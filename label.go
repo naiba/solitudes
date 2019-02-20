@@ -10,5 +10,5 @@ type Label struct {
 	Name string
 	Slug string `gorm:"unique_index"`
 
-	Articles []Article
+	ArticleLabels []ArticleLabel
 }
