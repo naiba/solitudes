@@ -1,0 +1,1 @@
+database: "postgres://postgres:mypassword@localhost/solitudes?sslmode=disable"
