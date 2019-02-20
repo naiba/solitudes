@@ -16,10 +16,9 @@ type Article struct {
 	Title         string
 	Content       string `gorm:"text"`
 
-	UserID  uint
-	User    User
-	LabelID uint
-	Label   Label
+	UserID uint
+	User   User
 
-	Comments []Comment
+	ArticleLabels []ArticleLabel
+	Comments      []Comment
 }
