@@ -10,4 +10,7 @@ type User struct {
 	Email    string `gorm:"unique_index"`
 	Password string
 	Name     string
+
+	Articles []Article
+	Comments []Comment
 }
