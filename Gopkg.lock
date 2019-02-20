@@ -10,14 +10,6 @@
   version = "v1.4.7"
 
 [[projects]]
-  digest = "1:3c4df6e0ec96b9dec76f15e0bcad888fa268ee6404d1cdcaf90d7567e32a8f73"
-  name = "github.com/google/wire"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "9a7ae3ba6b734d831e88c75966fd5e9c0abdeace"
-  version = "v0.2.1"
-
-[[projects]]
   digest = "1:c0d19ab64b32ce9fe5cf4ddceba78d5bc9807f0016db6b1183599da3dcc24d10"
   name = "github.com/hashicorp/hcl"
   packages = [
@@ -143,6 +135,18 @@
   version = "v1.3.1"
 
 [[projects]]
+  digest = "1:2773e4e922e5af534775962ffef08770b8114e177590f7605886528d37417105"
+  name = "go.uber.org/dig"
+  packages = [
+    ".",
+    "internal/digreflect",
+    "internal/dot",
+  ]
+  pruneopts = "UT"
+  revision = "7ff117f761a3f1b3eb521945c17a1091438eb6de"
+  version = "v1.7.0"
+
+[[projects]]
   branch = "master"
   digest = "1:8207c052fb873f83c61a5aa16f6add5feb9881eda2112b56f69fd3b9e7f55c3f"
   name = "golang.org/x/sys"
@@ -177,11 +181,11 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/google/wire",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/patrickmn/go-cache",
     "github.com/spf13/viper",
+    "go.uber.org/dig",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
