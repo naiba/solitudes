@@ -19,6 +19,6 @@ type Comment struct {
 	ArticleID uint
 	Article   Article
 
-	AuthorID uint `gorm:"index"`
-	Author   User
+	UserID uint `gorm:"index"`
+	User   User
 }
