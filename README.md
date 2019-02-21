@@ -11,3 +11,5 @@
 ## Thanks
 
 - theme from [@probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
+
+- dashboard from [@AdminLTE](https://adminlte.io/)
