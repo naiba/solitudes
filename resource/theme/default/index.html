@@ -33,7 +33,7 @@
             <a href="#"><i class="fas fa-bars fa-2x"></i></a>
           </li>
           {{range .Conf.Web.HeaderMenus}}
-          <li><a href="{{.Link}}" {{if .Black}} target="_black"{{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+          <li><a href="{{.Link}}" {{if .Black}} target="_black" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
               {{end}}{{.Name}}</a></li>
           {{end}}
         </ul>
@@ -42,6 +42,13 @@
 
     <section id="about">
       {{.Data.Bio|unsafe}}
+    </section>
+    <section id="search">
+      <span class="h1"><a href="#">Search</a></span>
+      <form action="/search/" method="get">
+        <input title="关键词" type="text" name="keyword" value="">
+        <button type="submit">&nbsp;搜索&nbsp;</button>
+      </form>
     </section>
     <section id="writing">
       <span class="h1"><a href="/static/cactus/archives">Writing</a></span>
@@ -87,34 +94,46 @@
             <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
           </span>
         </li>
-      </ul>
-    </section>
-
-    <section id="projects">
-      <span class="h1"><a href="http://github.com/probberechts">Projects</a></span>
-      <ul class="project-list">
-        <li class="project-item">
-          <a href="https://hexo.io/">Hexo</a>: <p>A fast, simple &amp; powerful blog framework</p>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
+          </span>
         </li>
-
-        <li class="project-item">
-          <a href="http://fontawesome.io/">Font Awesome</a>: <p>The iconic font and CSS toolkit</p>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
+          </span>
         </li>
-
-        <li class="project-item">
-          <a href="http://getbootstrap.com/">Bootstrap</a>: <p>The most popular HTML, CSS, and JS framework for
-            developing responsive, mobile first projects on the web.</p>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
+          </span>
         </li>
-
-        <li class="project-item">
-          <a href="https://www.python.org/">Python</a>: <p>Python is a programming language that lets you work quickly
-            and integrate systems more effectively. </p>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
+          </span>
         </li>
-
-        <li class="project-item">
-          <a href="https://d3js.org/">D3.js</a>: <p>A JavaScript library for manipulating documents based on data. </p>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
+          </span>
         </li>
-
       </ul>
     </section>
 
@@ -126,7 +145,7 @@
         <nav>
           <ul>
             {{range .Conf.Web.FooterMenus}}
-            <li><a href="{{.Link}}" {{if .Black}} target="_black"{{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+            <li><a href="{{.Link}}" {{if .Black}} target="_black" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
                 {{end}}{{.Name}}</a></li>
             {{end}}
           </ul>

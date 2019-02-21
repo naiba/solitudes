@@ -49,8 +49,7 @@ func newSystem(c *Config, d *gorm.DB, h *cache.Cache) *SysVeriable {
 }
 
 func migrate() {
-	if err := System.D.AutoMigrate(User{},
-		Label{}, Article{}, Comment{},
+	if err := System.D.AutoMigrate(Label{}, Article{}, Comment{},
 		ArticleLabel{}).Error; err != nil {
 		panic(err)
 	}

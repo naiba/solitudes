@@ -14,8 +14,16 @@ type Config struct {
 	SpaceName string `mapstructure:"space_name"`
 	SpaceDesc string `mapstructure:"space_desc"`
 	Web       struct {
-		Bio           string
-		Database      string
+		Bio      string
+		Database string
+		Email    string
+		Nickname string
+		/*
+			Password 用户密码
+			* default password: 123456
+			* gen password: https://bcrypt-generator.com/
+		*/
+		Password      string
 		SpaceKeywords string `mapstructure:"space_keywords"`
 		FrontendTheme string `mapstructure:"frontend_theme"`
 		BackendTheme  string `mapstructure:"backend_theme"`

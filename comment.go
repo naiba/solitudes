@@ -16,9 +16,6 @@ type Comment struct {
 	IP        string `gorm:"inet"`
 	UserAgent string
 
-	ArticleID uint
+	ArticleID uint `gorm:"index"`
 	Article   Article
-
-	UserID uint `gorm:"index"`
-	User   User
 }
