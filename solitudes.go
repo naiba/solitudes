@@ -21,6 +21,12 @@ func newDatabase(conf *Config) *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
+	if err = db.DB().Ping(); err != nil {
+		panic(err)
+	}
+	if conf.Debug {
+		db = db.Debug()
+	}
 	return db
 }
 
@@ -36,10 +42,14 @@ func newConfig() *Config {
 	return &c
 }
 
-func init() {
-	Solitudes = dig.New()
-	var err error
-	err = Solitudes.Provide(newCache)
+func migrate(db *gorm.DB) error {
+	return db.AutoMigrate(User{},
+		Label{}, Article{}, Comment{},
+		ArticleLabel{}).Error
+}
+
+func provide() {
+	err := Solitudes.Provide(newCache)
 	if err != nil {
 		panic(err)
 	}
@@ -49,6 +59,14 @@ func init() {
 	}
 	err = Solitudes.Provide(newDatabase)
 	if err != nil {
+		panic(err)
+	}
+}
+
+func init() {
+	Solitudes = dig.New()
+	provide()
+	if err := Solitudes.Invoke(migrate); err != nil {
 		panic(err)
 	}
 }

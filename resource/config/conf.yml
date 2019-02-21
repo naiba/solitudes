@@ -1,3 +1,4 @@
+debug: true
 frontend_theme: default
 backend_theme: admin-default
 database: postgres://postgres:mypassword@localhost/solitudes?sslmode=disable
