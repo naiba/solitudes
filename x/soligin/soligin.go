@@ -2,6 +2,7 @@ package soligin
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
@@ -18,7 +19,7 @@ func Soli(data map[string]interface{}) gin.H {
 // Authorize 用户认证中间件
 func Authorize(c *gin.Context) {
 	token, _ := c.Cookie(solitudes.AuthCookie)
-	if len(token) > 0 && token == solitudes.System.Token {
+	if len(token) > 0 && token == solitudes.System.Token && solitudes.System.TokenExpires.After(time.Now()) {
 		c.Set(solitudes.CtxAuthorized, true)
 	} else {
 		c.Set(solitudes.CtxAuthorized, false)

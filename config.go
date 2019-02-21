@@ -17,6 +17,7 @@ type Config struct {
 		Bio           string
 		Database      string
 		User          User
+		Domain        string
 		Theme         string `mapstructure:"theme"`
 		HeaderMenus   []Menu `mapstructure:"header_menus"`
 		FooterMenus   []Menu `mapstructure:"footer_menus"`
