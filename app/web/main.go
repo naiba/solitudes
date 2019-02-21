@@ -21,18 +21,24 @@ func main() {
 	r.Static("static", "resource/static")
 	r.LoadHTMLGlob("resource/theme/**/*")
 
-	r.GET("/", func(c *gin.Context) {
+	o := r.Group("")
+	o.Use(soligin.Authorize)
+	o.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "default/index", soligin.Soli(gin.H{
 			"Bio": string(blackfriday.Run([]byte(solitudes.System.C.Web.Bio))),
 		}))
 	})
-	r.GET("/login", func(c *gin.Context) {
+	o.GET("/login", soligin.Limit(soligin.LimitOption{
+		NeedGuest: true,
+	}), func(c *gin.Context) {
 		c.HTML(http.StatusOK, "admin/login", gin.H{})
 	})
-	admin := r.Group("/admin")
+	admin := o.Group("/admin")
+	admin.Use(soligin.Limit(soligin.LimitOption{
+		NeedLogin: true,
+	}))
 	{
-		admin.GET("/", func(c *gin.Context) {
-		})
+		admin.GET("/")
 	}
 	r.Run()
 }

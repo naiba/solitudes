@@ -46,7 +46,7 @@
     <section id="search">
       <span class="h1"><a href="#">Search</a></span>
       <form action="/search/" method="get">
-        <input title="关键词" class="search-input" type="text" name="keyword" value="">
+        <input class="search-input" name="keyword">
         <button class="search-button" type="submit">Search</button>
       </form>
     </section>
@@ -139,7 +139,7 @@
 
     <footer id="footer">
       <div class="footer-left">
-        Copyright &copy; 2019 {{.Conf.Web.Nickname}}
+        Copyright &copy; 2019 {{.Conf.Web.User.Nickname}}
       </div>
       <div class="footer-right">
         <nav>

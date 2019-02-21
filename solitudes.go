@@ -44,7 +44,7 @@ func newConfig() *Config {
 
 func newSystem(c *Config, d *gorm.DB, h *cache.Cache) *SysVeriable {
 	return &SysVeriable{
-		c, d, h,
+		c, d, h, "",
 	}
 }
 
@@ -88,9 +88,10 @@ func init() {
 
 // SysVeriable 全局变量
 type SysVeriable struct {
-	C *Config
-	D *gorm.DB
-	H *cache.Cache
+	C     *Config
+	D     *gorm.DB
+	H     *cache.Cache
+	Token string
 }
 
 // Injector 运行时依赖注入
