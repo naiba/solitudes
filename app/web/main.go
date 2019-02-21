@@ -20,7 +20,7 @@ func main() {
 	r.Static("static", "resource/static")
 	r.LoadHTMLGlob("resource/theme/**/*")
 	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.html", gin.H{})
+		c.HTML(http.StatusOK, "default/index", gin.H{})
 	})
 	r.Run()
 }
