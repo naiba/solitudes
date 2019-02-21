@@ -22,8 +22,8 @@ web:
   frontend_theme: default
   backend_theme: admin-default
   email: 1@5.nu
-	nickname: naiba
-	password: $2y$12$.Sbcj4mNEFbZIan3ly5XGuyX0U2XG92ztARIvE.rssyGd0p5ToBR6
+  nickname: naiba
+  password: $2y$12$.Sbcj4mNEFbZIan3ly5XGuyX0U2XG92ztARIvE.rssyGd0p5ToBR6
   header_menus:
     - name: Home
       link: /
