@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/gorm"
-	cache "github.com/patrickmn/go-cache"
+	"github.com/patrickmn/go-cache"
 	"github.com/spf13/viper"
 	"go.uber.org/dig"
 
@@ -17,7 +17,7 @@ func newCache() *cache.Cache {
 }
 
 func newDatabase(conf *Config) *gorm.DB {
-	db, err := gorm.Open("postgres", conf.Database)
+	db, err := gorm.Open("postgres", conf.Web.Database)
 	if err != nil {
 		panic(err)
 	}
@@ -42,34 +42,60 @@ func newConfig() *Config {
 	return &c
 }
 
-func migrate(db *gorm.DB) error {
-	return db.AutoMigrate(User{},
+func newSystem(c *Config, d *gorm.DB, h *cache.Cache) *SysVeriable {
+	return &SysVeriable{
+		c, d, h,
+	}
+}
+
+func migrate() {
+	if err := System.D.AutoMigrate(User{},
 		Label{}, Article{}, Comment{},
-		ArticleLabel{}).Error
+		ArticleLabel{}).Error; err != nil {
+		panic(err)
+	}
 }
 
 func provide() {
-	err := Solitudes.Provide(newCache)
+	err := Injector.Provide(newCache)
 	if err != nil {
 		panic(err)
 	}
-	err = Solitudes.Provide(newConfig)
+	err = Injector.Provide(newConfig)
 	if err != nil {
 		panic(err)
 	}
-	err = Solitudes.Provide(newDatabase)
+	err = Injector.Provide(newDatabase)
+	if err != nil {
+		panic(err)
+	}
+	err = Injector.Provide(newSystem)
+	if err != nil {
+		panic(err)
+	}
+	err = Injector.Invoke(func(s *SysVeriable) {
+		System = s
+	})
 	if err != nil {
 		panic(err)
 	}
 }
 
 func init() {
-	Solitudes = dig.New()
+	Injector = dig.New()
 	provide()
-	if err := Solitudes.Invoke(migrate); err != nil {
-		panic(err)
-	}
+	migrate()
 }
 
-// Solitudes 运行时依赖注入
-var Solitudes *dig.Container
+// SysVeriable 全局变量
+type SysVeriable struct {
+	C *Config
+	D *gorm.DB
+	H *cache.Cache
+}
+
+// Injector 运行时依赖注入
+var Injector *dig.Container
+
+// System 全局变量
+var System *SysVeriable

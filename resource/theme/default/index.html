@@ -7,14 +7,15 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="HandheldFriendly" content="True">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-  <meta name="description"
-    content="Hi, I&apos;m a theme for the [Hexo](http://hexo.io) blogging framework. I&apos;m particularly great for a personal web page with a simple blog. In this paragraph, you can provide some information about yourself">
   <link rel="shortcut icon" href="/static/cactus/images/favicon.ico">
   <link rel="icon" type="image/png" href="/static/cactus/images/favicon-192x192.png" sizes="192x192">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/cactus/images/apple-touch-icon.png">
-  <title>Cactus Classic</title>
   <link rel="stylesheet" href="/static/cactus/css/classic.css">
   <link rel="stylesheet" href="/static/cactus/css/rtl.css">
+
+  <title>{{.Conf.SpaceName}}</title>
+  <meta name="description" content="{{.Conf.SpaceDesc}}">
+  <meta name="keywords" content="{{.Conf.Web.SpaceKeywords}}">
 </head>
 
 <body class="max-width mx-auto px3 ltr">
@@ -23,7 +24,7 @@
       <a href="/static/cactus/">
         <div id="logo" style="background-image: url(/static/cactus/images/logo.png);"></div>
         <div id="title">
-          <h1>Cactus Classic</h1>
+          <h1>{{.Conf.SpaceName}}</h1>
         </div>
       </a>
       <div id="nav">
@@ -31,42 +32,16 @@
           <li class="icon">
             <a href="#"><i class="fas fa-bars fa-2x"></i></a>
           </li>
-          <li><a href="/static/cactus/">Home</a></li>
-          <li><a href="/static/cactus/about/">About</a></li>
-          <li><a href="/static/cactus/archives/">Writing</a></li>
-          <li><a href="/static/cactus/projects_url">Projects</a></li>
+          {{range .Conf.Web.HeaderMenus}}
+          <li><a href="{{.Link}}" {{if .Black}} target="_black"{{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+              {{end}}{{.Name}}</a></li>
+          {{end}}
         </ul>
       </div>
     </header>
 
-
     <section id="about">
-      <p>Hi, I’m a theme for the <a href="http://hexo.io">Hexo</a> blogging framework. I’m particularly great for a
-        personal web page with a simple blog. In this paragraph, you can provide some information about yourself. Below,
-        you’re most recent or highlighted writings and projects are listed. </p>
-      <p>
-        Find me on
-        <a class="icon" target="_blank" href="http://github.com/probberechts/cactus-dark">
-          <i class="fab fa-github"></i>
-        </a>
-        ,
-        <a class="icon" target="_blank" href="/static/cactus/">
-          <i class="fab fa-twitter"></i>
-        </a>
-        ,
-        <a class="icon" target="_blank" href="/static/cactus/">
-          <i class="fab fa-facebook"></i>
-        </a>
-        ,
-        <a class="icon" target="_blank" href="/static/cactus/">
-          <i class="fab fa-linkedin"></i>
-        </a>
-        and
-        <a class="icon" target="_blank" href="mailto:name@email.com">
-          <i class="fas fa-envelope"></i>
-        </a>
-        .
-      </p>
+      {{.Data.Bio|unsafe}}
     </section>
     <section id="writing">
       <span class="h1"><a href="/static/cactus/archives">Writing</a></span>
@@ -145,21 +120,22 @@
 
     <footer id="footer">
       <div class="footer-left">
-        Copyright &copy; 2018 Pieter Robberechts
+        Copyright &copy; 2019 {{.Conf.SpaceName}}
       </div>
       <div class="footer-right">
         <nav>
           <ul>
-            <li><a href="/static/cactus/">Home</a></li>
-            <li><a href="/static/cactus/about/">About</a></li>
-            <li><a href="/static/cactus/archives/">Writing</a></li>
-            <li><a href="/static/cactus/projects_url">Projects</a></li>
+            {{range .Conf.Web.FooterMenus}}
+            <li><a href="{{.Link}}" {{if .Black}} target="_black"{{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+                {{end}}{{.Name}}</a></li>
+            {{end}}
           </ul>
         </nav>
       </div>
     </footer>
   </div>
 </body>
+
 </html>
 
 <link rel="stylesheet" href="/static/cactus/lib/font-awesome/css/all.min.css">

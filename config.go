@@ -1,9 +1,25 @@
 package solitudes
 
+// Menu 自定义菜单
+type Menu struct {
+	Name  string
+	Link  string
+	Icon  string
+	Black bool
+}
+
 // Config 系统配置
 type Config struct {
-	Debug         bool
-	FrontendTheme string `mapstructure:"frontend_theme"`
-	BackendTheme  string `mapstructure:"backend_theme"`
-	Database      string
+	Debug     bool
+	SpaceName string `mapstructure:"space_name"`
+	SpaceDesc string `mapstructure:"space_desc"`
+	Web       struct {
+		Bio           string
+		Database      string
+		SpaceKeywords string `mapstructure:"space_keywords"`
+		FrontendTheme string `mapstructure:"frontend_theme"`
+		BackendTheme  string `mapstructure:"backend_theme"`
+		HeaderMenus   []Menu `mapstructure:"header_menus"`
+		FooterMenus   []Menu `mapstructure:"footer_menus"`
+	}
 }

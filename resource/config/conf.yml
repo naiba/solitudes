@@ -1,4 +1,39 @@
 debug: true
-frontend_theme: default
-backend_theme: admin-default
-database: postgres://postgres:mypassword@localhost/solitudes?sslmode=disable
+space_name: Solitudes
+space_desc: When I feel solitude, there is writing to accompany me. 
+web:
+  database: postgres://postgres:mypassword@localhost/solitudes?sslmode=disable
+  bio: >
+    Hi, I’m a theme for the Hexo blogging framework. I’m particularly great for a personal web page with a simple blog. In this paragraph, you can provide some information about yourself. Below, you’re most recent or highlighted writings and projects are listed.
+    
+    
+    Find me on<a class="icon" target="_blank" href="http://github.com/probberechts/cactus-dark">
+          <i class="fab fa-github"></i>
+        </a>,<a class="icon" target="_blank" href="/static/cactus/">
+          <i class="fab fa-twitter"></i>
+        </a>,<a class="icon" target="_blank" href="/static/cactus/">
+          <i class="fab fa-facebook"></i>
+        </a>,<a class="icon" target="_blank" href="/static/cactus/">
+          <i class="fab fa-linkedin"></i>
+        </a>and<a class="icon" target="_blank" href="mailto:name@email.com">
+          <i class="fas fa-envelope"></i>
+        </a>.
+  space_keywords: blog,solitude,died-simple
+  frontend_theme: default
+  backend_theme: admin-default
+  header_menus:
+    - name: Home
+      link: /
+    - name: About
+      link: /about
+      icon: fa fa-lightbulb
+    - name: Solitudes
+      link: https://github.com/naiba/solitudes
+      icon: fab fa-github
+      black: true
+  footer_menus:
+    - name: Home
+      link: /
+    - name: About
+      link: /about
+      icon: far fa-lightbulb
