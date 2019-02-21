@@ -1,30 +1,200 @@
 {{define "default/index"}}
-<!doctype html>
-<html lang="zh">
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="HandheldFriendly" content="True">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="description"
+    content="Hi, I&apos;m a theme for the [Hexo](http://hexo.io) blogging framework. I&apos;m particularly great for a personal web page with a simple blog. In this paragraph, you can provide some information about yourself">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Cactus Classic">
+  <meta property="og:url" content="http://probberechts.gihub.io/index.html">
+  <meta property="og:site_name" content="Cactus Classic">
+  <meta property="og:description"
+    content="Hi, I&apos;m a theme for the [Hexo](http://hexo.io) blogging framework. I&apos;m particularly great for a personal web page with a simple blog. In this paragraph, you can provide some information about yourself">
+  <meta property="og:locale" content="en">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Cactus Classic">
+  <meta name="twitter:description"
+    content="Hi, I&apos;m a theme for the [Hexo](http://hexo.io) blogging framework. I&apos;m particularly great for a personal web page with a simple blog. In this paragraph, you can provide some information about yourself">
 
-  <link rel="icon" href="/static/favicon.ico">
-  <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/twitter-bootstrap/4.3.0/css/bootstrap.min.css">
-  <link href="https://fonts.loli.net/css?family=Noto+Serif+SC" rel="stylesheet">
-  <link href="https://cdnjs.loli.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <link href="/static/solitudes.css" rel="stylesheet">
+  <link rel="shortcut icon" href="/static/cactus/images/favicon.ico">
 
-  <title>hello world</title>
+  <link rel="icon" type="image/png" href="/static/cactus/images/favicon-192x192.png" sizes="192x192">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/cactus/images/apple-touch-icon.png">
+
+  <title>Cactus Classic</title>
+  <link rel="stylesheet" href="/static/cactus/css/classic.css">
+  <link rel="stylesheet" href="/static/cactus/css/rtl.css">
 </head>
 
-<body>
-  <h1>hello world</h1>
-  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-  <script src="https://cdnjs.loli.net/ajax/libs/jquery/3.3.1/jquery.slim.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
-    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
-    crossorigin="anonymous"></script>
-  <script src="https://cdnjs.loli.net/ajax/libs/twitter-bootstrap/4.3.0/js/bootstrap.min.js"></script>
-  <script src="/static/solitudes.js"></script>
+<body class="max-width mx-auto px3 ltr">
+  <div class="content index py4">
+    <header id="header">
+      <a href="/static/cactus/">
+        <div id="logo" style="background-image: url(/static/cactus/images/logo.png);"></div>
+        <div id="title">
+          <h1>Cactus Classic</h1>
+        </div>
+      </a>
+      <div id="nav">
+        <ul>
+          <li class="icon">
+            <a href="#"><i class="fas fa-bars fa-2x"></i></a>
+          </li>
+
+          <li><a href="/static/cactus/">Home</a></li>
+
+          <li><a href="/static/cactus/about/">About</a></li>
+
+          <li><a href="/static/cactus/archives/">Writing</a></li>
+
+          <li><a href="/static/cactus/projects_url">Projects</a></li>
+
+        </ul>
+      </div>
+    </header>
+
+
+    <section id="about">
+
+      <p>Hi, I’m a theme for the <a href="http://hexo.io">Hexo</a> blogging framework. I’m particularly great for a
+        personal web page with a simple blog. In this paragraph, you can provide some information about yourself. Below,
+        you’re most recent or highlighted writings and projects are listed. </p>
+      <p>
+        Find me on
+        <a class="icon" target="_blank" href="http://github.com/probberechts/cactus-dark">
+          <i class="fab fa-github"></i>
+        </a>
+        ,
+        <a class="icon" target="_blank" href="/static/cactus/">
+          <i class="fab fa-twitter"></i>
+        </a>
+        ,
+        <a class="icon" target="_blank" href="/static/cactus/">
+          <i class="fab fa-facebook"></i>
+        </a>
+        ,
+        <a class="icon" target="_blank" href="/static/cactus/">
+          <i class="fab fa-linkedin"></i>
+        </a>
+        and
+        <a class="icon" target="_blank" href="mailto:name@email.com">
+          <i class="fas fa-envelope"></i>
+        </a>
+        .
+      </p>
+    </section>
+    <section id="writing">
+      <span class="h1"><a href="/static/cactus/archives">Writing</a></span>
+      <ul class="post-list">
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2016-11-14T16:49:32.000Z" itemprop="datePublished">2016-11-14</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2016/11/14/hello-world/">Hello World</a>
+          </span>
+        </li>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2016-11-01T08:35:18.000Z" itemprop="datePublished">2016-11-01</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2016/11/01/An-overview-of-all-Markdown-elements/">An overview of all
+              Markdown elements</a>
+          </span>
+        </li>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2013-12-26T21:46:49.000Z" itemprop="datePublished">2013-12-26</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2013/12/26/images/">Images</a>
+          </span>
+        </li>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2013-12-25T21:57:49.000Z" itemprop="datePublished">2013-12-25</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2013/12/25/no-title/">Untitled</a>
+          </span>
+        </li>
+        <li class="post-item">
+          <div class="meta">
+            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
+          </div>
+          <span>
+            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
+          </span>
+        </li>
+      </ul>
+    </section>
+
+    <section id="projects">
+      <span class="h1"><a href="http://github.com/probberechts">Projects</a></span>
+      <ul class="project-list">
+        <li class="project-item">
+          <a href="https://hexo.io/">Hexo</a>: <p>A fast, simple &amp; powerful blog framework</p>
+        </li>
+
+        <li class="project-item">
+          <a href="http://fontawesome.io/">Font Awesome</a>: <p>The iconic font and CSS toolkit</p>
+        </li>
+
+        <li class="project-item">
+          <a href="http://getbootstrap.com/">Bootstrap</a>: <p>The most popular HTML, CSS, and JS framework for
+            developing responsive, mobile first projects on the web.</p>
+        </li>
+
+        <li class="project-item">
+          <a href="https://www.python.org/">Python</a>: <p>Python is a programming language that lets you work quickly
+            and integrate systems more effectively. </p>
+        </li>
+
+        <li class="project-item">
+          <a href="https://d3js.org/">D3.js</a>: <p>A JavaScript library for manipulating documents based on data. </p>
+        </li>
+
+      </ul>
+    </section>
+
+
+    <footer id="footer">
+      <div class="footer-left">
+        Copyright &copy; 2018 Pieter Robberechts
+      </div>
+      <div class="footer-right">
+        <nav>
+          <ul>
+            <li><a href="/static/cactus/">Home</a></li>
+
+            <li><a href="/static/cactus/about/">About</a></li>
+
+            <li><a href="/static/cactus/archives/">Writing</a></li>
+
+            <li><a href="/static/cactus/projects_url">Projects</a></li>
+
+          </ul>
+        </nav>
+      </div>
+    </footer>
+
+  </div>
 </body>
 
 </html>
+
+<link rel="stylesheet" href="/static/cactus/lib/font-awesome/css/all.min.css">
+<link rel="stylesheet" href="/static/cactus/lib/justified-gallery/css/justifiedGallery.min.css">
+<script src="/static/cactus/lib/jquery/jquery.min.js"></script>
+<script src="/static/cactus/lib/justified-gallery/js/jquery.justifiedGallery.min.js"></script>
+<script src="/static/cactus/js/main.js"></script>
+
 {{end}}

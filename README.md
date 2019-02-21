@@ -10,5 +10,4 @@
 
 ## Thanks
 
-- icon from [@easyicon/paper_plane_icon](https://www.easyicon.net/1205696-paper_plane_icon.html)
 - theme from [@probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
