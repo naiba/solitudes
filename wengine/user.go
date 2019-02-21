@@ -2,6 +2,7 @@ package wengine
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/naiba/solitudes"
@@ -45,4 +46,14 @@ func loginHandler(c *gin.Context) {
 
 func login(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/login", gin.H{})
+}
+
+func logoutHandler(c *gin.Context) {
+	if !strings.Contains(c.Request.Referer(), "://"+solitudes.System.C.Web.Domain+"/") {
+		c.String(http.StatusOK, "CSRF protect")
+		return
+	}
+	solitudes.System.TokenExpires = time.Now()
+	solitudes.System.Token = ""
+	c.Redirect(http.StatusFound, "/")
 }

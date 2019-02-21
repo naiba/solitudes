@@ -24,6 +24,7 @@ func WEngine() error {
 	r.Static("static", "resource/static")
 	r.LoadHTMLGlob("resource/theme/**/*")
 
+	// router need authorize
 	o := r.Group("")
 	o.Use(soligin.Authorize)
 	o.GET("/", func(c *gin.Context) {
@@ -40,11 +41,12 @@ func WEngine() error {
 		g.POST("/login", loginHandler)
 	}
 
-	// admin router
-	admin := o.Group("/admin")
-	admin.Use(soligin.Limit(soligin.LimitOption{NeedLogin: true}))
+	// manager router
+	m := o.Group("")
+	m.Use(soligin.Limit(soligin.LimitOption{NeedLogin: true}))
 	{
-		admin.GET("/")
+		m.GET("/admin/", manager)
+		m.GET("/logout", logoutHandler)
 	}
 
 	return r.Run(":8080")
