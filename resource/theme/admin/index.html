@@ -74,99 +74,99 @@
                     <div class="col-lg-3 col-xs-6">
                         <div class="small-box bg-aqua">
                             <div class="inner">
-                                <h3>150</h3>
-                                <p>New Orders</p>
+                                <h3>{{.Data.articleNum}}</h3>
+                                <p>Articles</p>
                             </div>
                             <div class="icon">
-                                <i class="ion ion-bag"></i>
+                                <i class="fa fa-newspaper-o"></i>
                             </div>
-                            <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-green">
+                        <div class="small-box bg-purple">
                             <div class="inner">
-                                <h3>53<sup style="font-size: 20px">%</sup></h3>
-                                <p>Bounce Rate</p>
+                                <h3>{{.Data.lastArticlePublish}} </h3>
+                                <p>Days left from the last post</p>
                             </div>
                             <div class="icon">
-                                <i class="ion ion-stats-bars"></i>
+                                <i class="fa fa-clock-o"></i>
                             </div>
-                            <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-yellow">
+                        <div class="small-box bg-aqua">
                             <div class="inner">
-                                <h3>44</h3>
-                                <p>User Registrations</p>
+                                <h3>{{.Data.commentNum}}</h3>
+                                <p>Comments</p>
                             </div>
                             <div class="icon">
-                                <i class="ion ion-person-add"></i>
+                                <i class="fa fa-comments-o"></i>
                             </div>
-                            <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-red">
+                        <div class="small-box bg-purple">
                             <div class="inner">
-                                <h3>65</h3>
-                                <p>Unique Visitors</p>
+                                <h3>{{.Data.lastComment}}</h3>
+                                <p>Days left from the last comment</p>
                             </div>
                             <div class="icon">
-                                <i class="ion ion-pie-graph"></i>
+                                <i class="fa fa-clock-o"></i>
                             </div>
-                            <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-aqua">
+                        <div class="small-box bg-lime-active">
                             <div class="inner">
-                                <h3>150</h3>
-                                <p>New Orders</p>
+                                <h3>{{.Data.labelNum}}</h3>
+                                <p>Labels</p>
                             </div>
                             <div class="icon">
-                                <i class="ion ion-bag"></i>
+                                <i class="fa fa-tags"></i>
                             </div>
-                            <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-green">
+                        <div class="small-box bg-navy">
                             <div class="inner">
-                                <h3>53<sup style="font-size: 20px">%</sup></h3>
-                                <p>Bounce Rate</p>
+                                <h3>{{.Data.memoryUsage}} M</h3>
+                                <p>Memory Usage</p>
                             </div>
                             <div class="icon">
-                                <i class="ion ion-stats-bars"></i>
+                                <i class="fa fa-file-o"></i>
                             </div>
-                            <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-yellow">
+                        <div class="small-box bg-maroon">
                             <div class="inner">
-                                <h3>44</h3>
-                                <p>User Registrations</p>
+                                <h3>{{.Data.gcNum}}</h3>
+                                <p>GC num</p>
                             </div>
                             <div class="icon">
-                                <i class="ion ion-person-add"></i>
+                                <i class="fa fa-trash-o"></i>
                             </div>
-                            <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-red">
+                        <div class="small-box bg-teal">
                             <div class="inner">
-                                <h3>65</h3>
-                                <p>Unique Visitors</p>
+                                <h3>{{.Data.routineNum}}</h3>
+                                <p>Routine num</p>
                             </div>
                             <div class="icon">
-                                <i class="ion ion-pie-graph"></i>
+                                <i class="fa fa-meh-o"></i>
                             </div>
-                            <a href="#" class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></a>
+                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                         </div>
                     </div>
                 </div>
