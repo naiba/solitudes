@@ -15,17 +15,17 @@ import (
 )
 
 func manager(c *gin.Context) {
-	var articleNum, commentNum, tagNum int
+	var articleNum, commentNum int
 	var lastArticle solitudes.Article
 	var lastComment solitudes.Comment
 	solitudes.System.D.Model(solitudes.Article{}).Count(&articleNum)
 	solitudes.System.D.Model(solitudes.Comment{}).Count(&commentNum)
-	solitudes.System.D.Exec(`select count(*) from (select tags
-		from (
-		  select unnest(tags) as tags
-		  from articles 
-		) t
-		group by tags) ts;`).Scan(&tagNum)
+
+	type tagNum struct {
+		Count int
+	}
+	var tn tagNum
+	solitudes.System.D.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn)
 	solitudes.System.D.Select("created_at").Order("id DESC").First(&lastArticle)
 	solitudes.System.D.Select("created_at").Order("id DESC").First(&lastComment)
 
@@ -37,7 +37,7 @@ func manager(c *gin.Context) {
 		"commentNum":         commentNum,
 		"lastArticlePublish": time.Now().Sub(lastArticle.CreatedAt).Hours() / 24,
 		"lastComment":        time.Now().Sub(lastComment.CreatedAt).Hours() / 24,
-		"tagNum":             tagNum,
+		"tagNum":             tn.Count,
 
 		"memoryUsage": bToMb(m.Alloc),
 		"gcNum":       m.NumGC,
