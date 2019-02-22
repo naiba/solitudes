@@ -50,6 +50,7 @@ func WEngine() error {
 	{
 		a.GET("/", manager)
 		a.GET("/publish", publish)
+		a.POST("/publish", publishHandler)
 		a.POST("/upload", upload)
 	}
 

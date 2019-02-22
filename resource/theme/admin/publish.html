@@ -37,16 +37,18 @@
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <select id="selTemplate" class="form-control">
-                            {{range $k,$v := .Data.templates}}
-                            <option value="{{$k}}">{{$v}}</option>
-                            {{end}}
-                        </select>
+                        <div class="col-sm-offset-2">
+                            <select id="selTemplate" class="form-control">
+                                {{range $k,$v := .Data.templates}}
+                                <option value="{{$k}}">{{$v}}</option>
+                                {{end}}
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="form-group">
-                        <div class="col-sm-offset-2 col-sm-10">
+                        <div class="col-sm-offset-2">
                             <div class="checkbox">
                                 <label>
                                     <input id="cbCollection" type="checkbox"> It's a collection.
@@ -55,10 +57,19 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputCID" class="col-sm-2 control-label">CollectionID</label>
+                        <div class="col-sm-10">
+                            <input type="number" class="form-control" id="inputCID" placeholder="0">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="editSection"></div>
-        <button class="btn btn-lg btn-block btn-primary" style="margin-top:10px;">Publish</button>
+        <button onclick="publish(this)" class="btn btn-lg btn-block btn-primary"
+            style="margin-top:10px;">Publish</button>
     </section>
 </div>
 <link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor.css">
@@ -71,22 +82,6 @@
 </link>
 <script src="https://uicdn.toast.com/tui-editor/latest/tui-editor-Editor-full.js"></script>
 <script>
-    function uploadImage(blob, cb) {
-        var fd = new FormData();
-        fd.append('file', blob);
-        $.ajax({
-            type: 'POST',
-            url: '/admin/upload',
-            data: fd,
-            processData: false,
-            contentType: false
-        }).done((data) => {
-            cb(data)
-        }).fail((e) => {
-            cb(false)
-            alert("upload failed: " + e.responseText)
-        });
-    }
     var editor = new tui.Editor({
         el: document.querySelector('#editSection'),
         initialEditType: 'markdown',
@@ -104,6 +99,44 @@
             }
         },
     });
+    function publish(btn) {
+        if ($(btn).hasClass("disabled")) {
+            return
+        }
+        $(btn).toggleClass("disabled")
+        var article = {
+            title: $("#inputTitle").val(),
+            slug: $("#inputSlug").val(),
+            content: editor.getMarkdown(),
+            template: parseInt($("#selTemplate").val()),
+            tags: $("#inputTags").val(),
+            collection_id: parseInt($("#inputCID").val()),
+            is_collection: document.getElementById('cbCollection').checked,
+        }
+        $.post("", article, (data, status) => {
+            window.location.href = "/" + article.slug
+        }).fail((err) => {
+            alert("Publish failed: " + err.responseText)
+        }).always(() => {
+            $(btn).toggleClass("disabled")
+        })
+    }
+    function uploadImage(blob, cb) {
+        var fd = new FormData();
+        fd.append('file', blob);
+        $.ajax({
+            type: 'POST',
+            url: '/admin/upload',
+            data: fd,
+            processData: false,
+            contentType: false
+        }).done((data) => {
+            cb(data)
+        }).fail((e) => {
+            cb(false)
+            alert("upload failed: " + e.responseText)
+        });
+    }
 </script>
 {{template "admin/footer" .}}
 {{end}}

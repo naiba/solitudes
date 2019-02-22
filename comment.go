@@ -15,6 +15,7 @@ type Comment struct {
 	Content   string `gorm:"text"`
 	IP        string `gorm:"inet"`
 	UserAgent string
+	IsAdmin   bool
 
 	ArticleID uint `gorm:"index"`
 	Article   Article
