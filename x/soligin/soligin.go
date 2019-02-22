@@ -18,6 +18,7 @@ func Soli(data map[string]interface{}) gin.H {
 
 // Authorize 用户认证中间件
 func Authorize(c *gin.Context) {
+	c.Set(solitudes.CtxPassPreHandler, true)
 	token, _ := c.Cookie(solitudes.AuthCookie)
 	if len(token) > 0 && token == solitudes.System.Token && solitudes.System.TokenExpires.After(time.Now()) {
 		c.Set(solitudes.CtxAuthorized, true)
@@ -38,12 +39,15 @@ func Limit(lo LimitOption) gin.HandlerFunc {
 		if lo.NeedGuest && c.MustGet(solitudes.CtxAuthorized).(bool) {
 			c.Redirect(http.StatusFound, "/")
 			c.Abort()
+			c.Set(solitudes.CtxPassPreHandler, false)
 			return
 		} else if lo.NeedLogin && !c.MustGet(solitudes.CtxAuthorized).(bool) {
 			c.Redirect(http.StatusFound, "/login")
 			c.Abort()
+			c.Set(solitudes.CtxPassPreHandler, false)
 			return
 		}
+		c.Set(solitudes.CtxPassPreHandler, true)
 	}
 }
 

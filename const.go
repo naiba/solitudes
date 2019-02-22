@@ -5,4 +5,6 @@ const (
 	CtxAuthorized = "cazed"
 	// AuthCookie 用户认证使用的Cookie名
 	AuthCookie = "i_am_solitude"
+	// CtxPassPreHandler 通过了PreHandler
+	CtxPassPreHandler = "cpph"
 )

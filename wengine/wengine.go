@@ -30,18 +30,6 @@ func WEngine() error {
 
 	r.Any("/*shit", routerSwitch)
 
-	// // manager router
-	// m := o.Group("")
-	// m.Use(soligin.Limit(soligin.LimitOption{NeedLogin: true}))
-	// m.GET("/logout", logoutHandler)
-	// a := m.Group("/admin")
-	// {
-	// 	a.GET("/", manager)
-	// 	a.GET("/publish", publish)
-	// 	a.POST("/publish", publishHandler)
-	// 	a.POST("/upload", upload)
-	// }
-
 	return r.Run(":8080")
 }
 
@@ -59,20 +47,20 @@ type shitGin struct {
 
 var shits = []shitGin{
 	shitGin{
-		Match: regexp.MustCompile(`^/$`),
+		Match: regexp.MustCompile(`^\/$`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: index,
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^/archive`),
+		Match: regexp.MustCompile(`^\/archive`),
 		Routes: map[string]gin.HandlerFunc{
 			//TODO: archive
 			http.MethodGet: index,
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^/login/`),
+		Match: regexp.MustCompile(`^\/login\/$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 			soligin.Limit(soligin.LimitOption{NeedGuest: true}),
@@ -83,19 +71,60 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^/static/`),
+		Match: regexp.MustCompile(`^\/logout\/$`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: logoutHandler,
+		},
+	},
+	shitGin{
+		Match: regexp.MustCompile(`^\/admin\/$`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: manager,
+		},
+	},
+	shitGin{
+		Match: regexp.MustCompile(`^\/admin\/publish`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet:  publish,
+			http.MethodPost: publishHandler,
+		},
+	},
+	shitGin{
+		Match: regexp.MustCompile(`^\/admin\/upload`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodPost: upload,
+		},
+	},
+	shitGin{
+		Match: regexp.MustCompile(`^\/static\/`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: static("resource/static"),
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^/upload/`),
+		Match: regexp.MustCompile(`^\/upload\/`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: static("resource/upload"),
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^/.*$`),
+		Match: regexp.MustCompile(`^\/.*$`),
 		Routes: map[string]gin.HandlerFunc{
 			//TODO: slug
 			http.MethodGet: login,
@@ -107,13 +136,20 @@ func routerSwitch(c *gin.Context) {
 	log.Println(c.Request.URL.Path)
 	for j := 0; j < len(shits); j++ {
 		if shits[j].Match.MatchString(c.Request.URL.Path) {
+			log.Println(j, shits[j].Routes, c.Request.Method)
 			if f, ok := shits[j].Routes[c.Request.Method]; ok {
 				for i := 0; i < len(shits[j].Pre); i++ {
 					log.Println("run pre", i)
 					shits[j].Pre[i](c)
+					log.Println("run pre", i, "done")
+				}
+				if len(shits[j].Pre) > 0 && !c.MustGet(solitudes.CtxPassPreHandler).(bool) {
+					// 如果没有通过 pre handler
+					return
 				}
 				log.Println("run after")
 				f(c)
+				log.Println("run after done")
 				return
 			}
 			c.String(http.StatusMethodNotAllowed, "method not allowed")
