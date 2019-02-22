@@ -1,190 +1,115 @@
 {{define "admin/index"}}
-<!DOCTYPE html>
-<html>
+{{template "admin/header" .}}
+<div class="content-wrapper">
+    <section class="content-header">
+        <h1>
+            Dashboard
+            <small>known everything</small>
+        </h1>
+    </section>
 
-<head>
-    {{template "admin/common_css"}}
-    <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/iCheck/1.0.2/skins/square/blue.css">
-    <title>Dashboard - Powered by Solitudes</title>
-</head>
-
-<body class="hold-transition skin-blue-light sidebar-mini">
-    <div class="wrapper">
-        <header class="main-header">
-            <a href="/admin/" class="logo">
-                <span class="logo-mini"><b>S</b>E</span>
-                <span class="logo-lg"><b>Solitudes</b>Engine</span>
-            </a>
-            <nav class="navbar navbar-static-top" role="navigation">
-                <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
-                    <span class="sr-only">Toggle navigation</span>
-                </a>
-                <div class="navbar-custom-menu">
-                    <ul class="nav navbar-nav">
-                        <li class="dropdown user user-menu">
-                            <!-- Menu Toggle Button -->
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <!-- The user image in the navbar-->
-                                <img src="/static/cactus/images/logo.png" class="user-image" alt="User Image">
-                                <!-- hidden-xs hides the username on small devices so only the image appears. -->
-                                <span class="hidden-xs">{{.Conf.Web.User.Nickname}}</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li class="user-footer">
-                                    <a href="/signout" class="btn btn-default btn-flat">Sign out</a>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
+    <section class="content container-fluid">
+        <div class="row">
+            <div class="col-lg-3 col-xs-6">
+                <div class="small-box bg-aqua">
+                    <div class="inner">
+                        <h3>{{.Data.articleNum}}</h3>
+                        <p>Articles</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-newspaper-o"></i>
+                    </div>
+                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
-            </nav>
-        </header>
-        <aside class="main-sidebar">
-            <section class="sidebar">
-                <div class="user-panel">
-                    <div class="pull-left image">
-                        <img src="/static/cactus/images/logo.png" class="img-circle" alt="User Image">
-                    </div>
-                    <div class="pull-left info">
-                        <p>{{.Conf.Web.User.Nickname}}</p>
-                        <!-- Status -->
-                        <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
-                    </div>
-                </div>
-
-                <ul class="sidebar-menu" data-widget="tree">
-                    <li class="header">Blog</li>
-                    <li><a href="#"><i class="fa fa-plus"></i> <span>Publish</span></a></li>
-                    <li><a href="#"><i class="fa fa-book"></i> <span>Articles</span></a></li>
-                    <li><a href="#"><i class="fa fa-comments"></i> <span>Comments</span></a></li>
-                </ul>
-            </section>
-        </aside>
-
-        <div class="content-wrapper">
-            <section class="content-header">
-                <h1>
-                    Dashboard
-                    <small>known everything</small>
-                </h1>
-            </section>
-
-            <section class="content container-fluid">
-                <div class="row">
-                    <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-aqua">
-                            <div class="inner">
-                                <h3>{{.Data.articleNum}}</h3>
-                                <p>Articles</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fa fa-newspaper-o"></i>
-                            </div>
-                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-purple">
-                            <div class="inner">
-                                <h3>{{.Data.lastArticlePublish}} </h3>
-                                <p>Days left from the last post</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fa fa-clock-o"></i>
-                            </div>
-                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-aqua">
-                            <div class="inner">
-                                <h3>{{.Data.commentNum}}</h3>
-                                <p>Comments</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fa fa-comments-o"></i>
-                            </div>
-                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-purple">
-                            <div class="inner">
-                                <h3>{{.Data.lastComment}}</h3>
-                                <p>Days left from the last comment</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fa fa-clock-o"></i>
-                            </div>
-                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-lime-active">
-                            <div class="inner">
-                                <h3>{{.Data.labelNum}}</h3>
-                                <p>Labels</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fa fa-tags"></i>
-                            </div>
-                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-navy">
-                            <div class="inner">
-                                <h3>{{.Data.memoryUsage}} M</h3>
-                                <p>Memory Usage</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fa fa-file-o"></i>
-                            </div>
-                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-maroon">
-                            <div class="inner">
-                                <h3>{{.Data.gcNum}}</h3>
-                                <p>GC num</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fa fa-trash-o"></i>
-                            </div>
-                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-xs-6">
-                        <div class="small-box bg-teal">
-                            <div class="inner">
-                                <h3>{{.Data.routineNum}}</h3>
-                                <p>Routine num</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fa fa-meh-o"></i>
-                            </div>
-                            <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <footer class="main-footer">
-            <div class="pull-right hidden-xs">
-                When I feel solitude, there is writing to accompany me.
             </div>
-            <strong>Copyright &copy; 2019 <a href="https://github.com/naiba/solitudes"
-                    target="_black">Solitudes</a>.</strong> All
-            rights reserved.
-        </footer>
-    </div>
-
-    {{template "admin/common_js"}}
-</body>
-
-</html>
+            <div class="col-lg-3 col-xs-6">
+                <div class="small-box bg-purple">
+                    <div class="inner">
+                        <h3>{{.Data.lastArticlePublish}} </h3>
+                        <p>Days left from the last post</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-clock-o"></i>
+                    </div>
+                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-xs-6">
+                <div class="small-box bg-aqua">
+                    <div class="inner">
+                        <h3>{{.Data.commentNum}}</h3>
+                        <p>Comments</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-comments-o"></i>
+                    </div>
+                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-xs-6">
+                <div class="small-box bg-purple">
+                    <div class="inner">
+                        <h3>{{.Data.lastComment}}</h3>
+                        <p>Days left from the last comment</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-clock-o"></i>
+                    </div>
+                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-3 col-xs-6">
+                <div class="small-box bg-lime-active">
+                    <div class="inner">
+                        <h3>{{.Data.labelNum}}</h3>
+                        <p>Labels</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-tags"></i>
+                    </div>
+                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-xs-6">
+                <div class="small-box bg-navy">
+                    <div class="inner">
+                        <h3>{{.Data.memoryUsage}} M</h3>
+                        <p>Memory Usage</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-file-o"></i>
+                    </div>
+                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-xs-6">
+                <div class="small-box bg-maroon">
+                    <div class="inner">
+                        <h3>{{.Data.gcNum}}</h3>
+                        <p>GC num</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-trash-o"></i>
+                    </div>
+                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-xs-6">
+                <div class="small-box bg-teal">
+                    <div class="inner">
+                        <h3>{{.Data.routineNum}}</h3>
+                        <p>Routine num</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fa fa-meh-o"></i>
+                    </div>
+                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{{template "admin/footer" .}}
 {{end}}

@@ -44,9 +44,11 @@ func WEngine() error {
 	// manager router
 	m := o.Group("")
 	m.Use(soligin.Limit(soligin.LimitOption{NeedLogin: true}))
+	m.GET("/logout", logoutHandler)
+	a := m.Group("/admin")
 	{
-		m.GET("/admin/", manager)
-		m.GET("/logout", logoutHandler)
+		a.GET("/", manager)
+		a.GET("/publish", publish)
 	}
 
 	return r.Run(":8080")
