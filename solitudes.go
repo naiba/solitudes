@@ -102,3 +102,9 @@ var Injector *dig.Container
 
 // System 全局变量
 var System *SysVeriable
+
+// Templates 文章模板
+var Templates = map[int]string{
+	1: "Article template",
+	2: "Page template",
+}

@@ -1,14 +1,5 @@
 {{define "admin/publish"}}
 {{template "admin/header" .}}
-<link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor.css">
-</link>
-<link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor-contents.css">
-</link>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.css">
-</link>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
-</link>
-<script src="https://uicdn.toast.com/tui-editor/latest/tui-editor-Editor-full.js"></script>
 <div class="content-wrapper">
     <section class="content-header">
         <h1>
@@ -18,16 +9,100 @@
     </section>
 
     <section class="content container-fluid">
+        <div class="form-horizontal">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputTitle" class="col-sm-2 control-label">Title</label>
+                        <div class="col-sm-10">
+                            <input class="form-control" id="inputTitle" placeholder="Title">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputSlug" class="col-sm-2 control-label">Slug</label>
+                        <div class="col-sm-10">
+                            <input class="form-control" id="inputSlug" placeholder="URL slug">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputTags" class="col-sm-2 control-label">Tags</label>
+                        <div class="col-sm-10">
+                            <input class="form-control" id="inputTags" placeholder="dev,golang,docker">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <select id="selTemplate" class="form-control">
+                            {{range $k,$v := .Data.templates}}
+                            <option value="{{$k}}">{{$v}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <div class="col-sm-offset-2 col-sm-10">
+                            <div class="checkbox">
+                                <label>
+                                    <input id="cbCollection" type="checkbox"> It's a collection.
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="editSection"></div>
+        <button class="btn btn-lg btn-block btn-primary" style="margin-top:10px;">Publish</button>
     </section>
 </div>
+<link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor.css">
+</link>
+<link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor-contents.css">
+</link>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.css">
+</link>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+</link>
+<script src="https://uicdn.toast.com/tui-editor/latest/tui-editor-Editor-full.js"></script>
 <script>
-var editor = new tui.Editor({
-    el: document.querySelector('#editSection'),
-    initialEditType: 'markdown',
-    previewStyle: 'vertical',
-    height: '500px'
-});
+    function uploadImage(blob) {
+        var fd = new FormData();
+        fd.append('file', blob);
+        $.ajax({
+            type: 'POST',
+            url: '/admin/upload',
+            data: fd,
+            processData: false,
+            contentType: false
+        }).done((data) => {
+            return data.responseText
+        }).fail((e) => {
+            alert("upload failed: " + e.responseText)
+            return false
+        });
+    }
+    var editor = new tui.Editor({
+        el: document.querySelector('#editSection'),
+        initialEditType: 'markdown',
+        previewStyle: 'vertical',
+        height: 'auto',
+        usageStatistics: 'false',
+        hooks: {
+            addImageBlobHook: function (blob, callback) {
+                var url = uploadImage(blob)
+                if (url) {
+                    callback(url, blob.name)
+                }
+                return false
+            }
+        },
+    });
 </script>
 {{template "admin/footer" .}}
 {{end}}
