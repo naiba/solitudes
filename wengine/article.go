@@ -20,6 +20,7 @@ func publishHandler(c *gin.Context) {
 		c.String(http.StatusForbidden, err.Error())
 		return
 	}
+	article.DeletedAt = nil
 	if err := solitudes.System.D.Save(&article).Error; err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return

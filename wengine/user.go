@@ -2,11 +2,14 @@ package wengine
 
 import (
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/x/soligin"
 	"golang.org/x/crypto/bcrypt"
+	blackfriday "gopkg.in/russross/blackfriday.v2"
 
 	"github.com/gin-gonic/gin"
 )
@@ -56,4 +59,30 @@ func logoutHandler(c *gin.Context) {
 	solitudes.System.TokenExpires = time.Now()
 	solitudes.System.Token = ""
 	c.Redirect(http.StatusFound, "/")
+}
+
+func index(c *gin.Context) {
+	var as []solitudes.Article
+	solitudes.System.D.Order("id DESC").Limit(10).Find(&as)
+	c.HTML(http.StatusOK, "default/index", soligin.Soli(gin.H{
+		"bio":      string(blackfriday.Run([]byte(solitudes.System.C.Web.Bio))),
+		"articles": as,
+	}))
+}
+
+func static(root string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.Request.URL.Path == "" {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		i := strings.Index(c.Request.URL.Path[1:], "/")
+		if i == -1 {
+			c.AbortWithStatus(http.StatusNotFound)
+			return
+		}
+		// 其实这边 gin 已经过滤了一遍了 我这边再过滤一下
+		filepath := path.Clean(root + c.Request.URL.Path[i+1:])
+		http.ServeFile(c.Writer, c.Request, filepath)
+	}
 }

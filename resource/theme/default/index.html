@@ -41,7 +41,7 @@
     </header>
 
     <section id="about">
-      {{.Data.Bio|unsafe}}
+      {{.Data.bio|unsafe}}
     </section>
     <section id="search">
       <span class="h1"><a href="#">Search</a></span>
@@ -53,87 +53,16 @@
     <section id="writing">
       <span class="h1"><a href="/static/cactus/archives">Writing</a></span>
       <ul class="post-list">
+        {{range .Data.articles}}
         <li class="post-item">
           <div class="meta">
-            <time datetime="2016-11-14T16:49:32.000Z" itemprop="datePublished">2016-11-14</time>
+            <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt "02 Jan 2006"}}</time>
           </div>
           <span>
-            <a class="" href="/static/cactus/2016/11/14/hello-world/">Hello World</a>
+            <a href="/{{.Slug}}">{{.Title}}</a>
           </span>
         </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2016-11-01T08:35:18.000Z" itemprop="datePublished">2016-11-01</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2016/11/01/An-overview-of-all-Markdown-elements/">An overview of all
-              Markdown elements</a>
-          </span>
-        </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2013-12-26T21:46:49.000Z" itemprop="datePublished">2013-12-26</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2013/12/26/images/">Images</a>
-          </span>
-        </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2013-12-25T21:57:49.000Z" itemprop="datePublished">2013-12-25</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2013/12/25/no-title/">Untitled</a>
-          </span>
-        </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
-          </span>
-        </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
-          </span>
-        </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
-          </span>
-        </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
-          </span>
-        </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
-          </span>
-        </li>
-        <li class="post-item">
-          <div class="meta">
-            <time datetime="2013-12-24T23:23:23.000Z" itemprop="datePublished">2013-12-25</time>
-          </div>
-          <span>
-            <a class="" href="/static/cactus/2013/12/25/excerpts/">Excerpts</a>
-          </span>
-        </li>
+        {{end}}
       </ul>
     </section>
 
