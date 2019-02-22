@@ -110,7 +110,7 @@
             content: editor.getMarkdown(),
             template: parseInt($("#selTemplate").val()),
             tags: $("#inputTags").val(),
-            collection_id: parseInt($("#inputCID").val()),
+            collection_id: $("#inputCID").val() ? parseInt($("#inputCID").val()) : 0,
             is_collection: document.getElementById('cbCollection').checked,
         }
         $.post("", article, (data, status) => {
