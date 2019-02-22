@@ -32,7 +32,8 @@ func newDatabase(conf *Config) *gorm.DB {
 
 func newConfig() *Config {
 	viper.SetConfigName("conf")
-	viper.AddConfigPath("resource/config")
+	viper.SetConfigType("yml")
+	viper.AddConfigPath("resource/data/")
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(err)

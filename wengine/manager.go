@@ -1,8 +1,10 @@
 package wengine
 
 import (
+	"fmt"
 	"net/http"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/naiba/solitudes"
@@ -40,4 +42,35 @@ func manager(c *gin.Context) {
 
 func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
+}
+
+var validExtNames = map[string]interface{}{
+	"jpg":  nil,
+	"jpeg": nil,
+	"png":  nil,
+	"gif":  nil,
+}
+
+func upload(c *gin.Context) {
+	f, err := c.FormFile("file")
+	if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	fs := strings.Split(f.Filename, ".")
+	if len(fs) < 2 {
+		c.String(http.StatusInternalServerError, "Invalid file")
+		return
+	}
+	extName := fs[len(fs)-1]
+	if _, ok := validExtNames[extName]; !ok {
+		c.String(http.StatusInternalServerError, "Invalid file type")
+		return
+	}
+	extName = fmt.Sprintf("/upload/%d.%s", time.Now().UnixNano(), extName)
+	if err := c.SaveUploadedFile(f, "resource/data"+extName); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.String(http.StatusOK, extName)
 }

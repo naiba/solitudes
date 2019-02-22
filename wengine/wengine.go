@@ -22,6 +22,7 @@ func WEngine() error {
 		},
 	})
 	r.Static("static", "resource/static")
+	r.Static("upload", "resource/data/upload")
 	r.LoadHTMLGlob("resource/theme/**/*")
 
 	// router need authorize
@@ -49,6 +50,7 @@ func WEngine() error {
 	{
 		a.GET("/", manager)
 		a.GET("/publish", publish)
+		a.POST("/upload", upload)
 	}
 
 	return r.Run(":8080")

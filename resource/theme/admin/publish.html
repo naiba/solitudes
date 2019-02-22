@@ -71,7 +71,7 @@
 </link>
 <script src="https://uicdn.toast.com/tui-editor/latest/tui-editor-Editor-full.js"></script>
 <script>
-    function uploadImage(blob) {
+    function uploadImage(blob, cb) {
         var fd = new FormData();
         fd.append('file', blob);
         $.ajax({
@@ -81,10 +81,10 @@
             processData: false,
             contentType: false
         }).done((data) => {
-            return data.responseText
+            cb(data)
         }).fail((e) => {
+            cb(false)
             alert("upload failed: " + e.responseText)
-            return false
         });
     }
     var editor = new tui.Editor({
@@ -95,11 +95,12 @@
         usageStatistics: 'false',
         hooks: {
             addImageBlobHook: function (blob, callback) {
-                var url = uploadImage(blob)
-                if (url) {
-                    callback(url, blob.name)
-                }
-                return false
+                uploadImage(blob, (url) => {
+                    if (url) {
+                        callback(url, blob.name)
+                    }
+                    return false
+                })
             }
         },
     });
