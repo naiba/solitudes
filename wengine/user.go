@@ -7,9 +7,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jinzhu/gorm"
+
 	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
+	"github.com/naiba/solitudes/x/soliwriter"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/russross/blackfriday.v2"
 
@@ -72,6 +75,23 @@ func index(c *gin.Context) {
 	}))
 }
 
+func article(c *gin.Context) {
+	slug := c.MustGet(solitudes.CtxRequestParams).([]string)
+	var a solitudes.Article
+
+	if err := solitudes.System.D.Where("slug = ?", slug[1]).First(&a).Error; err == gorm.ErrRecordNotFound {
+		c.HTML(http.StatusNotFound, "default/404", soligin.Soli(gin.H{}))
+		return
+	} else if err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], gin.H{
+		"article": a,
+	})
+}
+
 func archive(c *gin.Context) {
 	pageSlice := c.MustGet(solitudes.CtxRequestParams).([]string)
 	var page int64
@@ -114,17 +134,15 @@ func listArticleByYear(as []solitudes.Article) [][]solitudes.Article {
 
 func static(root string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.URL.Path == "" {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
 		i := strings.Index(c.Request.URL.Path[1:], "/")
-		if i == -1 {
-			c.AbortWithStatus(http.StatusNotFound)
-			return
-		}
 		// 其实这边 gin 已经过滤了一遍了 我这边再过滤一下
 		filepath := path.Clean(root + c.Request.URL.Path[i+1:])
-		http.ServeFile(c.Writer, c.Request, filepath)
+		http.ServeFile(soliwriter.InterceptResponseWriter{
+			ResponseWriter: c.Writer,
+			ErrH: func(h http.ResponseWriter, s int) {
+				h.Header().Set("Content-Type", "text/html")
+				c.HTML(s, "default/404", soligin.Soli(gin.H{}))
+			},
+		}, c.Request, filepath)
 	}
 }

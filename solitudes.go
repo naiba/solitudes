@@ -87,24 +87,3 @@ func init() {
 	provide()
 	migrate()
 }
-
-// SysVeriable 全局变量
-type SysVeriable struct {
-	C            *Config
-	D            *gorm.DB
-	H            *cache.Cache
-	Token        string
-	TokenExpires time.Time
-}
-
-// Injector 运行时依赖注入
-var Injector *dig.Container
-
-// System 全局变量
-var System *SysVeriable
-
-// Templates 文章模板
-var Templates = map[int]string{
-	1: "Article template",
-	2: "Page template",
-}

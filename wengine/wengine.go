@@ -122,10 +122,9 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^\/.*$`),
+		Match: regexp.MustCompile(`^\/(.*)$`),
 		Routes: map[string]gin.HandlerFunc{
-			//TODO: slug
-			http.MethodGet: login,
+			http.MethodGet: article,
 		},
 	},
 }
