@@ -15,7 +15,10 @@
                     <div class="form-group">
                         <label for="inputTitle" class="col-sm-2 control-label">Title</label>
                         <div class="col-sm-10">
-                            <input class="form-control" id="inputTitle" placeholder="Title">
+                            <input type="hidden" id="csrfToken" value="{{.CSRF}}">
+                            <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
+                            <input class="form-control" id="inputTitle" placeholder="Title"
+                                value="{{.Data.article.Title}}">
                         </div>
                     </div>
                 </div>
@@ -23,7 +26,8 @@
                     <div class="form-group">
                         <label for="inputSlug" class="col-sm-2 control-label">Slug</label>
                         <div class="col-sm-10">
-                            <input class="form-control" id="inputSlug" placeholder="URL slug">
+                            <input class="form-control" id="inputSlug" placeholder="URL slug"
+                                value="{{.Data.article.Slug}}">
                         </div>
                     </div>
                 </div>
@@ -31,7 +35,8 @@
                     <div class="form-group">
                         <label for="inputTags" class="col-sm-2 control-label">Tags</label>
                         <div class="col-sm-10">
-                            <input class="form-control" id="inputTags" placeholder="dev,golang,docker">
+                            <input class="form-control" id="inputTags" placeholder="dev,golang,docker"
+                                value="{{.Data.article.RawTags}}">
                         </div>
                     </div>
                 </div>
@@ -40,7 +45,9 @@
                         <div class="col-sm-offset-2">
                             <select id="selTemplate" class="form-control">
                                 {{range $k,$v := .Data.templates}}
-                                <option value="{{$k}}">{{$v}}</option>
+                                <option value="{{$k}}" {{if eq $.Data.article.TemplateID $k}} selected{{end}}>
+                                    {{$v}}
+                                </option>
                                 {{end}}
                             </select>
                         </div>
@@ -51,7 +58,8 @@
                         <div class="col-sm-offset-2">
                             <div class="checkbox">
                                 <label>
-                                    <input id="cbCollection" type="checkbox"> It's a collection.
+                                    <input{{if .Data.article.IsCollection}} checked{{end}} id="cbCollection"
+                                        type="checkbox"> It's a collection.
                                 </label>
                             </div>
                         </div>
@@ -61,15 +69,27 @@
                     <div class="form-group">
                         <label for="inputCID" class="col-sm-2 control-label">CollectionID</label>
                         <div class="col-sm-10">
-                            <input type="number" class="form-control" id="inputCID" placeholder="0">
+                            <input type="number" class="form-control" id="inputCID" placeholder="0"
+                                value="{{.Data.article.CollectionID}}">
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div id="editSection"></div>
-        <button onclick="publish(this)" class="btn btn-lg btn-block btn-primary"
-            style="margin-top:10px;">Publish</button>
+        <div class="row" style="margin-top:10px;">
+            <div class="col-xs-6 col-md-2">
+                <button onclick="publish(this)" class="btn btn-lg btn-primary">Publish</button>
+            </div>
+            {{if .Data.article.ID}}
+            <div class="col-xs-6 col-md-2">
+                <form method="POST" action="?action=delete&id={{.Data.article.ID}}">
+                    <input type="hidden" name="_csrf" value="{{.CSRF}}">
+                    <button type="submit" class="btn btn-lg btn-danger">Delete</button>
+                </form>
+            </div>
+            {{end}}
+        </div>
     </section>
 </div>
 <link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor.css">
@@ -88,6 +108,7 @@
         previewStyle: 'vertical',
         height: 'auto',
         usageStatistics: 'false',
+        initialValue: '{{.Data.article.Content}}',
         hooks: {
             addImageBlobHook: function (blob, callback) {
                 uploadImage(blob, (url) => {
@@ -105,11 +126,13 @@
         }
         $(btn).toggleClass("disabled")
         var article = {
+            ID: $("#inputID").val() ? parseInt($("#inputID").val()) : 0,
             title: $("#inputTitle").val(),
             slug: $("#inputSlug").val(),
             content: editor.getMarkdown(),
             template: parseInt($("#selTemplate").val()),
             tags: $("#inputTags").val(),
+            _csrf: $("#csrfToken").val(),
             collection_id: $("#inputCID").val() ? parseInt($("#inputCID").val()) : 0,
             is_collection: document.getElementById('cbCollection').checked,
         }

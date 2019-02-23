@@ -14,8 +14,14 @@ import (
 )
 
 func publish(c *gin.Context) {
+	id := c.Query("id")
+	var article solitudes.Article
+	if id != "" {
+		solitudes.System.D.Where("id = ?", id).First(&article)
+	}
 	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, true, gin.H{
 		"templates": solitudes.Templates,
+		"article":   article,
 	}))
 }
 
@@ -74,16 +80,24 @@ func genTOC(post *solitudes.Article) {
 }
 
 func publishHandler(c *gin.Context) {
-	var article solitudes.Article
-	if err := c.ShouldBind(&article); err != nil {
-		c.String(http.StatusForbidden, err.Error())
-		return
-	}
-	genTOC(&article)
-	article.DeletedAt = nil
-	if err := solitudes.System.D.Save(&article).Error; err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	if c.Query("action") == "delete" && c.Query("id") != "" {
+		if err := solitudes.System.D.Unscoped().Delete(solitudes.Article{}, "id = ?", c.Query("id")).Error; err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		c.Redirect(http.StatusFound, "/admin/")
+	} else {
+		var article solitudes.Article
+		if err := c.ShouldBind(&article); err != nil {
+			c.String(http.StatusForbidden, err.Error())
+			return
+		}
+		genTOC(&article)
+		article.DeletedAt = nil
+		if err := solitudes.System.D.Save(&article).Error; err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 }
 
@@ -109,6 +123,10 @@ func article(c *gin.Context) {
 	} else {
 		solitudes.System.D.Select("id,slug").Where("collection_id = ? and  id > ?", a.CollectionID, a.ID).First(&nextPost)
 		solitudes.System.D.Select("id,slug").Where("collection_id = ? and  id < ?", a.CollectionID, a.ID).Order("id DESC").First(&prevPost)
+	}
+
+	if len(a.Tags) == 0 {
+		a.Tags = nil
 	}
 
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, false, gin.H{

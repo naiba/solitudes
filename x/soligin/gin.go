@@ -14,6 +14,7 @@ import (
 func Soli(c *gin.Context, protect bool, data map[string]interface{}) gin.H {
 	var soli = make(map[string]interface{})
 	soli["Conf"] = solitudes.System.C
+	soli["Login"], _ = c.Get(solitudes.CtxAuthorized)
 	soli["Data"] = data
 	if protect {
 		soli["CSRF"] = csrf.GetToken(c)

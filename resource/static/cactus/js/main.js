@@ -18,17 +18,7 @@ $(document).ready(function () {
   $("#header > #nav > ul > .icon").click(function () {
     $("#header > #nav > ul").toggleClass("responsive");
   });
-
-  /**
-   * Show '|' when has tags
-   */
-  $("div.article-tag:has(>i)").append(`<style>
-  @media (min-width: 480px) {
-    .article-tag::before {
-        content: '|';
-    }
-}</style>`)
-
+  
   /**
    * Controls the different versions of  the menu in blog post articles 
    * for Desktop, tablet and mobile.

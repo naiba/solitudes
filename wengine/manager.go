@@ -33,8 +33,8 @@ func manager(c *gin.Context) {
 	c.HTML(http.StatusOK, "admin/index", soligin.Soli(c, true, gin.H{
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
-		"lastArticlePublish": time.Now().Sub(lastArticle.CreatedAt).Hours() / 24,
-		"lastComment":        time.Now().Sub(lastComment.CreatedAt).Hours() / 24,
+		"lastArticlePublish": fmt.Sprintf("%.2f", time.Now().Sub(lastArticle.CreatedAt).Hours()/24),
+		"lastComment":        fmt.Sprintf("%.2f", time.Now().Sub(lastComment.CreatedAt).Hours()/24),
 		"tagNum":             tn.Count,
 
 		"memoryUsage": bToMb(m.Alloc),
