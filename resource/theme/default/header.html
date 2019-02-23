@@ -1,0 +1,42 @@
+{{define "default/header"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <link rel="shortcut icon" href="/static/cactus/images/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/cactus/images/favicon-192x192.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/cactus/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="/static/cactus/css/classic.css">
+    <link rel="stylesheet" href="/static/cactus/css/rtl.css">
+
+    <title>{{.Conf.SpaceName}}</title>
+    <meta name="description" content="{{.Conf.SpaceDesc}}">
+    <meta name="keywords" content="{{.Conf.Web.SpaceKeywords}}">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    <div class="content index py4">
+        <header id="header">
+            <a href="/static/cactus/">
+                <div id="logo" style="background-image: url(/static/cactus/images/logo.png);"></div>
+                <div id="title">
+                    <h1>{{.Conf.SpaceName}}</h1>
+                </div>
+            </a>
+            <div id="nav">
+                <ul>
+                    <li class="icon">
+                        <a href="#"><i class="fas fa-bars fa-2x"></i></a>
+                    </li>
+                    {{range .Conf.Web.HeaderMenus}}
+                    <li><a href="{{.Link}}" {{if .Black}} target="_black" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+                            {{end}}{{.Name}}</a></li>
+                    {{end}}
+                </ul>
+            </div>
+        </header>
+        {{end}}

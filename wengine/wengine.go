@@ -2,7 +2,6 @@ package wengine
 
 import (
 	"html/template"
-	"log"
 	"net/http"
 	"regexp"
 	"time"
@@ -53,10 +52,9 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^\/archive`),
+		Match: regexp.MustCompile(`^\/archives/(\d*)/?$`),
 		Routes: map[string]gin.HandlerFunc{
-			//TODO: archive
-			http.MethodGet: index,
+			http.MethodGet: archive,
 		},
 	},
 	shitGin{
@@ -133,23 +131,20 @@ var shits = []shitGin{
 }
 
 func routerSwitch(c *gin.Context) {
-	log.Println(c.Request.URL.Path)
+	var params []string
 	for j := 0; j < len(shits); j++ {
-		if shits[j].Match.MatchString(c.Request.URL.Path) {
-			log.Println(j, shits[j].Routes, c.Request.Method)
+		params = shits[j].Match.FindStringSubmatch(c.Request.URL.Path)
+		if len(params) >= 1 {
 			if f, ok := shits[j].Routes[c.Request.Method]; ok {
+				c.Set(solitudes.CtxRequestParams, params)
 				for i := 0; i < len(shits[j].Pre); i++ {
-					log.Println("run pre", i)
 					shits[j].Pre[i](c)
-					log.Println("run pre", i, "done")
 				}
 				if len(shits[j].Pre) > 0 && !c.MustGet(solitudes.CtxPassPreHandler).(bool) {
 					// 如果没有通过 pre handler
 					return
 				}
-				log.Println("run after")
 				f(c)
-				log.Println("run after done")
 				return
 			}
 			c.String(http.StatusMethodNotAllowed, "method not allowed")

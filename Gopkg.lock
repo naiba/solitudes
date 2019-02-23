@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:d9e3192353e2b1dc6da0d7de1e9faa6069b56f0e667363c03636e3533d83c2de"
+  name = "github.com/biezhi/gorm-paginator"
+  packages = ["pagination"]
+  pruneopts = "UT"
+  revision = "7a5c8ed20334610e9560e561a21ee4f3fc66bef4"
+  version = "v0.0.2"
+
+[[projects]]
   digest = "1:abeb38ade3f32a92943e5be54f55ed6d6e3b6602761d74b4aab4c9dd45c18abd"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
@@ -225,6 +233,17 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:9d5b5d543996dd584da1db1e0de1926f3e4c3a8dba0fa2f8db70f3ebee2342e0"
+  name = "golang.org/x/crypto"
+  packages = [
+    "bcrypt",
+    "blowfish",
+  ]
+  pruneopts = "UT"
+  revision = "ffb98f73852f696ea2bb21a617a5c4b3e067a439"
+
+[[projects]]
+  branch = "master"
   digest = "1:8207c052fb873f83c61a5aa16f6add5feb9881eda2112b56f69fd3b9e7f55c3f"
   name = "golang.org/x/sys"
   packages = ["unix"]
@@ -274,12 +293,15 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/biezhi/gorm-paginator/pagination",
     "github.com/gin-gonic/gin",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
+    "github.com/lib/pq",
     "github.com/patrickmn/go-cache",
     "github.com/spf13/viper",
     "go.uber.org/dig",
+    "golang.org/x/crypto/bcrypt",
     "gopkg.in/russross/blackfriday.v2",
   ]
   solver-name = "gps-cdcl"

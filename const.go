@@ -7,4 +7,6 @@ const (
 	AuthCookie = "i_am_solitude"
 	// CtxPassPreHandler 通过了PreHandler
 	CtxPassPreHandler = "cpph"
+	// CtxRequestParams 路由参数
+	CtxRequestParams = "crp"
 )

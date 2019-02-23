@@ -1,0 +1,28 @@
+{{define "default/archive"}}
+{{template "default/header" .}}
+<section id="archive">
+  <ul class="post-list">
+    {{range $i,$s  := .Data.articles}}
+    {{range $j,$a := $s}}
+    {{if eq $j 0}}<h2>{{$a.UpdatedAt.Year}}</h2>{{end}}
+    <li class="post-item">
+      <div class="meta">
+        <time datetime="{{$a.UpdatedAt}}" itemprop="datePublished">{{tf $a.UpdatedAt "02 Jan 2006"}}</time>
+      </div>
+      <span>
+        <a href="/{{$a.Slug}}">{{$a.Title}}</a>
+      </span>
+    </li>
+    {{end}}
+    {{end}}
+  </ul>
+  <div class="pagination">
+    {{if gt .Data.page.Page 1}}<a href="/archives/{{.Data.page.PrevPage}}/"><i class="fas fa-angle-left"></i></a>{{end}}
+    <span class="page-number">Page {{.Data.page.Page}} of {{.Data.page.TotalPage}}, {{.Data.page.TotalRecord}}
+      articles in total.</span>
+    {{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}<a
+      href="/archives/{{.Data.page.NextPage}}/"><i class="fas fa-angle-right"></i></a>{{end}}
+  </div>
+</section>
+{{template "default/footer" .}}
+{{end}}

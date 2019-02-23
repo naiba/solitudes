@@ -29,6 +29,8 @@ web:
   header_menus:
     - name: Home
       link: /
+    - name: Archives
+      link: /archives/
     - name: About
       link: /about
       icon: fa fa-lightbulb
