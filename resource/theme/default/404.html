@@ -1,0 +1,17 @@
+{{define "default/index"}}
+{{template "default/header" .}}
+<section>
+  <span class="h1">404 Not found</span>
+</section>
+<section id="about">
+  {{.Data.bio|unsafe}}
+</section>
+<section id="search">
+  <span class="h1"><a href="#">Search</a></span>
+  <form action="/search/" method="get">
+    <input class="search-input" name="keyword">
+    <button class="search-button" type="submit">Search</button>
+  </form>
+</section>
+{{template "default/footer" .}}
+{{end}}
