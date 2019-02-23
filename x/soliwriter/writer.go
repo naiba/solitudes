@@ -19,7 +19,7 @@ func (w InterceptResponseWriter) WriteHeader(status int) {
 }
 
 func (w InterceptResponseWriter) Write(p []byte) (n int, err error) {
-	if w.ErrH != nil {
+	if len(w.Header().Get("X-File-Server")) > 0 {
 		return len(p), nil
 	}
 	return w.ResponseWriter.Write(p)
