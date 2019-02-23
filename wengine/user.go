@@ -78,7 +78,7 @@ func static(root string) gin.HandlerFunc {
 		http.ServeFile(soliwriter.InterceptResponseWriter{
 			ResponseWriter: c.Writer,
 			ErrH: func(h http.ResponseWriter, s int) {
-				h.Header().Set("Content-Type", "text/html")
+				h.Header().Set("Content-Type", "text/html,charset=utf8")
 				h.Header().Set("X-File-Server", "solitudes")
 				c.HTML(s, "default/404", soligin.Soli(gin.H{}))
 			},
