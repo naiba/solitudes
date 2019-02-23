@@ -142,9 +142,6 @@
 
             <h1 class="posttitle" itemprop="name headline">
                 {{.Data.article.Title}}
-                {{if .Login}}
-                <a href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
-                {{end}}
             </h1>
 
             <div class="meta">
@@ -157,7 +154,7 @@
                         itemprop="datePublished">{{tf .Data.article.CreatedAt "02 Jan 2006"}}</time>
                 </div>
 
-                {{if gt (len .Data.article.Tags) 0}}
+                {{if .Data.article.RawTags}}
                 <div class="article-tag">
                     {{range $k,$v:=.Data.article.Tags}}
                     {{if $v}}{{if eq $k 0}}<i class="fas fa-tag"></i> {{end}}<a class="tag-link"
@@ -166,6 +163,9 @@
                 </div>
                 {{end}}
 
+                {{if .Login}}
+                <a href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
+                {{end}}
             </div>
         </header>
 
