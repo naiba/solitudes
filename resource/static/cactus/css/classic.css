@@ -1411,9 +1411,6 @@ article .content .caption {
     .article-tag {
         display: inline;
     }
-    .article-tag:before {
-        content: "|";
-    }
 }
 
 #archive .post-list {

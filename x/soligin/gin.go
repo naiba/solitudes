@@ -42,7 +42,7 @@ func Limit(lo LimitOption) gin.HandlerFunc {
 			c.Set(solitudes.CtxPassPreHandler, false)
 			return
 		} else if lo.NeedLogin && !c.MustGet(solitudes.CtxAuthorized).(bool) {
-			c.Redirect(http.StatusFound, "/login")
+			c.Redirect(http.StatusFound, "/login/")
 			c.Abort()
 			c.Set(solitudes.CtxPassPreHandler, false)
 			return

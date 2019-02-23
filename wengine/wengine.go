@@ -3,6 +3,7 @@ package wengine
 import (
 	"html/template"
 	"net/http"
+	"reflect"
 	"regexp"
 	"time"
 
@@ -26,7 +27,23 @@ func WEngine() error {
 			return t.Format(f)
 		},
 		"md": func(raw string) template.HTML {
-			return template.HTML(string(blackfriday.Run([]byte(raw))))
+			return template.HTML(string(blackfriday.Run([]byte(raw), blackfriday.WithRenderer(blackfriday.NewHTMLRenderer(
+				blackfriday.HTMLRendererParameters{
+					Flags: blackfriday.CommonHTMLFlags,
+				},
+			)), blackfriday.WithExtensions(blackfriday.NoIntraEmphasis|
+				blackfriday.Tables|
+				blackfriday.FencedCode|
+				blackfriday.Autolink|
+				blackfriday.Strikethrough|
+				blackfriday.SpaceHeadings|
+				blackfriday.HeadingIDs|
+				blackfriday.BackslashLineBreak|
+				blackfriday.DefinitionLists|
+				blackfriday.AutoHeadingIDs))))
+		},
+		"last": func(x int, a interface{}) bool {
+			return x == reflect.ValueOf(a).Len()-1
 		},
 	})
 	r.LoadHTMLGlob("resource/theme/**/*")

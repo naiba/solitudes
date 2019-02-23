@@ -8,10 +8,10 @@
     <span id="menu">
         <span id="nav">
             <ul>
-                <li><a href="/hexo-theme-cactus/cactus-classic/public/">Home</a></li>
-                <li><a href="/hexo-theme-cactus/cactus-classic/public/about/">About</a></li>
-                <li><a href="/hexo-theme-cactus/cactus-classic/public/archives/">Writing</a></li>
-                <li><a href="/hexo-theme-cactus/cactus-classic/public/projects_url">Projects</a></li>
+                {{range .Conf.Web.HeaderMenus}}
+                <li><a href="{{.Link}}" {{if .Black}} target="_black" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+                        {{end}}{{.Name}}</a></li>
+                {{end}}
             </ul>
         </span>
         <br>
@@ -38,34 +38,34 @@
         <div id="share" style="display: none">
             <ul>
                 <li><a class="icon"
-                        href="http://www.facebook.com/sharer.php?u=http://probberechts.gihub.io/2016/11/14/hello-world/"><i
+                        href="http://www.facebook.com/sharer.php?u=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}"><i
                             class="fab fa-facebook " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://twitter.com/share?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;text=Hello World"><i
+                        href="https://twitter.com/share?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;text={{.Data.article.Title}}"><i
                             class="fab fa-twitter " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.linkedin.com/shareArticle?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                        href="http://www.linkedin.com/shareArticle?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-linkedin " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://pinterest.com/pin/create/bookmarklet/?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;is_video=false&amp;description=Hello World"><i
+                        href="https://pinterest.com/pin/create/bookmarklet/?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;is_video=false&amp;description={{.Data.article.Title}}"><i
                             class="fab fa-pinterest " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="mailto:?subject=Hello World&amp;body=Check out this article: http://probberechts.gihub.io/2016/11/14/hello-world/"><i
+                        href="mailto:?subject={{.Data.article.Title}}&amp;body=Check out this article: https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}"><i
                             class="fas fa-envelope " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://getpocket.com/save?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                        href="https://getpocket.com/save?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://reddit.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                        href="http://reddit.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-reddit " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.stumbleupon.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                        href="http://www.stumbleupon.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://digg.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                        href="http://digg.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-digg " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.tumblr.com/share/link?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;name=Hello World&amp;description="><i
+                        href="http://www.tumblr.com/share/link?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
                             class="fab fa-tumblr " aria-hidden="true"></i></a></li>
             </ul>
 
@@ -101,9 +101,10 @@
                 </div>
 
                 <div class="article-tag">
-                    <i class="fas fa-tag"></i>
-                    <a class="tag-link" href="/hexo-theme-cactus/cactus-classic/public/tags/example/">example</a>, <a
-                        class="tag-link" href="/hexo-theme-cactus/cactus-classic/public/tags/features/">features</a>
+                    {{range $k,$v:=.Data.article.Tags}}
+                    {{if $v}}{{if eq $k 0}}<i class="fas fa-tag"></i> {{end}}<a class="tag-link"
+                        href="/tags/{{$v}}/">{{$v}}</a>{{if not (last $k $.Data.article.Tags)}},{{end}}{{end}}
+                    {{end}}
                 </div>
 
             </div>
@@ -118,14 +119,10 @@
         <div id="footer-post">
             <div id="nav-footer" style="display: none">
                 <ul>
-                    <li><a href="/hexo-theme-cactus/cactus-classic/public/">Home</a></li>
-
-                    <li><a href="/hexo-theme-cactus/cactus-classic/public/about/">About</a></li>
-
-                    <li><a href="/hexo-theme-cactus/cactus-classic/public/archives/">Writing</a></li>
-
-                    <li><a href="/hexo-theme-cactus/cactus-classic/public/projects_url">Projects</a></li>
-
+                    {{range .Conf.Web.HeaderMenus}}
+                    <li><a href="{{.Link}}" {{if .Black}} target="_black" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+                            {{end}}{{.Name}}</a></li>
+                    {{end}}
                 </ul>
             </div>
 
@@ -142,34 +139,34 @@
             <div id="share-footer" style="display: none">
                 <ul>
                     <li><a class="icon"
-                            href="http://www.facebook.com/sharer.php?u=http://probberechts.gihub.io/2016/11/14/hello-world/"><i
+                            href="http://www.facebook.com/sharer.php?u=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}"><i
                                 class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="https://twitter.com/share?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;text=Hello World"><i
+                            href="https://twitter.com/share?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;text={{.Data.article.Title}}"><i
                                 class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://www.linkedin.com/shareArticle?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            href="http://www.linkedin.com/shareArticle?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="https://pinterest.com/pin/create/bookmarklet/?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;is_video=false&amp;description=Hello World"><i
+                            href="https://pinterest.com/pin/create/bookmarklet/?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;is_video=false&amp;description={{.Data.article.Title}}"><i
                                 class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="mailto:?subject=Hello World&amp;body=Check out this article: http://probberechts.gihub.io/2016/11/14/hello-world/"><i
+                            href="mailto:?subject={{.Data.article.Title}}&amp;body=Check out this article: https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}"><i
                                 class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="https://getpocket.com/save?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            href="https://getpocket.com/save?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://reddit.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            href="http://reddit.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://www.stumbleupon.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            href="http://www.stumbleupon.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://digg.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            href="http://digg.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://www.tumblr.com/share/link?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;name=Hello World&amp;description="><i
+                            href="http://www.tumblr.com/share/link?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
                                 class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
                 </ul>
             </div>
