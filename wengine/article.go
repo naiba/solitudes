@@ -99,8 +99,19 @@ func article(c *gin.Context) {
 		return
 	}
 
+	var prevPost, nextPost solitudes.Article
+	if a.CollectionID == 0 {
+		solitudes.System.D.Select("id,slug").Where("id > ?", a.ID).First(&nextPost)
+		solitudes.System.D.Select("id,slug").Where("id < ?", a.ID).Order("id DESC").First(&prevPost)
+	} else {
+		solitudes.System.D.Select("id,slug").Where("collection_id = ? and  id > ?", a.CollectionID, a.ID).First(&nextPost)
+		solitudes.System.D.Select("id,slug").Where("collection_id = ? and  id < ?", a.CollectionID, a.ID).Order("id DESC").First(&prevPost)
+	}
+
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(gin.H{
 		"article": a,
+		"next":    nextPost.Slug,
+		"prev":    prevPost.Slug,
 	}))
 }
 
