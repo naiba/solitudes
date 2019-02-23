@@ -44,12 +44,10 @@ func Limit(lo LimitOption) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if lo.NeedGuest && c.MustGet(solitudes.CtxAuthorized).(bool) {
 			c.Redirect(http.StatusFound, "/")
-			c.Abort()
 			c.Set(solitudes.CtxPassPreHandler, false)
 			return
 		} else if lo.NeedLogin && !c.MustGet(solitudes.CtxAuthorized).(bool) {
 			c.Redirect(http.StatusFound, "/login")
-			c.Abort()
 			c.Set(solitudes.CtxPassPreHandler, false)
 			return
 		}

@@ -157,7 +157,7 @@ var shits = []shitGin{
 	shitGin{
 		Match: regexp.MustCompile(`^\/upload\/`),
 		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: static("resource/upload"),
+			http.MethodGet: static("resource/data/upload"),
 		},
 	},
 	shitGin{

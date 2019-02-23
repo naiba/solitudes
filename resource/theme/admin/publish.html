@@ -146,7 +146,9 @@
     }
     function uploadImage(blob, cb) {
         var fd = new FormData();
+        var csrf = '{{.CSRF}}';
         fd.append('file', blob);
+        fd.append('_csrf', csrf)
         $.ajax({
             type: 'POST',
             url: '/admin/upload',
