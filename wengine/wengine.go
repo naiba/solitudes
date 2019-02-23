@@ -20,6 +20,9 @@ func WEngine() error {
 	}
 	r := gin.New()
 	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b int) int {
+			return a + b
+		},
 		"unsafe": func(raw string) template.HTML {
 			return template.HTML(raw)
 		},

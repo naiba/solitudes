@@ -1,11 +1,21 @@
 package solitudes
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 )
+
+// ArticleTOC 文章标题
+type ArticleTOC struct {
+	Title     string
+	Slug      string
+	SubTitles []*ArticleTOC
+	Parent    *ArticleTOC `gorm:"-" json:"-"`
+	Level     int         `gorm:"-" json:"-"`
+}
 
 // Article 文章表
 type Article struct {
@@ -19,6 +29,8 @@ type Article struct {
 	IsCollection bool           `form:"is_collection" json:"is_collection,omitempty"`
 	RawTags      string         `form:"tags" gorm:"-" json:"-"`
 	Tags         pq.StringArray `gorm:"index;type:varchar(255)[]" json:"tags,omitempty"`
+	Toc          []*ArticleTOC  `gorm:"-"`
+	RawToc       string         `gorm:"text"`
 
 	ReadingNumber uint      `json:"reading_number,omitempty"`
 	Comments      []Comment `json:"comments,omitempty"`
@@ -27,9 +39,12 @@ type Article struct {
 // BeforeSave hook
 func (t *Article) BeforeSave() {
 	t.Tags = strings.Split(t.RawTags, ",")
+	b, _ := json.Marshal(t.Toc)
+	t.RawToc = string(b)
 }
 
 // AfterFind hook
 func (t *Article) AfterFind() {
 	t.RawTags = strings.Join(t.Tags, ",")
+	json.Unmarshal([]byte(t.RawToc), &t.Toc)
 }
