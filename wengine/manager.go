@@ -7,11 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/naiba/solitudes"
-
-	"github.com/naiba/solitudes/x/soligin"
-
 	"github.com/gin-gonic/gin"
+	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/x/soligin"
 )
 
 func manager(c *gin.Context) {
@@ -32,7 +30,7 @@ func manager(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
-	c.HTML(http.StatusOK, "admin/index", soligin.Soli(gin.H{
+	c.HTML(http.StatusOK, "admin/index", soligin.Soli(c, true, gin.H{
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
 		"lastArticlePublish": time.Now().Sub(lastArticle.CreatedAt).Hours() / 24,

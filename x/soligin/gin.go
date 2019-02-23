@@ -4,15 +4,20 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/utrack/gin-csrf"
+
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
 )
 
 // Soli 输出共同的参数
-func Soli(data map[string]interface{}) gin.H {
+func Soli(c *gin.Context, protect bool, data map[string]interface{}) gin.H {
 	var soli = make(map[string]interface{})
 	soli["Conf"] = solitudes.System.C
 	soli["Data"] = data
+	if protect {
+		soli["CSRF"] = csrf.GetToken(c)
+	}
 	return soli
 }
 
@@ -42,7 +47,7 @@ func Limit(lo LimitOption) gin.HandlerFunc {
 			c.Set(solitudes.CtxPassPreHandler, false)
 			return
 		} else if lo.NeedLogin && !c.MustGet(solitudes.CtxAuthorized).(bool) {
-			c.Redirect(http.StatusFound, "/login/")
+			c.Redirect(http.StatusFound, "/login")
 			c.Abort()
 			c.Set(solitudes.CtxPassPreHandler, false)
 			return

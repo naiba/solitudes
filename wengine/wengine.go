@@ -7,10 +7,13 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
-	blackfriday "gopkg.in/russross/blackfriday.v2"
+	"github.com/utrack/gin-csrf"
+	"gopkg.in/russross/blackfriday.v2"
 )
 
 // WEngine web engine
@@ -50,6 +53,18 @@ func WEngine() error {
 		},
 	})
 	r.LoadHTMLGlob("resource/theme/**/*")
+	store := cookie.NewStore([]byte("secret"))
+	r.Use(sessions.Sessions("solisession", store))
+	r.Use(csrf.Middleware(csrf.Options{
+		Secret: solitudes.System.C.Web.User.Password,
+		ErrorFunc: func(c *gin.Context) {
+			c.HTML(http.StatusBadRequest, "default/error", soligin.Soli(c, true, gin.H{
+				"title": "CSRF Protectoion",
+				"msg":   "Wow ... Native.",
+			}))
+			c.Abort()
+		},
+	}))
 
 	r.Any("/*shit", routerSwitch)
 
@@ -82,7 +97,7 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^\/login\/$`),
+		Match: regexp.MustCompile(`^\/login$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 			soligin.Limit(soligin.LimitOption{NeedGuest: true}),
@@ -93,13 +108,13 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^\/logout\/$`),
+		Match: regexp.MustCompile(`^\/logout$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
 		},
 		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: logoutHandler,
+			http.MethodPost: logoutHandler,
 		},
 	},
 	shitGin{
@@ -113,7 +128,7 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
-		Match: regexp.MustCompile(`^\/admin\/publish`),
+		Match: regexp.MustCompile(`^\/admin\/publish$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
@@ -170,7 +185,10 @@ func routerSwitch(c *gin.Context) {
 				f(c)
 				return
 			}
-			c.String(http.StatusMethodNotAllowed, "method not allowed")
+			c.HTML(http.StatusMethodNotAllowed, "default/error", soligin.Soli(c, true, gin.H{
+				"title": "Method Not Allowed",
+				"msg":   "Are you lost?",
+			}))
 			return
 		}
 	}

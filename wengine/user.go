@@ -6,12 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
 	"github.com/naiba/solitudes/x/soliwriter"
 	"golang.org/x/crypto/bcrypt"
-
-	"github.com/gin-gonic/gin"
 )
 
 type loginForm struct {
@@ -48,14 +47,10 @@ func loginHandler(c *gin.Context) {
 }
 
 func login(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/login", gin.H{})
+	c.HTML(http.StatusOK, "admin/login", soligin.Soli(c, true, gin.H{}))
 }
 
 func logoutHandler(c *gin.Context) {
-	if !strings.Contains(c.Request.Referer(), "://"+solitudes.System.C.Web.Domain+"/") {
-		c.String(http.StatusOK, "CSRF protect")
-		return
-	}
 	solitudes.System.TokenExpires = time.Now()
 	solitudes.System.Token = ""
 	c.Redirect(http.StatusFound, "/")
@@ -64,7 +59,7 @@ func logoutHandler(c *gin.Context) {
 func index(c *gin.Context) {
 	var as []solitudes.Article
 	solitudes.System.D.Order("id DESC").Limit(10).Find(&as)
-	c.HTML(http.StatusOK, "default/index", soligin.Soli(gin.H{
+	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, true, gin.H{
 		"bio":      solitudes.System.C.Web.Bio,
 		"articles": as,
 	}))
@@ -80,7 +75,10 @@ func static(root string) gin.HandlerFunc {
 			ErrH: func(h http.ResponseWriter, s int) {
 				h.Header().Set("Content-Type", "text/html,charset=utf8")
 				h.Header().Set("X-File-Server", "solitudes")
-				c.HTML(s, "default/404", soligin.Soli(gin.H{}))
+				c.HTML(s, "default/error", soligin.Soli(c, true, gin.H{
+					"title": "404 Page Not Found",
+					"msg":   "Wow ... This page may fly to Mars.",
+				}))
 			},
 		}, c.Request, filepath)
 	}

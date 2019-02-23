@@ -14,7 +14,7 @@ import (
 )
 
 func publish(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(gin.H{
+	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, true, gin.H{
 		"templates": solitudes.Templates,
 	}))
 }
@@ -92,7 +92,10 @@ func article(c *gin.Context) {
 	var a solitudes.Article
 
 	if err := solitudes.System.D.Where("slug = ?", slug[1]).First(&a).Error; err == gorm.ErrRecordNotFound {
-		c.HTML(http.StatusNotFound, "default/404", soligin.Soli(gin.H{}))
+		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, true, gin.H{
+			"title": "404 Page Not Found",
+			"msg":   "Wow ... This page may fly to Mars.",
+		}))
 		return
 	} else if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
@@ -108,7 +111,7 @@ func article(c *gin.Context) {
 		solitudes.System.D.Select("id,slug").Where("collection_id = ? and  id < ?", a.CollectionID, a.ID).Order("id DESC").First(&prevPost)
 	}
 
-	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(gin.H{
+	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, false, gin.H{
 		"article": a,
 		"next":    nextPost.Slug,
 		"prev":    prevPost.Slug,
@@ -128,7 +131,7 @@ func archive(c *gin.Context) {
 		Limit:   15,
 		OrderBy: []string{"id desc"},
 	}, &articles)
-	c.HTML(http.StatusOK, "default/archive", soligin.Soli(gin.H{
+	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
 		"articles": listArticleByYear(articles),
 		"page":     pg,
 	}))

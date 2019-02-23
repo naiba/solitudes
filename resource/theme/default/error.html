@@ -1,9 +1,9 @@
-{{define "default/404"}}
+{{define "default/error"}}
 {{template "default/header" .}}
 {{template "default/menu" .}}
 <section>
-  <span class="h1">404 Not found</span>
-  <p>Wow ... This page may fly to Mars.</p>
+  <span class="h1">{{.Data.title}}</span>
+  <p>{{.Data.msg}}</p>
 </section>
 <section id="search">
   <span class="h1"><a href="#">Search</a></span>

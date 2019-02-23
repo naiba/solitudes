@@ -31,7 +31,10 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li class="user-footer">
-                                    <a href="/signout" class="btn btn-default btn-flat">Sign out</a>
+                                    <form method="POST" action="/logout">
+                                        <input name="_csrf" type="hidden" value="{{.CSRF}}">
+                                        <button type="submit" class="btn btn-default btn-flat">Sign out</button>
+                                    </form>
                                 </li>
                             </ul>
                         </li>
