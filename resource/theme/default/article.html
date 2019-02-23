@@ -1,3 +1,192 @@
 {{define "default/article"}}
+{{template "default/header" .}}
+<div id="header-post">
+    <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
+    <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
+    <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"
+        style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+    <span id="menu">
+        <span id="nav">
+            <ul>
+                <li><a href="/hexo-theme-cactus/cactus-classic/public/">Home</a></li>
+                <li><a href="/hexo-theme-cactus/cactus-classic/public/about/">About</a></li>
+                <li><a href="/hexo-theme-cactus/cactus-classic/public/archives/">Writing</a></li>
+                <li><a href="/hexo-theme-cactus/cactus-classic/public/projects_url">Projects</a></li>
+            </ul>
+        </span>
+        <br>
+        <span id="actions">
+            <ul>
+                <li><a class="icon"
+                        href="/hexo-theme-cactus/cactus-classic/public/2016/11/01/An-overview-of-all-Markdown-elements/"><i
+                            class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();"
+                            onmouseout="$('#i-next').toggle();"></i></a></li>
 
-{{end}}
+                <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i
+                            class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();"
+                            onmouseout="$('#i-top').toggle();"></i></a></li>
+                <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true"
+                            onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();"
+                            onclick="$('#share').toggle();return false;"></i></a></li>
+            </ul>
+            <span id="i-prev" class="info" style="display:none;">Previous post</span>
+            <span id="i-next" class="info" style="display:none;">Next post</span>
+            <span id="i-top" class="info" style="display:none;">Back to top</span>
+            <span id="i-share" class="info" style="display:none;">Share post</span>
+        </span>
+        <br>
+        <div id="share" style="display: none">
+            <ul>
+                <li><a class="icon"
+                        href="http://www.facebook.com/sharer.php?u=http://probberechts.gihub.io/2016/11/14/hello-world/"><i
+                            class="fab fa-facebook " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="https://twitter.com/share?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;text=Hello World"><i
+                            class="fab fa-twitter " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="http://www.linkedin.com/shareArticle?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            class="fab fa-linkedin " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="https://pinterest.com/pin/create/bookmarklet/?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;is_video=false&amp;description=Hello World"><i
+                            class="fab fa-pinterest " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="mailto:?subject=Hello World&amp;body=Check out this article: http://probberechts.gihub.io/2016/11/14/hello-world/"><i
+                            class="fas fa-envelope " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="https://getpocket.com/save?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="http://reddit.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            class="fab fa-reddit " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="http://www.stumbleupon.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="http://digg.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                            class="fab fa-digg " aria-hidden="true"></i></a></li>
+                <li><a class="icon"
+                        href="http://www.tumblr.com/share/link?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;name=Hello World&amp;description="><i
+                            class="fab fa-tumblr " aria-hidden="true"></i></a></li>
+            </ul>
+
+        </div>
+        <div id="toc">
+            <ol class="toc">
+                <li class="toc-item toc-level-2"><a class="toc-link" href="#This-is-a-subtitle"><span
+                            class="toc-number">1.</span> <span class="toc-text">This is a subtitle</span></a></li>
+                <li class="toc-item toc-level-2"><a class="toc-link" href="#This-is-a-second-subtitle"><span
+                            class="toc-number">2.</span> <span class="toc-text">This is a second subtitle</span></a>
+                </li>
+            </ol>
+        </div>
+    </span>
+</div>
+<div class="content index py4">
+
+    <article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
+        <header>
+
+            <h1 class="posttitle" itemprop="name headline">
+                {{.Data.article.Title}}
+            </h1>
+
+            <div class="meta">
+                <span class="author" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+                    <span itemprop="name">{{.Conf.Web.User.Nickname}}</span>
+                </span>
+
+                <div class="postdate">
+                    <time datetime="{{.Data.article.CreatedAt}}"
+                        itemprop="datePublished">{{tf .Data.article.CreatedAt "02 Jan 2006"}}</time>
+                </div>
+
+                <div class="article-tag">
+                    <i class="fas fa-tag"></i>
+                    <a class="tag-link" href="/hexo-theme-cactus/cactus-classic/public/tags/example/">example</a>, <a
+                        class="tag-link" href="/hexo-theme-cactus/cactus-classic/public/tags/features/">features</a>
+                </div>
+
+            </div>
+        </header>
+
+        <div class="content" itemprop="articleBody">
+            {{.Data.article.Content|md}}
+        </div>
+    </article>
+
+    <div id="footer-post-container">
+        <div id="footer-post">
+            <div id="nav-footer" style="display: none">
+                <ul>
+                    <li><a href="/hexo-theme-cactus/cactus-classic/public/">Home</a></li>
+
+                    <li><a href="/hexo-theme-cactus/cactus-classic/public/about/">About</a></li>
+
+                    <li><a href="/hexo-theme-cactus/cactus-classic/public/archives/">Writing</a></li>
+
+                    <li><a href="/hexo-theme-cactus/cactus-classic/public/projects_url">Projects</a></li>
+
+                </ul>
+            </div>
+
+            <div id="toc-footer" style="display: none">
+                <ol class="toc">
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#This-is-a-subtitle"><span
+                                class="toc-number">1.</span> <span class="toc-text">This is a subtitle</span></a></li>
+                    <li class="toc-item toc-level-2"><a class="toc-link" href="#This-is-a-second-subtitle"><span
+                                class="toc-number">2.</span> <span class="toc-text">This is a second subtitle</span></a>
+                    </li>
+                </ol>
+            </div>
+
+            <div id="share-footer" style="display: none">
+                <ul>
+                    <li><a class="icon"
+                            href="http://www.facebook.com/sharer.php?u=http://probberechts.gihub.io/2016/11/14/hello-world/"><i
+                                class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="https://twitter.com/share?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;text=Hello World"><i
+                                class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="http://www.linkedin.com/shareArticle?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                                class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="https://pinterest.com/pin/create/bookmarklet/?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;is_video=false&amp;description=Hello World"><i
+                                class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="mailto:?subject=Hello World&amp;body=Check out this article: http://probberechts.gihub.io/2016/11/14/hello-world/"><i
+                                class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="https://getpocket.com/save?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                                class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="http://reddit.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                                class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="http://www.stumbleupon.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                                class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="http://digg.com/submit?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;title=Hello World"><i
+                                class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
+                    <li><a class="icon"
+                            href="http://www.tumblr.com/share/link?url=http://probberechts.gihub.io/2016/11/14/hello-world/&amp;name=Hello World&amp;description="><i
+                                class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
+                </ul>
+            </div>
+
+            <div id="actions-footer">
+                <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i
+                        class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+                <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i
+                        class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+                <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i
+                        class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+                <a id="top" style="display:none" class="icon" href="#"
+                    onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg"
+                        aria-hidden="true"></i> Top</a>
+            </div>
+
+        </div>
+    </div>
+    {{template "default/footer" .}}
+    {{end}}

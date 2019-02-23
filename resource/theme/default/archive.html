@@ -1,5 +1,6 @@
 {{define "default/archive"}}
 {{template "default/header" .}}
+{{template "default/menu" .}}
 <section id="archive">
   <ul class="post-list">
     {{range $i,$s  := .Data.articles}}

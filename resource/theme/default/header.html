@@ -19,24 +19,4 @@
 </head>
 
 <body class="max-width mx-auto px3 ltr">
-    <div class="content index py4">
-        <header id="header">
-            <a href="/">
-                <div id="logo" style="background-image: url(/static/cactus/images/logo.png);"></div>
-                <div id="title">
-                    <h1>{{.Conf.SpaceName}}</h1>
-                </div>
-            </a>
-            <div id="nav">
-                <ul>
-                    <li class="icon">
-                        <a href="#"><i class="fas fa-bars fa-2x"></i></a>
-                    </li>
-                    {{range .Conf.Web.HeaderMenus}}
-                    <li><a href="{{.Link}}" {{if .Black}} target="_black" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
-                            {{end}}{{.Name}}</a></li>
-                    {{end}}
-                </ul>
-            </div>
-        </header>
-        {{end}}
+    {{end}}

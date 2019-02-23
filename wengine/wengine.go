@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
+	blackfriday "gopkg.in/russross/blackfriday.v2"
 )
 
 // WEngine web engine
@@ -23,6 +24,9 @@ func WEngine() error {
 		},
 		"tf": func(t time.Time, f string) string {
 			return t.Format(f)
+		},
+		"md": func(raw string) template.HTML {
+			return template.HTML(string(blackfriday.Run([]byte(raw))))
 		},
 	})
 	r.LoadHTMLGlob("resource/theme/**/*")
