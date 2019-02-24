@@ -534,7 +534,7 @@ body table {
 
 body th {
     padding: 8px;
-    border-bottom: 1px dashed $color-code-border;
+    border-bottom: 1px dashed #22272a;
     color: rgba(86, 124, 119, 0.8);
     font-weight: bold;
     font-size: 13px;
