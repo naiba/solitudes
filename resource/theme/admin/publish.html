@@ -17,8 +17,6 @@
                         <div class="col-sm-10">
                             <input type="hidden" id="csrfToken" value="{{.CSRF}}">
                             <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
-                            <input type="hidden" id="inputRDN" value="{{.Data.article.ReadingNumber}}">
-                            <input type="hidden" id="inputVersion" value="{{.Data.article.Version}}">
                             <input class="form-control" id="inputTitle" placeholder="Title"
                                 value="{{.Data.article.Title}}">
                         </div>
@@ -136,8 +134,6 @@
             tags: $("#inputTags").val(),
             _csrf: $("#csrfToken").val(),
             collection_id: $("#inputCID").val() ? parseInt($("#inputCID").val()) : 0,
-            reading_number: $("#inputRDN").val() ? parseInt($("#inputRDN").val()) : 0,
-            version: $("#inputVersion").val() ? parseInt($("#inputVersion").val()) : 0,
             is_collection: document.getElementById('cbCollection').checked,
         }
         $.post("", article, (data, status) => {

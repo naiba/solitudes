@@ -82,27 +82,50 @@ func genTOC(post *solitudes.Article) {
 func publishHandler(c *gin.Context) {
 	var err error
 	if c.Query("action") == "delete" && c.Query("id") != "" {
+		// delete article
 		if err = solitudes.System.D.Unscoped().Delete(solitudes.Article{}, "id = ?", c.Query("id")).Error; err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.Redirect(http.StatusFound, "/admin/")
 	} else {
-		var article solitudes.Article
-		if err = c.ShouldBind(&article); err != nil {
+		// new or edit article
+		var newArticle solitudes.Article
+		if err = c.ShouldBind(&newArticle); err != nil {
 			c.String(http.StatusForbidden, err.Error())
 			return
 		}
-		genTOC(&article)
-		article.DeletedAt = nil
-		article.Version = article.Version + 1
+		genTOC(&newArticle)
+		if newArticle.ID != 0 {
+			// get article in db
+			var originArticle solitudes.Article
+			if err := solitudes.System.D.First(&originArticle, "id = ?", newArticle.ID).Error; err != nil {
+				c.String(http.StatusInternalServerError, err.Error())
+				return
+			}
+			originArticle.Title = newArticle.Title
+			originArticle.Slug = newArticle.Slug
+			originArticle.Content = newArticle.Content
+			originArticle.TemplateID = newArticle.TemplateID
+			originArticle.RawTags = newArticle.RawTags
+			originArticle.CollectionID = newArticle.CollectionID
+			originArticle.IsCollection = newArticle.IsCollection
+			newArticle = originArticle
+		} else {
+			newArticle.DeletedAt = nil
+		}
+
+		// update article version
+		newArticle.Version = newArticle.Version + 1
+
+		// save edit history && article
 		tx := solitudes.System.D.Begin()
-		err = tx.Save(&article).Error
+		err = tx.Save(&newArticle).Error
 		if err == nil {
 			var history solitudes.ArticleHistory
-			history.Content = article.Content
-			history.Version = article.Version
-			history.ArticleID = article.ID
+			history.Content = newArticle.Content
+			history.Version = newArticle.Version
+			history.ArticleID = newArticle.ID
 			err = tx.Save(&history).Error
 		}
 		if err != nil {
