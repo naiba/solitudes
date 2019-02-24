@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
 	"github.com/naiba/solitudes/x/soliwriter"
@@ -82,4 +83,18 @@ func static(root string) gin.HandlerFunc {
 			},
 		}, c.Request, filepath)
 	}
+}
+
+func count(c *gin.Context) {
+	if c.Query("slug") == "" {
+		return
+	}
+	key := c.ClientIP() + c.Query("slug")
+	if _, ok := solitudes.System.H.Get(key); ok {
+		return
+	}
+	solitudes.System.H.Set(key, nil, time.Hour*20)
+	solitudes.System.D.Model(solitudes.Article{}).
+		Where("slug = ?", c.Query("slug")).
+		UpdateColumn("reading_number", gorm.Expr("reading_number + ?", 1))
 }

@@ -152,6 +152,9 @@
                 <div class="postdate">
                     <time datetime="{{.Data.article.CreatedAt}}"
                         itemprop="datePublished">{{tf .Data.article.CreatedAt "02 Jan 2006"}}</time>
+                    {{if ge .Data.article.ReadingNumber 2}}
+                    | <span>{{.Data.article.ReadingNumber}} readings</span>
+                    {{end}}
                 </div>
 
                 {{if .Data.article.RawTags}}
@@ -296,5 +299,10 @@
 
         </div>
     </div>
+    <script>
+        window.onload = function () {
+            $.get("/count?action=article&slug={{.Data.article.Slug}}")
+        }
+    </script>
     {{template "default/footer" .}}
     {{end}}

@@ -128,6 +128,12 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
+		Match: regexp.MustCompile(`^\/count$`),
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: count,
+		},
+	},
+	shitGin{
 		Match: regexp.MustCompile(`^\/admin\/publish$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
