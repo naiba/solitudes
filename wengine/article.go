@@ -20,6 +20,7 @@ func publish(c *gin.Context) {
 		solitudes.System.D.Where("id = ?", id).First(&article)
 	}
 	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, true, gin.H{
+		"title":     "Publish new article",
 		"templates": solitudes.Templates,
 		"article":   article,
 	}))
@@ -169,9 +170,11 @@ func article(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, false, gin.H{
-		"article": a,
-		"next":    nextPost.Slug,
-		"prev":    prevPost.Slug,
+		"title":    a.Title,
+		"keywords": a.RawTags,
+		"article":  a,
+		"next":     nextPost.Slug,
+		"prev":     prevPost.Slug,
 	}))
 }
 
@@ -189,6 +192,7 @@ func archive(c *gin.Context) {
 		OrderBy: []string{"id desc"},
 	}, &articles)
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
+		"title":    "Archive",
 		"articles": listArticleByYear(articles),
 		"page":     pg,
 	}))

@@ -12,8 +12,32 @@ import (
 
 // Soli 输出共同的参数
 func Soli(c *gin.Context, protect bool, data map[string]interface{}) gin.H {
+	var title, keywords, desc string
+
+	// custom title
+	if k, ok := data["title"]; ok && k.(string) != "" {
+		title = data["title"].(string) + " - " + solitudes.System.C.SpaceName
+	} else {
+		title = solitudes.System.C.SpaceName
+	}
+	// custom keywords
+	if k, ok := data["keywords"]; ok && k.(string) != "" {
+		keywords = data["keywords"].(string)
+	} else {
+		keywords = solitudes.System.C.Web.SpaceKeywords
+	}
+	// custom desc
+	if k, ok := data["desc"]; ok && k.(string) != "" {
+		desc = data["desc"].(string)
+	} else {
+		desc = solitudes.System.C.SpaceDesc
+	}
+
 	var soli = make(map[string]interface{})
 	soli["Conf"] = solitudes.System.C
+	soli["Title"] = title
+	soli["Keywords"] = keywords
+	soli["Desc"] = desc
 	soli["Login"], _ = c.Get(solitudes.CtxAuthorized)
 	soli["Data"] = data
 	if protect {

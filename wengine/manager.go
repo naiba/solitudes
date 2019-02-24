@@ -31,6 +31,7 @@ func manager(c *gin.Context) {
 	runtime.ReadMemStats(&m)
 
 	c.HTML(http.StatusOK, "admin/index", soligin.Soli(c, true, gin.H{
+		"title":              "Dashboard",
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
 		"lastArticlePublish": fmt.Sprintf("%.2f", time.Now().Sub(lastArticle.CreatedAt).Hours()/24),

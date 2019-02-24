@@ -48,7 +48,9 @@ func loginHandler(c *gin.Context) {
 }
 
 func login(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/login", soligin.Soli(c, true, gin.H{}))
+	c.HTML(http.StatusOK, "admin/login", soligin.Soli(c, true, gin.H{
+		"title": "Login to dashboard",
+	}))
 }
 
 func logoutHandler(c *gin.Context) {
@@ -61,6 +63,7 @@ func index(c *gin.Context) {
 	var as []solitudes.Article
 	solitudes.System.D.Order("id DESC").Limit(10).Find(&as)
 	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, true, gin.H{
+		"title":    "Home",
 		"bio":      solitudes.System.C.Web.Bio,
 		"articles": as,
 	}))
