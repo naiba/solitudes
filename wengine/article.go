@@ -96,9 +96,9 @@ func publishHandler(c *gin.Context) {
 			c.String(http.StatusForbidden, err.Error())
 			return
 		}
-		genTOC(&newArticle)
+
+		// edit article
 		if newArticle.ID != 0 {
-			// get article in db
 			var originArticle solitudes.Article
 			if err := solitudes.System.D.First(&originArticle, "id = ?", newArticle.ID).Error; err != nil {
 				c.String(http.StatusInternalServerError, err.Error())
@@ -116,6 +116,7 @@ func publishHandler(c *gin.Context) {
 			newArticle.DeletedAt = nil
 		}
 
+		genTOC(&newArticle)
 		// update article version
 		newArticle.Version = newArticle.Version + 1
 

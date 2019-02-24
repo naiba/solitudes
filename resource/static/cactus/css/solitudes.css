@@ -1,0 +1,31 @@
+.search-input {
+    padding: 4px 7px;
+    outline: none;
+    width: 40%;
+    border: solid 1px #666;
+    border-radius: 5px;
+    background-color: #fafafa;
+    color: #22272a;
+    font-size: 1.1rem;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
+.search-button {
+    padding-left: 9px;
+    padding-bottom: 4px;
+    padding-top: 4px;
+    padding-right: 9px;
+    border-radius: 5px;
+    color: whitesmoke;
+    background-color: #CC2A4C;
+    font-size: 1.1rem;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
+@media screen and (max-width: 500px) {
+    .search-input {
+        width: 55%
+    }
+}

@@ -153,7 +153,8 @@
                     <time datetime="{{.Data.article.CreatedAt}}"
                         itemprop="datePublished">{{tf .Data.article.CreatedAt "02 Jan 2006"}}</time>
                     {{if gt .Data.article.ReadingNumber 0}}
-                    | <span>{{.Data.article.ReadingNumber}} reading{{if gt .Data.article.ReadingNumber 1}}s{{end}}</span>
+                    | <span>{{.Data.article.ReadingNumber}}
+                        reading{{if gt .Data.article.ReadingNumber 1}}s{{end}}</span>
                     {{end}}
                 </div>
 
