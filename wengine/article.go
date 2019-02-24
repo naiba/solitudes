@@ -95,12 +95,8 @@ func publishHandler(c *gin.Context) {
 		}
 		genTOC(&article)
 		article.DeletedAt = nil
+		article.Version = article.Version + 1
 		tx := solitudes.System.D.Begin()
-		if article.Version == 0 {
-			article.Version = 1
-		} else {
-			article.Version = article.Version + 1
-		}
 		err = tx.Save(&article).Error
 		if err == nil {
 			var history solitudes.ArticleHistory

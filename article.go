@@ -31,8 +31,8 @@ type Article struct {
 	Tags          pq.StringArray `gorm:"index;type:varchar(255)[]" json:"tags,omitempty"`
 	Toc           []*ArticleTOC  `gorm:"-"`
 	RawToc        string         `gorm:"text"`
-	ReadingNumber uint           `json:"reading_number,omitempty"`
-	Version       uint           `gorm:"default:1;"`
+	ReadingNumber uint           `form:"reading_number" json:"reading_number,omitempty"`
+	Version       uint           `form:"version" gorm:"default:1;"`
 
 	Comments         []Comment `json:"comments,omitempty"`
 	ArticleHistories []ArticleHistory
