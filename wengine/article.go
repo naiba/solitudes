@@ -80,21 +80,41 @@ func genTOC(post *solitudes.Article) {
 }
 
 func publishHandler(c *gin.Context) {
+	var err error
 	if c.Query("action") == "delete" && c.Query("id") != "" {
-		if err := solitudes.System.D.Unscoped().Delete(solitudes.Article{}, "id = ?", c.Query("id")).Error; err != nil {
+		if err = solitudes.System.D.Unscoped().Delete(solitudes.Article{}, "id = ?", c.Query("id")).Error; err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}
 		c.Redirect(http.StatusFound, "/admin/")
 	} else {
 		var article solitudes.Article
-		if err := c.ShouldBind(&article); err != nil {
+		if err = c.ShouldBind(&article); err != nil {
 			c.String(http.StatusForbidden, err.Error())
 			return
 		}
 		genTOC(&article)
 		article.DeletedAt = nil
-		if err := solitudes.System.D.Save(&article).Error; err != nil {
+		tx := solitudes.System.D.Begin()
+		if article.Version == 0 {
+			article.Version = 1
+		} else {
+			article.Version = article.Version + 1
+		}
+		err = tx.Save(&article).Error
+		if err == nil {
+			var history solitudes.ArticleHistory
+			history.Content = article.Content
+			history.Version = article.Version
+			history.ArticleID = article.ID
+			err = tx.Save(&history).Error
+		}
+		if err != nil {
+			tx.Rollback()
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err = tx.Commit().Error; err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
 		}

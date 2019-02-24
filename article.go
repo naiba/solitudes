@@ -24,16 +24,18 @@ type Article struct {
 	Title   string `form:"title" binding:"required" json:"title,omitempty"`
 	Content string `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
 
-	TemplateID   byte           `form:"template" binding:"required" json:"template_id,omitempty"`
-	CollectionID uint           `form:"collection_id" gorm:"index" json:"collection_id,omitempty"`
-	IsCollection bool           `form:"is_collection" json:"is_collection,omitempty"`
-	RawTags      string         `form:"tags" gorm:"-" json:"-"`
-	Tags         pq.StringArray `gorm:"index;type:varchar(255)[]" json:"tags,omitempty"`
-	Toc          []*ArticleTOC  `gorm:"-"`
-	RawToc       string         `gorm:"text"`
+	TemplateID    byte           `form:"template" binding:"required" json:"template_id,omitempty"`
+	CollectionID  uint           `form:"collection_id" gorm:"index" json:"collection_id,omitempty"`
+	IsCollection  bool           `form:"is_collection" json:"is_collection,omitempty"`
+	RawTags       string         `form:"tags" gorm:"-" json:"-"`
+	Tags          pq.StringArray `gorm:"index;type:varchar(255)[]" json:"tags,omitempty"`
+	Toc           []*ArticleTOC  `gorm:"-"`
+	RawToc        string         `gorm:"text"`
+	ReadingNumber uint           `json:"reading_number,omitempty"`
+	Version       uint           `gorm:"default:1;"`
 
-	ReadingNumber uint      `json:"reading_number,omitempty"`
-	Comments      []Comment `json:"comments,omitempty"`
+	Comments         []Comment `json:"comments,omitempty"`
+	ArticleHistories []ArticleHistory
 }
 
 // BeforeSave hook
