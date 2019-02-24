@@ -7,16 +7,16 @@ import (
 // Comment 评论表
 type Comment struct {
 	gorm.Model
-	ReplayTo uint
 
-	Name      string
-	Website   string
-	Email     string
-	Content   string `gorm:"text"`
-	IP        string `gorm:"inet"`
-	UserAgent string
-	IsAdmin   bool
+	ReplyTo   uint   `form:"reply_to" json:"reply_to,omitempty"`
+	Nickname  string `form:"nickname" binding:"required" json:"name,omitempty"`
+	Content   string `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
+	Website   string `form:"website" json:"website,omitempty"`
+	Email     string `form:"email" json:"email,omitempty"`
+	IP        string `gorm:"inet" json:"ip,omitempty"`
+	UserAgent string `json:"user_agent,omitempty"`
+	IsAdmin   bool   `json:"is_admin,omitempty"`
 
-	ArticleID uint `gorm:"index"`
-	Article   Article
+	ArticleID uint    `form:"article_id" binding:"required" gorm:"index" json:"article_id,omitempty"`
+	Article   Article `json:"article,omitempty"`
 }

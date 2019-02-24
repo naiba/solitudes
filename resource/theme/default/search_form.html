@@ -1,0 +1,15 @@
+{{define "default/search_form"}}
+<section id="search">
+    <span class="h1"><a href="#">Search</a></span>
+    <form action="/search/" method="get">
+        <div class="row">
+            <div class="col-xs-8 col-md-4">
+                <input class="search-input" name="keyword">
+            </div>
+            <div class="col-xs-4 col-md-2">
+                <button class="search-button" type="submit">Search</button>
+            </div>
+        </div>
+    </form>
+</section>
+{{end}}

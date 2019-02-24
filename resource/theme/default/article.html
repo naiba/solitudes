@@ -136,19 +136,15 @@
     </span>
 </div>
 <div class="content index py4">
-
     <article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
         <header>
-
             <h1 class="posttitle" itemprop="name headline">
                 {{.Data.article.Title}}
             </h1>
-
             <div class="meta">
                 <span class="author" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
                     <span itemprop="name">{{.Conf.Web.User.Nickname}}</span>
                 </span>
-
                 <div class="postdate">
                     <time datetime="{{.Data.article.CreatedAt}}"
                         itemprop="datePublished">{{tf .Data.article.CreatedAt "02 Jan 2006"}}</time>
@@ -157,7 +153,6 @@
                         reading{{if gt .Data.article.ReadingNumber 1}}s{{end}}</span>
                     {{end}}
                 </div>
-
                 {{if .Data.article.RawTags}}
                 <div class="article-tag">
                     {{range $k,$v:=.Data.article.Tags}}
@@ -166,17 +161,99 @@
                     {{end}}
                 </div>
                 {{end}}
-
                 {{if .Login}}
                 <a href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
                 {{end}}
             </div>
         </header>
-
         <div class="content" itemprop="articleBody">
             {{.Data.article.Content|md}}
         </div>
     </article>
+
+
+    <div id="reply-list">
+        <h1>评论</h1>
+        <div class="row" id="comment-2522">
+            <div class="col-xs-2 col-sm-1 gravatar">
+                <img src="https://secure.gravatar.com/avatar/3b3898290bdcf73f7f1f29a34f2192da.jpg?s=100&amp;d=mm&amp;r=g"
+                    width="100%" alt="">
+            </div>
+            <div class="col-xs-10 col-sm-11">
+                <p class="comment-meta title">
+                    <a href="https://www.leavesongs.com" target="_blank" rel="nofollow noopener">phithon</a>
+                    <time datetime="2017年2月2日 14:39" itemprop="datePublished">
+                        2017 二月 02 14:39
+                    </time>
+                    <a href="javascript:reply_to('2522', 'phithon')">回复</a>
+                </p>
+                <p class="comment-meta">@花与海 这个并不是bootstrap主题，这是一个hexo的主题，叫Cactus Dark。<br>我只是加了个grid框架，Flexbox
+                    Grid，可能被误认为是bootstrap。</p>
+            </div>
+        </div>
+
+
+        <div class="child-node">
+            <div class="row" id="comment-2536">
+                <div class="col-xs-2 col-sm-1 gravatar">
+                    <img src="https://secure.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e.jpg?s=100&amp;d=mm&amp;r=g"
+                        width="100%" alt="">
+                </div>
+                <div class="col-xs-10 col-sm-11">
+                    <p class="comment-meta title">
+                        <a href="" target="_blank" rel="nofollow noopener">花与海</a>
+                        <time datetime="2017年2月10日 14:14" itemprop="datePublished">
+                            2017 二月 10 14:14
+                        </time>
+                        <a href="javascript:reply_to('2536', '花与海')">回复</a>
+                    </p>
+                    <p class="comment-meta">@phithon P牛厉害 所以你起名叫做talkbook吗</p>
+                </div>
+            </div>
+            <div class="child-node">
+                <div class="row" id="comment-2537">
+                    <div class="col-xs-2 col-sm-1 gravatar">
+                        <img src="https://secure.gravatar.com/avatar/c4267eb6d17276fa31c547ac71611e90.jpg?s=100&amp;d=mm&amp;r=g"
+                            width="100%" alt="">
+                    </div>
+                    <div class="col-xs-10 col-sm-11">
+                        <p class="comment-meta title">
+                            <a href="https://www.leavesongs.com" target="_blank" rel="nofollow noopener">phithon</a>
+                            <time datetime="2017年2月10日 16:10" itemprop="datePublished">
+                                2017 二月 10 16:10
+                            </time>
+                            <a href="javascript:reply_to('2537', 'phithon')">回复</a>
+                        </p>
+                        <p class="comment-meta">@花与海 talkbook这名字随便起的。。。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="pagination">
+        <a href="/archives/{{.Data.page.PrevPage}}/"><i class="fas fa-angle-left"></i></a>
+        <span class="page-number">Page 1 of 1, 1
+            comments in total.</span>
+        <a href="/archives/{{.Data.page.NextPage}}/"><i class="fas fa-angle-right"></i></a>
+    </div>
+    <div id="reply">
+        <textarea cols="40" rows="6" id="id_content"></textarea>
+        <div class="row">
+            <div class="col-xs-4">
+                <input placeholder="Nickname" maxlength="64" id="id_nickname">
+            </div>
+            <div class="col-xs-4">
+                <input placeholder="Email (Not Required)" maxlength="254" id="id_email">
+            </div>
+            <div class="col-xs-4">
+                <input placeholder="Website (Not Required)" maxlength="200" id="id_website">
+            </div>
+        </div>
+        <button onclick="comment(this)" class="search-button">Submit</button>
+        <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
+        <input type="hidden" id="id_reply_to">
+        <input type="hidden" value="{{.CSRF}}" id="id_csrf">
+    </div>
 
     <div id="footer-post-container">
         <div id="footer-post">
@@ -303,6 +380,34 @@
     <script>
         window.onload = function () {
             $.get("/count?action=article&slug={{.Data.article.Slug}}")
+            $('#id_nickname').val(localStorage.getItem("cm_nickname"))
+            $('#id_email').val(localStorage.getItem("cm_email"))
+            $('#id_website').val(localStorage.getItem("cm_website"))
+        }
+        function comment(btn) {
+            if (!$('#id_nickname').val() || !$('#id_content').val()) {
+                alert('nickname & content is required.')
+                return
+            }
+            localStorage.setItem("cm_nickname", $('#id_nickname').val())
+            localStorage.setItem("cm_email", $('#id_email').val())
+            localStorage.setItem("cm_website", $('#id_website').val())
+            $(btn).text("Submiting ...")
+            $.post("comment", {
+                nickname: $('#id_nickname').val(),
+                email: $('#id_email').val(),
+                content: $('#id_content').val(),
+                website: $('#id_website').val(),
+                _csrf: $('#id_csrf').val(),
+                reply_to: $('#id_reply_to').val() ? parseInt($('#id_reply_to').val()) : 0,
+                slug: $('#id_slug').val(),
+            }, (d) => {
+                window.location.reload()
+            }).fail((e) => {
+                alert("Submit faile: " + e.responseText)
+            }).always(() => {
+                $(btn).text("Submit")
+            })
         }
     </script>
     {{template "default/footer" .}}

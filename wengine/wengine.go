@@ -118,6 +118,21 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
+		Match: regexp.MustCompile(`^\/count$`),
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: count,
+		},
+	},
+	shitGin{
+		Match: regexp.MustCompile(`^\/comment$`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodPost: commentHandler,
+		},
+	},
+	shitGin{
 		Match: regexp.MustCompile(`^\/admin\/$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
@@ -125,12 +140,6 @@ var shits = []shitGin{
 		},
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: manager,
-		},
-	},
-	shitGin{
-		Match: regexp.MustCompile(`^\/count$`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: count,
 		},
 	},
 	shitGin{

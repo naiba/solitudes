@@ -1,7 +1,6 @@
 .search-input {
     padding: 4px 7px;
     outline: none;
-    width: 40%;
     border: solid 1px #666;
     border-radius: 5px;
     background-color: #fafafa;
@@ -24,8 +23,50 @@
     -moz-border-radius: 5px;
 }
 
-@media screen and (max-width: 500px) {
-    .search-input {
-        width: 55%
-    }
+#reply-list .comment-meta {
+    margin: 0;
+}
+
+#reply-list time {
+    color: #666;
+}
+
+#reply-list span {
+    color: #ccc;
+}
+
+#reply-list .gravatar img {
+    margin-top: 7px;
+}
+
+#reply-list .child-node {
+    margin-left: 50px;
+}
+
+#reply-list .row {
+    margin-bottom: 10px;
+}
+
+#reply {
+    margin-top: 2rem;
+}
+
+#reply textarea {
+    width: 100%;
+    padding: 5px;
+    resize: none;
+}
+
+#reply input {
+    width: 100%;
+    padding: 2px;
+}
+
+#reply button {
+    width: 100%;
+    margin-top: 5px;
+}
+
+.pagination a {
+    border: 1px dashed #cc2a41;
 }

@@ -16,7 +16,7 @@ func Soli(c *gin.Context, protect bool, data map[string]interface{}) gin.H {
 
 	// custom title
 	if k, ok := data["title"]; ok && k.(string) != "" {
-		title = data["title"].(string) + " - " + solitudes.System.C.SpaceName
+		title = data["title"].(string) + " | " + solitudes.System.C.SpaceName
 	} else {
 		title = solitudes.System.C.SpaceName
 	}

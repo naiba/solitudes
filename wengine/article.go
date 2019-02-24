@@ -170,7 +170,7 @@ func article(c *gin.Context) {
 		a.Tags = nil
 	}
 
-	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, false, gin.H{
+	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
 		"title":    a.Title,
 		"keywords": a.RawTags,
 		"article":  a,
@@ -218,4 +218,40 @@ func listArticleByYear(as []solitudes.Article) [][]solitudes.Article {
 		listed = append(listed, listItem)
 	}
 	return listed
+}
+
+type commentForm struct {
+	ReplyTo  uint   `form:"reply_to" json:"reply_to,omitempty"`
+	Nickname string `form:"nickname" binding:"required" json:"name,omitempty"`
+	Content  string `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
+	Slug     string `form:"slug" binding:"required" gorm:"index" json:"article_id,omitempty"`
+	Website  string `form:"website" binding:"url" json:"website,omitempty"`
+	Email    string `form:"email" binding:"email" json:"email,omitempty"`
+}
+
+func commentHandler(c *gin.Context) {
+	var cf commentForm
+	if err := c.ShouldBind(&cf); err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	var article solitudes.Article
+	if err := solitudes.System.D.Select("id").First(&article, "slug = ?", cf.Slug).Error; err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
+	var cm solitudes.Comment
+	cm.ReplyTo = cf.ReplyTo
+	cm.Nickname = cf.Nickname
+	cm.Content = cf.Content
+	cm.ArticleID = article.ID
+	cm.Website = cf.Website
+	cm.Email = cf.Email
+	cm.IP = c.ClientIP()
+	cm.UserAgent = c.Request.Header.Get("User-Agent")
+	cm.IsAdmin = c.GetBool(solitudes.CtxAuthorized)
+	if err := solitudes.System.D.Save(&cm).Error; err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
+	}
 }

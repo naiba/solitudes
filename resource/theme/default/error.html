@@ -5,12 +5,6 @@
   <span class="h1">{{.Data.title}}</span>
   <p>{{.Data.msg}}</p>
 </section>
-<section id="search">
-  <span class="h1"><a href="#">Search</a></span>
-  <form action="/search/" method="get">
-    <input class="search-input" name="keyword">
-    <button class="search-button" type="submit">Search</button>
-  </form>
-</section>
+{{template "default/search_form" .}}
 {{template "default/footer" .}}
 {{end}}
