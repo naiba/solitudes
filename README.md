@@ -2,7 +2,7 @@
 
 :smoking:When I feel solitude, there is writing to accompany me.
 
-## Futures
+## Features
 
 - A died simple blog-engine
 - Easy to build a book
