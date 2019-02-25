@@ -74,5 +74,13 @@
 article footer {
     border: 1px dashed #cc2a41;
     padding: 10px;
-    margin-top: 10px;
+    margin-top: 40px;
+}
+
+article footer p:last-child {
+    text-align: center;
+}
+
+table thead {
+    border-bottom: 1px dashed gray;
 }

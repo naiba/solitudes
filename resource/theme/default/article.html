@@ -182,23 +182,23 @@
         </div>
         <footer>
             {{if .Data.article.BookRefer}}
-            book::<a href="/{{.Data.book.Slug}}"><b>{{.Data.book.Title}}</b></a> - index
+            book::<a href="/{{.Data.book.Slug}}"><b>{{.Data.book.Title}}</b></a> - chapters index
             <ul>
-                <li>...</li>
-                {{if .Data.prev.ID}}<li>Prev chapter: <a href="/{{.Data.prev.Slug}}">{{.Data.prev.Title}}</a></li>
+                {{if .Data.prev.ID}}<li>Prev: <a href="/{{.Data.prev.Slug}}">{{.Data.prev.Title}}</a></li>
                 {{end}}
                 <li>{{.Data.article.Title}}</li>
-                {{if .Data.next.ID}}<li>Next chapter: <a href="/{{.Data.next.Slug}}">{{.Data.next.Title}}</a></li>
+                {{if .Data.next.ID}}<li>Next: <a href="/{{.Data.next.Slug}}">{{.Data.next.Title}}</a></li>
                 {{end}}
-                <li>...</li>
             </ul>
-            <hr>
             {{end}}
-            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img
-                    alt="Creative Commons License" style="border-width:0"
-                    src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png" /></a><br />This work is licensed under
-            a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons
-                Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.
+            <p>
+                <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img
+                        alt="Creative Commons License" style="border-width:0"
+                        src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png" /></a><br />This work is licensed
+                under
+                a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons
+                    Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.
+            </p>
         </footer>
     </article>
 
