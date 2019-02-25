@@ -9,6 +9,14 @@
 - SEO friendly
 - Full text search
 
+## Quick start
+
+1. clone repo to local gopath
+2. into path & run `go build app/web/main.go`
+3. copy binary file to your path
+4. mkdir `data/upload` `data/conf.yml`
+5. setting system like `resource/data/conf.yml`
+
 ## Todo
 
 - [ ] show article edit history
