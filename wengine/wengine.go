@@ -102,6 +102,12 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
+		Match: regexp.MustCompile(`^\/search/$`),
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: search,
+		},
+	},
+	shitGin{
 		Match: regexp.MustCompile(`^\/tags/([^\/]*)/(\d*)/?$`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: tags,

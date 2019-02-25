@@ -3,6 +3,8 @@ package solitudes
 import (
 	"time"
 
+	"github.com/blevesearch/bleve"
+
 	"github.com/jinzhu/gorm"
 	"github.com/patrickmn/go-cache"
 	"go.uber.org/dig"
@@ -24,6 +26,7 @@ type SysVeriable struct {
 	C            *Config
 	D            *gorm.DB
 	H            *cache.Cache
+	S            bleve.Index
 	Token        string
 	TokenExpires time.Time
 }
