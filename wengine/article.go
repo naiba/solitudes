@@ -164,20 +164,27 @@ func article(c *gin.Context) {
 	}
 
 	// load comments
+	// build index
 	var commentsIndex = make(map[uint]*solitudes.Comment)
-	var comments = make([]*solitudes.Comment, 0)
 	for i := 0; i < len(a.Comments); i++ {
 		comment := &a.Comments[i]
+		commentsIndex[a.Comments[i].ID] = comment
+	}
+	// build comments tree
+	var comments = make([]*solitudes.Comment, 0)
+	for i := 0; i < len(a.Comments); i++ {
+		comment := commentsIndex[a.Comments[i].ID]
 		if comment.IsAdmin {
 			comment.Nickname = solitudes.System.C.Web.User.Nickname
 			comment.Email = solitudes.System.C.Web.User.Email
 		}
-		commentsIndex[a.Comments[i].ID] = comment
 		if a.Comments[i].ReplyTo == 0 {
-			comment.ChildComments = make([]solitudes.Comment, 0)
 			comments = append(comments, comment)
 		} else {
-			commentsIndex[comment.ID].ChildComments = append(commentsIndex[comment.ID].ChildComments, *comment)
+			if commentsIndex[comment.ReplyTo].ChildComments == nil {
+				commentsIndex[comment.ReplyTo].ChildComments = make([]solitudes.Comment, 0)
+			}
+			commentsIndex[comment.ReplyTo].ChildComments = append(commentsIndex[comment.ReplyTo].ChildComments, *comment)
 		}
 	}
 
@@ -247,8 +254,8 @@ type commentForm struct {
 	Nickname string `form:"nickname" binding:"required" json:"name,omitempty"`
 	Content  string `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
 	Slug     string `form:"slug" binding:"required" gorm:"index" json:"article_id,omitempty"`
-	Website  string `form:"website" binding:"url" json:"website,omitempty"`
-	Email    string `form:"email" binding:"email" json:"email,omitempty"`
+	Website  string `form:"website,omitempty" binding:"omitempty,url" json:"website,omitempty"`
+	Email    string `form:"email,omitempty" binding:"omitempty,email" json:"email,omitempty"`
 }
 
 func commentHandler(c *gin.Context) {
@@ -264,6 +271,14 @@ func commentHandler(c *gin.Context) {
 	}
 	var cm solitudes.Comment
 	cm.ReplyTo = cf.ReplyTo
+	if cm.ReplyTo != 0 {
+		var count int
+		solitudes.System.D.Model(solitudes.Comment{}).Where("id = ?", cm.ReplyTo).Count(&count)
+		if count != 1 {
+			c.String(http.StatusBadRequest, "reply to invaild comment")
+			return
+		}
+	}
 	cm.Nickname = cf.Nickname
 	cm.Content = cf.Content
 	cm.ArticleID = article.ID
