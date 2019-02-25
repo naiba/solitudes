@@ -102,6 +102,12 @@ var shits = []shitGin{
 		},
 	},
 	shitGin{
+		Match: regexp.MustCompile(`^\/tags/([^\/]*)/(\d*)/?$`),
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: tags,
+		},
+	},
+	shitGin{
 		Match: regexp.MustCompile(`^\/login$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,

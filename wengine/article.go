@@ -221,6 +221,28 @@ func archive(c *gin.Context) {
 	}, &articles)
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
 		"title":    "Archive",
+		"what":     "archives",
+		"articles": listArticleByYear(articles),
+		"page":     pg,
+	}))
+}
+
+func tags(c *gin.Context) {
+	pageSlice := c.MustGet(solitudes.CtxRequestParams).([]string)
+	var page int64
+	if len(pageSlice) == 3 {
+		page, _ = strconv.ParseInt(pageSlice[2], 10, 32)
+	}
+	var articles []solitudes.Article
+	pg := pagination.Paging(&pagination.Param{
+		DB:      solitudes.System.D.Where("tags @> ARRAY[?]::varchar[]", pageSlice[1]),
+		Page:    int(page),
+		Limit:   15,
+		OrderBy: []string{"id desc"},
+	}, &articles)
+	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
+		"title":    "Articles in \"" + pageSlice[1] + "\"",
+		"what":     "tags",
 		"articles": listArticleByYear(articles),
 		"page":     pg,
 	}))
