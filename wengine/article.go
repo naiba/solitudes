@@ -147,9 +147,7 @@ func article(c *gin.Context) {
 
 	// load article
 	var a solitudes.Article
-	if err := solitudes.System.D.Preload("Comments", func(db *gorm.DB) *gorm.DB {
-		return db.Order("comments.id DESC")
-	}).Where("slug = ?", slug[1]).First(&a).Error; err == gorm.ErrRecordNotFound {
+	if err := solitudes.System.D.Where("slug = ?", slug[1]).First(&a).Error; err == gorm.ErrRecordNotFound {
 		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, true, gin.H{
 			"title": "404 Page Not Found",
 			"msg":   "Wow ... This page may fly to Mars.",
@@ -164,29 +162,19 @@ func article(c *gin.Context) {
 	}
 
 	// load comments
-	// build index
-	var commentsIndex = make(map[uint]*solitudes.Comment)
-	for i := 0; i < len(a.Comments); i++ {
-		comment := &a.Comments[i]
-		commentsIndex[a.Comments[i].ID] = comment
+	pageSlice := c.Query("comment_page")
+	var page int64
+	if pageSlice != "" {
+		page, _ = strconv.ParseInt(pageSlice, 10, 32)
 	}
-	// build comments tree
-	var comments = make([]*solitudes.Comment, 0)
-	for i := 0; i < len(a.Comments); i++ {
-		comment := commentsIndex[a.Comments[i].ID]
-		if comment.IsAdmin {
-			comment.Nickname = solitudes.System.C.Web.User.Nickname
-			comment.Email = solitudes.System.C.Web.User.Email
-		}
-		if a.Comments[i].ReplyTo == 0 {
-			comments = append(comments, comment)
-		} else {
-			if commentsIndex[comment.ReplyTo].ChildComments == nil {
-				commentsIndex[comment.ReplyTo].ChildComments = make([]solitudes.Comment, 0)
-			}
-			commentsIndex[comment.ReplyTo].ChildComments = append(commentsIndex[comment.ReplyTo].ChildComments, *comment)
-		}
-	}
+	pg := pagination.Paging(&pagination.Param{
+		DB: solitudes.System.D.Preload("ChildComments", func(db *gorm.DB) *gorm.DB {
+			return db.Order("id DESC")
+		}).Where("reply_to = 0"),
+		Page:    int(page),
+		Limit:   5,
+		OrderBy: []string{"id desc"},
+	}, &a.Comments)
 
 	// load prevPost,nextPost
 	var prevPost, nextPost solitudes.Article
@@ -199,12 +187,12 @@ func article(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
-		"title":    a.Title,
-		"keywords": a.RawTags,
-		"article":  a,
-		"comments": comments,
-		"next":     nextPost.Slug,
-		"prev":     prevPost.Slug,
+		"title":        a.Title,
+		"keywords":     a.RawTags,
+		"article":      a,
+		"comment_page": pg,
+		"next":         nextPost.Slug,
+		"prev":         prevPost.Slug,
 	}))
 }
 
@@ -287,8 +275,22 @@ func commentHandler(c *gin.Context) {
 	cm.IP = c.ClientIP()
 	cm.UserAgent = c.Request.Header.Get("User-Agent")
 	cm.IsAdmin = c.GetBool(solitudes.CtxAuthorized)
-	if err := solitudes.System.D.Save(&cm).Error; err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+	tx := solitudes.System.D.Begin()
+	if err := tx.Save(&cm).Error; err != nil {
+		tx.Rollback()
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := tx.Model(solitudes.Article{}).
+		Where("id = ?", cm.ArticleID).
+		UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
+		tx.Rollback()
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err := tx.Commit().Error; err != nil {
+		tx.Rollback()
+		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 }

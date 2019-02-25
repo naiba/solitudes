@@ -14,7 +14,9 @@
         <time datetime="{{.UpdatedAt}}" itemprop="datePublished">{{tf .UpdatedAt "02 Jan 2006"}}</time>
       </div>
       <span>
-        <a href="/{{.Slug}}">{{.Title}}</a>
+        <a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}} <small>({{.ReadNum}}
+          read{{if gt .ReadNum 1}}s{{end}}{{if .CommentNum}},{{.CommentNum}}
+          comment{{if gt .CommentNum 1}}s{{end}}{{end}})</small>{{end}}
       </span>
     </li>
     {{end}}

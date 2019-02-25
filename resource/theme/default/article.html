@@ -148,9 +148,10 @@
                 <div class="postdate">
                     <time datetime="{{.Data.article.CreatedAt}}"
                         itemprop="datePublished">{{tf .Data.article.CreatedAt "02 Jan 2006"}}</time>
-                    {{if gt .Data.article.ReadingNumber 0}}
-                    | <span>{{.Data.article.ReadingNumber}}
-                        reading{{if gt .Data.article.ReadingNumber 1}}s{{end}}</span>
+                    {{if .Data.article.ReadNum}}
+                    | <span>{{.Data.article.ReadNum}}
+                        read{{if .Data.article.CommentNum}},{{.Data.article.CommentNum}}
+                        comment{{if gt .Data.article.CommentNum 1}}s{{end}}{{end}}</span>
                     {{end}}
                 </div>
                 {{if .Data.article.RawTags}}
@@ -171,16 +172,20 @@
         </div>
     </article>
 
-
     <div id="reply-list">
         <h1>Comments</h1>
-        {{template "default/comments_entry" .Data.comments}}
+        {{template "default/comments_entry" .Data.article.Comments}}
     </div>
     <div class="pagination">
-        <a href="/archives/{{.Data.page.PrevPage}}/"><i class="fas fa-angle-left"></i></a>
-        <span class="page-number">Page 1 of 1, 1
+        {{if gt .Data.comment_page.Page 1}}<a
+            href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}"><i
+                class="fas fa-angle-left"></i></a>{{end}}
+        <span class="page-number">Page {{.Data.comment_page.Page}} of {{.Data.comment_page.TotalPage}},
+            {{.Data.comment_page.TotalRecord}}
             comments in total.</span>
-        <a href="/archives/{{.Data.page.NextPage}}/"><i class="fas fa-angle-right"></i></a>
+        {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a
+            href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}"><i
+                class="fas fa-angle-right"></i></a>{{end}}
     </div>
     <div id="reply">
         <textarea cols="40" rows="6" id="id_content"></textarea>

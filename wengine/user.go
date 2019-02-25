@@ -99,5 +99,5 @@ func count(c *gin.Context) {
 	solitudes.System.H.Set(key, nil, time.Hour*20)
 	solitudes.System.D.Model(solitudes.Article{}).
 		Where("slug = ?", c.Query("slug")).
-		UpdateColumn("reading_number", gorm.Expr("reading_number + ?", 1))
+		UpdateColumn("read_num", gorm.Expr("read_num + ?", 1))
 }
