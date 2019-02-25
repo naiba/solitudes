@@ -29,10 +29,34 @@ func publishHandler(c *gin.Context) {
 	var err error
 	if c.Query("action") == "delete" && c.Query("id") != "" {
 		// delete article
-		solitudes.System.S.Delete(c.Query("id"))
-		if err = solitudes.System.D.Unscoped().Delete(solitudes.Article{}, "id = ?", c.Query("id")).Error; err != nil {
+		var a solitudes.Article
+		if err = solitudes.System.D.Select("id").Preload("ArticleHistories").First(&a, "id = ?", c.Query("id")).Error; err != nil {
+			c.String(http.StatusForbidden, err.Error())
+			return
+		}
+		var indexIDs = make([]string, 0)
+		indexIDs = append(indexIDs, a.GetIndexID())
+		tx := solitudes.System.D.Unscoped().Begin()
+		if err = tx.Delete(solitudes.Article{}, "id = ?", a.ID).Error; err != nil {
+			tx.Rollback()
 			c.String(http.StatusInternalServerError, err.Error())
 			return
+		}
+		for i := 0; i < len(a.ArticleHistories); i++ {
+			indexIDs = append(indexIDs, a.ArticleHistories[i].GetIndexID())
+		}
+		if err = tx.Delete(solitudes.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
+			tx.Rollback()
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		if err = tx.Commit().Error; err != nil {
+			tx.Rollback()
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		for i := 0; i < len(indexIDs); i++ {
+			solitudes.System.S.Delete(indexIDs[i])
 		}
 		c.Redirect(http.StatusFound, "/admin/")
 		return
@@ -79,7 +103,7 @@ func publishHandler(c *gin.Context) {
 	}
 	if err == nil {
 		// indexing serch engine
-		err = solitudes.System.S.Index(newArticle.SID(), newArticle.ToIndexData())
+		err = solitudes.System.S.Index(newArticle.GetIndexID(), newArticle.ToIndexData())
 	}
 	if err != nil {
 		tx.Rollback()
@@ -157,15 +181,59 @@ func article(c *gin.Context) {
 	}))
 }
 
+type searchResp struct {
+	solitudes.ArticleIndex
+	Match map[string]string
+}
+
 func search(c *gin.Context) {
 	keywords := c.Query("w")
 	req := bleve.NewSearchRequest(bleve.NewQueryStringQuery(keywords))
 	req.Highlight = bleve.NewHighlight()
 	res, err := solitudes.System.S.Search(req)
 	if err != nil {
-		panic(err)
+		c.HTML(http.StatusInternalServerError, "default/error", soligin.Soli(c, true, gin.H{
+			"title": "Search Engine Error",
+			"msg":   err.Error(),
+		}))
+		return
 	}
-	c.JSON(http.StatusOK, res)
+	var result = make([]searchResp, 0)
+	for _, v := range res.Hits {
+		d, err := solitudes.System.S.Document(v.ID)
+		if err == nil {
+			var r searchResp
+			for _, f := range d.Fields {
+				switch f.Name() {
+				case "Slug":
+					r.Slug = string(f.Value())
+				case "Title":
+					r.Title = string(f.Value())
+				case "Version":
+					t, _ := strconv.ParseUint(string(f.Value()), 10, 64)
+					r.Version = uint(t)
+				}
+			}
+			r.Match = make(map[string]string)
+			for k, v := range v.Fragments {
+				var t = ""
+				for _, innerV := range v {
+					t += innerV + ","
+				}
+				var l int
+				if len(t) > 100 {
+					l = 100
+				}
+				t = t[:l]
+				r.Match[k] = t
+			}
+			result = append(result, r)
+		}
+	}
+	c.HTML(http.StatusOK, "default/search", soligin.Soli(c, true, gin.H{
+		"title":   "Search result for \"" + c.Query("w") + "\"",
+		"results": result,
+	}))
 }
 
 func archive(c *gin.Context) {

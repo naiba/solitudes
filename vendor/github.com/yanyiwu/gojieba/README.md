@@ -10,7 +10,7 @@
 [![Go Report Card](https://goreportcard.com/badge/yanyiwu/gojieba)](https://goreportcard.com/report/yanyiwu/gojieba)
 [![Awesome](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/avelino/awesome-go) 
 
-[![logo](http://7viirv.com1.z0.glb.clouddn.com/GoJieBaLogo-v2.png)](http://yanyiwu.com/work/2015/09/14/c-cpp-go-mix-programming.html)
+[![logo](http://images.yanyiwu.com/GoJieBaLogo-v2.png)](http://yanyiwu.com/work/2015/09/14/c-cpp-go-mix-programming.html)
 
 [GoJieba]是"结巴"中文分词的Golang语言版本。
 
@@ -176,6 +176,8 @@ func Example() {
 			"dictpath":     gojieba.DICT_PATH,
 			"hmmpath":      gojieba.HMM_PATH,
 			"userdictpath": gojieba.USER_DICT_PATH,
+			"idf":          gojieba.IDF_PATH,
+			"stop_words":   gojieba.STOP_WORDS_PATH,
 			"type":         "gojieba",
 		},
 	)
@@ -277,5 +279,3 @@ go test -bench "Extractor" -test.benchtime 10s
 [Jieba]:https://github.com/fxsjy/jieba
 [Jieba中文分词系列性能评测]:http://yanyiwu.com/work/2015/06/14/jieba-series-performance-test.html
 [bleve]:https://github.com/blevesearch/bleve
-
-[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/yanyiwu/gojieba/trend.png)](https://bitdeli.com/free "Bitdeli Badge")

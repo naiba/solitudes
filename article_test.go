@@ -3,12 +3,10 @@ package solitudes
 import (
 	"fmt"
 	"testing"
-
-	"github.com/naiba/solitudes"
 )
 
 func TestGenTOC(t *testing.T) {
-	var post = &solitudes.Article{
+	var post = &Article{
 		Content: `### 一3.1
 		#### 二3.2
 		## 一2.1
@@ -20,11 +18,11 @@ func TestGenTOC(t *testing.T) {
 		# 一1.2
 		# 一1.3`,
 	}
-	post.GenTOC(post)
+	post.GenTOC()
 	printToc(post.Toc, 0)
 }
 
-func printToc(toc []*solitudes.ArticleTOC, level int) {
+func printToc(toc []*ArticleTOC, level int) {
 	for _, t := range toc {
 		for i := 0; i < level; i++ {
 			fmt.Print(" ")

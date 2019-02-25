@@ -47,22 +47,25 @@ func (t *Article) SID() string {
 
 // ArticleIndex index data
 type ArticleIndex struct {
-	ID      string
 	Slug    string
 	Version uint
+	Title   string
 	Content string
-	Tags    string
 }
 
 // ToIndexData to index data
 func (t *Article) ToIndexData() ArticleIndex {
 	return ArticleIndex{
-		ID:      t.SID(),
 		Slug:    t.Slug,
 		Version: t.Version,
-		Tags:    t.RawTags,
 		Content: t.Content,
+		Title:   t.Title,
 	}
+}
+
+// GetIndexID get index data id
+func (t *Article) GetIndexID() string {
+	return fmt.Sprintf("%d.%d", t.ID, t.Version)
 }
 
 // BeforeSave hook
@@ -135,7 +138,7 @@ func BuildArticleIndex() {
 	var as []Article
 	System.D.Find(&as)
 	for i := 0; i < len(as); i++ {
-		err := System.S.Index(as[i].SID(), as[i].ToIndexData())
+		err := System.S.Index(as[i].GetIndexID(), as[i].ToIndexData())
 		if err != nil {
 			panic(err)
 		}

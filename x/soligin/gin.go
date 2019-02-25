@@ -67,7 +67,7 @@ type LimitOption struct {
 func Limit(lo LimitOption) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if lo.NeedGuest && c.MustGet(solitudes.CtxAuthorized).(bool) {
-			c.Redirect(http.StatusFound, "/")
+			c.Redirect(http.StatusFound, "/admin/")
 			c.Set(solitudes.CtxPassPreHandler, false)
 			return
 		} else if lo.NeedLogin && !c.MustGet(solitudes.CtxAuthorized).(bool) {
