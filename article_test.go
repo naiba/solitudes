@@ -1,4 +1,4 @@
-package wengine
+package solitudes
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func TestGenTOC(t *testing.T) {
 		# 一1.2
 		# 一1.3`,
 	}
-	genTOC(post)
+	post.GenTOC(post)
 	printToc(post.Toc, 0)
 }
 
