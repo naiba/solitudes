@@ -21,5 +21,5 @@
 ## Thanks
 
 - theme from [@probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
-
 - dashboard UI from [@AdminLTE](https://adminlte.io/)
+- full text search engine @blevesearch/bleve
