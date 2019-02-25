@@ -17,6 +17,7 @@ type Comment struct {
 	UserAgent string `json:"user_agent,omitempty"`
 	IsAdmin   bool   `json:"is_admin,omitempty"`
 
-	ArticleID uint    `form:"article_id" binding:"required" gorm:"index" json:"article_id,omitempty"`
-	Article   Article `json:"article,omitempty"`
+	ArticleID     uint      `form:"article_id" binding:"required" gorm:"index" json:"article_id,omitempty"`
+	Article       Article   `json:"article,omitempty"`
+	ChildComments []Comment `form:"-" json:"-" binding:"-" gorm:"-"`
 }

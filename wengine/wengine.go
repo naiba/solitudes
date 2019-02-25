@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/naiba/com"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -23,6 +25,9 @@ func WEngine() error {
 	}
 	r := gin.New()
 	r.SetFuncMap(template.FuncMap{
+		"md5": func(origin string) string {
+			return com.MD5(origin)
+		},
 		"add": func(a, b int) int {
 			return a + b
 		},

@@ -144,9 +144,12 @@ func publishHandler(c *gin.Context) {
 
 func article(c *gin.Context) {
 	slug := c.MustGet(solitudes.CtxRequestParams).([]string)
-	var a solitudes.Article
 
-	if err := solitudes.System.D.Where("slug = ?", slug[1]).First(&a).Error; err == gorm.ErrRecordNotFound {
+	// load article
+	var a solitudes.Article
+	if err := solitudes.System.D.Preload("Comments", func(db *gorm.DB) *gorm.DB {
+		return db.Order("comments.id DESC")
+	}).Where("slug = ?", slug[1]).First(&a).Error; err == gorm.ErrRecordNotFound {
 		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, true, gin.H{
 			"title": "404 Page Not Found",
 			"msg":   "Wow ... This page may fly to Mars.",
@@ -156,7 +159,29 @@ func article(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+	if len(a.Tags) == 0 {
+		a.Tags = nil
+	}
 
+	// load comments
+	var commentsIndex = make(map[uint]*solitudes.Comment)
+	var comments = make([]*solitudes.Comment, 0)
+	for i := 0; i < len(a.Comments); i++ {
+		comment := &a.Comments[i]
+		if comment.IsAdmin {
+			comment.Nickname = solitudes.System.C.Web.User.Nickname
+			comment.Email = solitudes.System.C.Web.User.Email
+		}
+		commentsIndex[a.Comments[i].ID] = comment
+		if a.Comments[i].ReplyTo == 0 {
+			comment.ChildComments = make([]solitudes.Comment, 0)
+			comments = append(comments, comment)
+		} else {
+			commentsIndex[comment.ID].ChildComments = append(commentsIndex[comment.ID].ChildComments, *comment)
+		}
+	}
+
+	// load prevPost,nextPost
 	var prevPost, nextPost solitudes.Article
 	if a.CollectionID == 0 {
 		solitudes.System.D.Select("id,slug").Where("id > ?", a.ID).First(&nextPost)
@@ -166,14 +191,11 @@ func article(c *gin.Context) {
 		solitudes.System.D.Select("id,slug").Where("collection_id = ? and  id < ?", a.CollectionID, a.ID).Order("id DESC").First(&prevPost)
 	}
 
-	if len(a.Tags) == 0 {
-		a.Tags = nil
-	}
-
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
 		"title":    a.Title,
 		"keywords": a.RawTags,
 		"article":  a,
+		"comments": comments,
 		"next":     nextPost.Slug,
 		"prev":     prevPost.Slug,
 	}))
