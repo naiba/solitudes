@@ -19,5 +19,5 @@ type Comment struct {
 
 	ArticleID     uint      `form:"article_id" binding:"required" gorm:"index" json:"article_id,omitempty"`
 	Article       Article   `json:"article,omitempty"`
-	ChildComments []Comment `gorm:"foreignkey:ReplyTo" form:"-" json:"-" binding:"-"`
+	ChildComments []Comment `gorm:"foreignkey:ReplyTo" form:"-" binding:"-"`
 }

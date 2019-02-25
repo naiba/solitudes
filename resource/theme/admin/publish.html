@@ -58,8 +58,8 @@
                         <div class="col-sm-offset-2">
                             <div class="checkbox">
                                 <label>
-                                    <input{{if .Data.article.IsCollection}} checked{{end}} id="cbCollection"
-                                        type="checkbox"> It's a collection.
+                                    <input{{if .Data.article.IsBook}} checked{{end}} id="cbBook" type="checkbox"> It's a
+                                        book.
                                 </label>
                             </div>
                         </div>
@@ -67,10 +67,10 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputCID" class="col-sm-2 control-label">CollectionID</label>
+                        <label for="inputCID" class="col-sm-2 control-label">BookRefer</label>
                         <div class="col-sm-10">
                             <input type="number" class="form-control" id="inputCID" placeholder="0"
-                                value="{{.Data.article.CollectionID}}">
+                                value="{{.Data.article.BookRefer}}">
                         </div>
                     </div>
                 </div>
@@ -133,8 +133,8 @@
             template: parseInt($("#selTemplate").val()),
             tags: $("#inputTags").val(),
             _csrf: $("#csrfToken").val(),
-            collection_id: $("#inputCID").val() ? parseInt($("#inputCID").val()) : 0,
-            is_collection: document.getElementById('cbCollection').checked,
+            book_refer: $("#inputCID").val() ? parseInt($("#inputCID").val()) : 0,
+            is_book: document.getElementById('cbBook').checked,
         }
         $.post("", article, (data, status) => {
             window.location.href = "/" + article.slug

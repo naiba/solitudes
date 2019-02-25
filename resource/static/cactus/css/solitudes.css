@@ -70,3 +70,9 @@
 .pagination a {
     border: 1px dashed #cc2a41;
 }
+
+article footer {
+    border: 1px dashed #cc2a41;
+    padding: 10px;
+    margin-top: 10px;
+}

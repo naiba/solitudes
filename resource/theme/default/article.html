@@ -17,13 +17,15 @@
         <br>
         <span id="actions">
             <ul>
-                {{if .Data.prev}}
-                <li><a class="icon" href="/{{.Data.prev}}"><i class="fas fa-chevron-left" aria-hidden="true"
-                            onmouseover="$('#i-prev').toggle();" onmouseout="$('#i-prev').toggle();"></i></a></li>
+                {{if .Data.prev.ID}}
+                <li><a class="icon" href="/{{.Data.prev.Slug}}" title="{{.Data.prev.Title}}"><i
+                            class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();"
+                            onmouseout="$('#i-prev').toggle();"></i></a></li>
                 {{end}}
-                {{if .Data.next}}
-                <li><a class="icon" href="/{{.Data.next}}"><i class="fas fa-chevron-right" aria-hidden="true"
-                            onmouseover="$('#i-next').toggle();" onmouseout="$('#i-next').toggle();"></i></a></li>
+                {{if .Data.next.ID}}
+                <li><a class="icon" href="/{{.Data.next.Slug}}" title="{{.Data.next.Title}}"><i
+                            class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();"
+                            onmouseout="$('#i-next').toggle();"></i></a></li>
                 {{end}}
                 <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i
                             class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();"
@@ -169,7 +171,35 @@
         </header>
         <div class="content" itemprop="articleBody">
             {{.Data.article.Content|md}}
+            {{if .Data.article.IsBook}}
+            <h4>Chapters</h4>
+            <ul>
+                {{range .Data.article.Chapters}}
+                <li><a href="/{{.Slug}}">{{.Title}}</a></li>
+                {{end}}
+            </ul>
+            {{end}}
         </div>
+        <footer>
+            {{if .Data.article.BookRefer}}
+            book::<a href="/{{.Data.book.Slug}}"><b>{{.Data.book.Title}}</b></a> - index
+            <ul>
+                <li>...</li>
+                {{if .Data.prev.ID}}<li>Prev chapter: <a href="/{{.Data.prev.Slug}}">{{.Data.prev.Title}}</a></li>
+                {{end}}
+                <li>{{.Data.article.Title}}</li>
+                {{if .Data.next.ID}}<li>Next chapter: <a href="/{{.Data.next.Slug}}">{{.Data.next.Title}}</a></li>
+                {{end}}
+                <li>...</li>
+            </ul>
+            <hr>
+            {{end}}
+            <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/"><img
+                    alt="Creative Commons License" style="border-width:0"
+                    src="https://i.creativecommons.org/l/by-nc-nd/4.0/88x31.png" /></a><br />This work is licensed under
+            a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/4.0/">Creative Commons
+                Attribution-NonCommercial-NoDerivatives 4.0 International License</a>.
+        </footer>
     </article>
 
     <div id="reply-list">

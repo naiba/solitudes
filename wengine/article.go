@@ -109,8 +109,8 @@ func publishHandler(c *gin.Context) {
 			originArticle.Content = newArticle.Content
 			originArticle.TemplateID = newArticle.TemplateID
 			originArticle.RawTags = newArticle.RawTags
-			originArticle.CollectionID = newArticle.CollectionID
-			originArticle.IsCollection = newArticle.IsCollection
+			originArticle.BookRefer = newArticle.BookRefer
+			originArticle.IsBook = newArticle.IsBook
 			newArticle = originArticle
 		} else {
 			newArticle.DeletedAt = nil
@@ -160,6 +160,13 @@ func article(c *gin.Context) {
 	if len(a.Tags) == 0 {
 		a.Tags = nil
 	}
+	if a.IsBook {
+		solitudes.System.D.Find(&a.Chapters, "book_refer=?", a.ID)
+	}
+	var book solitudes.Article
+	if a.BookRefer != 0 {
+		solitudes.System.D.First(&book, "id = ?", a.BookRefer)
+	}
 
 	// load comments
 	pageSlice := c.Query("comment_page")
@@ -178,21 +185,23 @@ func article(c *gin.Context) {
 
 	// load prevPost,nextPost
 	var prevPost, nextPost solitudes.Article
-	if a.CollectionID == 0 {
-		solitudes.System.D.Select("id,slug").Where("id > ?", a.ID).First(&nextPost)
-		solitudes.System.D.Select("id,slug").Where("id < ?", a.ID).Order("id DESC").First(&prevPost)
+	if a.BookRefer == 0 {
+		solitudes.System.D.Select("id,title,slug").Where("id > ?", a.ID).First(&nextPost)
+		solitudes.System.D.Select("id,title,slug").Where("id < ?", a.ID).Order("id DESC").First(&prevPost)
 	} else {
-		solitudes.System.D.Select("id,slug").Where("collection_id = ? and  id > ?", a.CollectionID, a.ID).First(&nextPost)
-		solitudes.System.D.Select("id,slug").Where("collection_id = ? and  id < ?", a.CollectionID, a.ID).Order("id DESC").First(&prevPost)
+		// if this is a book section
+		solitudes.System.D.Select("id,title,slug").Where("book_refer = ? and  id > ?", a.BookRefer, a.ID).First(&nextPost)
+		solitudes.System.D.Select("id,title,slug").Where("book_refer = ? and  id < ?", a.BookRefer, a.ID).Order("id DESC").First(&prevPost)
 	}
 
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
 		"title":        a.Title,
 		"keywords":     a.RawTags,
 		"article":      a,
+		"book":         book,
 		"comment_page": pg,
-		"next":         nextPost.Slug,
-		"prev":         prevPost.Slug,
+		"next":         nextPost,
+		"prev":         prevPost,
 	}))
 }
 
