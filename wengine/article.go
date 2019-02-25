@@ -34,7 +34,7 @@ func publishHandler(c *gin.Context) {
 			c.String(http.StatusForbidden, err.Error())
 			return
 		}
-		var indexIDs = make([]string, 0)
+		var indexIDs []string
 		indexIDs = append(indexIDs, a.GetIndexID())
 		tx := solitudes.System.D.Unscoped().Begin()
 		if err = tx.Delete(solitudes.Article{}, "id = ?", a.ID).Error; err != nil {
@@ -198,7 +198,7 @@ func search(c *gin.Context) {
 		}))
 		return
 	}
-	var result = make([]searchResp, 0)
+	var result []searchResp
 	for _, v := range res.Hits {
 		d, err := solitudes.System.S.Document(v.ID)
 		if err == nil {
@@ -279,7 +279,7 @@ func tags(c *gin.Context) {
 }
 
 func listArticleByYear(as []solitudes.Article) [][]solitudes.Article {
-	var listed = make([][]solitudes.Article, 0)
+	var listed [][]solitudes.Article
 	var lastYear int
 	var listItem []solitudes.Article
 	for i := 0; i < len(as); i++ {
@@ -288,7 +288,6 @@ func listArticleByYear(as []solitudes.Article) [][]solitudes.Article {
 			if len(listItem) > 0 {
 				listed = append(listed, listItem)
 			}
-			listItem = make([]solitudes.Article, 0)
 			lastYear = currentYear
 		}
 		listItem = append(listItem, as[i])

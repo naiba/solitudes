@@ -86,7 +86,6 @@ func (t *Article) GenTOC() {
 	lines := strings.Split(t.Content, "\n")
 	var matches []string
 	var currentToc *ArticleTOC
-	t.Toc = make([]*ArticleTOC, 0)
 	for j := 0; j < len(lines); j++ {
 		matches = titleRegex.FindStringSubmatch(lines[j])
 		if len(matches) == 3 {
@@ -94,7 +93,6 @@ func (t *Article) GenTOC() {
 			toc.Level = len(matches[1])
 			toc.Title = string(matches[2])
 			toc.Slug = string(whitespaces.ReplaceAllString(matches[2], "-"))
-			toc.SubTitles = make([]*ArticleTOC, 0)
 			if currentToc == nil {
 				t.Toc = append(t.Toc, &toc)
 				currentToc = &toc
