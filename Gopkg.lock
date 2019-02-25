@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  branch = "master"
+  digest = "1:9769b231d8f5ff406a012aa7f293e45ed69d11617832a1c3c7b8c6ce1558a2a1"
+  name = "github.com/adtac/go-akismet"
+  packages = ["akismet"]
+  pruneopts = "UT"
+  revision = "0ca9e1023047c869ecd4bd3c20780511597a4a77"
+
+[[projects]]
   digest = "1:d9e3192353e2b1dc6da0d7de1e9faa6069b56f0e667363c03636e3533d83c2de"
   name = "github.com/biezhi/gorm-paginator"
   packages = ["pagination"]
@@ -188,6 +196,14 @@
   version = "1.0.1"
 
 [[projects]]
+  branch = "master"
+  digest = "1:451c4d7265b3740773805177282beeabb28d442906dece51dfd2042d036b3196"
+  name = "github.com/naiba/com"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "927647a4f54e5db5a040fb97799fca9ed9d0bcd3"
+
+[[projects]]
   digest = "1:808cdddf087fb64baeae67b8dfaee2069034d9704923a3cb8bd96a995421a625"
   name = "github.com/patrickmn/go-cache"
   packages = ["."]
@@ -344,6 +360,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/adtac/go-akismet/akismet",
     "github.com/biezhi/gorm-paginator/pagination",
     "github.com/gin-contrib/sessions",
     "github.com/gin-contrib/sessions/cookie",
@@ -351,6 +368,7 @@
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/lib/pq",
+    "github.com/naiba/com",
     "github.com/patrickmn/go-cache",
     "github.com/spf13/viper",
     "github.com/utrack/gin-csrf",

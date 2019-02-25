@@ -16,6 +16,7 @@ type Config struct {
 	Web       struct {
 		Bio           string
 		Database      string
+		Akismet       string
 		User          User
 		Domain        string
 		Theme         string `mapstructure:"theme"`

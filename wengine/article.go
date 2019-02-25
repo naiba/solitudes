@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/adtac/go-akismet/akismet"
 	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
@@ -266,16 +267,45 @@ func commentHandler(c *gin.Context) {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	var cm solitudes.Comment
-	cm.ReplyTo = cf.ReplyTo
-	if cm.ReplyTo != 0 {
+	var commentType string
+	if cf.ReplyTo != 0 {
+		commentType = "reply"
 		var count int
-		solitudes.System.D.Model(solitudes.Comment{}).Where("id = ?", cm.ReplyTo).Count(&count)
+		solitudes.System.D.Model(solitudes.Comment{}).Where("id = ?", cf.ReplyTo).Count(&count)
 		if count != 1 {
 			c.String(http.StatusBadRequest, "reply to invaild comment")
 			return
 		}
+	} else {
+		commentType = "comment"
 	}
+
+	// akismet anti spam
+	if solitudes.System.C.Web.Akismet != "" {
+		isSpam, err := akismet.Check(&akismet.Comment{
+			Blog:               "https://" + solitudes.System.C.Web.Domain, // required
+			UserIP:             c.ClientIP(),                               // required
+			UserAgent:          c.Request.Header.Get("User-Agent"),         // required
+			CommentType:        commentType,
+			Referrer:           c.Request.Header.Get("Referer"),
+			Permalink:          "https://" + solitudes.System.C.Web.Domain + "/" + cf.Slug,
+			CommentAuthor:      cf.Nickname,
+			CommentAuthorEmail: cf.Email,
+			CommentAuthorURL:   cf.Website,
+			CommentContent:     cf.Content,
+		}, solitudes.System.C.Web.Akismet)
+		if err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		if isSpam {
+			c.String(http.StatusForbidden, "Spam")
+			return
+		}
+	}
+
+	var cm solitudes.Comment
+	cm.ReplyTo = cf.ReplyTo
 	cm.Nickname = cf.Nickname
 	cm.Content = cf.Content
 	cm.ArticleID = article.ID
