@@ -24,6 +24,13 @@
 - [ ] comment like github
 - [ ] file manager
 
+## Notice
+
+Has two hacks in current revolution.
+
+- yanyiwu/gojieba#46 english word segmentation issue.
+- yanyiwu/gojieba dep ensure not include `deps` and `dict` dir.
+
 ## Thanks
 
 - theme from [@probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
