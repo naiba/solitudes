@@ -176,6 +176,7 @@
         <h1>Comments</h1>
         {{template "default/comments_entry" .Data.article.Comments}}
     </div>
+    {{if .Data.article.Comments}}
     <div class="pagination">
         {{if gt .Data.comment_page.Page 1}}<a
             href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}"><i
@@ -187,6 +188,7 @@
             href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}"><i
                 class="fas fa-angle-right"></i></a>{{end}}
     </div>
+    {{end}}
     <div id="reply">
         <textarea cols="40" rows="6" id="id_content"></textarea>
         <div class="row">

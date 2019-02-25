@@ -20,7 +20,7 @@ web:
           <i class="fas fa-envelope"></i>
         </a>.
   space_keywords: blog,solitude,died-simple
-  theme: classic #classic dark light white
+  theme: dark #classic dark light white
   user:
     email: 1@5.nu
     nickname: naiba

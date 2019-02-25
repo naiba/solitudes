@@ -170,7 +170,7 @@ func article(c *gin.Context) {
 	pg := pagination.Paging(&pagination.Param{
 		DB: solitudes.System.D.Preload("ChildComments", func(db *gorm.DB) *gorm.DB {
 			return db.Order("id DESC")
-		}).Where("reply_to = 0"),
+		}).Where("reply_to = 0 and article_id = ?", a.ID),
 		Page:    int(page),
 		Limit:   5,
 		OrderBy: []string{"id desc"},
