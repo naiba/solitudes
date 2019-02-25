@@ -4,19 +4,17 @@
 
 ## Futures
 
-- A died simple blog-engine.
-- Has article collection(like write a book).
+- A died simple blog-engine
+- Easy to build a book
 - SEO friendly
+- Full text search
 
 ## Todo
 
-- [x] Post article
-- [x] Article archive
-- [x] Comment
-- [ ] Comment anti spam
-- [ ] Book link tree
-- [ ] Tag page
-- [ ] Search page
+- [ ] show article edit history
+- [ ] dashboard rebuild search index
+- [ ] comment like github
+- [ ] file manager
 
 ## Thanks
 
