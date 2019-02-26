@@ -9,31 +9,31 @@ import (
 )
 
 var shits = []shitGin{
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/$`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: index,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/archives/(\d*)/?$`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: archive,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/search/$`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: search,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/tags/([^\/]*)/(\d*)/?$`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: tags,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/login$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
@@ -44,7 +44,7 @@ var shits = []shitGin{
 			http.MethodPost: loginHandler,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/logout$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
@@ -54,13 +54,13 @@ var shits = []shitGin{
 			http.MethodPost: logoutHandler,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/count$`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: count,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/comment$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
@@ -69,7 +69,7 @@ var shits = []shitGin{
 			http.MethodPost: commentHandler,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/admin\/$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
@@ -79,7 +79,7 @@ var shits = []shitGin{
 			http.MethodGet: manager,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/admin\/publish$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
@@ -90,7 +90,7 @@ var shits = []shitGin{
 			http.MethodPost: publishHandler,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/admin\/upload`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
@@ -100,19 +100,19 @@ var shits = []shitGin{
 			http.MethodPost: upload,
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/static\/`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: static("resource/static"),
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/upload\/`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: static("data/upload"),
 		},
 	},
-	shitGin{
+	{
 		Match: regexp.MustCompile(`^\/(.*)$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
