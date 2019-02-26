@@ -1,0 +1,10 @@
+language: go
+go:
+  - master
+before_install:
+  - go get golang.org/x/lint/golint
+script:
+  - go list ./... | xargs -L1 golint
+  - go test -v -race ./...
+  - go build app/web/main.go
+  - docker build -t naiba/solitudes .

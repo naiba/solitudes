@@ -1,5 +1,7 @@
 # Solitudes
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/naiba/solitudes)](https://goreportcard.com/report/github.com/naiba/solitudes) [![Build Status](https://travis-ci.com/naiba/solitudes.svg?branch=master)](https://travis-ci.com/naiba/solitudes) [![](https://images.microbadger.com/badges/image/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes) [![](https://img.shields.io/docker/pulls/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes)
+
 :smoking:When I feel solitude, there is writing to accompany me.
 
 ## Features
