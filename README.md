@@ -14,7 +14,7 @@
 ## Quick start
 
 1. create a data dir
-2. setting up config file like `/data/conf.yml`
+2. setting up config file like `/data/conf.yml.example`
 3. deploy on docker
 
     ```shell
