@@ -25,40 +25,44 @@ func publish(c *gin.Context) {
 	}))
 }
 
+func deleteArticle(c *gin.Context) {
+	var err error
+	var a solitudes.Article
+	if err = solitudes.System.D.Select("id").Preload("ArticleHistories").First(&a, "id = ?", c.Query("id")).Error; err != nil {
+		c.String(http.StatusForbidden, err.Error())
+		return
+	}
+	var indexIDs []string
+	indexIDs = append(indexIDs, a.GetIndexID())
+	tx := solitudes.System.D.Unscoped().Begin()
+	if err = tx.Delete(solitudes.Article{}, "id = ?", a.ID).Error; err != nil {
+		tx.Rollback()
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	for i := 0; i < len(a.ArticleHistories); i++ {
+		indexIDs = append(indexIDs, a.ArticleHistories[i].GetIndexID())
+	}
+	if err = tx.Delete(solitudes.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
+		tx.Rollback()
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err = tx.Commit().Error; err != nil {
+		tx.Rollback()
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	for i := 0; i < len(indexIDs); i++ {
+		solitudes.System.S.Delete(indexIDs[i])
+	}
+	c.Redirect(http.StatusFound, "/admin/")
+}
+
 func publishHandler(c *gin.Context) {
 	var err error
 	if c.Query("action") == "delete" && c.Query("id") != "" {
-		// delete article
-		var a solitudes.Article
-		if err = solitudes.System.D.Select("id").Preload("ArticleHistories").First(&a, "id = ?", c.Query("id")).Error; err != nil {
-			c.String(http.StatusForbidden, err.Error())
-			return
-		}
-		var indexIDs []string
-		indexIDs = append(indexIDs, a.GetIndexID())
-		tx := solitudes.System.D.Unscoped().Begin()
-		if err = tx.Delete(solitudes.Article{}, "id = ?", a.ID).Error; err != nil {
-			tx.Rollback()
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-		for i := 0; i < len(a.ArticleHistories); i++ {
-			indexIDs = append(indexIDs, a.ArticleHistories[i].GetIndexID())
-		}
-		if err = tx.Delete(solitudes.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
-			tx.Rollback()
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-		if err = tx.Commit().Error; err != nil {
-			tx.Rollback()
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-		for i := 0; i < len(indexIDs); i++ {
-			solitudes.System.S.Delete(indexIDs[i])
-		}
-		c.Redirect(http.StatusFound, "/admin/")
+		deleteArticle(c)
 		return
 	}
 
