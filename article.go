@@ -88,46 +88,47 @@ func (t *Article) GenTOC() {
 	var currentToc *ArticleTOC
 	for j := 0; j < len(lines); j++ {
 		matches = titleRegex.FindStringSubmatch(lines[j])
-		if len(matches) == 3 {
-			var toc ArticleTOC
-			toc.Level = len(matches[1])
-			toc.Title = string(matches[2])
-			toc.Slug = string(whitespaces.ReplaceAllString(matches[2], "-"))
-			if currentToc == nil {
-				t.Toc = append(t.Toc, &toc)
-				currentToc = &toc
-			} else {
-				parent := currentToc
-				if currentToc.Level > toc.Level {
-					// 父节点
-					for i := -1; i < currentToc.Level-toc.Level; i++ {
-						parent = parent.Parent
-						if parent == nil || parent.Level < toc.Level {
-							break
-						}
-					}
-					if parent == nil {
-						t.Toc = append(t.Toc, &toc)
-					} else {
-						toc.Parent = parent
-						parent.SubTitles = append(parent.SubTitles, &toc)
-					}
-				} else if currentToc.Level == toc.Level {
-					// 兄弟节点
-					if parent.Parent == nil {
-						t.Toc = append(t.Toc, &toc)
-					} else {
-						toc.Parent = parent.Parent
-						parent.Parent.SubTitles = append(parent.Parent.SubTitles, &toc)
-					}
-				} else {
-					// 子节点
-					toc.Parent = parent
-					parent.SubTitles = append(parent.SubTitles, &toc)
-				}
-				currentToc = &toc
-			}
+		if len(matches) != 3 {
+			continue
 		}
+		var toc ArticleTOC
+		toc.Level = len(matches[1])
+		toc.Title = string(matches[2])
+		toc.Slug = string(whitespaces.ReplaceAllString(matches[2], "-"))
+		if currentToc == nil {
+			t.Toc = append(t.Toc, &toc)
+			currentToc = &toc
+			continue
+		}
+		parent := currentToc
+		if currentToc.Level > toc.Level {
+			// 父节点
+			for i := -1; i < currentToc.Level-toc.Level; i++ {
+				parent = parent.Parent
+				if parent == nil || parent.Level < toc.Level {
+					break
+				}
+			}
+			if parent == nil {
+				t.Toc = append(t.Toc, &toc)
+			} else {
+				toc.Parent = parent
+				parent.SubTitles = append(parent.SubTitles, &toc)
+			}
+		} else if currentToc.Level == toc.Level {
+			// 兄弟节点
+			if parent.Parent == nil {
+				t.Toc = append(t.Toc, &toc)
+			} else {
+				toc.Parent = parent.Parent
+				parent.Parent.SubTitles = append(parent.Parent.SubTitles, &toc)
+			}
+		} else {
+			// 子节点
+			toc.Parent = parent
+			parent.SubTitles = append(parent.SubTitles, &toc)
+		}
+		currentToc = &toc
 	}
 }
 

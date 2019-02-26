@@ -7,11 +7,10 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/naiba/com"
-
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/naiba/com"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
 	"github.com/utrack/gin-csrf"
@@ -207,24 +206,25 @@ func routerSwitch(c *gin.Context) {
 	var params []string
 	for j := 0; j < len(shits); j++ {
 		params = shits[j].Match.FindStringSubmatch(c.Request.URL.Path)
-		if len(params) >= 1 {
-			if f, ok := shits[j].Routes[c.Request.Method]; ok {
-				c.Set(solitudes.CtxRequestParams, params)
-				for i := 0; i < len(shits[j].Pre); i++ {
-					shits[j].Pre[i](c)
-				}
-				if len(shits[j].Pre) > 0 && !c.MustGet(solitudes.CtxPassPreHandler).(bool) {
-					// 如果没有通过 pre handler
-					return
-				}
-				f(c)
+		if len(params) == 0 {
+			continue
+		}
+		if f, ok := shits[j].Routes[c.Request.Method]; ok {
+			c.Set(solitudes.CtxRequestParams, params)
+			for i := 0; i < len(shits[j].Pre); i++ {
+				shits[j].Pre[i](c)
+			}
+			if len(shits[j].Pre) > 0 && !c.MustGet(solitudes.CtxPassPreHandler).(bool) {
+				// 如果没有通过 pre handler
 				return
 			}
-			c.HTML(http.StatusMethodNotAllowed, "default/error", soligin.Soli(c, true, gin.H{
-				"title": "Method Not Allowed",
-				"msg":   "Are you lost?",
-			}))
+			f(c)
 			return
 		}
+		c.HTML(http.StatusMethodNotAllowed, "default/error", soligin.Soli(c, true, gin.H{
+			"title": "Method Not Allowed",
+			"msg":   "Are you lost?",
+		}))
+		return
 	}
 }
