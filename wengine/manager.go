@@ -72,7 +72,7 @@ func upload(c *gin.Context) {
 		return
 	}
 	extName = fmt.Sprintf("/upload/%d.%s", time.Now().UnixNano(), extName)
-	if err := c.SaveUploadedFile(f, "resource/data"+extName); err != nil {
+	if err := c.SaveUploadedFile(f, "data"+extName); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}

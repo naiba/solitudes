@@ -5,10 +5,9 @@
 *.so
 *.dylib
 .DS_Store
-main
-/resource/data/bleve.article
-/resource/data/upload/*
-!/resource/data/upload/.gitkeep
+/data/bleve.article
+/data/upload/*
+!/data/upload/.gitkeep
 
 # Test binary, build with `go test -c`
 *.test

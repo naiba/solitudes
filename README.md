@@ -15,7 +15,7 @@
 2. into repo root & run `go build app/web/main.go`
 3. copy binary file to your path
 4. mkdir `data/upload` `data/conf.yml`
-5. setting system like `resource/data/conf.yml`
+5. setting system like `data/conf.yml`
 
 ## Todo
 

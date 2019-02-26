@@ -18,7 +18,7 @@ import (
 )
 
 func newBleveIndex() bleve.Index {
-	dataPath := "resource/data/bleve.article"
+	dataPath := "data/bleve.article"
 	index, err := bleve.Open(dataPath)
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		mapping := bleve.NewIndexMapping()
@@ -77,7 +77,7 @@ func newDatabase(conf *Config) *gorm.DB {
 func newConfig() *Config {
 	viper.SetConfigName("conf")
 	viper.SetConfigType("yml")
-	viper.AddConfigPath("resource/data/")
+	viper.AddConfigPath("data/")
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(err)
