@@ -18,8 +18,7 @@ import (
 )
 
 func newBleveIndex() bleve.Index {
-	// TODO: change to dynamic path
-	dataPath := "/Users/naiba/go/src/github.com/naiba/solitudes/resource/data/bleve.article"
+	dataPath := "resource/data/bleve.article"
 	index, err := bleve.Open(dataPath)
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		mapping := bleve.NewIndexMapping()
