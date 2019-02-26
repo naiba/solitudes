@@ -11,14 +11,17 @@
 
 ## Quick start
 
-1. clone repo to local gopath
-2. into repo root & run `go build app/web/main.go`
-3. copy binary file to your path
-4. mkdir `data/upload` `data/conf.yml`
-5. setting system like `data/conf.yml`
+1. create a data dir
+2. setting up config file like `/data/conf.yml`
+3. deploy on docker
+
+    ```shell
+    docker run --name solitudes -p 8080:8080 -v /path/to/data:/solitudes/data naiba/solitudes
+    ```
 
 ## Todo
 
+- [x] docker deploy
 - [ ] show article edit history
 - [ ] dashboard rebuild search index
 - [ ] comment like github
