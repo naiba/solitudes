@@ -6,11 +6,12 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/patrickmn/go-cache"
 	"github.com/spf13/viper"
-	"github.com/yanyiwu/gojieba"
 	"go.uber.org/dig"
 
 	"github.com/blevesearch/bleve"
-	// - gojieba bleve adapter
+	"github.com/yanyiwu/gojieba"
+
+	// - bleve adapter
 	_ "github.com/yanyiwu/gojieba/bleve"
 
 	// - db driver

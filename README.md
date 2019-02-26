@@ -24,6 +24,7 @@
 ## Todo
 
 - [x] docker deploy
+- [x] multi level chapter
 - [ ] show article edit history
 - [ ] dashboard rebuild search index
 - [ ] comment like github
@@ -31,10 +32,11 @@
 
 ## Notice
 
-Has two hacks in current revolution.
+Has three hacks in current revolution.
 
 - yanyiwu/gojieba#46 english word segmentation issue.
 - yanyiwu/gojieba dep ensure not include `deps` and `dict` dir.
+- yanyiwu/gojieba getCurrentFilePath func can't get running path
 
 ## Thanks
 

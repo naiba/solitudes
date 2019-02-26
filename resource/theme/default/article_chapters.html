@@ -1,0 +1,10 @@
+{{define "default/article_chapters"}}
+<ul>
+    {{range .Chapters}}
+    <li><a href="/{{.Slug}}">{{.Title}}</a></li>
+    {{if .IsBook}}
+    {{template "default/article_chapters" .}}
+    {{end}}
+    {{end}}
+</ul>
+{{end}}

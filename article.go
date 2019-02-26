@@ -34,8 +34,8 @@ type Article struct {
 	Version    uint           `form:"version" gorm:"default:1;"`
 	BookRefer  uint           `form:"book_refer" gorm:"index" json:"book_refer,omitempty"`
 
-	Chapters         []Article     `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
-	Book             *Article      `gorm:"-"`
+	Chapters         []*Article    `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
+	Book             *Article      `gorm:"-" binding:"-" form:"-" json:"-"`
 	Comments         []Comment     `json:"comments,omitempty"`
 	Toc              []*ArticleTOC `gorm:"-"`
 	ArticleHistories []ArticleHistory

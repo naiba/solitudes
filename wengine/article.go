@@ -15,7 +15,7 @@ func publish(c *gin.Context) {
 	id := c.Query("id")
 	var article solitudes.Article
 	if id != "" {
-		solitudes.System.D.Where("id = ?", id).First(&article)
+		solitudes.System.D.First(&article, "id = ?", id)
 	}
 	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, true, gin.H{
 		"title":     "Publish new article",
@@ -67,6 +67,7 @@ func publishHandler(c *gin.Context) {
 
 	// new or edit article
 	var newArticle solitudes.Article
+
 	if err = c.ShouldBind(&newArticle); err != nil {
 		c.String(http.StatusForbidden, err.Error())
 		return
@@ -124,7 +125,7 @@ func article(c *gin.Context) {
 
 	// load article
 	var a solitudes.Article
-	if err := solitudes.System.D.Where("slug = ?", slug[1]).First(&a).Error; err == gorm.ErrRecordNotFound {
+	if err := solitudes.System.D.First(&a, "slug = ?", slug[1]).Error; err == gorm.ErrRecordNotFound {
 		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, true, gin.H{
 			"title": "404 Page Not Found",
 			"msg":   "Wow ... This page may fly to Mars.",
@@ -159,11 +160,11 @@ func article(c *gin.Context) {
 	// load prevPost,nextPost
 	var prevPost, nextPost solitudes.Article
 	if a.BookRefer == 0 {
-		solitudes.System.D.Select("id,title,slug").Where("id > ?", a.ID).First(&nextPost)
+		solitudes.System.D.Select("id,title,slug").First(&nextPost, "id > ?", a.ID)
 		solitudes.System.D.Select("id,title,slug").Where("id < ?", a.ID).Order("id DESC").First(&prevPost)
 	} else {
 		// if this is a book section
-		solitudes.System.D.Select("id,title,slug").Where("book_refer = ? and  id > ?", a.BookRefer, a.ID).First(&nextPost)
+		solitudes.System.D.Select("id,title,slug").First(&nextPost, "book_refer = ? and  id > ?", a.BookRefer, a.ID)
 		solitudes.System.D.Select("id,title,slug").Where("book_refer = ? and  id < ?", a.BookRefer, a.ID).Order("id DESC").First(&prevPost)
 	}
 
@@ -180,11 +181,11 @@ func article(c *gin.Context) {
 }
 
 func relatedChapters(p *solitudes.Article) {
-	if p.IsBook && p.BookRefer == 0 {
+	if p.IsBook {
 		solitudes.System.D.Find(&p.Chapters, "book_refer=?", p.ID)
 		for i := 0; i < len(p.Chapters); i++ {
 			if p.Chapters[i].IsBook {
-				relatedChapters(&p.Chapters[i])
+				relatedChapters(p.Chapters[i])
 			}
 		}
 	}
@@ -192,13 +193,10 @@ func relatedChapters(p *solitudes.Article) {
 
 func relatedBook(p *solitudes.Article) {
 	if p.BookRefer != 0 {
-		solitudes.System.D.Where("id = ?", p.BookRefer).First(&p.Book)
-		if p.Book == nil {
+		var book solitudes.Article
+		if err := solitudes.System.D.First(&book, "id = ?", p.BookRefer).Error; err != nil {
 			return
 		}
-		for p.Book.BookRefer != 0 {
-			solitudes.System.D.Where("id = ?", p.Book.BookRefer).First(&p.Book)
-		}
-		relatedChapters(p.Book)
+		p.Book = &book
 	}
 }

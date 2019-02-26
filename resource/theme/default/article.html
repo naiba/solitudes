@@ -173,16 +173,12 @@
             {{.Data.article.Content|md}}
             {{if .Data.article.IsBook}}
             <h4>Chapters</h4>
-            <ul>
-                {{range .Data.article.Chapters}}
-                <li><a href="/{{.Slug}}">{{.Title}}</a></li>
-                {{end}}
-            </ul>
+            {{template "default/article_chapters" .Data.article}}
             {{end}}
         </div>
         <footer>
-            {{if .Data.article.BookRefer}}
-            book::<a href="/{{.Data.book.Slug}}"><b>{{.Data.book.Title}}</b></a> - chapters index
+            {{if .Data.article.Book}}
+            book::<a href="/{{.Data.article.Book.Slug}}"><b>{{.Data.article.Book.Title}}</b></a> - chapters index
             <ul>
                 {{if .Data.prev.ID}}<li>Prev: <a href="/{{.Data.prev.Slug}}">{{.Data.prev.Title}}</a></li>
                 {{end}}
