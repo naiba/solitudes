@@ -61,6 +61,9 @@ func newCache() *cache.Cache {
 }
 
 func newDatabase(conf *Config) *gorm.DB {
+	if conf.Web.Database == "" {
+		return nil
+	}
 	db, err := gorm.Open("postgres", conf.Web.Database)
 	if err != nil {
 		panic(err)
