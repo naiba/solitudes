@@ -7,7 +7,6 @@
 .DS_Store
 /data/bleve.article
 /data/upload
-/data/conf.yml
 
 # Test binary, build with `go test -c`
 *.test
