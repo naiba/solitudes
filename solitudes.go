@@ -131,7 +131,9 @@ func provide() {
 func init() {
 	Injector = dig.New()
 	provide()
-	migrate()
-	// 重建索引
-	BuildArticleIndex()
+	if System.D != nil {
+		migrate()
+		// 重建索引
+		BuildArticleIndex()
+	}
 }
