@@ -3,8 +3,8 @@ space_name: Solitudes
 space_desc: When I feel solitude, there is writing to accompany me. 
 web:
   domain: localhost:8080
-  database: postgres://postgres:mypassword@localhost/solitudes?sslmode=disable
-  akismet: d751634358ad
+  database: #postgres://postgres:mypassword@localhost/solitudes?sslmode=disable
+  akismet: #xxxx-xx
   bio: >
     Hi, I’m a theme for the Hexo blogging framework. I’m particularly great for a personal web page with a simple blog. In this paragraph, you can provide some information about yourself. Below, you’re most recent or highlighted writings and projects are listed.
     
