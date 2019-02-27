@@ -1,8 +1,15 @@
 package main
 
-import "github.com/naiba/solitudes/wengine"
+import (
+	"os"
+
+	"github.com/naiba/solitudes/wengine"
+)
 
 func main() {
+	if _, err := os.Stat("data/upload"); os.IsNotExist(err) {
+		os.Mkdir("data/upload", os.ModeDir)
+	}
 	if err := wengine.WEngine(); err != nil {
 		panic(err)
 	}

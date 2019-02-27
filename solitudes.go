@@ -1,7 +1,6 @@
 package solitudes
 
 import (
-	"os"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -145,8 +144,5 @@ func init() {
 		migrate()
 		// 重建索引
 		BuildArticleIndex()
-	}
-	if _, err := os.Stat("data/upload"); os.IsNotExist(err) {
-		os.Mkdir("data/upload", os.ModeDir)
 	}
 }
