@@ -25,7 +25,7 @@
 
 - [x] docker deploy
 - [x] multi level chapter
-- [ ] cache
+- [x] cache
 - [ ] show article edit history
 - [ ] dashboard rebuild search index
 - [ ] comment like github
