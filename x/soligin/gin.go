@@ -37,6 +37,7 @@ func Soli(c *gin.Context, protect bool, data map[string]interface{}) gin.H {
 	soli["Conf"] = solitudes.System.Config
 	soli["Title"] = title
 	soli["Keywords"] = keywords
+	soli["BuildVersion"] = solitudes.BuildVersion
 	soli["Desc"] = desc
 	soli["Login"], _ = c.Get(solitudes.CtxAuthorized)
 	soli["Data"] = data

@@ -46,6 +46,9 @@ var Injector *dig.Container
 // System 全局变量
 var System *SysVeriable
 
+// BuildVersion 构建版本
+var BuildVersion string
+
 // Templates 文章模板
 var Templates = map[byte]string{
 	1: "Article template",
@@ -56,4 +59,8 @@ var Templates = map[byte]string{
 var TemplateIndex = map[byte]string{
 	1: "article",
 	2: "page",
+}
+
+func init() {
+	BuildVersion = BuildVersion[:8]
 }
