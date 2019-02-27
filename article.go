@@ -18,6 +18,12 @@ type ArticleTOC struct {
 	Level     int         `gorm:"-" json:"-"`
 }
 
+// SibilingArticle 相邻文章
+type SibilingArticle struct {
+	Next Article
+	Prev Article
+}
+
 // Article 文章表
 type Article struct {
 	gorm.Model
@@ -34,11 +40,13 @@ type Article struct {
 	Version    uint           `form:"version" gorm:"default:1;"`
 	BookRefer  uint           `form:"book_refer" gorm:"index" json:"book_refer,omitempty"`
 
-	Chapters         []*Article    `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
-	Book             *Article      `gorm:"-" binding:"-" form:"-" json:"-"`
-	Comments         []Comment     `json:"comments,omitempty"`
-	Toc              []*ArticleTOC `gorm:"-"`
+	Comments         []Comment `json:"comments,omitempty"`
 	ArticleHistories []ArticleHistory
+
+	Toc             []*ArticleTOC    `gorm:"-"`
+	Chapters        []*Article       `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
+	Book            *Article         `gorm:"-" binding:"-" form:"-" json:"-"`
+	SibilingArticle *SibilingArticle `gorm:"-" binding:"-" form:"-" json:"-"`
 }
 
 // SID string id

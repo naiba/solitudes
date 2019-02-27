@@ -1,6 +1,7 @@
 package wengine
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -173,34 +174,60 @@ func article(c *gin.Context) {
 }
 
 func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next solitudes.Article) {
-	if p.BookRefer == 0 {
-		solitudes.System.DB.Select("id,title,slug").First(&next, "id > ?", p.ID)
-		solitudes.System.DB.Select("id,title,slug").Where("id < ?", p.ID).Order("id DESC").First(&prev)
-	} else {
-		// if this is a book section
-		solitudes.System.DB.Select("id,title,slug").First(&next, "book_refer = ? and  id > ?", p.BookRefer, p.ID)
-		solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  id < ?", p.BookRefer, p.ID).Order("id DESC").First(&prev)
+	sibiling, _ := solitudes.System.SafeCache.GetOrBuild(fmt.Sprintf("%s%d", solitudes.CacheKeyPrefixRelatedSiblingArticle, p.ID), func() (interface{}, error) {
+		var sb solitudes.SibilingArticle
+		if p.BookRefer == 0 {
+			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "id > ?", p.ID)
+			solitudes.System.DB.Select("id,title,slug").Where("id < ?", p.ID).Order("id DESC").First(&sb.Prev)
+		} else {
+			// if this is a book section
+			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "book_refer = ? and  id > ?", p.BookRefer, p.ID)
+			solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  id < ?", p.BookRefer, p.ID).Order("id DESC").First(&sb.Prev)
+		}
+		return sb, nil
+	})
+	if sibiling != nil {
+		x := sibiling.(solitudes.SibilingArticle)
+		p.SibilingArticle = &x
 	}
 	return
 }
 
 func relatedChapters(p *solitudes.Article) {
 	if p.IsBook {
-		solitudes.System.DB.Find(&p.Chapters, "book_refer=?", p.ID)
-		for i := 0; i < len(p.Chapters); i++ {
-			if p.Chapters[i].IsBook {
-				relatedChapters(p.Chapters[i])
-			}
+		chapters, _ := solitudes.System.SafeCache.GetOrBuild(fmt.Sprintf("%s%d", solitudes.CacheKeyPrefixRelatedChapters, p.ID), func() (interface{}, error) {
+			return innerRelatedChapters(p.ID), nil
+		})
+		if chapters != nil {
+			x := chapters.([]*solitudes.Article)
+			p.Chapters = x
 		}
 	}
 }
 
+func innerRelatedChapters(pid uint) (ps []*solitudes.Article) {
+	solitudes.System.DB.Find(&ps, "book_refer=?", pid)
+	for i := 0; i < len(ps); i++ {
+		if ps[i].IsBook {
+			ps[i].Chapters = innerRelatedChapters(ps[i].ID)
+		}
+	}
+	return
+}
+
 func relatedBook(p *solitudes.Article) {
 	if p.BookRefer != 0 {
-		var book solitudes.Article
-		if err := solitudes.System.DB.First(&book, "id = ?", p.BookRefer).Error; err != nil {
-			return
+		book, err := solitudes.System.SafeCache.GetOrBuild(fmt.Sprintf("%s%d", solitudes.CacheKeyPrefixRelatedArticle, p.BookRefer), func() (interface{}, error) {
+			var book solitudes.Article
+			var err error
+			if err = solitudes.System.DB.First(&book, "id = ?", p.BookRefer).Error; err != nil {
+				return nil, err
+			}
+			return book, err
+		})
+		if err == nil {
+			x := book.(solitudes.Article)
+			p.Book = &x
 		}
-		p.Book = &book
 	}
 }

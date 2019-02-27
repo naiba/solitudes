@@ -21,11 +21,11 @@ const (
 	// AuthCookie 用户认证使用的Cookie名
 	AuthCookie = "i_like_solitude"
 
-	// CacheKeyPrefixRelatedChapters 缓存键前缀：取章节
+	// CacheKeyPrefixRelatedChapters 缓存键前缀：章节
 	CacheKeyPrefixRelatedChapters = "ckprc"
-	// CacheKeyPrefixRelatedBook 缓存键前缀：取书本信息
-	CacheKeyPrefixRelatedBook = "ckprb"
-	// CacheKeyPrefixRelatedSiblingArticle 缓存键前缀：取相邻文章
+	// CacheKeyPrefixRelatedArticle 缓存键前缀：文章
+	CacheKeyPrefixRelatedArticle = "ckpra"
+	// CacheKeyPrefixRelatedSiblingArticle 缓存键前缀：相邻文章
 	CacheKeyPrefixRelatedSiblingArticle = "ckprsa"
 )
 

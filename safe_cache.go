@@ -19,36 +19,38 @@ func (sc *SafeCache) GetOrBuild(key string, build func() (interface{}, error)) (
 	if v, has := System.Cache.Get(key); has {
 		return v, nil
 	}
-	// 如果是重建携程，重建后删除 key
-	var loading bool
-	defer func() {
-		if !loading {
-			sc.Lock()
-			delete(sc.List, key)
-			sc.Unlock()
-		}
-	}()
-
 	// 查询是否已在重建
+	var loading bool
 	var ch chan error
 	sc.Lock()
 	if _, ok := sc.List[key]; ok {
 		loading = true
 		ch = make(chan error)
-		sc.List[key] = append(sc.List[key], ch)
 	}
+	sc.List[key] = append(sc.List[key], ch)
 	sc.Unlock()
 
 	// 重建缓存，并通知订阅者
 	var v interface{}
 	var err error
 	if !loading {
+		// 如果是重建携程，重建后删除 key
+		defer func() {
+			sc.Lock()
+			delete(sc.List, key)
+			sc.Unlock()
+		}()
+		// 重建缓存
 		v, err = build()
 		if err == nil {
 			System.Cache.Set(key, v, cache.DefaultExpiration)
 		}
+		// 通知其他请求
 		for i := 0; i < len(sc.List[key]); i++ {
-			sc.List[key][i] <- err
+			select {
+			case sc.List[key][i] <- err:
+			default:
+			}
 		}
 		return v, err
 	}
