@@ -47,7 +47,7 @@ var Injector *dig.Container
 var System *SysVeriable
 
 // BuildVersion 构建版本
-var BuildVersion string
+var BuildVersion = "_BuildVersion_"
 
 // Templates 文章模板
 var Templates = map[byte]string{
