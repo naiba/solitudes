@@ -136,9 +136,9 @@ func (t *Article) GenTOC() {
 // BuildArticleIndex 重建索引
 func BuildArticleIndex() {
 	var as []Article
-	System.D.Find(&as)
+	System.DB.Find(&as)
 	for i := 0; i < len(as); i++ {
-		err := System.S.Index(as[i].GetIndexID(), as[i].ToIndexData())
+		err := System.Search.Index(as[i].GetIndexID(), as[i].ToIndexData())
 		if err != nil {
 			panic(err)
 		}

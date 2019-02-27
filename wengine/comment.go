@@ -25,7 +25,7 @@ func commentHandler(c *gin.Context) {
 		return
 	}
 	var article solitudes.Article
-	if err := solitudes.System.D.Select("id").First(&article, "slug = ?", cf.Slug).Error; err != nil {
+	if err := solitudes.System.DB.Select("id").First(&article, "slug = ?", cf.Slug).Error; err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -33,7 +33,7 @@ func commentHandler(c *gin.Context) {
 	if cf.ReplyTo != 0 {
 		commentType = "reply"
 		var count int
-		solitudes.System.D.Model(solitudes.Comment{}).Where("id = ?", cf.ReplyTo).Count(&count)
+		solitudes.System.DB.Model(solitudes.Comment{}).Where("id = ?", cf.ReplyTo).Count(&count)
 		if count != 1 {
 			c.String(http.StatusBadRequest, "reply to invaild comment")
 			return
@@ -43,19 +43,19 @@ func commentHandler(c *gin.Context) {
 	}
 
 	// akismet anti spam
-	if solitudes.System.C.Web.Akismet != "" {
+	if solitudes.System.Config.Web.Akismet != "" {
 		isSpam, err := akismet.Check(&akismet.Comment{
-			Blog:               "https://" + solitudes.System.C.Web.Domain, // required
-			UserIP:             c.ClientIP(),                               // required
-			UserAgent:          c.Request.Header.Get("User-Agent"),         // required
+			Blog:               "https://" + solitudes.System.Config.Web.Domain, // required
+			UserIP:             c.ClientIP(),                                    // required
+			UserAgent:          c.Request.Header.Get("User-Agent"),              // required
 			CommentType:        commentType,
 			Referrer:           c.Request.Header.Get("Referer"),
-			Permalink:          "https://" + solitudes.System.C.Web.Domain + "/" + cf.Slug,
+			Permalink:          "https://" + solitudes.System.Config.Web.Domain + "/" + cf.Slug,
 			CommentAuthor:      cf.Nickname,
 			CommentAuthorEmail: cf.Email,
 			CommentAuthorURL:   cf.Website,
 			CommentContent:     cf.Content,
-		}, solitudes.System.C.Web.Akismet)
+		}, solitudes.System.Config.Web.Akismet)
 		if err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
@@ -76,7 +76,7 @@ func commentHandler(c *gin.Context) {
 	cm.IP = c.ClientIP()
 	cm.UserAgent = c.Request.Header.Get("User-Agent")
 	cm.IsAdmin = c.GetBool(solitudes.CtxAuthorized)
-	tx := solitudes.System.D.Begin()
+	tx := solitudes.System.DB.Begin()
 	if err := tx.Save(&cm).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())

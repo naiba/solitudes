@@ -26,8 +26,8 @@ func loginHandler(c *gin.Context) {
 		c.String(http.StatusOK, err.Error())
 		return
 	}
-	if lf.Email != solitudes.System.C.Web.User.Email ||
-		bcrypt.CompareHashAndPassword([]byte(solitudes.System.C.Web.User.Password),
+	if lf.Email != solitudes.System.Config.Web.User.Email ||
+		bcrypt.CompareHashAndPassword([]byte(solitudes.System.Config.Web.User.Password),
 			[]byte(lf.Password)) != nil {
 		c.String(http.StatusOK, "Invalid email or password")
 		return
@@ -43,7 +43,7 @@ func loginHandler(c *gin.Context) {
 	} else {
 		solitudes.System.TokenExpires = time.Now().Add(time.Hour * 4)
 	}
-	c.SetCookie(solitudes.AuthCookie, string(token), int(time.Hour*24*90), "/", solitudes.System.C.Web.Domain, false, false)
+	c.SetCookie(solitudes.AuthCookie, string(token), int(time.Hour*24*90), "/", solitudes.System.Config.Web.Domain, false, false)
 	c.Redirect(http.StatusFound, "/admin/")
 }
 
@@ -61,10 +61,10 @@ func logoutHandler(c *gin.Context) {
 
 func index(c *gin.Context) {
 	var as []solitudes.Article
-	solitudes.System.D.Order("id DESC").Limit(10).Find(&as)
+	solitudes.System.DB.Order("id DESC").Limit(10).Find(&as)
 	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, true, gin.H{
 		"title":    "Home",
-		"bio":      solitudes.System.C.Web.Bio,
+		"bio":      solitudes.System.Config.Web.Bio,
 		"articles": as,
 	}))
 }
@@ -93,11 +93,11 @@ func count(c *gin.Context) {
 		return
 	}
 	key := c.ClientIP() + c.Query("slug")
-	if _, ok := solitudes.System.H.Get(key); ok {
+	if _, ok := solitudes.System.Cache.Get(key); ok {
 		return
 	}
-	solitudes.System.H.Set(key, nil, time.Hour*20)
-	solitudes.System.D.Model(solitudes.Article{}).
+	solitudes.System.Cache.Set(key, nil, time.Hour*20)
+	solitudes.System.DB.Model(solitudes.Article{}).
 		Where("slug = ?", c.Query("slug")).
 		UpdateColumn("read_num", gorm.Expr("read_num + ?", 1))
 }

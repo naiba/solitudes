@@ -17,16 +17,25 @@ const (
 	CtxPassPreHandler = "cpph"
 	// CtxRequestParams 路由参数
 	CtxRequestParams = "crp"
+
 	// AuthCookie 用户认证使用的Cookie名
 	AuthCookie = "i_like_solitude"
+
+	// CacheKeyPrefixRelatedChapters 缓存键前缀：取章节
+	CacheKeyPrefixRelatedChapters = "ckprc"
+	// CacheKeyPrefixRelatedBook 缓存键前缀：取书本信息
+	CacheKeyPrefixRelatedBook = "ckprb"
+	// CacheKeyPrefixRelatedSiblingArticle 缓存键前缀：取相邻文章
+	CacheKeyPrefixRelatedSiblingArticle = "ckprsa"
 )
 
 // SysVeriable 全局变量
 type SysVeriable struct {
-	C            *Config
-	D            *gorm.DB
-	H            *cache.Cache
-	S            bleve.Index
+	Config       *Config
+	DB           *gorm.DB
+	Cache        *cache.Cache
+	Search       bleve.Index
+	SafeCache    *SafeCache
 	Token        string
 	TokenExpires time.Time
 }

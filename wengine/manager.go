@@ -16,16 +16,16 @@ func manager(c *gin.Context) {
 	var articleNum, commentNum int
 	var lastArticle solitudes.Article
 	var lastComment solitudes.Comment
-	solitudes.System.D.Model(solitudes.Article{}).Count(&articleNum)
-	solitudes.System.D.Model(solitudes.Comment{}).Count(&commentNum)
+	solitudes.System.DB.Model(solitudes.Article{}).Count(&articleNum)
+	solitudes.System.DB.Model(solitudes.Comment{}).Count(&commentNum)
 
 	type tagNum struct {
 		Count int
 	}
 	var tn tagNum
-	solitudes.System.D.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn)
-	solitudes.System.D.Select("created_at").Order("id DESC").First(&lastArticle)
-	solitudes.System.D.Select("created_at").Order("id DESC").First(&lastComment)
+	solitudes.System.DB.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn)
+	solitudes.System.DB.Select("created_at").Order("id DESC").First(&lastArticle)
+	solitudes.System.DB.Select("created_at").Order("id DESC").First(&lastComment)
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)

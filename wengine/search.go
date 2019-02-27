@@ -19,7 +19,7 @@ func search(c *gin.Context) {
 	keywords := c.Query("w")
 	req := bleve.NewSearchRequest(bleve.NewQueryStringQuery(keywords))
 	req.Highlight = bleve.NewHighlight()
-	res, err := solitudes.System.S.Search(req)
+	res, err := solitudes.System.Search.Search(req)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "default/error", soligin.Soli(c, true, gin.H{
 			"title": "Search Engine Error",
@@ -29,7 +29,7 @@ func search(c *gin.Context) {
 	}
 	var result []searchResp
 	for _, v := range res.Hits {
-		d, err := solitudes.System.S.Document(v.ID)
+		d, err := solitudes.System.Search.Document(v.ID)
 		if err == nil {
 			var r searchResp
 			for _, f := range d.Fields {

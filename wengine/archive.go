@@ -18,7 +18,7 @@ func archive(c *gin.Context) {
 	}
 	var articles []solitudes.Article
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.D,
+		DB:      solitudes.System.DB,
 		Page:    int(page),
 		Limit:   15,
 		OrderBy: []string{"id desc"},
@@ -39,7 +39,7 @@ func tags(c *gin.Context) {
 	}
 	var articles []solitudes.Article
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.D.Where("tags @> ARRAY[?]::varchar[]", pageSlice[1]),
+		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", pageSlice[1]),
 		Page:    int(page),
 		Limit:   15,
 		OrderBy: []string{"id desc"},

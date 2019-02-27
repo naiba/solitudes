@@ -61,6 +61,12 @@ func newCache() *cache.Cache {
 	return cache.New(5*time.Minute, 10*time.Minute)
 }
 
+func newSafeCache() *SafeCache {
+	return &SafeCache{
+		List: make(map[string][]chan error),
+	}
+}
+
 func newDatabase(conf *Config) *gorm.DB {
 	if conf.Web.Database == "" {
 		return nil
@@ -91,17 +97,18 @@ func newConfig() *Config {
 	return &c
 }
 
-func newSystem(c *Config, d *gorm.DB, h *cache.Cache, s bleve.Index) *SysVeriable {
+func newSystem(c *Config, d *gorm.DB, h *cache.Cache, sc *SafeCache, s bleve.Index) *SysVeriable {
 	return &SysVeriable{
-		C: c,
-		D: d,
-		H: h,
-		S: s,
+		Config:    c,
+		DB:        d,
+		Cache:     h,
+		Search:    s,
+		SafeCache: sc,
 	}
 }
 
 func migrate() {
-	if err := System.D.AutoMigrate(Article{}, ArticleHistory{}, Comment{}).Error; err != nil {
+	if err := System.DB.AutoMigrate(Article{}, ArticleHistory{}, Comment{}).Error; err != nil {
 		panic(err)
 	}
 }
@@ -113,6 +120,7 @@ func provide() {
 		newDatabase,
 		newSystem,
 		newBleveIndex,
+		newSafeCache,
 	}
 	var err error
 	for i := 0; i < len(providers); i++ {
@@ -132,7 +140,7 @@ func provide() {
 func init() {
 	Injector = dig.New()
 	provide()
-	if System.D != nil {
+	if System.DB != nil {
 		migrate()
 		// 重建索引
 		BuildArticleIndex()

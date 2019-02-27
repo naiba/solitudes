@@ -13,13 +13,13 @@ import (
 	"github.com/naiba/com"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
-	"github.com/utrack/gin-csrf"
+	csrf "github.com/utrack/gin-csrf"
 	"gopkg.in/russross/blackfriday.v2"
 )
 
 // WEngine web engine
 func WEngine() error {
-	if !solitudes.System.C.Debug {
+	if !solitudes.System.Config.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
@@ -60,7 +60,7 @@ func WEngine() error {
 	store := cookie.NewStore([]byte("secret"))
 	r.Use(sessions.Sessions("solisession", store))
 	r.Use(csrf.Middleware(csrf.Options{
-		Secret: solitudes.System.C.Web.User.Password,
+		Secret: solitudes.System.Config.Web.User.Password,
 		ErrorFunc: func(c *gin.Context) {
 			c.HTML(http.StatusBadRequest, "default/error", soligin.Soli(c, true, gin.H{
 				"title": "CSRF Protectoion",

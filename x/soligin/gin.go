@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/utrack/gin-csrf"
+	csrf "github.com/utrack/gin-csrf"
 
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
@@ -16,25 +16,25 @@ func Soli(c *gin.Context, protect bool, data map[string]interface{}) gin.H {
 
 	// custom title
 	if k, ok := data["title"]; ok && k.(string) != "" {
-		title = data["title"].(string) + " | " + solitudes.System.C.SpaceName
+		title = data["title"].(string) + " | " + solitudes.System.Config.SpaceName
 	} else {
-		title = solitudes.System.C.SpaceName
+		title = solitudes.System.Config.SpaceName
 	}
 	// custom keywords
 	if k, ok := data["keywords"]; ok && k.(string) != "" {
 		keywords = data["keywords"].(string)
 	} else {
-		keywords = solitudes.System.C.Web.SpaceKeywords
+		keywords = solitudes.System.Config.Web.SpaceKeywords
 	}
 	// custom desc
 	if k, ok := data["desc"]; ok && k.(string) != "" {
 		desc = data["desc"].(string)
 	} else {
-		desc = solitudes.System.C.SpaceDesc
+		desc = solitudes.System.Config.SpaceDesc
 	}
 
 	var soli = make(map[string]interface{})
-	soli["Conf"] = solitudes.System.C
+	soli["Conf"] = solitudes.System.Config
 	soli["Title"] = title
 	soli["Keywords"] = keywords
 	soli["Desc"] = desc
