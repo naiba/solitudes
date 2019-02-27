@@ -14,7 +14,7 @@
 ## Quick start
 
 1. create a data dir
-2. setting up config file like `/data/conf.yml.example`
+2. setting up config file like `/data/conf.yml`
 3. deploy on docker
 
     ```shell
@@ -25,6 +25,7 @@
 
 - [x] docker deploy
 - [x] multi level chapter
+- [ ] cache
 - [ ] show article edit history
 - [ ] dashboard rebuild search index
 - [ ] comment like github
