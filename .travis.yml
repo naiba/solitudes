@@ -5,6 +5,7 @@ before_install:
   - go get golang.org/x/lint/golint
 script:
   - go list ./... | xargs -L1 golint
+  - cp -r vendor/github.com/yanyiwu/gojieba/dict .
   - go test -v -race ./...
   - go build app/web/main.go
   - docker build -t naiba/solitudes .
