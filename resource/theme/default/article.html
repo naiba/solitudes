@@ -17,14 +17,16 @@
         <br>
         <span id="actions">
             <ul>
-                {{if .Data.prev.ID}}
-                <li><a class="icon" href="/{{.Data.prev.Slug}}" title="{{.Data.prev.Title}}"><i
-                            class="fas fa-chevron-left" aria-hidden="true" onmouseover="$('#i-prev').toggle();"
+                {{if .Data.article.SibilingArticle.Prev}}
+                <li><a class="icon" href="/{{.Data.article.SibilingArticle.Prev.Slug}}"
+                        title="{{.Data.article.SibilingArticle.Prev.Title}}"><i class="fas fa-chevron-left"
+                            aria-hidden="true" onmouseover="$('#i-prev').toggle();"
                             onmouseout="$('#i-prev').toggle();"></i></a></li>
                 {{end}}
-                {{if .Data.next.ID}}
-                <li><a class="icon" href="/{{.Data.next.Slug}}" title="{{.Data.next.Title}}"><i
-                            class="fas fa-chevron-right" aria-hidden="true" onmouseover="$('#i-next').toggle();"
+                {{if .Data.article.SibilingArticle.Next}}
+                <li><a class="icon" href="/{{.Data.article.SibilingArticle.Next.Slug}}"
+                        title="{{.Data.article.SibilingArticle.Next.Title}}"><i class="fas fa-chevron-right"
+                            aria-hidden="true" onmouseover="$('#i-next').toggle();"
                             onmouseout="$('#i-next').toggle();"></i></a></li>
                 {{end}}
                 <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i
@@ -180,10 +182,14 @@
             {{if .Data.article.Book}}
             book::<a href="/{{.Data.article.Book.Slug}}"><b>{{.Data.article.Book.Title}}</b></a> - chapters index
             <ul>
-                {{if .Data.prev.ID}}<li>Prev: <a href="/{{.Data.prev.Slug}}">{{.Data.prev.Title}}</a></li>
+                {{if .Data.article.SibilingArticle.Prev.ID}}<li>Prev: <a
+                        href="/{{.Data.article.SibilingArticle.Prev.Slug}}">{{.Data.article.SibilingArticle.Prev.Title}}</a>
+                </li>
                 {{end}}
                 <li>{{.Data.article.Title}}</li>
-                {{if .Data.next.ID}}<li>Next: <a href="/{{.Data.next.Slug}}">{{.Data.next.Title}}</a></li>
+                {{if .Data.article.SibilingArticle.Next.ID}}<li>Next: <a
+                        href="/{{.Data.article.SibilingArticle.Next.Slug}}">{{.Data.article.SibilingArticle.Next.Title}}</a>
+                </li>
                 {{end}}
             </ul>
             {{end}}

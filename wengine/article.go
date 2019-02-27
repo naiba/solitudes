@@ -159,7 +159,7 @@ func article(c *gin.Context) {
 	}, &a.Comments)
 
 	// load prevPost,nextPost
-	prevPost, nextPost := relatedSiblingArticle(&a)
+	relatedSiblingArticle(&a)
 
 	a.GenTOC()
 
@@ -168,8 +168,6 @@ func article(c *gin.Context) {
 		"keywords":     a.RawTags,
 		"article":      a,
 		"comment_page": pg,
-		"next":         nextPost,
-		"prev":         prevPost,
 	}))
 }
 
