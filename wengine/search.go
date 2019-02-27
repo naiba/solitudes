@@ -28,8 +28,8 @@ func search(c *gin.Context) {
 		return
 	}
 	var articleIndex = make(map[string]struct {
-		Version uint
-		Index   uint
+		Version uint64
+		Index   int
 	})
 	var result []searchResp
 	for _, v := range res.Hits {
@@ -43,8 +43,7 @@ func search(c *gin.Context) {
 				case "Title":
 					r.Title = string(f.Value())
 				case "Version":
-					t, _ := strconv.ParseUint(string(f.Value()), 10, 64)
-					r.Version = uint(t)
+					r.Version = string(f.Value())
 				}
 			}
 			r.Match = make(map[string]string)
@@ -60,12 +59,20 @@ func search(c *gin.Context) {
 				t = t[:l]
 				r.Match[k] = t
 			}
+			intVersion, _ := strconv.ParseUint(r.Version, 10, 64)
 			// hide too old versoin article
 			if v, has := articleIndex[r.Slug]; has {
-				if r.Version > v.Version {
+				if intVersion > v.Version {
 					result[v.Index] = r
 				}
 				continue
+			}
+			articleIndex[r.Slug] = struct {
+				Version uint64
+				Index   int
+			}{
+				intVersion,
+				len(result),
 			}
 			result = append(result, r)
 		}

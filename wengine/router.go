@@ -113,7 +113,16 @@ var shits = []shitGin{
 		},
 	},
 	{
-		Match: regexp.MustCompile(`^\/(.*)$`),
+		Match: regexp.MustCompile(`^\/([^\/]*)\/version/(\d*)$`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: article,
+		},
+	},
+	{
+		Match: regexp.MustCompile(`^\/([^\/]*)$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 		},

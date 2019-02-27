@@ -140,6 +140,36 @@ func article(c *gin.Context) {
 		a.Tags = nil
 	}
 
+	var title string
+	// load history
+	if len(slug) == 3 && slug[2] != "" {
+		version, err := strconv.ParseUint(slug[2], 10, 64)
+		if err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		if uint(version) == a.Version {
+			c.Redirect(http.StatusFound, "/"+a.Slug)
+			return
+		}
+		var history solitudes.ArticleHistory
+		if err := solitudes.System.DB.First(&history, "article_id = ? and version = ?", a.ID, slug[2]).Error; err == gorm.ErrRecordNotFound {
+			c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
+				"title": "404 Page Not Found",
+				"msg":   "Wow ... This page may fly to Mars.",
+			}))
+			return
+		} else if err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
+		a.Content = history.Content
+		a.Version = history.Version
+		title = fmt.Sprintf("%s v%d.%s", a.Title, a.Version, a.CreatedAt.Format("20060102"))
+	} else {
+		title = a.Title
+	}
+
 	relatedChapters(&a)
 	relatedBook(&a)
 
@@ -164,7 +194,7 @@ func article(c *gin.Context) {
 	a.GenTOC()
 
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
-		"title":        a.Title,
+		"title":        title,
 		"keywords":     a.RawTags,
 		"article":      a,
 		"comment_page": pg,

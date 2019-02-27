@@ -57,7 +57,7 @@ func (t *Article) SID() string {
 // ArticleIndex index data
 type ArticleIndex struct {
 	Slug    string
-	Version uint
+	Version string
 	Title   string
 	Content string
 }
@@ -66,7 +66,7 @@ type ArticleIndex struct {
 func (t *Article) ToIndexData() ArticleIndex {
 	return ArticleIndex{
 		Slug:    t.Slug,
-		Version: t.Version,
+		Version: fmt.Sprintf("%d", t.Version),
 		Content: t.Content,
 		Title:   t.Title,
 	}

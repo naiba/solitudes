@@ -26,9 +26,9 @@
 - [x] docker deploy
 - [x] multi level chapter
 - [x] safe cache
-- [ ] show article edit history
+- [x] show article edit history
     - [x] search page: hide old version article
-    - [ ] show edit history handler
+    - [x] show edit history handler
 - [ ] dashboard rebuild search index
 - [ ] comment like github
 - [ ] file manager
