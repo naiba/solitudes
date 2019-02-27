@@ -15,7 +15,7 @@
       </div>
       <span>
         <a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}} <small>({{.ReadNum}}
-          read{{if gt .ReadNum 1}}s{{end}}{{if .CommentNum}},{{.CommentNum}}
+          read{{if .CommentNum}},{{.CommentNum}}
           comment{{if gt .CommentNum 1}}s{{end}}{{end}})</small>{{end}}
       </span>
     </li>

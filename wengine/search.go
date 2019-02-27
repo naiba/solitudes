@@ -27,6 +27,10 @@ func search(c *gin.Context) {
 		}))
 		return
 	}
+	var articleIndex = make(map[string]struct {
+		Version uint
+		Index   uint
+	})
 	var result []searchResp
 	for _, v := range res.Hits {
 		d, err := solitudes.System.Search.Document(v.ID)
@@ -55,6 +59,13 @@ func search(c *gin.Context) {
 				}
 				t = t[:l]
 				r.Match[k] = t
+			}
+			// hide too old versoin article
+			if v, has := articleIndex[r.Slug]; has {
+				if r.Version > v.Version {
+					result[v.Index] = r
+				}
+				continue
 			}
 			result = append(result, r)
 		}

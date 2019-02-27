@@ -152,6 +152,7 @@
                 <div class="postdate">
                     <time datetime="{{.Data.article.CreatedAt}}"
                         itemprop="datePublished">{{tf .Data.article.CreatedAt "02 Jan 2006"}}</time>
+                    <small>·v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
                     | <span>{{.Data.article.ReadNum}}
                         read{{if .Data.article.CommentNum}},{{.Data.article.CommentNum}}
