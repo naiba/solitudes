@@ -158,15 +158,7 @@ func article(c *gin.Context) {
 	}, &a.Comments)
 
 	// load prevPost,nextPost
-	var prevPost, nextPost solitudes.Article
-	if a.BookRefer == 0 {
-		solitudes.System.D.Select("id,title,slug").First(&nextPost, "id > ?", a.ID)
-		solitudes.System.D.Select("id,title,slug").Where("id < ?", a.ID).Order("id DESC").First(&prevPost)
-	} else {
-		// if this is a book section
-		solitudes.System.D.Select("id,title,slug").First(&nextPost, "book_refer = ? and  id > ?", a.BookRefer, a.ID)
-		solitudes.System.D.Select("id,title,slug").Where("book_refer = ? and  id < ?", a.BookRefer, a.ID).Order("id DESC").First(&prevPost)
-	}
+	prevPost, nextPost := relatedSiblingArticle(&a)
 
 	a.GenTOC()
 
@@ -178,6 +170,18 @@ func article(c *gin.Context) {
 		"next":         nextPost,
 		"prev":         prevPost,
 	}))
+}
+
+func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next solitudes.Article) {
+	if p.BookRefer == 0 {
+		solitudes.System.D.Select("id,title,slug").First(&next, "id > ?", p.ID)
+		solitudes.System.D.Select("id,title,slug").Where("id < ?", p.ID).Order("id DESC").First(&prev)
+	} else {
+		// if this is a book section
+		solitudes.System.D.Select("id,title,slug").First(&next, "book_refer = ? and  id > ?", p.BookRefer, p.ID)
+		solitudes.System.D.Select("id,title,slug").Where("book_refer = ? and  id < ?", p.BookRefer, p.ID).Order("id DESC").First(&prev)
+	}
+	return
 }
 
 func relatedChapters(p *solitudes.Article) {
