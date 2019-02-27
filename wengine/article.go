@@ -127,7 +127,7 @@ func article(c *gin.Context) {
 	// load article
 	var a solitudes.Article
 	if err := solitudes.System.DB.First(&a, "slug = ?", slug[1]).Error; err == gorm.ErrRecordNotFound {
-		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, true, gin.H{
+		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
 			"title": "404 Page Not Found",
 			"msg":   "Wow ... This page may fly to Mars.",
 		}))

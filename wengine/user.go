@@ -62,7 +62,7 @@ func logoutHandler(c *gin.Context) {
 func index(c *gin.Context) {
 	var as []solitudes.Article
 	solitudes.System.DB.Order("id DESC").Limit(10).Find(&as)
-	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, true, gin.H{
+	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, false, gin.H{
 		"title":    "Home",
 		"bio":      solitudes.System.Config.Web.Bio,
 		"articles": as,
@@ -79,7 +79,7 @@ func static(root string) gin.HandlerFunc {
 			ErrH: func(h http.ResponseWriter, s int) {
 				h.Header().Set("Content-Type", "text/html,charset=utf8")
 				h.Header().Set("X-File-Server", "solitudes")
-				c.HTML(s, "default/error", soligin.Soli(c, true, gin.H{
+				c.HTML(s, "default/error", soligin.Soli(c, false, gin.H{
 					"title": "404 Page Not Found",
 					"msg":   "Wow ... This page may fly to Mars.",
 				}))

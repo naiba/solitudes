@@ -62,7 +62,7 @@ func WEngine() error {
 	r.Use(csrf.Middleware(csrf.Options{
 		Secret: solitudes.System.Config.Web.User.Password,
 		ErrorFunc: func(c *gin.Context) {
-			c.HTML(http.StatusBadRequest, "default/error", soligin.Soli(c, true, gin.H{
+			c.HTML(http.StatusBadRequest, "default/error", soligin.Soli(c, false, gin.H{
 				"title": "CSRF Protectoion",
 				"msg":   "Wow ... Native.",
 			}))
@@ -100,7 +100,7 @@ func routerSwitch(c *gin.Context) {
 			f(c)
 			return
 		}
-		c.HTML(http.StatusMethodNotAllowed, "default/error", soligin.Soli(c, true, gin.H{
+		c.HTML(http.StatusMethodNotAllowed, "default/error", soligin.Soli(c, false, gin.H{
 			"title": "Method Not Allowed",
 			"msg":   "Are you lost?",
 		}))

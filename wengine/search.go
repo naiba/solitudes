@@ -21,7 +21,7 @@ func search(c *gin.Context) {
 	req.Highlight = bleve.NewHighlight()
 	res, err := solitudes.System.Search.Search(req)
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "default/error", soligin.Soli(c, true, gin.H{
+		c.HTML(http.StatusInternalServerError, "default/error", soligin.Soli(c, false, gin.H{
 			"title": "Search Engine Error",
 			"msg":   err.Error(),
 		}))
