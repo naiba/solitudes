@@ -176,11 +176,11 @@ func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next s
 		var sb solitudes.SibilingArticle
 		if p.BookRefer == 0 {
 			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "id > ?", p.ID)
-			solitudes.System.DB.Select("id,title,slug").Where("id < ?", p.ID).Order("id DESC").First(&sb.Prev)
+			solitudes.System.DB.Select("id,title,slug").Where("id < ?", p.ID).Order("id DESC", true).First(&sb.Prev)
 		} else {
 			// if this is a book section
 			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "book_refer = ? and  id > ?", p.BookRefer, p.ID)
-			solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  id < ?", p.BookRefer, p.ID).Order("id DESC").First(&sb.Prev)
+			solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  id < ?", p.BookRefer, p.ID).Order("id DESC", true).First(&sb.Prev)
 		}
 		return sb, nil
 	})
@@ -204,7 +204,7 @@ func relatedChapters(p *solitudes.Article) {
 }
 
 func innerRelatedChapters(pid uint) (ps []*solitudes.Article) {
-	solitudes.System.DB.Find(&ps, "book_refer=?", pid)
+	solitudes.System.DB.Order("id ASC", true).Find(&ps, "book_refer=?", pid)
 	for i := 0; i < len(ps); i++ {
 		if ps[i].IsBook {
 			ps[i].Chapters = innerRelatedChapters(ps[i].ID)
