@@ -101,6 +101,16 @@ var shits = []shitGin{
 		},
 	},
 	{
+		Match: regexp.MustCompile(`^\/admin\/media`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: media,
+		},
+	},
+	{
 		Match: regexp.MustCompile(`^\/static\/`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: static("resource/static"),

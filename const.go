@@ -17,16 +17,16 @@ const (
 	CtxPassPreHandler = "cpph"
 	// CtxRequestParams 路由参数
 	CtxRequestParams = "crp"
-
 	// AuthCookie 用户认证使用的Cookie名
 	AuthCookie = "i_like_solitude"
-
 	// CacheKeyPrefixRelatedChapters 缓存键前缀：章节
 	CacheKeyPrefixRelatedChapters = "ckprc"
 	// CacheKeyPrefixRelatedArticle 缓存键前缀：文章
 	CacheKeyPrefixRelatedArticle = "ckpra"
 	// CacheKeyPrefixRelatedSiblingArticle 缓存键前缀：相邻文章
 	CacheKeyPrefixRelatedSiblingArticle = "ckprsa"
+	// CacheKeyPrefixUploadFiles 缓存键前缀：上传的文件
+	CacheKeyPrefixUploadFiles = "ckpuf"
 )
 
 // SysVeriable 全局变量
