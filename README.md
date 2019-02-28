@@ -29,7 +29,7 @@
 - [x] show article edit history
     - [x] search page: hide old version article
     - [x] show edit history handler
-- [ ] media manager
+- [x] media manager
 - [ ] comment manager
 
 ## Notice
