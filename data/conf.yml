@@ -1,10 +1,10 @@
 debug: true
-space_name: Solitudes
-space_desc: When I feel solitude, there is writing to accompany me. 
+space_name: Solitudes #Site title
+space_desc: When I feel solitude, there is writing to accompany me. #Site description
 web:
-  domain: localhost:8080
-  database: #postgres://postgres:mypassword@postgres/solitudes?sslmode=disable
-  akismet: #xxxx-xx
+  domain: localhost:8080 #Site domain
+  database: #Only Postgres postgres://postgres:mypassword@postgres/solitudes?sslmode=disable
+  akismet: #Akismet key
   bio: >
     Hi, I’m a theme for the Hexo blogging framework. I’m particularly great for a personal web page with a simple blog. In this paragraph, you can provide some information about yourself. Below, you’re most recent or highlighted writings and projects are listed.
     
@@ -21,10 +21,12 @@ web:
           <i class="fas fa-envelope"></i>
         </a>.
   space_keywords: blog,solitude,died-simple
-  theme: dark #classic dark light white
+  theme: dark #4 themes: classic dark light white
   user:
     email: 1@5.nu
+    # nickname show on article author
     nickname: naiba
+    # password hash on https://bcrypt-generator.com
     password: $2y$12$.Sbcj4mNEFbZIan3ly5XGuyX0U2XG92ztARIvE.rssyGd0p5ToBR6
   header_menus:
     - name: Home
