@@ -107,7 +107,8 @@ var shits = []shitGin{
 			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
 		},
 		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: media,
+			http.MethodGet:    media,
+			http.MethodDelete: mediaHandler,
 		},
 	},
 	{

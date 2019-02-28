@@ -30,7 +30,8 @@
                                             href="/{{.Article.Slug}}/version/{{.Article.Version}}">{{.Article.Title}}</a>
                                     </td>
                                     <td>{{tf .UploadedAt "02 Jan 2006"}}</td>
-                                    <td><button class="btn btn-warning btn-sm">Delete</button></td>
+                                    <td><button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')"
+                                            class="btn btn-warning btn-sm">Delete</button></td>
                                 </tr>
                                 {{end}}
                             </tbody>
@@ -45,5 +46,23 @@
         </div>
     </section>
 </div>
+<script>
+    function deleteFile(file, articleId) {
+        if (articleId !== '0') {
+            alert("You have to delete file usage in article.")
+            return
+        }
+        $.ajax({
+            url: "/admin/media?_csrf={{.CSRF }}&name=" + file,
+            type: 'DELETE',
+            success: () => {
+                window.location.reload()
+            },
+            error: (e) => {
+                alert(e.responseText)
+            },
+        })
+    }
+</script>
 {{template "admin/footer" .}}
 {{end}}
