@@ -21,6 +21,8 @@
     docker run --name solitudes -p 8080:8080 -v /path/to/data:/solitudes/data naiba/solitudes
     ```
 
+4. open `https://yourdomain/login` to login Dashboard
+
 ## Notice
 
 Has three hacks in current revolution.
