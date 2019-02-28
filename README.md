@@ -29,9 +29,8 @@
 - [x] show article edit history
     - [x] search page: hide old version article
     - [x] show edit history handler
-- [ ] dashboard rebuild search index
-- [ ] comment like github
-- [ ] file manager
+- [ ] media manager
+- [ ] comment manager
 
 ## Notice
 
