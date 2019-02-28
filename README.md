@@ -14,23 +14,12 @@
 ## Quick start
 
 1. create a data dir
-2. setting up config file like `/data/conf.yml`
+2. create config file `path/to/data/conf.yml` (example: `data/conf.yml`)
 3. deploy on docker
 
     ```shell
     docker run --name solitudes -p 8080:8080 -v /path/to/data:/solitudes/data naiba/solitudes
     ```
-
-## Todo
-
-- [x] docker deploy
-- [x] multi level chapter
-- [x] safe cache
-- [x] show article edit history
-    - [x] search page: hide old version article
-    - [x] show edit history handler
-- [x] media manager
-- [ ] comment manager
 
 ## Notice
 

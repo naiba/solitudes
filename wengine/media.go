@@ -62,7 +62,7 @@ func media(c *gin.Context) {
 	//	return innerMedias, nil
 	//})
 	c.HTML(http.StatusOK, "admin/media", soligin.Soli(c, true, gin.H{
-		"title":  "Media file manage",
+		"title":  "Manage File",
 		"medias": innerMedias,
 		"page":   page,
 	}))
