@@ -38,6 +38,7 @@ func (sc *SafeCache) GetOrBuild(key string, build func() (interface{}, error)) (
 		// 如果是重建携程，重建后删除 key
 		defer func() {
 			sc.Lock()
+			sc.List[key] = nil
 			delete(sc.List, key)
 			sc.Unlock()
 		}()
