@@ -1,6 +1,7 @@
 package solitudes
 
 import (
+	"sync"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -63,7 +64,7 @@ func newCache() *cache.Cache {
 
 func newSafeCache() *SafeCache {
 	return &SafeCache{
-		List: make(map[string][]chan error),
+		List: make(map[string]*sync.Cond),
 	}
 }
 

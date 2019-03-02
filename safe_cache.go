@@ -11,7 +11,7 @@ import (
 // SafeCache 防穿透防雪崩的缓存
 type SafeCache struct {
 	sync.Mutex
-	List map[string][]chan error
+	List map[string]*sync.Cond
 }
 
 // GetOrBuild 获取或重建缓存
@@ -20,14 +20,15 @@ func (sc *SafeCache) GetOrBuild(key string, build func() (interface{}, error)) (
 		return v, nil
 	}
 	// 查询是否已在重建
-	var loading bool
-	var ch chan error
+	var loading, has bool
+	var cond *sync.Cond
 	sc.Lock()
-	if _, ok := sc.List[key]; ok {
+	if cond, has = sc.List[key]; has {
 		loading = true
-		ch = make(chan error)
+	} else {
+		cond = sync.NewCond(new(sync.Mutex))
+		sc.List[key] = cond
 	}
-	sc.List[key] = append(sc.List[key], ch)
 	sc.Unlock()
 
 	// 重建缓存，并通知订阅者
@@ -46,24 +47,23 @@ func (sc *SafeCache) GetOrBuild(key string, build func() (interface{}, error)) (
 			System.Cache.Set(key, v, cache.DefaultExpiration)
 		}
 		// 通知其他请求
-		for i := 0; i < len(sc.List[key]); i++ {
-			select {
-			case sc.List[key][i] <- err:
-			default:
-			}
-		}
+		cond.Broadcast()
 		return v, err
 	}
 
 	// 接收重建通知
+	done := make(chan struct{})
+	go func() {
+		cond.Wait()
+		close(done)
+	}()
 	select {
-	case err := <-ch:
+	case <-time.After(time.Second * 5):
+		return nil, errors.New("Error get cache time out")
+	case <-done:
 		if err != nil {
 			return nil, err
 		}
-		v, _ = System.Cache.Get(key)
 		return v, err
-	case <-time.After(time.Second * 5):
-		return nil, errors.New("Error cache load time out")
 	}
 }
