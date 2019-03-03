@@ -1,6 +1,6 @@
 debug: true
 space_name: Solitudes #Site title
-space_desc: When I feel solitude, there is writing to accompany me. #Site description
+space_desc: In those days when I feel solitude, there is writing to accompany me. #Site description
 web:
   domain: localhost:8080 #Site domain
   database: #Only Postgres postgres://postgres:mypassword@postgres/solitudes?sslmode=disable
