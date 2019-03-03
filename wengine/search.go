@@ -60,7 +60,7 @@ func search(c *gin.Context) {
 				r.Match[k] = t
 			}
 			intVersion, _ := strconv.ParseUint(r.Version, 10, 64)
-			// hide too old versoin article
+			// hide too old version article
 			if v, has := articleIndex[r.Slug]; has {
 				if intVersion > v.Version {
 					result[v.Index] = r
