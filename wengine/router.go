@@ -91,7 +91,7 @@ var shits = []shitGin{
 		},
 	},
 	{
-		Match: regexp.MustCompile(`^\/admin\/upload`),
+		Match: regexp.MustCompile(`^\/admin\/upload$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
@@ -101,7 +101,7 @@ var shits = []shitGin{
 		},
 	},
 	{
-		Match: regexp.MustCompile(`^\/admin\/comment`),
+		Match: regexp.MustCompile(`^\/admin\/comments$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
@@ -112,7 +112,18 @@ var shits = []shitGin{
 		},
 	},
 	{
-		Match: regexp.MustCompile(`^\/admin\/media`),
+		Match: regexp.MustCompile(`^\/admin\/articles$`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet:    manageArticle,
+			http.MethodDelete: deleteArticle,
+		},
+	},
+	{
+		Match: regexp.MustCompile(`^\/admin\/media$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 			soligin.Limit(soligin.LimitOption{NeedLogin: true}),

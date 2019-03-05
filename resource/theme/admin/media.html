@@ -31,7 +31,7 @@
                                     </td>
                                     <td>{{tf .UploadedAt "02 Jan 2006"}}</td>
                                     <td><button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')"
-                                            class="btn btn-warning btn-sm">Delete</button></td>
+                                            class="btn btn-warning btn-xs">Delete</button></td>
                                 </tr>
                                 {{end}}
                             </tbody>
@@ -50,6 +50,9 @@
     function deleteFile(file, articleId) {
         if (articleId !== '0') {
             alert("You have to delete file usage in article.")
+            return
+        }
+        if (!confirm("Confirm delete?")){
             return
         }
         $.ajax({

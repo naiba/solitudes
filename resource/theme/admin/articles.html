@@ -1,10 +1,10 @@
-{{define "admin/comments"}}
+{{define "admin/articles"}}
 {{template "admin/header" .}}
 <div class="content-wrapper">
     <section class="content-header">
         <h1>
-            Media files
-            <small>manage upload files</small>
+            Recent posts
+            <small>manage articles</small>
         </h1>
     </section>
 
@@ -17,27 +17,32 @@
                             <thead>
                                 <tr role="row">
                                     <th>ID</th>
-                                    <th>Content</th>
-                                    <th>Author</th>
-                                    <th>Website</th>
-                                    <th>Article</th>
+                                    <th>Title</th>
+                                    <th>ReadNum</th>
+                                    <th>Slug</th>
+                                    <th>IsBook</th>
                                     <th>CreatedAt</th>
                                     <th>Manage</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {{range .Data.comments}}
+                                {{range .Data.articles}}
                                 <tr role="row">
                                     <td>{{.ID}}</td>
-                                    <td>{{.Content}}</td>
-                                    <td>{{.Nickname}}({{.Email}})</td>
-                                    <td>{{.Website}}</td>
-                                    <td><a target="_black"
-                                            href="/{{.Article.Slug}}/version/{{.Article.Version}}">{{.Article.Title}}</a>
+                                    <td><a target="_black" href="/{{.Slug}}/version/{{.Version}}">{{.Title}}</a>
                                     </td>
+                                    <td>{{.ReadNum}}</td>
+                                    <td>{{.Slug}}</td>
+                                    <td>{{.IsBook}}</td>
                                     <td>{{tf .CreatedAt "02 Jan 2006"}}</td>
-                                    <td><button onclick="deleteComment('{{.ID}}')"
-                                            class="btn btn-warning btn-xs">Delete</button></td>
+                                    <td>
+                                        <div class="btn-group btn-group-xs">
+                                            <a href="/admin/publish?id={{.ID}}" target="_black"
+                                                class="btn btn-warning">Edit</a>
+                                            <button onclick="deleteArticle('{{.ID}}')" type="button"
+                                                class="btn btn-danger">Delete</button>
+                                        </div>
+                                    </td>
                                 </tr>
                                 {{end}}
                             </tbody>
@@ -53,12 +58,12 @@
     </section>
 </div>
 <script>
-    function deleteComment(commendId) {
+    function deleteArticle(id) {
         if (!confirm("Confirm delete?")){
             return
         }
         $.ajax({
-            url: "/admin/comments?_csrf={{.CSRF }}&id=" + commendId,
+            url: "/admin/articles?_csrf={{.CSRF }}&id=" + id,
             type: 'DELETE',
             success: () => {
                 window.location.reload()

@@ -81,14 +81,6 @@
             <div class="col-xs-6 col-md-2">
                 <button onclick="publish(this)" class="btn btn-lg btn-primary">Publish</button>
             </div>
-            {{if .Data.article.ID}}
-            <div class="col-xs-6 col-md-2">
-                <form method="POST" action="?action=delete&id={{.Data.article.ID}}">
-                    <input type="hidden" name="_csrf" value="{{.CSRF}}">
-                    <button type="submit" class="btn btn-lg btn-danger">Delete</button>
-                </form>
-            </div>
-            {{end}}
         </div>
     </section>
 </div>
