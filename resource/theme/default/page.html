@@ -6,5 +6,10 @@
     {{.Data.article.Content|md}}
   </div>
 </article>
+<script>
+  window.onload = function () {
+    $.get("/count?action=article&slug={{.Data.article.Slug}}")
+  }
+</script>
 {{template "default/footer" .}}
 {{end}}
