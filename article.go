@@ -16,6 +16,7 @@ type ArticleTOC struct {
 	SubTitles []*ArticleTOC
 	Parent    *ArticleTOC `gorm:"-" json:"-"`
 	Level     int         `gorm:"-" json:"-"`
+	ShowLevel int         `gorm:"-" json:"-"`
 }
 
 // SibilingArticle 相邻文章
@@ -102,6 +103,7 @@ func (t *Article) GenTOC() {
 		}
 		var toc ArticleTOC
 		toc.Level = len(matches[1])
+		toc.ShowLevel = 2
 		toc.Title = string(matches[2])
 		toc.Slug = string(whitespaces.ReplaceAllString(matches[2], "-"))
 		if currentToc == nil {
@@ -122,6 +124,7 @@ func (t *Article) GenTOC() {
 				t.Toc = append(t.Toc, &toc)
 			} else {
 				toc.Parent = parent
+				toc.ShowLevel = parent.ShowLevel + 1
 				parent.SubTitles = append(parent.SubTitles, &toc)
 			}
 		} else if currentToc.Level == toc.Level {
@@ -130,11 +133,13 @@ func (t *Article) GenTOC() {
 				t.Toc = append(t.Toc, &toc)
 			} else {
 				toc.Parent = parent.Parent
+				toc.ShowLevel = parent.ShowLevel + 1
 				parent.Parent.SubTitles = append(parent.Parent.SubTitles, &toc)
 			}
 		} else {
 			// 子节点
 			toc.Parent = parent
+			toc.ShowLevel = parent.ShowLevel + 1
 			parent.SubTitles = append(parent.SubTitles, &toc)
 		}
 		currentToc = &toc
