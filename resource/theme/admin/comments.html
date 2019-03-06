@@ -58,7 +58,7 @@
             return
         }
         $.ajax({
-            url: "/admin/comments?_csrf={{.CSRF }}&aid=" + aid + "id=" + commendId,
+            url: "/admin/comments?_csrf={{.CSRF }}&aid=" + aid + "&id=" + commendId,
             type: 'DELETE',
             success: () => {
                 window.location.reload()
