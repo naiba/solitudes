@@ -8,9 +8,8 @@
         <p class="comment-meta title">
             <a href="{{if .Website}}{{.Website}}{{else}}javascript:;{{end}}" target="_blank"
                 rel="nofollow noopener">{{.Nickname}}</a>
-            <time datetime="{{.CreatedAt}}" itemprop="datePublished">
-                {{tf .CreatedAt "02 Jan 2006"}}
-            </time>
+            <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt "02 Jan 2006"}}</time>
+            <a href="/{{.Article.Slug}}/version/{{.Version}}"><small>·v{{.Version}}</small></a>
             <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">Reply</a>
         </p>
         <p class="comment-meta">{{.Content}}</p>

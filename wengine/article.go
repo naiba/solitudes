@@ -82,6 +82,9 @@ func article(c *gin.Context) {
 	// load prevPost,nextPost
 	relatedSiblingArticle(&a)
 
+	// set slug
+	setSlugToComment(&a, a.Comments)
+
 	a.GenTOC()
 
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
@@ -147,6 +150,15 @@ func relatedBook(p *solitudes.Article) {
 		if err == nil {
 			x := book.(solitudes.Article)
 			p.Book = &x
+		}
+	}
+}
+
+func setSlugToComment(a *solitudes.Article, cm []*solitudes.Comment) {
+	for i := 0; i < len(cm); i++ {
+		cm[i].Article = a
+		if len(cm[i].ChildComments) > 0 {
+			setSlugToComment(a, cm[i].ChildComments)
 		}
 	}
 }

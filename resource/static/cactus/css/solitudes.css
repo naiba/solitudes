@@ -84,3 +84,8 @@ article footer p:last-child {
 table thead {
     border-bottom: 1px dashed gray;
 }
+
+.comment-meta a:nth-child(3) {
+    color: #666;
+    background: none;
+}

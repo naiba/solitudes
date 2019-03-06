@@ -74,6 +74,7 @@ func commentHandler(c *gin.Context) {
 	cm.Website = cf.Website
 	cm.Email = cf.Email
 	cm.IP = c.ClientIP()
+	cm.Version = article.Version
 	cm.UserAgent = c.Request.Header.Get("User-Agent")
 	cm.IsAdmin = c.GetBool(solitudes.CtxAuthorized)
 	tx := solitudes.System.DB.Begin()
