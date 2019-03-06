@@ -25,7 +25,7 @@ func commentHandler(c *gin.Context) {
 		return
 	}
 	var article solitudes.Article
-	if err := solitudes.System.DB.Select("id").First(&article, "slug = ?", cf.Slug).Error; err != nil {
+	if err := solitudes.System.DB.Select("id,version").First(&article, "slug = ?", cf.Slug).Error; err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
