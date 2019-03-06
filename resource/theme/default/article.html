@@ -198,63 +198,7 @@
 
             <div id="toc-footer" style="display: none">
                 <ol class="toc">
-                    {{range $k,$v := .Data.article.Toc}}
-                    <li class="toc-item toc-level-2">
-                        <a class="toc-link" href="#{{$v.Slug}}">
-                            <span class="toc-number">{{add $k 1}}.</span> <span class="toc-text">{{$v.Title}}</span>
-                        </a>
-                        {{if $v.SubTitles}}
-                        <ol class="toc-child">
-                            {{range $k2,$v2 := $v.SubTitles}}
-                            <li class="toc-item toc-level-3">
-                                <a class="toc-link" href="#{{$v2.Slug}}">
-                                    <span class="toc-number">{{add $k 1}}.{{add $k2 1}}.</span>
-                                    <span class="toc-text">{{$v2.Title}}</span>
-                                </a>
-                                {{if $v2.SubTitles}}
-                                <ol class="toc-child">
-                                    {{range $k3,$v3 := $v2.SubTitles}}
-                                    <li class="toc-item toc-level-4">
-                                        <a class="toc-link" href="#{{$v3.Slug}}">
-                                            <span class="toc-number">{{add $k 1}}.{{add $k2 1}}.{{add $k3 1}}.</span>
-                                            <span class="toc-text">{{$v3.Title}}</span>
-                                        </a>
-                                        {{if $v3.SubTitles}}
-                                        <ol class="toc-child">
-                                            {{range $k4,$v4 := $v3.SubTitles}}
-                                            <li class="toc-item toc-level-5">
-                                                <a class="toc-link" href="#{{$v4.Slug}}">
-                                                    <span
-                                                        class="toc-number">{{add $k 1}}.{{add $k2 1}}.{{add $k3 1}}.{{add $k4 1}}.</span>
-                                                    <span class="toc-text">{{$v4.Title}}</span>
-                                                </a>
-                                                {{if $v4.SubTitles}}
-                                                <ol class="toc-child">
-                                                    {{range $k5,$v5 := $v4.SubTitles}}
-                                                    <li class="toc-item toc-level-6">
-                                                        <a class="toc-link" href="#{{$v5.Slug}}">
-                                                            <span
-                                                                class="toc-number">{{add $k 1}}.{{add $k2 1}}.{{add $k3 1}}.{{add $k4 1}}.{{add $k5 1}}.</span>
-                                                            <span class="toc-text">{{$v5.Title}}</span>
-                                                        </a>
-                                                    </li>
-                                                    {{end}}
-                                                </ol>
-                                                {{end}}
-                                            </li>
-                                            {{end}}
-                                        </ol>
-                                        {{end}}
-                                    </li>
-                                    {{end}}
-                                </ol>
-                                {{end}}
-                            </li>
-                            {{end}}
-                        </ol>
-                        {{end}}
-                    </li>
-                    {{end}}
+                    {{template "default/article_title_item" .Data.article.Toc}}
                 </ol>
             </div>
 
