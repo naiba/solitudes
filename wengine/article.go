@@ -155,12 +155,16 @@ func relatedBook(p *solitudes.Article) {
 func relatedChildComments(a *solitudes.Article, cm []*solitudes.Comment, root bool) {
 	if root {
 		var idMaptoComment = make(map[uint]*solitudes.Comment)
+		var idArray []uint
 		// map to index
 		for i := 0; i < len(cm); i++ {
 			idMaptoComment[cm[i].ID] = cm[i]
+			idArray = append(idArray, cm[i].ID)
 		}
 		var cms []*solitudes.Comment
-		solitudes.System.DB.Where("reply_to != 0 and article_id = ?", a.ID).Find(&cms)
+		solitudes.System.DB.Raw(`WITH RECURSIVE cs AS (SELECT comments.* FROM comments WHERE comments.reply_to in (?) union ALL
+		SELECT comments.* FROM comments, cs WHERE comments.reply_to = cs.id)
+		SELECT * FROM cs ORDER BY id;`, idArray).Scan(&cms)
 		// map to index
 		for i := 0; i < len(cms); i++ {
 			if cms[i].ReplyTo != 0 {
