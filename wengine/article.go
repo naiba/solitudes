@@ -64,16 +64,14 @@ func article(c *gin.Context) {
 	relatedChapters(&a)
 	relatedBook(&a)
 
-	// load comments
+	// load root comments
 	pageSlice := c.Query("comment_page")
 	var page int64
 	if pageSlice != "" {
 		page, _ = strconv.ParseInt(pageSlice, 10, 32)
 	}
 	pg := pagination.Paging(&pagination.Param{
-		DB: solitudes.System.DB.Preload("ChildComments", func(db *gorm.DB) *gorm.DB {
-			return db.Order("id DESC")
-		}).Where("reply_to = 0 and article_id = ?", a.ID),
+		DB:      solitudes.System.DB.Where("reply_to = 0 and article_id = ?", a.ID),
 		Page:    int(page),
 		Limit:   5,
 		OrderBy: []string{"id desc"},
@@ -82,8 +80,8 @@ func article(c *gin.Context) {
 	// load prevPost,nextPost
 	relatedSiblingArticle(&a)
 
-	// set slug
-	setSlugToComment(&a, a.Comments)
+	// load childComments
+	relatedChildComments(&a, a.Comments, true)
 
 	a.GenTOC()
 
@@ -154,11 +152,34 @@ func relatedBook(p *solitudes.Article) {
 	}
 }
 
-func setSlugToComment(a *solitudes.Article, cm []*solitudes.Comment) {
+func relatedChildComments(a *solitudes.Article, cm []*solitudes.Comment, root bool) {
+	if root {
+		var idMaptoComment = make(map[uint]*solitudes.Comment)
+		// map to index
+		for i := 0; i < len(cm); i++ {
+			idMaptoComment[cm[i].ID] = cm[i]
+		}
+		var cms []*solitudes.Comment
+		solitudes.System.DB.Where("reply_to != 0 and article_id = ?", a.ID).Find(&cms)
+		// map to index
+		for i := 0; i < len(cms); i++ {
+			if cms[i].ReplyTo != 0 {
+				idMaptoComment[cms[i].ID] = cms[i]
+			}
+		}
+		// set child comments
+		for i := 0; i < len(cms); i++ {
+			if _, has := idMaptoComment[cms[i].ReplyTo]; has {
+				idMaptoComment[cms[i].ReplyTo].ChildComments =
+					append(idMaptoComment[cms[i].ReplyTo].ChildComments, cms[i])
+			}
+		}
+	}
 	for i := 0; i < len(cm); i++ {
 		cm[i].Article = a
 		if len(cm[i].ChildComments) > 0 {
-			setSlugToComment(a, cm[i].ChildComments)
+			relatedChildComments(a, cm[i].ChildComments, false)
+			continue
 		}
 	}
 }
