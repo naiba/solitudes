@@ -6,6 +6,7 @@ import (
 
 	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
 )
@@ -30,12 +31,29 @@ func comments(c *gin.Context) {
 
 func deleteComment(c *gin.Context) {
 	id := c.Query("id")
+	articleStrID := c.Query("aid")
 	intID, err := strconv.ParseInt(id, 10, 32)
-	if err != nil || intID == 0 {
-		c.String(http.StatusForbidden, "Error comment id")
+	articleID, err2 := strconv.ParseInt(articleStrID, 10, 32)
+
+	if err != nil || err2 != nil || articleID == 0 || intID == 0 {
+		c.String(http.StatusForbidden, "Error id")
 		return
 	}
-	if err := solitudes.System.DB.Delete(&solitudes.Comment{}, "id =?", intID).Error; err != nil {
+
+	tx := solitudes.System.DB.Begin()
+	if err = tx.Delete(&solitudes.Comment{}, "id =?", intID).Error; err != nil {
+		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err = tx.Model(solitudes.Article{}).Where("id = ?", articleID).
+		UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
+		tx.Rollback()
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+	if err = tx.Commit().Error; err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
 	}
 }
