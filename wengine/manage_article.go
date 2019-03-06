@@ -55,7 +55,7 @@ func deleteArticle(c *gin.Context) {
 	}
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
-	tx := solitudes.System.DB.Unscoped().Begin()
+	tx := solitudes.System.DB.Begin()
 	if err = tx.Delete(solitudes.Article{}, "id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())

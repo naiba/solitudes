@@ -82,6 +82,7 @@ func newDatabase(conf *Config) *gorm.DB {
 	if conf.Debug {
 		db = db.Debug()
 	}
+	db = db.Unscoped()
 	return db
 }
 
