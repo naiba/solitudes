@@ -36,7 +36,7 @@
                                             href="/{{.Article.Slug}}/version/{{.Article.Version}}">{{.Article.Title}}</a>
                                     </td>
                                     <td>{{tf .CreatedAt "02 Jan 2006"}}</td>
-                                    <td><button onclick="deleteComment('{{.ID}}')"
+                                    <td><button onclick="deleteComment('{{.Article.ID}}','{{.ID}}')"
                                             class="btn btn-warning btn-xs">Delete</button></td>
                                 </tr>
                                 {{end}}
@@ -53,12 +53,12 @@
     </section>
 </div>
 <script>
-    function deleteComment(commendId) {
-        if (!confirm("Confirm delete?")){
+    function deleteComment(aid, commendId) {
+        if (!confirm("Confirm delete?")) {
             return
         }
         $.ajax({
-            url: "/admin/comments?_csrf={{.CSRF }}&id=" + commendId,
+            url: "/admin/comments?_csrf={{.CSRF }}&aid=" + aid + "id=" + commendId,
             type: 'DELETE',
             success: () => {
                 window.location.reload()
