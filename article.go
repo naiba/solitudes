@@ -41,9 +41,9 @@ type Article struct {
 	ReadNum    uint           `gorm:"default:0;"`
 	CommentNum uint           `gorm:"default:0;"`
 	Version    uint           `form:"version" gorm:"default:1;"`
-	BookRefer  uint           `form:"book_refer" gorm:"index"`
+	BookRefer  *string        `form:"book_refer" binding:"omitempty,uuid" gorm:"uuid;index"`
 
-	Comments         []*Comment 
+	Comments         []*Comment
 	ArticleHistories []*ArticleHistory
 	Toc              []*ArticleTOC    `gorm:"-"`
 	Chapters         []*Article       `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`

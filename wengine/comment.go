@@ -10,12 +10,12 @@ import (
 )
 
 type commentForm struct {
-	ReplyTo  string `form:"reply_to" binding:"uuid4"`
-	Nickname string `form:"nickname" binding:"required"`
-	Content  string `form:"content" binding:"required" gorm:"text"`
-	Slug     string `form:"slug" binding:"required" gorm:"index"`
-	Website  string `form:"website,omitempty" binding:"omitempty,url"`
-	Email    string `form:"email,omitempty" binding:"omitempty,email"`
+	ReplyTo  *string `form:"reply_to" binding:"omitempty,uuid4"`
+	Nickname string  `form:"nickname" binding:"required"`
+	Content  string  `form:"content" binding:"required" gorm:"text"`
+	Slug     string  `form:"slug" binding:"required" gorm:"index"`
+	Website  string  `form:"website,omitempty" binding:"omitempty,url"`
+	Email    string  `form:"email,omitempty" binding:"omitempty,email"`
 }
 
 func commentHandler(c *gin.Context) {
@@ -30,7 +30,7 @@ func commentHandler(c *gin.Context) {
 		return
 	}
 	var commentType string
-	if cf.ReplyTo != "" {
+	if cf.ReplyTo != nil {
 		commentType = "reply"
 		var count int
 		solitudes.System.DB.Model(solitudes.Comment{}).Where("id = ?", cf.ReplyTo).Count(&count)
@@ -70,7 +70,7 @@ func commentHandler(c *gin.Context) {
 	cm.ReplyTo = cf.ReplyTo
 	cm.Nickname = cf.Nickname
 	cm.Content = cf.Content
-	cm.ArticleID = article.ID
+	cm.ArticleID = &article.ID
 	cm.Website = cf.Website
 	cm.Email = cf.Email
 	cm.IP = c.ClientIP()

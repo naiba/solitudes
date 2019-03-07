@@ -20,6 +20,13 @@
       </span>
     </li>
     {{end}}
+    {{if not .Data.articles}}
+    <li class="post-item">
+      <span>
+        <small>No articles have been published yet</small>
+      </span>
+    </li>
+    {{end}}
   </ul>
 </section>
 {{template "default/footer" .}}

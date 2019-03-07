@@ -271,15 +271,16 @@
             localStorage.setItem("cm_email", $('#id_email').val())
             localStorage.setItem("cm_website", $('#id_website').val())
             $(btn).text("Submiting ...")
-            $.post("comment", {
+            var data = {
                 nickname: $('#id_nickname').val(),
                 email: $('#id_email').val(),
                 content: $('#id_content').val(),
                 website: $('#id_website').val(),
                 _csrf: $('#id_csrf').val(),
-                reply_to: $('#id_reply_to').val(),
                 slug: $('#id_slug').val(),
-            }, (d) => {
+            }
+            $('#id_reply_to').val() && (data.reply_to = $('#id_reply_to').val())
+            $.post("comment", data, (d) => {
                 window.location.reload()
             }).fail((e) => {
                 alert("Submit faile: " + e.responseText)

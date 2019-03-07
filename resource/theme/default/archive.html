@@ -17,6 +17,13 @@
     </li>
     {{end}}
     {{end}}
+    {{if not .Data.articles}}
+    <li class="post-item">
+      <span>
+        No articles have been published yet
+      </span>
+    </li>
+    {{end}}
   </ul>
   <div class="pagination">
     {{if gt .Data.page.Page 1}}<a href="/{{.Data.what}}/{{.Data.page.PrevPage}}/"><i

@@ -71,7 +71,7 @@ func article(c *gin.Context) {
 		page, _ = strconv.ParseInt(pageSlice, 10, 32)
 	}
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("reply_to = 0 and article_id = ?", a.ID),
+		DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", a.ID),
 		Page:    int(page),
 		Limit:   5,
 		OrderBy: []string{"id desc"},
@@ -94,9 +94,9 @@ func article(c *gin.Context) {
 }
 
 func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next solitudes.Article) {
-	sibiling, _ := solitudes.System.SafeCache.GetOrBuild(fmt.Sprintf("%s%d", solitudes.CacheKeyPrefixRelatedSiblingArticle, p.ID), func() (interface{}, error) {
+	sibiling, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedSiblingArticle+p.ID, func() (interface{}, error) {
 		var sb solitudes.SibilingArticle
-		if p.BookRefer == 0 {
+		if p.BookRefer == nil {
 			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "id > ?", p.ID)
 			solitudes.System.DB.Select("id,title,slug").Where("id < ?", p.ID).Order("id DESC", true).First(&sb.Prev)
 		} else {
@@ -115,7 +115,7 @@ func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next s
 
 func relatedChapters(p *solitudes.Article) {
 	if p.IsBook {
-		chapters, _ := solitudes.System.SafeCache.GetOrBuild(fmt.Sprintf("%s%d", solitudes.CacheKeyPrefixRelatedChapters, p.ID), func() (interface{}, error) {
+		chapters, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedChapters+p.ID, func() (interface{}, error) {
 			return innerRelatedChapters(p.ID), nil
 		})
 		if chapters != nil {
@@ -136,7 +136,7 @@ func innerRelatedChapters(pid string) (ps []*solitudes.Article) {
 }
 
 func relatedBook(p *solitudes.Article) {
-	if p.BookRefer != 0 {
+	if p.BookRefer != nil {
 		book, err := solitudes.System.SafeCache.GetOrBuild(fmt.Sprintf("%s%d", solitudes.CacheKeyPrefixRelatedArticle, p.BookRefer), func() (interface{}, error) {
 			var book solitudes.Article
 			var err error
@@ -167,15 +167,15 @@ func relatedChildComments(a *solitudes.Article, cm []*solitudes.Comment, root bo
 		SELECT * FROM cs ORDER BY id;`, idArray).Scan(&cms)
 		// map to index
 		for i := 0; i < len(cms); i++ {
-			if cms[i].ReplyTo != "" {
+			if cms[i].ReplyTo != nil {
 				idMaptoComment[cms[i].ID] = cms[i]
 			}
 		}
 		// set child comments
 		for i := 0; i < len(cms); i++ {
-			if _, has := idMaptoComment[cms[i].ReplyTo]; has {
-				idMaptoComment[cms[i].ReplyTo].ChildComments =
-					append(idMaptoComment[cms[i].ReplyTo].ChildComments, cms[i])
+			if _, has := idMaptoComment[*cms[i].ReplyTo]; has {
+				idMaptoComment[*cms[i].ReplyTo].ChildComments =
+					append(idMaptoComment[*cms[i].ReplyTo].ChildComments, cms[i])
 			}
 		}
 	}
