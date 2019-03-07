@@ -20,7 +20,7 @@ func comments(c *gin.Context) {
 		DB:      solitudes.System.DB.Preload("Article"),
 		Page:    int(page),
 		Limit:   15,
-		OrderBy: []string{"id desc"},
+		OrderBy: []string{"created_at desc"},
 	}, &cs)
 	c.HTML(http.StatusOK, "admin/comments", soligin.Soli(c, true, gin.H{
 		"title":    "Manage Comments",

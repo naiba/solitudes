@@ -24,8 +24,8 @@ func manager(c *gin.Context) {
 	}
 	var tn tagNum
 	solitudes.System.DB.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn)
-	solitudes.System.DB.Select("created_at").Order("id DESC").First(&lastArticle)
-	solitudes.System.DB.Select("created_at").Order("id DESC").First(&lastComment)
+	solitudes.System.DB.Select("created_at").Order("created_at DESC").First(&lastArticle)
+	solitudes.System.DB.Select("created_at").Order("created_at DESC").First(&lastComment)
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)

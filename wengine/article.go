@@ -74,7 +74,7 @@ func article(c *gin.Context) {
 		DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", a.ID),
 		Page:    int(page),
 		Limit:   5,
-		OrderBy: []string{"id desc"},
+		OrderBy: []string{"created_at desc"},
 	}, &a.Comments)
 
 	// load prevPost,nextPost
@@ -97,12 +97,12 @@ func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next s
 	sibiling, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedSiblingArticle+p.ID, func() (interface{}, error) {
 		var sb solitudes.SibilingArticle
 		if p.BookRefer == nil {
-			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "created_at < ?", p.CreatedAt)
-			solitudes.System.DB.Select("id,title,slug").Where("created_at > ?", p.CreatedAt).Order("created_at DESC", true).First(&sb.Prev)
+			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "created_at > ?", p.CreatedAt)
+			solitudes.System.DB.Select("id,title,slug").Where("created_at < ?", p.CreatedAt).Order("created_at DESC", true).First(&sb.Prev)
 		} else {
 			// if this is a book section
-			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "book_refer = ? and  created_at < ?", p.BookRefer, p.CreatedAt)
-			solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  created_at > ?", p.BookRefer, p.CreatedAt).Order("created_at DESC", true).First(&sb.Prev)
+			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "book_refer = ? and  created_at > ?", p.BookRefer, p.CreatedAt)
+			solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  created_at < ?", p.BookRefer, p.CreatedAt).Order("created_at DESC", true).First(&sb.Prev)
 		}
 		return sb, nil
 	})
@@ -126,7 +126,7 @@ func relatedChapters(p *solitudes.Article) {
 }
 
 func innerRelatedChapters(pid string) (ps []*solitudes.Article) {
-	solitudes.System.DB.Order("id ASC", true).Find(&ps, "book_refer=?", pid)
+	solitudes.System.DB.Order("created_at ASC", true).Find(&ps, "book_refer=?", pid)
 	for i := 0; i < len(ps); i++ {
 		if ps[i].IsBook {
 			ps[i].Chapters = innerRelatedChapters(ps[i].ID)
@@ -164,7 +164,7 @@ func relatedChildComments(a *solitudes.Article, cm []*solitudes.Comment, root bo
 		var cms []*solitudes.Comment
 		solitudes.System.DB.Raw(`WITH RECURSIVE cs AS (SELECT comments.* FROM comments WHERE comments.reply_to in (?) union ALL
 		SELECT comments.* FROM comments, cs WHERE comments.reply_to = cs.id)
-		SELECT * FROM cs ORDER BY id;`, idArray).Scan(&cms)
+		SELECT * FROM cs ORDER BY created_at;`, idArray).Scan(&cms)
 		// map to index
 		for i := 0; i < len(cms); i++ {
 			if cms[i].ReplyTo != nil {

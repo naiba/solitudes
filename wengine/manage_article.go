@@ -19,7 +19,7 @@ func manageArticle(c *gin.Context) {
 		DB:      solitudes.System.DB,
 		Page:    int(page),
 		Limit:   15,
-		OrderBy: []string{"id desc"},
+		OrderBy: []string{"created_at desc"},
 	}, &as)
 	c.HTML(http.StatusOK, "admin/articles", soligin.Soli(c, true, gin.H{
 		"title":    "Manage Articles",
@@ -43,20 +43,19 @@ func publish(c *gin.Context) {
 
 func deleteArticle(c *gin.Context) {
 	id := c.Query("id")
-	intID, err := strconv.ParseInt(id, 10, 32)
-	if err != nil || intID == 0 {
+	if len(id) < 10 {
 		c.String(http.StatusForbidden, "Error article id")
 		return
 	}
 	var a solitudes.Article
-	if err = solitudes.System.DB.Select("id").Preload("ArticleHistories").First(&a, "id = ?", id).Error; err != nil {
+	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").First(&a, "id = ?", id).Error; err != nil {
 		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
 	tx := solitudes.System.DB.Begin()
-	if err = tx.Delete(solitudes.Article{}, "id = ?", a.ID).Error; err != nil {
+	if err := tx.Delete(solitudes.Article{}, "id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -65,18 +64,18 @@ func deleteArticle(c *gin.Context) {
 	for i := 0; i < len(a.ArticleHistories); i++ {
 		indexIDs = append(indexIDs, a.ArticleHistories[i].GetIndexID())
 	}
-	if err = tx.Delete(solitudes.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
+	if err := tx.Delete(solitudes.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 	// delete comments
-	if err = tx.Delete(solitudes.Comment{}, "article_id = ?", a.ID).Error; err != nil {
+	if err := tx.Delete(solitudes.Comment{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	if err = tx.Commit().Error; err != nil {
+	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
