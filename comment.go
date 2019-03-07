@@ -1,12 +1,12 @@
 package solitudes
 
-import (
-	"github.com/jinzhu/gorm"
-)
+import "time"
 
 // Comment 评论表
 type Comment struct {
-	gorm.Model
+	ID        string `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	CreatedAt time.Time
+	DeletedAt time.Time
 
 	ReplyTo   uint   `form:"reply_to" json:"reply_to,omitempty"`
 	Nickname  string `form:"nickname" binding:"required" json:"name,omitempty"`

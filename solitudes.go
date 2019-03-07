@@ -76,13 +76,12 @@ func newDatabase(conf *Config) *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
-	if err = db.DB().Ping(); err != nil {
-		panic(err)
-	}
 	if conf.Debug {
 		db = db.Debug()
 	}
-	db = db.Unscoped()
+	if _, err = db.DB().Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;`); err != nil {
+		panic(err)
+	}
 	return db
 }
 

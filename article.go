@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 )
 
@@ -27,11 +27,13 @@ type SibilingArticle struct {
 
 // Article 文章表
 type Article struct {
-	gorm.Model
-	Slug    string `form:"slug" binding:"required" gorm:"unique_index" json:"slug,omitempty"`
-	Title   string `form:"title" binding:"required" json:"title,omitempty"`
-	Content string `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
+	ID        string `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	CreatedAt time.Time
+	DeletedAt time.Time
 
+	Slug       string         `form:"slug" binding:"required" gorm:"unique_index" json:"slug,omitempty"`
+	Title      string         `form:"title" binding:"required" json:"title,omitempty"`
+	Content    string         `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
 	TemplateID byte           `form:"template" binding:"required" json:"template_id,omitempty"`
 	IsBook     bool           `form:"is_book" json:"is_book,omitempty"`
 	RawTags    string         `form:"tags" gorm:"-" json:"-"`
@@ -43,16 +45,10 @@ type Article struct {
 
 	Comments         []*Comment `json:"comments,omitempty"`
 	ArticleHistories []*ArticleHistory
-
-	Toc             []*ArticleTOC    `gorm:"-"`
-	Chapters        []*Article       `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
-	Book            *Article         `gorm:"-" binding:"-" form:"-" json:"-"`
-	SibilingArticle *SibilingArticle `gorm:"-" binding:"-" form:"-" json:"-"`
-}
-
-// SID string id
-func (t *Article) SID() string {
-	return fmt.Sprintf("%d", t.ID)
+	Toc              []*ArticleTOC    `gorm:"-"`
+	Chapters         []*Article       `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
+	Book             *Article         `gorm:"-" binding:"-" form:"-" json:"-"`
+	SibilingArticle  *SibilingArticle `gorm:"-" binding:"-" form:"-" json:"-"`
 }
 
 // ArticleIndex index data
@@ -75,7 +71,7 @@ func (t *Article) ToIndexData() ArticleIndex {
 
 // GetIndexID get index data id
 func (t *Article) GetIndexID() string {
-	return fmt.Sprintf("%d.%d", t.ID, t.Version)
+	return fmt.Sprintf("%s.%d", t.ID, t.Version)
 }
 
 // BeforeSave hook

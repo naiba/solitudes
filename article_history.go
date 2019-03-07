@@ -7,7 +7,7 @@ import (
 
 // ArticleHistory 文章修订历史
 type ArticleHistory struct {
-	ArticleID uint
+	ArticleID string `gorm:"index"`
 	Article   Article
 	Version   uint   `gorm:"index"`
 	Desc      string `gorm:"text"`
@@ -17,5 +17,5 @@ type ArticleHistory struct {
 
 // GetIndexID get index data id
 func (t *ArticleHistory) GetIndexID() string {
-	return fmt.Sprintf("%d.%d", t.ArticleID, t.Version)
+	return fmt.Sprintf("%s.%d", t.ArticleID, t.Version)
 }
