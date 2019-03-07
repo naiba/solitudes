@@ -79,6 +79,9 @@ func newDatabase(conf *Config) *gorm.DB {
 	if conf.Debug {
 		db = db.Debug()
 	}
+	if _, err = db.DB().Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;`); err != nil {
+		panic(err)
+	}
 	return db
 }
 
