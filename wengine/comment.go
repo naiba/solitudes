@@ -10,12 +10,12 @@ import (
 )
 
 type commentForm struct {
-	ReplyTo  *string `form:"reply_to" binding:"omitempty,uuid4"`
+	ReplyTo  *string `form:"omitempty,reply_to" binding:"omitempty,uuid4"`
 	Nickname string  `form:"nickname" binding:"required"`
 	Content  string  `form:"content" binding:"required" gorm:"text"`
 	Slug     string  `form:"slug" binding:"required" gorm:"index"`
-	Website  string  `form:"website,omitempty" binding:"omitempty,url"`
-	Email    string  `form:"email,omitempty" binding:"omitempty,email"`
+	Website  string  `form:"omitempty,website" binding:"omitempty,url"`
+	Email    string  `form:"omitempty,email" binding:"omitempty,email"`
 }
 
 func commentHandler(c *gin.Context) {

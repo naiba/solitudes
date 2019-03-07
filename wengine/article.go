@@ -97,12 +97,12 @@ func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next s
 	sibiling, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedSiblingArticle+p.ID, func() (interface{}, error) {
 		var sb solitudes.SibilingArticle
 		if p.BookRefer == nil {
-			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "id > ?", p.ID)
-			solitudes.System.DB.Select("id,title,slug").Where("id < ?", p.ID).Order("id DESC", true).First(&sb.Prev)
+			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "created_at < ?", p.CreatedAt)
+			solitudes.System.DB.Select("id,title,slug").Where("created_at > ?", p.CreatedAt).Order("created_at DESC", true).First(&sb.Prev)
 		} else {
 			// if this is a book section
-			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "book_refer = ? and  id > ?", p.BookRefer, p.ID)
-			solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  id < ?", p.BookRefer, p.ID).Order("id DESC", true).First(&sb.Prev)
+			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "book_refer = ? and  created_at < ?", p.BookRefer, p.CreatedAt)
+			solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  created_at > ?", p.BookRefer, p.CreatedAt).Order("created_at DESC", true).First(&sb.Prev)
 		}
 		return sb, nil
 	})

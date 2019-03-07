@@ -8,7 +8,7 @@ type Comment struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	ReplyTo   *string `gorm:"type:uuid;index" form:"reply_to"`
+	ReplyTo   *string `gorm:"type:uuid;index;default:NULL" form:"reply_to"`
 	Nickname  string  `form:"nickname" binding:"required"`
 	Content   string  `form:"content" binding:"required" gorm:"text"`
 	Website   string  `form:"website"`
@@ -18,7 +18,7 @@ type Comment struct {
 	UserAgent string
 	IsAdmin   bool
 
-	ArticleID     *string `gorm:"type:uuid;index" form:"article_id" binding:"required,uuid"`
+	ArticleID     *string `gorm:"type:uuid;index;default:NULL" form:"article_id" binding:"required,uuid"`
 	Article       *Article
 	ChildComments []*Comment `gorm:"foreignkey:ReplyTo" form:"-" binding:"-"`
 }
