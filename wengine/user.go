@@ -43,7 +43,7 @@ func loginHandler(c *gin.Context) {
 	} else {
 		solitudes.System.TokenExpires = time.Now().Add(time.Hour * 4)
 	}
-	c.SetCookie(solitudes.AuthCookie, string(token), int(time.Hour*24*90), "/", solitudes.System.Config.Web.Domain, false, false)
+	c.SetCookie(solitudes.AuthCookie, string(token), int(time.Hour*24*90), "/", "", false, false)
 	c.Redirect(http.StatusFound, "/admin/")
 }
 
