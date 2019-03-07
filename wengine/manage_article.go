@@ -97,11 +97,17 @@ func publishHandler(c *gin.Context) {
 	}
 
 	// edit article
+	var newVersion bool
 	if newArticle.ID != "" {
 		var originArticle solitudes.Article
 		if err := solitudes.System.DB.First(&originArticle, "id = ?", newArticle.ID).Error; err != nil {
 			c.String(http.StatusInternalServerError, err.Error())
 			return
+		}
+		if originArticle.Content != newArticle.Content {
+			newVersion = true
+			// update article version
+			originArticle.Version = originArticle.Version + 1
 		}
 		originArticle.Title = newArticle.Title
 		originArticle.Slug = newArticle.Slug
@@ -112,13 +118,11 @@ func publishHandler(c *gin.Context) {
 		originArticle.IsBook = newArticle.IsBook
 		newArticle = originArticle
 	}
-	// update article version
-	newArticle.Version = newArticle.Version + 1
 
 	// save edit history && article
 	tx := solitudes.System.DB.Begin()
 	err = tx.Save(&newArticle).Error
-	if err == nil {
+	if newVersion && err == nil {
 		var history solitudes.ArticleHistory
 		history.Content = newArticle.Content
 		history.Version = newArticle.Version

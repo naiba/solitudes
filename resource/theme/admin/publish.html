@@ -69,7 +69,8 @@
                     <div class="form-group">
                         <label for="inputCID" class="col-sm-2 control-label">BookRefer</label>
                         <div class="col-sm-10">
-                            <input class="form-control" id="inputCID" value="{{if .Data.article.BookRefer}}{{.Data.article.BookRefer}}{{end}}">
+                            <input class="form-control" id="inputCID"
+                                value="{{if .Data.article.BookRefer}}{{.Data.article.BookRefer}}{{end}}">
                         </div>
                     </div>
                 </div>
@@ -124,9 +125,9 @@
             template: parseInt($("#selTemplate").val()),
             tags: $("#inputTags").val(),
             _csrf: $("#csrfToken").val(),
-            book_refer: $("#inputCID").val(),
             is_book: document.getElementById('cbBook').checked,
         }
+        $("#inputCID").val() && (article.book_refer = $("#inputCID").val())
         $.post("", article, (data, status) => {
             window.location.href = "/" + article.slug
         }).fail((err) => {

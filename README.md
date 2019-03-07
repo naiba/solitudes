@@ -14,17 +14,21 @@
 
 ## Quick start
 
-*your postgres db must exec `CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;`
+1. your postgres **must** enable `uuid` plugin
 
-1. create a data dir
-2. create config file `path/to/data/conf.yml` (example: `data/conf.yml`)
-3. deploy on docker
+    ```sql
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+    ```
+
+2. create a data dir
+3. create config file `path/to/data/conf.yml` (example: `data/conf.yml`)
+4. deploy on docker
 
     ```shell
     docker run --name solitudes -p 8080:8080 -v /path/to/data:/solitudes/data naiba/solitudes
     ```
 
-4. open `https://yourdomain/login` to login Dashboard
+5. open `https://yourdomain/login` to login Dashboard
 
 ## Notice
 
