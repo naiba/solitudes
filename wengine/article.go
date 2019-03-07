@@ -137,7 +137,7 @@ func innerRelatedChapters(pid string) (ps []*solitudes.Article) {
 
 func relatedBook(p *solitudes.Article) {
 	if p.BookRefer != nil {
-		book, err := solitudes.System.SafeCache.GetOrBuild(fmt.Sprintf("%s%d", solitudes.CacheKeyPrefixRelatedArticle, p.BookRefer), func() (interface{}, error) {
+		book, err := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedArticle+*p.BookRefer, func() (interface{}, error) {
 			var book solitudes.Article
 			var err error
 			if err = solitudes.System.DB.First(&book, "id = ?", p.BookRefer).Error; err != nil {
