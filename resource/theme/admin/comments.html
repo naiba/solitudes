@@ -21,6 +21,7 @@
                                     <th>Author</th>
                                     <th>Website</th>
                                     <th>Article</th>
+                                    <th>Version</th>
                                     <th>CreatedAt</th>
                                     <th>Manage</th>
                                 </tr>
@@ -33,8 +34,9 @@
                                     <td>{{.Nickname}}({{.Email}})</td>
                                     <td>{{.Website}}</td>
                                     <td><a target="_black"
-                                            href="/{{.Article.Slug}}/version/{{.Article.Version}}">{{.Article.Title}}</a>
+                                            href="/{{.Article.Slug}}/version/{{.Version}}">{{.Article.Title}}</a>
                                     </td>
+                                    <td>{{.Version}}</td>
                                     <td>{{tf .CreatedAt "02 Jan 2006"}}</td>
                                     <td><button onclick="deleteComment('{{.Article.ID}}','{{.ID}}')"
                                             class="btn btn-warning btn-xs">Delete</button></td>

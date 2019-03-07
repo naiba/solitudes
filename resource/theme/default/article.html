@@ -277,10 +277,11 @@
                 content: $('#id_content').val(),
                 website: $('#id_website').val(),
                 _csrf: $('#id_csrf').val(),
+                version: parseInt('{{.Data.article.Version}}'),
                 slug: $('#id_slug').val(),
             }
             $('#id_reply_to').val() && (data.reply_to = $('#id_reply_to').val())
-            $.post("comment", data, (d) => {
+            $.post("/comment", data, (d) => {
                 window.location.reload()
             }).fail((e) => {
                 alert("Submit faile: " + e.responseText)

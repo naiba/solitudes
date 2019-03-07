@@ -15,6 +15,7 @@ type commentForm struct {
 	Content  string  `form:"content" binding:"required" gorm:"text"`
 	Slug     string  `form:"slug" binding:"required" gorm:"index"`
 	Website  string  `form:"website" binding:"omitempty,url"`
+	Version  uint    `form:"version" binding:"required"`
 	Email    string  `form:"email" binding:"omitempty,email"`
 }
 
@@ -29,6 +30,11 @@ func commentHandler(c *gin.Context) {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
+	if cf.Version > article.Version || cf.Version == 0 {
+		c.String(http.StatusBadRequest, "Error invalid version")
+		return
+	}
+
 	var commentType string
 	if cf.ReplyTo != nil {
 		commentType = "reply"
@@ -74,7 +80,7 @@ func commentHandler(c *gin.Context) {
 	cm.Website = cf.Website
 	cm.Email = cf.Email
 	cm.IP = c.ClientIP()
-	cm.Version = article.Version
+	cm.Version = cf.Version
 	cm.UserAgent = c.Request.Header.Get("User-Agent")
 	cm.IsAdmin = c.GetBool(solitudes.CtxAuthorized)
 	tx := solitudes.System.DB.Begin()
