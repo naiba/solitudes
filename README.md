@@ -10,6 +10,7 @@
 - Easy to build a book
 - SEO friendly
 - Full text search
+- Article history
 
 ## Quick start
 
