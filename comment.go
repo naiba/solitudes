@@ -6,7 +6,7 @@ import "time"
 type Comment struct {
 	ID        string `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	CreatedAt time.Time
-	DeletedAt time.Time
+	UpdatedAt time.Time
 
 	ReplyTo   uint   `form:"reply_to" json:"reply_to,omitempty"`
 	Nickname  string `form:"nickname" binding:"required" json:"name,omitempty"`

@@ -112,10 +112,7 @@ func publishHandler(c *gin.Context) {
 		originArticle.BookRefer = newArticle.BookRefer
 		originArticle.IsBook = newArticle.IsBook
 		newArticle = originArticle
-	} else {
-		newArticle.DeletedAt = nil
 	}
-
 	// update article version
 	newArticle.Version = newArticle.Version + 1
 

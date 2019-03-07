@@ -29,7 +29,7 @@ type SibilingArticle struct {
 type Article struct {
 	ID        string `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	CreatedAt time.Time
-	DeletedAt time.Time
+	UpdatedAt time.Time
 
 	Slug       string         `form:"slug" binding:"required" gorm:"unique_index" json:"slug,omitempty"`
 	Title      string         `form:"title" binding:"required" json:"title,omitempty"`
