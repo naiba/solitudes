@@ -20,10 +20,13 @@ type commentForm struct {
 }
 
 func commentHandler(c *gin.Context) {
+	isAdmin := c.GetBool(solitudes.CtxAuthorized)
 	var cf commentForm
 	if err := c.ShouldBind(&cf); err != nil {
-		c.String(http.StatusBadRequest, err.Error())
-		return
+		if !isAdmin {
+			c.String(http.StatusBadRequest, err.Error())
+			return
+		}
 	}
 	var article solitudes.Article
 	if err := solitudes.System.DB.Select("id,version").First(&article, "slug = ?", cf.Slug).Error; err != nil {
@@ -49,13 +52,13 @@ func commentHandler(c *gin.Context) {
 	}
 
 	// akismet anti spam
-	if solitudes.System.Config.Web.Akismet != "" {
+	if solitudes.System.Config.Web.Akismet != "" && !isAdmin {
 		isSpam, err := akismet.Check(&akismet.Comment{
 			Blog:               "https://" + solitudes.System.Config.Web.Domain, // required
 			UserIP:             c.ClientIP(),                                    // required
-			UserAgent:          c.Request.Header.Get("User-Agent"),              // required
+			UserAgent:          c.GetHeader("User-Agent"),                       // required
 			CommentType:        commentType,
-			Referrer:           c.Request.Header.Get("Referer"),
+			Referrer:           c.GetHeader("Referer"),
 			Permalink:          "https://" + solitudes.System.Config.Web.Domain + "/" + cf.Slug,
 			CommentAuthor:      cf.Nickname,
 			CommentAuthorEmail: cf.Email,
@@ -67,22 +70,27 @@ func commentHandler(c *gin.Context) {
 			return
 		}
 		if isSpam {
-			c.String(http.StatusForbidden, "Spam")
+			c.String(http.StatusForbidden, "Rejected by Akismet Anti-Spam System")
 			return
 		}
 	}
 
 	var cm solitudes.Comment
 	cm.ReplyTo = cf.ReplyTo
-	cm.Nickname = cf.Nickname
 	cm.Content = cf.Content
 	cm.ArticleID = &article.ID
-	cm.Website = cf.Website
-	cm.Email = cf.Email
-	cm.IP = c.ClientIP()
+	if isAdmin {
+		cm.Nickname = solitudes.System.Config.Web.User.Nickname
+		cm.Email = solitudes.System.Config.Web.User.Email
+	} else {
+		cm.Nickname = cf.Nickname
+		cm.Email = cf.Email
+		cm.Website = cf.Website
+		cm.IP = c.ClientIP()
+		cm.UserAgent = c.GetHeader("UserAgent")
+	}
+	cm.IsAdmin = isAdmin
 	cm.Version = cf.Version
-	cm.UserAgent = c.Request.Header.Get("User-Agent")
-	cm.IsAdmin = c.GetBool(solitudes.CtxAuthorized)
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Save(&cm).Error; err != nil {
 		tx.Rollback()

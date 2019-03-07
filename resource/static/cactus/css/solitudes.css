@@ -89,3 +89,7 @@ table thead {
     color: #666;
     background: none;
 }
+
+.comment-meta.admin a:first-child {
+    color: #cc2a41;
+}

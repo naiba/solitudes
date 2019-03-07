@@ -168,6 +168,9 @@
     {{end}}
     <div id="reply">
         <textarea cols="40" rows="6" id="id_content"></textarea>
+        {{if .Login}}
+        <input type="hidden" maxlength="64" value="{{.Conf.Web.User.Nickname}}" id="id_nickname">
+        {{else}}
         <div class="row">
             <div class="col-xs-4">
                 <input placeholder="Nickname" maxlength="64" id="id_nickname">
@@ -179,6 +182,7 @@
                 <input placeholder="Website (Not Required)" maxlength="200" id="id_website">
             </div>
         </div>
+        {{end}}
         <button onclick="comment(this)" class="search-button">Submit</button>
         <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
         <input type="hidden" id="id_reply_to" value="">
