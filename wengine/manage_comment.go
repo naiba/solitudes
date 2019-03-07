@@ -31,28 +31,26 @@ func comments(c *gin.Context) {
 
 func deleteComment(c *gin.Context) {
 	id := c.Query("id")
-	articleStrID := c.Query("aid")
-	intID, err := strconv.ParseInt(id, 10, 32)
-	articleID, err2 := strconv.ParseInt(articleStrID, 10, 32)
+	articleID := c.Query("aid")
 
-	if err != nil || err2 != nil || articleID == 0 || intID == 0 {
+	if len(id) < 10 || len(articleID) < 10 {
 		c.String(http.StatusForbidden, "Error id")
 		return
 	}
 
 	tx := solitudes.System.DB.Begin()
-	if err = tx.Delete(&solitudes.Comment{}, "id =?", intID).Error; err != nil {
+	if err := tx.Delete(&solitudes.Comment{}, "id =?", id).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	if err = tx.Model(solitudes.Article{}).Where("id = ?", articleID).
+	if err := tx.Model(solitudes.Article{}).Where("id = ?", articleID).
 		UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	if err = tx.Commit().Error; err != nil {
+	if err := tx.Commit().Error; err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
