@@ -14,6 +14,8 @@
 
 ## Quick start
 
+*your postgres db must exec `CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;`
+
 1. create a data dir
 2. create config file `path/to/data/conf.yml` (example: `data/conf.yml`)
 3. deploy on docker
