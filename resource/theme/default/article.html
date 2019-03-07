@@ -181,7 +181,7 @@
         </div>
         <button onclick="comment(this)" class="search-button">Submit</button>
         <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
-        <input type="hidden" id="id_reply_to">
+        <input type="hidden" id="id_reply_to" value="">
         <input type="hidden" value="{{.CSRF}}" id="id_csrf">
     </div>
 
@@ -277,7 +277,7 @@
                 content: $('#id_content').val(),
                 website: $('#id_website').val(),
                 _csrf: $('#id_csrf').val(),
-                reply_to: $('#id_reply_to').val() ? parseInt($('#id_reply_to').val()) : 0,
+                reply_to: $('#id_reply_to').val(),
                 slug: $('#id_slug').val(),
             }, (d) => {
                 window.location.reload()

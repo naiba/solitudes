@@ -69,8 +69,7 @@
                     <div class="form-group">
                         <label for="inputCID" class="col-sm-2 control-label">BookRefer</label>
                         <div class="col-sm-10">
-                            <input type="number" class="form-control" id="inputCID" placeholder="0"
-                                value="{{.Data.article.BookRefer}}">
+                            <input type="number" class="form-control" id="inputCID" value="{{.Data.article.BookRefer}}">
                         </div>
                     </div>
                 </div>
@@ -118,14 +117,14 @@
         }
         $(btn).toggleClass("disabled")
         var article = {
-            ID: $("#inputID").val() ? parseInt($("#inputID").val()) : 0,
+            ID: $("#inputID").val(),
             title: $("#inputTitle").val(),
             slug: $("#inputSlug").val(),
             content: editor.getMarkdown(),
             template: parseInt($("#selTemplate").val()),
             tags: $("#inputTags").val(),
             _csrf: $("#csrfToken").val(),
-            book_refer: $("#inputCID").val() ? parseInt($("#inputCID").val()) : 0,
+            book_refer: $("#inputCID").val(),
             is_book: document.getElementById('cbBook').checked,
         }
         $.post("", article, (data, status) => {
