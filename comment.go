@@ -8,17 +8,17 @@ type Comment struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	ReplyTo   uint   `form:"reply_to" json:"reply_to,omitempty"`
-	Nickname  string `form:"nickname" binding:"required" json:"name,omitempty"`
-	Content   string `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
-	Website   string `form:"website" json:"website,omitempty"`
+	ReplyTo   string `gorm:"type:uuid;index" form:"reply_to"`
+	Nickname  string `form:"nickname" binding:"required"`
+	Content   string `form:"content" binding:"required" gorm:"text"`
+	Website   string `form:"website"`
 	Version   uint   `form:"-"`
-	Email     string `form:"email" json:"email,omitempty"`
-	IP        string `gorm:"inet" json:"ip,omitempty"`
-	UserAgent string `json:"user_agent,omitempty"`
-	IsAdmin   bool   `json:"is_admin,omitempty"`
+	Email     string `form:"email"`
+	IP        string `gorm:"inet"`
+	UserAgent string
+	IsAdmin   bool
 
-	ArticleID     uint       `form:"article_id" binding:"required" gorm:"index" json:"article_id,omitempty"`
-	Article       *Article   `json:"article,omitempty"`
+	ArticleID     string `gorm:"type:uuid;index" form:"article_id" binding:"required"`
+	Article       *Article
 	ChildComments []*Comment `gorm:"foreignkey:ReplyTo" form:"-" binding:"-"`
 }

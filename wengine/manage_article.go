@@ -98,7 +98,7 @@ func publishHandler(c *gin.Context) {
 	}
 
 	// edit article
-	if newArticle.ID != 0 {
+	if newArticle.ID != "" {
 		var originArticle solitudes.Article
 		if err := solitudes.System.DB.First(&originArticle, "id = ?", newArticle.ID).Error; err != nil {
 			c.String(http.StatusInternalServerError, err.Error())

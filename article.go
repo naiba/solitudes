@@ -14,9 +14,9 @@ type ArticleTOC struct {
 	Title     string
 	Slug      string
 	SubTitles []*ArticleTOC
-	Parent    *ArticleTOC `gorm:"-" json:"-"`
-	Level     int         `gorm:"-" json:"-"`
-	ShowLevel int         `gorm:"-" json:"-"`
+	Parent    *ArticleTOC `gorm:"-"`
+	Level     int         `gorm:"-"`
+	ShowLevel int         `gorm:"-"`
 }
 
 // SibilingArticle 相邻文章
@@ -31,24 +31,24 @@ type Article struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	Slug       string         `form:"slug" binding:"required" gorm:"unique_index" json:"slug,omitempty"`
-	Title      string         `form:"title" binding:"required" json:"title,omitempty"`
-	Content    string         `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
-	TemplateID byte           `form:"template" binding:"required" json:"template_id,omitempty"`
-	IsBook     bool           `form:"is_book" json:"is_book,omitempty"`
-	RawTags    string         `form:"tags" gorm:"-" json:"-"`
-	Tags       pq.StringArray `gorm:"index;type:varchar(255)[]" json:"tags,omitempty"`
-	ReadNum    uint           `gorm:"default:0;" json:"read_num,omitempty"`
+	Slug       string         `form:"slug" binding:"required" gorm:"unique_index"`
+	Title      string         `form:"title" binding:"required"`
+	Content    string         `form:"content" binding:"required" gorm:"text"`
+	TemplateID byte           `form:"template" binding:"required"`
+	IsBook     bool           `form:"is_book"`
+	RawTags    string         `form:"tags" gorm:"-"`
+	Tags       pq.StringArray `gorm:"index;type:varchar(255)[]"`
+	ReadNum    uint           `gorm:"default:0;"`
 	CommentNum uint           `gorm:"default:0;"`
 	Version    uint           `form:"version" gorm:"default:1;"`
-	BookRefer  uint           `form:"book_refer" gorm:"index" json:"book_refer,omitempty"`
+	BookRefer  uint           `form:"book_refer" gorm:"index"`
 
-	Comments         []*Comment `json:"comments,omitempty"`
+	Comments         []*Comment 
 	ArticleHistories []*ArticleHistory
 	Toc              []*ArticleTOC    `gorm:"-"`
 	Chapters         []*Article       `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
-	Book             *Article         `gorm:"-" binding:"-" form:"-" json:"-"`
-	SibilingArticle  *SibilingArticle `gorm:"-" binding:"-" form:"-" json:"-"`
+	Book             *Article         `gorm:"-" binding:"-" form:"-"`
+	SibilingArticle  *SibilingArticle `gorm:"-" binding:"-" form:"-"`
 }
 
 // ArticleIndex index data

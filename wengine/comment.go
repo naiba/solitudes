@@ -10,12 +10,12 @@ import (
 )
 
 type commentForm struct {
-	ReplyTo  uint   `form:"reply_to" json:"reply_to,omitempty"`
-	Nickname string `form:"nickname" binding:"required" json:"name,omitempty"`
-	Content  string `form:"content" binding:"required" gorm:"text" json:"content,omitempty"`
-	Slug     string `form:"slug" binding:"required" gorm:"index" json:"article_id,omitempty"`
-	Website  string `form:"website,omitempty" binding:"omitempty,url" json:"website,omitempty"`
-	Email    string `form:"email,omitempty" binding:"omitempty,email" json:"email,omitempty"`
+	ReplyTo  string `form:"reply_to" binding:"uuid4"`
+	Nickname string `form:"nickname" binding:"required"`
+	Content  string `form:"content" binding:"required" gorm:"text"`
+	Slug     string `form:"slug" binding:"required" gorm:"index"`
+	Website  string `form:"website,omitempty" binding:"omitempty,url"`
+	Email    string `form:"email,omitempty" binding:"omitempty,email"`
 }
 
 func commentHandler(c *gin.Context) {
@@ -30,7 +30,7 @@ func commentHandler(c *gin.Context) {
 		return
 	}
 	var commentType string
-	if cf.ReplyTo != 0 {
+	if cf.ReplyTo != "" {
 		commentType = "reply"
 		var count int
 		solitudes.System.DB.Model(solitudes.Comment{}).Where("id = ?", cf.ReplyTo).Count(&count)

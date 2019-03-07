@@ -125,7 +125,7 @@ func relatedChapters(p *solitudes.Article) {
 	}
 }
 
-func innerRelatedChapters(pid uint) (ps []*solitudes.Article) {
+func innerRelatedChapters(pid string) (ps []*solitudes.Article) {
 	solitudes.System.DB.Order("id ASC", true).Find(&ps, "book_refer=?", pid)
 	for i := 0; i < len(ps); i++ {
 		if ps[i].IsBook {
@@ -154,8 +154,8 @@ func relatedBook(p *solitudes.Article) {
 
 func relatedChildComments(a *solitudes.Article, cm []*solitudes.Comment, root bool) {
 	if root {
-		var idMaptoComment = make(map[uint]*solitudes.Comment)
-		var idArray []uint
+		var idMaptoComment = make(map[string]*solitudes.Comment)
+		var idArray []string
 		// map to index
 		for i := 0; i < len(cm); i++ {
 			idMaptoComment[cm[i].ID] = cm[i]
@@ -167,7 +167,7 @@ func relatedChildComments(a *solitudes.Article, cm []*solitudes.Comment, root bo
 		SELECT * FROM cs ORDER BY id;`, idArray).Scan(&cms)
 		// map to index
 		for i := 0; i < len(cms); i++ {
-			if cms[i].ReplyTo != 0 {
+			if cms[i].ReplyTo != "" {
 				idMaptoComment[cms[i].ID] = cms[i]
 			}
 		}
