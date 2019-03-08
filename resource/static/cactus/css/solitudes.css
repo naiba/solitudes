@@ -25,6 +25,7 @@
 
 #reply-list .comment-meta {
     margin: 0;
+    word-wrap: break-word;
 }
 
 #reply-list time {
