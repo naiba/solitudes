@@ -40,7 +40,7 @@ type Article struct {
 	Tags       pq.StringArray `gorm:"index;type:varchar(255)[]"`
 	ReadNum    uint           `gorm:"default:0;"`
 	CommentNum uint           `gorm:"default:0;"`
-	Version    uint           `form:"version" gorm:"default:1;"`
+	Version    uint           `gorm:"default:1;"`
 	BookRefer  *string        `form:"book_refer" binding:"omitempty,uuid4" gorm:"type:uuid;index;default:NULL"`
 
 	Comments         []*Comment
@@ -49,6 +49,9 @@ type Article struct {
 	Chapters         []*Article       `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
 	Book             *Article         `gorm:"-" binding:"-" form:"-"`
 	SibilingArticle  *SibilingArticle `gorm:"-" binding:"-" form:"-"`
+
+	// for form
+	NewVersion bool `gorm:"-" form:"new_version"`
 }
 
 // ArticleIndex index data

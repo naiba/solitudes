@@ -89,49 +89,33 @@ func deleteArticle(c *gin.Context) {
 func publishHandler(c *gin.Context) {
 	var err error
 	// new or edit article
-	var newArticle solitudes.Article
+	var af solitudes.Article
 
-	if err = c.ShouldBind(&newArticle); err != nil {
+	if err = c.ShouldBind(&af); err != nil {
 		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 
 	// edit article
-	var newVersion bool
-	if newArticle.ID != "" {
-		var originArticle solitudes.Article
-		if err := solitudes.System.DB.First(&originArticle, "id = ?", newArticle.ID).Error; err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-		if originArticle.Content != newArticle.Content {
-			newVersion = true
-			// update article version
-			originArticle.Version = originArticle.Version + 1
-		}
-		originArticle.Title = newArticle.Title
-		originArticle.Slug = newArticle.Slug
-		originArticle.Content = newArticle.Content
-		originArticle.TemplateID = newArticle.TemplateID
-		originArticle.RawTags = newArticle.RawTags
-		originArticle.BookRefer = newArticle.BookRefer
-		originArticle.IsBook = newArticle.IsBook
-		newArticle = originArticle
+	var article *solitudes.Article
+	if article, err = fetchOriginArticle(&af); err != nil {
+		c.String(http.StatusForbidden, err.Error())
+		return
 	}
 
 	// save edit history && article
 	tx := solitudes.System.DB.Begin()
-	err = tx.Save(&newArticle).Error
-	if newVersion && err == nil {
+	err = tx.Save(&article).Error
+	if article.NewVersion && err == nil {
 		var history solitudes.ArticleHistory
-		history.Content = newArticle.Content
-		history.Version = newArticle.Version
-		history.ArticleID = newArticle.ID
+		history.Content = article.Content
+		history.Version = article.Version
+		history.ArticleID = article.ID
 		err = tx.Save(&history).Error
 	}
 	if err == nil {
 		// indexing serch engine
-		err = solitudes.System.Search.Index(newArticle.GetIndexID(), newArticle.ToIndexData())
+		err = solitudes.System.Search.Index(article.GetIndexID(), article.ToIndexData())
 	}
 	if err != nil {
 		tx.Rollback()
@@ -142,4 +126,25 @@ func publishHandler(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+}
+
+func fetchOriginArticle(af *solitudes.Article) (*solitudes.Article, error) {
+	if af.ID == "" {
+		return af, nil
+	}
+	var originArticle solitudes.Article
+	if err := solitudes.System.DB.First(&originArticle, "id = ?", af.ID).Error; err != nil {
+		return nil, err
+	}
+	if af.NewVersion {
+		originArticle.Version++
+	}
+	originArticle.Title = af.Title
+	originArticle.Slug = af.Slug
+	originArticle.Content = af.Content
+	originArticle.TemplateID = af.TemplateID
+	originArticle.RawTags = af.RawTags
+	originArticle.BookRefer = af.BookRefer
+	originArticle.IsBook = af.IsBook
+	return &originArticle, nil
 }
