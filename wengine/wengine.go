@@ -106,4 +106,8 @@ func routerSwitch(c *gin.Context) {
 		}))
 		return
 	}
+	c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
+		"title": "404 Page Not Found",
+		"msg":   "Wow ... This page may fly to Mars.",
+	}))
 }
