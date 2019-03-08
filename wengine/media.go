@@ -50,10 +50,10 @@ func media(c *gin.Context) {
 		var item mediaInfo
 		item.UploadedAt = files[i].ModTime()
 		item.Filename = files[i].Name()
-		if err := solitudes.System.DB.First(&item.Article, "content like ?", "%(/upload/"+item.Filename+")%").Error; err == gorm.ErrRecordNotFound {
+		if err := solitudes.System.DB.Take(&item.Article, "content like ?", "%(/upload/"+item.Filename+")%").Error; err == gorm.ErrRecordNotFound {
 			var ah solitudes.ArticleHistory
-			if solitudes.System.DB.First(&ah, "content like ?", "%(/upload/"+item.Filename+")%").Error == nil {
-				solitudes.System.DB.First(&item.Article, "id = ?", ah.ArticleID)
+			if solitudes.System.DB.Take(&ah, "content like ?", "%(/upload/"+item.Filename+")%").Error == nil {
+				solitudes.System.DB.Take(&item.Article, "id = ?", ah.ArticleID)
 				item.Article.Version = ah.Version
 			}
 		}

@@ -21,7 +21,7 @@ func archive(c *gin.Context) {
 		DB:      solitudes.System.DB,
 		Page:    int(page),
 		Limit:   15,
-		OrderBy: []string{"created_at desc"},
+		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
 		"title":    "Archive",
@@ -42,7 +42,7 @@ func tags(c *gin.Context) {
 		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", pageSlice[1]),
 		Page:    int(page),
 		Limit:   15,
-		OrderBy: []string{"created_at desc"},
+		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
 		"title":    "Articles in \"" + pageSlice[1] + "\"",

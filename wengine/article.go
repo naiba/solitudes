@@ -17,7 +17,7 @@ func article(c *gin.Context) {
 
 	// load article
 	var a solitudes.Article
-	if err := solitudes.System.DB.First(&a, "slug = ?", slug[1]).Error; err == gorm.ErrRecordNotFound {
+	if err := solitudes.System.DB.Take(&a, "slug = ?", slug[1]).Error; err == gorm.ErrRecordNotFound {
 		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
 			"title": "404 Page Not Found",
 			"msg":   "Wow ... This page may fly to Mars.",
@@ -44,7 +44,7 @@ func article(c *gin.Context) {
 			return
 		}
 		var history solitudes.ArticleHistory
-		if err := solitudes.System.DB.First(&history, "article_id = ? and version = ?", a.ID, slug[2]).Error; err == gorm.ErrRecordNotFound {
+		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, slug[2]).Error; err == gorm.ErrRecordNotFound {
 			c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
 				"title": "404 Page Not Found",
 				"msg":   "Wow ... This page may fly to Mars.",
@@ -97,12 +97,12 @@ func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next s
 	sibiling, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedSiblingArticle+p.ID, func() (interface{}, error) {
 		var sb solitudes.SibilingArticle
 		if p.BookRefer == nil {
-			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "created_at > ?", p.CreatedAt)
-			solitudes.System.DB.Select("id,title,slug").Where("created_at < ?", p.CreatedAt).Order("created_at DESC", true).First(&sb.Prev)
+			solitudes.System.DB.Select("id,title,slug").Order("created_at ASC").Take(&sb.Next, "book_refer is null and created_at > ?", p.CreatedAt)
+			solitudes.System.DB.Select("id,title,slug").Order("created_at DESC").Where("book_refer is null and created_at < ?", p.CreatedAt).Take(&sb.Prev)
 		} else {
-			// if this is a book section
-			solitudes.System.DB.Select("id,title,slug").First(&sb.Next, "book_refer = ? and  created_at > ?", p.BookRefer, p.CreatedAt)
-			solitudes.System.DB.Select("id,title,slug").Where("book_refer = ? and  created_at < ?", p.BookRefer, p.CreatedAt).Order("created_at DESC", true).First(&sb.Prev)
+			// if this is a book chapter
+			solitudes.System.DB.Select("id,title,slug").Order("created_at ASC").Take(&sb.Next, "book_refer = ? and  created_at > ?", p.BookRefer, p.CreatedAt)
+			solitudes.System.DB.Select("id,title,slug").Order("created_at DESC").Where("book_refer = ? and  created_at < ?", p.BookRefer, p.CreatedAt).Take(&sb.Prev)
 		}
 		return sb, nil
 	})
@@ -126,7 +126,7 @@ func relatedChapters(p *solitudes.Article) {
 }
 
 func innerRelatedChapters(pid string) (ps []*solitudes.Article) {
-	solitudes.System.DB.Order("created_at ASC", true).Find(&ps, "book_refer=?", pid)
+	solitudes.System.DB.Order("created_at ASC").Find(&ps, "book_refer=?", pid)
 	for i := 0; i < len(ps); i++ {
 		if ps[i].IsBook {
 			ps[i].Chapters = innerRelatedChapters(ps[i].ID)
@@ -140,7 +140,7 @@ func relatedBook(p *solitudes.Article) {
 		book, err := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedArticle+*p.BookRefer, func() (interface{}, error) {
 			var book solitudes.Article
 			var err error
-			if err = solitudes.System.DB.First(&book, "id = ?", p.BookRefer).Error; err != nil {
+			if err = solitudes.System.DB.Take(&book, "id = ?", p.BookRefer).Error; err != nil {
 				return nil, err
 			}
 			return book, err

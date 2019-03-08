@@ -32,7 +32,7 @@ func publish(c *gin.Context) {
 	id := c.Query("id")
 	var article solitudes.Article
 	if id != "" {
-		solitudes.System.DB.First(&article, "id = ?", id)
+		solitudes.System.DB.Take(&article, "id = ?", id)
 	}
 	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, true, gin.H{
 		"title":     "Publish new article",
@@ -48,7 +48,7 @@ func deleteArticle(c *gin.Context) {
 		return
 	}
 	var a solitudes.Article
-	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").First(&a, "id = ?", id).Error; err != nil {
+	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
 		c.String(http.StatusForbidden, err.Error())
 		return
 	}
@@ -133,7 +133,7 @@ func fetchOriginArticle(af *solitudes.Article) (*solitudes.Article, error) {
 		return af, nil
 	}
 	var originArticle solitudes.Article
-	if err := solitudes.System.DB.First(&originArticle, "id = ?", af.ID).Error; err != nil {
+	if err := solitudes.System.DB.Take(&originArticle, "id = ?", af.ID).Error; err != nil {
 		return nil, err
 	}
 	if af.NewVersion {

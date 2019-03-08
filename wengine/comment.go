@@ -84,7 +84,7 @@ func commentHandler(c *gin.Context) {
 }
 
 func verifyArticle(cf *commentForm) (article *solitudes.Article, err error) {
-	if err = solitudes.System.DB.Select("id,version").First(article, "slug = ?", cf.Slug).Error; err != nil {
+	if err = solitudes.System.DB.Select("id,version").Take(article, "slug = ?", cf.Slug).Error; err != nil {
 		return
 	}
 	if cf.Version > article.Version || cf.Version == 0 {
