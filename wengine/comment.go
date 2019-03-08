@@ -83,15 +83,16 @@ func commentHandler(c *gin.Context) {
 	}
 }
 
-func verifyArticle(cf *commentForm) (article *solitudes.Article, err error) {
-	if err = solitudes.System.DB.Select("id,version").Take(article, "slug = ?", cf.Slug).Error; err != nil {
-		return
+func verifyArticle(cf *commentForm) (*solitudes.Article, error) {
+	var article solitudes.Article
+	if err := solitudes.System.DB.Select("id,version").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
+		return nil, err
 	}
 	if cf.Version > article.Version || cf.Version == 0 {
-		err = errors.New("Error invalid version")
-		return
+		err := errors.New("Error invalid version")
+		return nil, err
 	}
-	return
+	return &article, nil
 }
 
 func getCommentType(cf *commentForm) (commentType string, err error) {
