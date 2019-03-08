@@ -1,6 +1,7 @@
 package wengine
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/adtac/go-akismet/akismet"
@@ -22,33 +23,21 @@ type commentForm struct {
 func commentHandler(c *gin.Context) {
 	isAdmin := c.GetBool(solitudes.CtxAuthorized)
 	var cf commentForm
-	if err := c.ShouldBind(&cf); err != nil {
-		if !isAdmin {
-			c.String(http.StatusBadRequest, err.Error())
-			return
-		}
-	}
-	var article solitudes.Article
-	if err := solitudes.System.DB.Select("id,version").First(&article, "slug = ?", cf.Slug).Error; err != nil {
+	if err := c.ShouldBind(&cf); err != nil && !isAdmin {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
-	if cf.Version > article.Version || cf.Version == 0 {
-		c.String(http.StatusBadRequest, "Error invalid version")
+
+	article, err := verifyArticle(&cf)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	var commentType string
-	if cf.ReplyTo != nil {
-		commentType = "reply"
-		var count int
-		solitudes.System.DB.Model(solitudes.Comment{}).Where("id = ?", cf.ReplyTo).Count(&count)
-		if count != 1 {
-			c.String(http.StatusBadRequest, "reply to invaild comment")
-			return
-		}
-	} else {
-		commentType = "comment"
+	commentType, err := getCommentType(&cf)
+	if err != nil {
+		c.String(http.StatusBadRequest, err.Error())
+		return
 	}
 
 	// akismet anti spam
@@ -65,32 +54,15 @@ func commentHandler(c *gin.Context) {
 			CommentAuthorURL:   cf.Website,
 			CommentContent:     cf.Content,
 		}, solitudes.System.Config.Web.Akismet)
-		if err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
-			return
-		}
-		if isSpam {
+		if err != nil || isSpam {
 			c.String(http.StatusForbidden, "Rejected by Akismet Anti-Spam System")
 			return
 		}
 	}
 
 	var cm solitudes.Comment
-	cm.ReplyTo = cf.ReplyTo
-	cm.Content = cf.Content
-	cm.ArticleID = &article.ID
-	if isAdmin {
-		cm.Nickname = solitudes.System.Config.Web.User.Nickname
-		cm.Email = solitudes.System.Config.Web.User.Email
-	} else {
-		cm.Nickname = cf.Nickname
-		cm.Email = cf.Email
-		cm.Website = cf.Website
-		cm.IP = c.ClientIP()
-		cm.UserAgent = c.GetHeader("UserAgent")
-	}
-	cm.IsAdmin = isAdmin
-	cm.Version = cf.Version
+	fillCommentEntry(c, isAdmin, &cm, &cf, article)
+
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Save(&cm).Error; err != nil {
 		tx.Rollback()
@@ -109,4 +81,48 @@ func commentHandler(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+}
+
+func verifyArticle(cf *commentForm) (article *solitudes.Article, err error) {
+	if err = solitudes.System.DB.Select("id,version").First(article, "slug = ?", cf.Slug).Error; err != nil {
+		return
+	}
+	if cf.Version > article.Version || cf.Version == 0 {
+		err = errors.New("Error invalid version")
+		return
+	}
+	return
+}
+
+func getCommentType(cf *commentForm) (commentType string, err error) {
+	if cf.ReplyTo != nil {
+		commentType = "reply"
+		var count int
+		solitudes.System.DB.Model(solitudes.Comment{}).Where("id = ?", cf.ReplyTo).Count(&count)
+		if count != 1 {
+			err = errors.New("reply to invaild comment")
+			return
+		}
+		return
+	}
+	commentType = "comment"
+	return
+}
+
+func fillCommentEntry(c *gin.Context, isAdmin bool, cm *solitudes.Comment, cf *commentForm, article *solitudes.Article) {
+	cm.ReplyTo = cf.ReplyTo
+	cm.Content = cf.Content
+	cm.ArticleID = &article.ID
+	if isAdmin {
+		cm.Nickname = solitudes.System.Config.Web.User.Nickname
+		cm.Email = solitudes.System.Config.Web.User.Email
+	} else {
+		cm.Nickname = cf.Nickname
+		cm.Email = cf.Email
+		cm.Website = cf.Website
+		cm.IP = c.ClientIP()
+		cm.UserAgent = c.GetHeader("UserAgent")
+	}
+	cm.IsAdmin = isAdmin
+	cm.Version = cf.Version
 }
