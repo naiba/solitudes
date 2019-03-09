@@ -29,7 +29,7 @@
                                 {{range .Data.articles}}
                                 <tr role="row">
                                     <td>{{.ID}}</td>
-                                    <td><a target="_black" href="/{{.Slug}}/version/{{.Version}}">{{.Title}}</a>
+                                    <td><a target="_blank" href="/{{.Slug}}/version/{{.Version}}">{{.Title}}</a>
                                     </td>
                                     <td>{{.ReadNum}}</td>
                                     <td>{{.Slug}}</td>
@@ -37,7 +37,7 @@
                                     <td>{{tf .CreatedAt "02 Jan 2006"}}</td>
                                     <td>
                                         <div class="btn-group btn-group-xs">
-                                            <a href="/admin/publish?id={{.ID}}" target="_black"
+                                            <a href="/admin/publish?id={{.ID}}" target="_blank"
                                                 class="btn btn-warning">Edit</a>
                                             <button onclick="deleteArticle('{{.ID}}')" type="button"
                                                 class="btn btn-danger">Delete</button>

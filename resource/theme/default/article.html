@@ -9,7 +9,7 @@
         <span id="nav">
             <ul>
                 {{range .Conf.Web.HeaderMenus}}
-                <li><a href="{{.Link}}" {{if .Black}} target="_black" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+                <li><a href="{{.Link}}" {{if .Black}} target="_blank" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
                         {{end}}{{.Name}}</a></li>
                 {{end}}
             </ul>
@@ -194,7 +194,7 @@
             <div id="nav-footer" style="display: none">
                 <ul>
                     {{range .Conf.Web.HeaderMenus}}
-                    <li><a href="{{.Link}}" {{if .Black}} target="_black" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
+                    <li><a href="{{.Link}}" {{if .Black}} target="_blank" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
                             {{end}}{{.Name}}</a></li>
                     {{end}}
                 </ul>
