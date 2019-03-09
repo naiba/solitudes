@@ -69,12 +69,14 @@ func commentHandler(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	if err := tx.Model(solitudes.Article{}).
-		Where("id = ?", cm.ArticleID).
-		UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
-		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	if cm.ReplyTo == nil {
+		if err := tx.Model(solitudes.Article{}).
+			Where("id = ?", cm.ArticleID).
+			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
+			tx.Rollback()
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
