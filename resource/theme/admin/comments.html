@@ -38,7 +38,7 @@
                                     </td>
                                     <td>{{.Version}}</td>
                                     <td>{{tf .CreatedAt "02 Jan 2006"}}</td>
-                                    <td><button onclick="deleteComment('{{.Article.ID}}','{{.ID}}')"
+                                    <td><button onclick="deleteComment('{{.Article.ID}}','{{.ID}}','{{.ReplyTo}}')"
                                             class="btn btn-warning btn-xs">Delete</button></td>
                                 </tr>
                                 {{end}}
@@ -55,12 +55,12 @@
     </section>
 </div>
 <script>
-    function deleteComment(aid, commendId) {
+    function deleteComment(aid, commendId, rpl) {
         if (!confirm("Confirm delete?")) {
             return
         }
         $.ajax({
-            url: "/admin/comments?_csrf={{.CSRF }}&aid=" + aid + "&id=" + commendId,
+            url: "/admin/comments?_csrf={{.CSRF }}&aid=" + aid + '&id=' + commendId + '&rpl=' + (rpl=='\x3cnil\x3e'?'':rpl),
             type: 'DELETE',
             success: () => {
                 window.location.reload()

@@ -31,6 +31,7 @@ func comments(c *gin.Context) {
 
 func deleteComment(c *gin.Context) {
 	id := c.Query("id")
+	rpl := c.Query("rpl")
 	articleID := c.Query("aid")
 
 	if len(id) < 10 || len(articleID) < 10 {
@@ -44,11 +45,13 @@ func deleteComment(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	if err := tx.Model(solitudes.Article{}).Where("id = ?", articleID).
-		UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
-		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	if rpl == "" {
+		if err := tx.Model(solitudes.Article{}).Where("id = ?", articleID).
+			UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
+			tx.Rollback()
+			c.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 	if err := tx.Commit().Error; err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
