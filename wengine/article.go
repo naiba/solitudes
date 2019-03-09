@@ -74,7 +74,7 @@ func article(c *gin.Context) {
 		DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", a.ID),
 		Page:    int(page),
 		Limit:   5,
-		OrderBy: []string{"created_at desc"},
+		OrderBy: []string{"created_at DESC"},
 	}, &a.Comments)
 
 	// load prevPost,nextPost

@@ -19,7 +19,7 @@ func manageArticle(c *gin.Context) {
 		DB:      solitudes.System.DB,
 		Page:    int(page),
 		Limit:   15,
-		OrderBy: []string{"created_at desc"},
+		OrderBy: []string{"updated_at DESC"},
 	}, &as)
 	c.HTML(http.StatusOK, "admin/articles", soligin.Soli(c, true, gin.H{
 		"title":    "Manage Articles",

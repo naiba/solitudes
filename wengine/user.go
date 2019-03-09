@@ -61,7 +61,7 @@ func logoutHandler(c *gin.Context) {
 
 func index(c *gin.Context) {
 	var as []solitudes.Article
-	solitudes.System.DB.Order("created_at DESC").Limit(10).Find(&as)
+	solitudes.System.DB.Order("updated_at DESC").Limit(10).Find(&as)
 	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, false, gin.H{
 		"title":    "Home",
 		"bio":      solitudes.System.Config.Web.Bio,
