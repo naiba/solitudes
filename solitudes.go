@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/panjf2000/ants"
+
 	"github.com/jinzhu/gorm"
 	"github.com/patrickmn/go-cache"
 	"github.com/spf13/viper"
@@ -69,6 +71,14 @@ func newSafeCache() *SafeCache {
 	}
 }
 
+func newPool() *ants.Pool {
+	p, err := ants.NewPool(20000)
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
 func newDatabase(conf *Config) *gorm.DB {
 	if conf.Web.Database == "" {
 		return nil
@@ -96,13 +106,15 @@ func newConfig() *Config {
 	return &c
 }
 
-func newSystem(c *Config, d *gorm.DB, h *cache.Cache, sc *SafeCache, s bleve.Index) *SysVeriable {
+func newSystem(c *Config, d *gorm.DB, h *cache.Cache, sc *SafeCache,
+	s bleve.Index, p *ants.Pool) *SysVeriable {
 	return &SysVeriable{
 		Config:    c,
 		DB:        d,
 		Cache:     h,
 		Search:    s,
 		SafeCache: sc,
+		Pool:      p,
 	}
 }
 
@@ -120,6 +132,7 @@ func provide() {
 		newSystem,
 		newBleveIndex,
 		newSafeCache,
+		newPool,
 	}
 	var err error
 	for i := 0; i < len(providers); i++ {
@@ -142,15 +155,24 @@ func BuildArticleIndex() {
 	os.Remove("data/bleve.article")
 	System.Search = newBleveIndex()
 	var as []Article
-	System.DB.Find(&as)
+	var hs []ArticleHistory
+	var wg sync.WaitGroup
+	wg.Add(2)
+	System.Pool.Submit(func() {
+		System.DB.Find(&as)
+		wg.Done()
+	})
+	System.Pool.Submit(func() {
+		System.DB.Preload("Article").Find(&hs)
+		wg.Done()
+	})
+	wg.Wait()
 	for i := 0; i < len(as); i++ {
 		err := System.Search.Index(as[i].GetIndexID(), as[i].ToIndexData())
 		if err != nil {
 			panic(err)
 		}
 	}
-	var hs []ArticleHistory
-	System.DB.Preload("Article").Find(&hs)
 	for i := 0; i < len(hs); i++ {
 		err := System.Search.Index(hs[i].GetIndexID(), hs[i].ToIndexData())
 		if err != nil {

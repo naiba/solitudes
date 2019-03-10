@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gin-gonic/gin"
@@ -60,30 +61,44 @@ func article(c *gin.Context) {
 	} else {
 		title = a.Title
 	}
-
-	relatedChapters(&a)
-	relatedBook(&a)
-
-	// load root comments
-	pageSlice := c.Query("comment_page")
-	var page int64
-	if pageSlice != "" {
-		page, _ = strconv.ParseInt(pageSlice, 10, 32)
-	}
-	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", a.ID),
-		Page:    int(page),
-		Limit:   5,
-		OrderBy: []string{"created_at DESC"},
-	}, &a.Comments)
-
-	// load prevPost,nextPost
-	relatedSiblingArticle(&a)
-
-	// load childComments
-	relatedChildComments(&a, a.Comments, true)
-
-	a.GenTOC()
+	var wg sync.WaitGroup
+	wg.Add(5)
+	solitudes.System.Pool.Submit(func() {
+		relatedChapters(&a)
+		wg.Done()
+	})
+	solitudes.System.Pool.Submit(func() {
+		relatedBook(&a)
+		wg.Done()
+	})
+	solitudes.System.Pool.Submit(func() {
+		// load prevPost,nextPost
+		relatedSiblingArticle(&a)
+		wg.Done()
+	})
+	solitudes.System.Pool.Submit(func() {
+		a.GenTOC()
+		wg.Done()
+	})
+	var pg *pagination.Paginator
+	solitudes.System.Pool.Submit(func() {
+		// load root comments
+		pageSlice := c.Query("comment_page")
+		var page int64
+		if pageSlice != "" {
+			page, _ = strconv.ParseInt(pageSlice, 10, 32)
+		}
+		pg = pagination.Paging(&pagination.Param{
+			DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", a.ID),
+			Page:    int(page),
+			Limit:   5,
+			OrderBy: []string{"created_at DESC"},
+		}, &a.Comments)
+		// load childComments
+		relatedChildComments(&a, a.Comments, true)
+		wg.Done()
+	})
+	wg.Wait()
 
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
 		"title":        title,

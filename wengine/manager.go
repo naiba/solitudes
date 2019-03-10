@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,16 +17,33 @@ func manager(c *gin.Context) {
 	var articleNum, commentNum int
 	var lastArticle solitudes.Article
 	var lastComment solitudes.Comment
-	solitudes.System.DB.Model(solitudes.Article{}).Count(&articleNum)
-	solitudes.System.DB.Model(solitudes.Comment{}).Count(&commentNum)
-
 	type tagNum struct {
 		Count int
 	}
 	var tn tagNum
-	solitudes.System.DB.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn)
-	solitudes.System.DB.Select("updated_at").Order("updated_at DESC").Take(&lastArticle)
-	solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment)
+
+	var wg sync.WaitGroup
+	solitudes.System.Pool.Submit(func() {
+		solitudes.System.DB.Model(solitudes.Article{}).Count(&articleNum)
+		wg.Done()
+	})
+	solitudes.System.Pool.Submit(func() {
+		solitudes.System.DB.Model(solitudes.Comment{}).Count(&commentNum)
+		wg.Done()
+	})
+	solitudes.System.Pool.Submit(func() {
+		solitudes.System.DB.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn)
+		wg.Done()
+	})
+	solitudes.System.Pool.Submit(func() {
+		solitudes.System.DB.Select("updated_at").Order("updated_at DESC").Take(&lastArticle)
+		wg.Done()
+	})
+	solitudes.System.Pool.Submit(func() {
+		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment)
+		wg.Done()
+	})
+	wg.Wait()
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)

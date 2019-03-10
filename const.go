@@ -6,6 +6,7 @@ import (
 	"github.com/blevesearch/bleve"
 
 	"github.com/jinzhu/gorm"
+	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"
 	"go.uber.org/dig"
 )
@@ -38,6 +39,7 @@ type SysVeriable struct {
 	SafeCache    *SafeCache
 	Token        string
 	TokenExpires time.Time
+	Pool         *ants.Pool
 }
 
 // Injector 运行时依赖注入
