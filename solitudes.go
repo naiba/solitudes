@@ -1,6 +1,7 @@
 package solitudes
 
 import (
+	"os"
 	"sync"
 	"time"
 
@@ -135,12 +136,33 @@ func provide() {
 	}
 }
 
+// BuildArticleIndex 重建索引
+func BuildArticleIndex() {
+	System.Search.Close()
+	os.Remove("data/bleve.article")
+	System.Search = newBleveIndex()
+	var as []Article
+	System.DB.Find(&as)
+	for i := 0; i < len(as); i++ {
+		err := System.Search.Index(as[i].GetIndexID(), as[i].ToIndexData())
+		if err != nil {
+			panic(err)
+		}
+	}
+	var hs []ArticleHistory
+	System.DB.Preload("Article").Find(&hs)
+	for i := 0; i < len(hs); i++ {
+		err := System.Search.Index(hs[i].GetIndexID(), hs[i].ToIndexData())
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
 func init() {
 	Injector = dig.New()
 	provide()
 	if System.DB != nil {
 		migrate()
-		// 重建索引
-		BuildArticleIndex()
 	}
 }

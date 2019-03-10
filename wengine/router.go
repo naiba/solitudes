@@ -91,6 +91,16 @@ var shits = []shitGin{
 		},
 	},
 	{
+		Match: regexp.MustCompile(`^\/admin\/rebuild-bleve$`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: rebuildBleveData,
+		},
+	},
+	{
 		Match: regexp.MustCompile(`^\/admin\/upload$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,

@@ -19,3 +19,13 @@ type ArticleHistory struct {
 func (t *ArticleHistory) GetIndexID() string {
 	return fmt.Sprintf("%s.%d", t.ArticleID, t.Version)
 }
+
+// ToIndexData to index data
+func (t *ArticleHistory) ToIndexData() ArticleIndex {
+	return ArticleIndex{
+		Slug:    t.Article.Slug,
+		Version: fmt.Sprintf("%d", t.Version),
+		Content: t.Content,
+		Title:   t.Article.Title,
+	}
+}

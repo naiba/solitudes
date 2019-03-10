@@ -109,7 +109,21 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col-lg-3 col-xs-6">
+                <button onclick="rebuildBleveData()" class="btn btn-danger btn-lg">Rebuild Bleve Data</button>
+            </div>
+        </div>
     </section>
 </div>
+<script>
+    function rebuildBleveData() {
+        if (confirm('Rebuild Bleve data?')) {
+            $.get("/admin/rebuild-bleve").done(() => {
+                alert("Rebuild successful")
+            })
+        }
+    }
+</script>
 {{template "admin/footer" .}}
 {{end}}
