@@ -6,6 +6,7 @@ go:
   - 1.9.x
   - 1.10.x
   - 1.11.x
+  - 1.12.x
   - master
 
 services:
@@ -17,6 +18,8 @@ matrix:
   fast_finish: true
   include:
   - go: 1.11.x
+    env: GO111MODULE=on
+  - go: 1.12.x
     env: GO111MODULE=on
 
 before_install:
