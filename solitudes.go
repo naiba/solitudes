@@ -154,7 +154,7 @@ func BuildArticleIndex() {
 	if err := System.Search.Close(); err != nil {
 		panic(err)
 	}
-	if err := os.Remove("data/bleve.article"); err != nil {
+	if err := os.RemoveAll("data/bleve.article"); err != nil {
 		panic(err)
 	}
 	System.Search = newBleveIndex()
