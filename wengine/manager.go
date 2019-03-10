@@ -23,6 +23,7 @@ func manager(c *gin.Context) {
 	var tn tagNum
 
 	var wg sync.WaitGroup
+	wg.Add(5)
 	solitudes.System.Pool.Submit(func() {
 		solitudes.System.DB.Model(solitudes.Article{}).Count(&articleNum)
 		wg.Done()

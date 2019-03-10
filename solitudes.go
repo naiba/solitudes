@@ -151,8 +151,12 @@ func provide() {
 
 // BuildArticleIndex 重建索引
 func BuildArticleIndex() {
-	System.Search.Close()
-	os.Remove("data/bleve.article")
+	if err := System.Search.Close(); err != nil {
+		panic(err)
+	}
+	if err := os.Remove("data/bleve.article"); err != nil {
+		panic(err)
+	}
 	System.Search = newBleveIndex()
 	var as []Article
 	var hs []ArticleHistory
