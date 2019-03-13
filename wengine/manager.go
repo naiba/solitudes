@@ -37,11 +37,11 @@ func manager(c *gin.Context) {
 		wg.Done()
 	})
 	solitudes.System.Pool.Submit(func() {
-		solitudes.System.DB.Select("updated_at").Order("updated_at DESC").First(&lastArticle)
+		solitudes.System.DB.Select("updated_at").Order("updated_at DESC").Take(&lastArticle)
 		wg.Done()
 	})
 	solitudes.System.Pool.Submit(func() {
-		solitudes.System.DB.Select("created_at").Order("created_at DESC").First(&lastComment)
+		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment)
 		wg.Done()
 	})
 	wg.Wait()
@@ -53,7 +53,7 @@ func manager(c *gin.Context) {
 		"title":              "Dashboard",
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
-		"lastArticlePublish": fmt.Sprintf("%.2f", time.Now().Sub(lastArticle.CreatedAt).Hours()/24),
+		"lastArticlePublish": fmt.Sprintf("%.2f", time.Now().Sub(lastArticle.UpdatedAt).Hours()/24),
 		"lastComment":        fmt.Sprintf("%.2f", time.Now().Sub(lastComment.CreatedAt).Hours()/24),
 		"tagNum":             tn.Count,
 
