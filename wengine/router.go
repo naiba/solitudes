@@ -2,11 +2,77 @@ package wengine
 
 import (
 	"net/http"
+	"net/http/pprof"
 	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
 )
+
+func init() {
+	if solitudes.System.Config.Debug {
+		pprofPrefix := `^\/debug/pprof`
+		pprofRouters := []shitGin{
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet: pprofHandler(pprof.Index),
+				},
+			},
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/cmdline$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet: pprofHandler(pprof.Cmdline),
+				},
+			},
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/symbol$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet:  pprofHandler(pprof.Symbol),
+					http.MethodPost: pprofHandler(pprof.Symbol),
+				},
+			},
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/trace$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet: pprofHandler(pprof.Trace),
+				},
+			},
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/block$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet: pprofHandler(pprof.Handler("block").ServeHTTP),
+				},
+			},
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/goroutine$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet: pprofHandler(pprof.Handler("goroutine").ServeHTTP),
+				},
+			},
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/heap$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet: pprofHandler(pprof.Handler("heap").ServeHTTP),
+				},
+			},
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/mutex$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet: pprofHandler(pprof.Handler("mutex").ServeHTTP),
+				},
+			},
+			{
+				Match: regexp.MustCompile(pprofPrefix + `/threadcreate$`),
+				Routes: map[string]gin.HandlerFunc{
+					http.MethodGet: pprofHandler(pprof.Handler("threadcreate").ServeHTTP),
+				},
+			},
+		}
+		shits = append(pprofRouters, shits...)
+	}
+}
 
 var shits = []shitGin{
 	{
@@ -173,4 +239,11 @@ var shits = []shitGin{
 			http.MethodGet: article,
 		},
 	},
+}
+
+func pprofHandler(h http.HandlerFunc) gin.HandlerFunc {
+	handler := http.HandlerFunc(h)
+	return func(c *gin.Context) {
+		handler.ServeHTTP(c.Writer, c.Request)
+	}
 }
