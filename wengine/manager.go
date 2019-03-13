@@ -37,11 +37,11 @@ func manager(c *gin.Context) {
 		wg.Done()
 	})
 	solitudes.System.Pool.Submit(func() {
-		solitudes.System.DB.Select("updated_at").Order("updated_at DESC").Take(&lastArticle)
+		solitudes.System.DB.Select("updated_at").Order("updated_at DESC").First(&lastArticle)
 		wg.Done()
 	})
 	solitudes.System.Pool.Submit(func() {
-		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment)
+		solitudes.System.DB.Select("created_at").Order("created_at DESC").First(&lastComment)
 		wg.Done()
 	})
 	wg.Wait()
