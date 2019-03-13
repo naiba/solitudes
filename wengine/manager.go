@@ -57,7 +57,7 @@ func manager(c *gin.Context) {
 		"lastComment":        fmt.Sprintf("%.2f", time.Now().Sub(lastComment.CreatedAt).Hours()/24),
 		"tagNum":             tn.Count,
 
-		"memoryUsage": bToMb(m.Alloc),
+		"memoryUsage": bToMb(m.Sys),
 		"gcNum":       m.NumGC,
 		"routineNum":  runtime.NumGoroutine(),
 	}))
