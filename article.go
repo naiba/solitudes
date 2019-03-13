@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/lib/pq"
 )
@@ -88,7 +89,6 @@ func (t *Article) AfterFind() {
 }
 
 var titleRegex = regexp.MustCompile(`^\s{0,2}(#{1,6})\s(.*)$`)
-var whitespaces = regexp.MustCompile(`[\s|\.]{1,}`)
 
 // GenTOC 生成标题树
 func (t *Article) GenTOC() {
@@ -104,7 +104,7 @@ func (t *Article) GenTOC() {
 		toc.Level = len(matches[1])
 		toc.ShowLevel = 2
 		toc.Title = string(matches[2])
-		toc.Slug = string(whitespaces.ReplaceAllString(matches[2], "-"))
+		toc.Slug = sanitizedAnchorName(string(matches[2]))
 		if currentToc == nil {
 			t.Toc = append(t.Toc, &toc)
 			currentToc = &toc
@@ -143,4 +143,36 @@ func (t *Article) GenTOC() {
 		}
 		currentToc = &toc
 	}
+	ensureUniqueIDs(make(map[string]int), t.Toc)
+}
+
+// 确保标题 ID 唯一
+func ensureUniqueIDs(ids map[string]int, ts []*ArticleTOC) {
+	for i := 0; i < len(ts); i++ {
+		if count, has := ids[ts[i].Slug]; has {
+			ts[i].Slug = fmt.Sprintf("%s-%d", ts[i].Slug, count+1)
+		} else {
+			ids[ts[i].Slug] = 0
+		}
+		ensureUniqueIDs(ids, ts[i].SubTitles)
+	}
+}
+
+// 生成标题 ID
+func sanitizedAnchorName(text string) string {
+	var anchorName []rune
+	futureDash := false
+	for _, r := range text {
+		switch {
+		case unicode.IsLetter(r) || unicode.IsNumber(r):
+			if futureDash && len(anchorName) > 0 {
+				anchorName = append(anchorName, '-')
+			}
+			futureDash = false
+			anchorName = append(anchorName, unicode.ToLower(r))
+		default:
+			futureDash = true
+		}
+	}
+	return string(anchorName)
 }
