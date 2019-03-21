@@ -123,8 +123,8 @@
             {{template "default/article_chapters" .Data.article}}
             {{end}}
         </div>
+        {{if .Data.article.Book}}
         <footer>
-            {{if .Data.article.Book}}
             book::<a href="/{{.Data.article.Book.Slug}}"><b>{{.Data.article.Book.Title}}</b></a> - chapters index
             <ul>
                 {{if .Data.article.SibilingArticle.Prev.ID}}<li>Prev: <a
@@ -137,8 +137,8 @@
                 </li>
                 {{end}}
             </ul>
-            {{end}}
         </footer>
+        {{end}}
     </article>
 
     <div id="reply-list">
