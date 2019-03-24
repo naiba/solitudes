@@ -78,14 +78,6 @@ article footer {
     margin-top: 40px;
 }
 
-article footer p:last-child {
-    text-align: center;
-}
-
-table thead {
-    border-bottom: 1px dashed gray;
-}
-
 .comment-meta a:nth-child(3) {
     color: #666;
     background: none;
