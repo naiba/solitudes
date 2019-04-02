@@ -86,3 +86,9 @@ article footer {
 .comment-meta.admin a:first-child {
     color: #cc2a41;
 }
+
+@media (max-width:768px) {
+    div.footer-left {
+        height: auto;
+    }
+}
