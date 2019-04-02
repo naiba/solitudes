@@ -21,7 +21,7 @@ func archive(c *gin.Context) {
 		DB:      solitudes.System.DB,
 		Page:    int(page),
 		Limit:   15,
-		OrderBy: []string{"updated_at DESC"},
+		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
 		"title":    "Archive",
