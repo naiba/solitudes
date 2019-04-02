@@ -89,6 +89,6 @@ article footer {
 
 @media (max-width:768px) {
     div.footer-left {
-        height: auto;
+        height: auto !important;
     }
 }
