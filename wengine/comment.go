@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/x/notify"
 )
 
 type commentForm struct {
@@ -83,6 +84,9 @@ func commentHandler(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	//Email notify
+	notify.Email()
 }
 
 func verifyArticle(cf *commentForm) (*solitudes.Article, error) {
