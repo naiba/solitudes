@@ -7,7 +7,7 @@
 
 [![Chinese README](https://img.shields.io/badge/Chinese-README-informational.svg)](README.md) [![English README](https://img.shields.io/badge/English-README-informational.svg)](README_en-US.md)
 
-## 引擎特色
+## 特色
 
 - 一个极简博客引擎
 - 适合长篇多章节文章写作（专栏）
@@ -16,7 +16,7 @@
 - 文章历史版本保存（可浏览可被搜索）
 - Markdown 发布文章
 
-## 快速开始
+## 指南
 
 1. 你的 postgres 服务器**必须**启用 `uuid` 扩展
 
