@@ -25,6 +25,9 @@ func Email(src, dist *solitudes.Comment, article *solitudes.Article) error {
 	if dist == nil || dist.Email == "" {
 		return errors.New("Not replying to a comment or being replied to a person who does not leave a mailbox, without email notification")
 	}
+	if dist.Email == src.Email {
+		return errors.New("Same email from src to dist")
+	}
 	if dist.IsAdmin {
 		return errors.New("Reply to the administrator without notification")
 	}
