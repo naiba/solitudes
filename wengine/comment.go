@@ -87,8 +87,8 @@ func commentHandler(c *gin.Context) {
 
 	//Email notify
 	solitudes.System.Pool.Submit(func() {
-		notify.Email(&cm, replyTo, article)
-
+		err := notify.Email(&cm, replyTo, article)
+		notify.ServerChain(&cm, article, err)
 	})
 }
 

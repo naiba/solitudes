@@ -21,8 +21,11 @@ var sender = gomail.NewPlainDialer(solitudes.System.Config.Email.Host,
 
 //Email notify
 func Email(src, dist *solitudes.Comment, article *solitudes.Article) error {
-	if src.ReplyTo == nil {
-		return errors.New("不是回复评论，无需邮件通知")
+	if dist != nil && dist.Email != "" {
+		return errors.New("Not replying to a comment or being replied to a person who does not leave a mailbox, without email notification")
+	}
+	if dist.IsAdmin {
+		return errors.New("Reply to the administrator without notification")
 	}
 	email := hermes.Email{
 		Body: hermes.Body{

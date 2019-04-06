@@ -1,6 +1,7 @@
 debug: true
 space_name: Solitudes #Site title
 space_desc: In those days when I feel solitude, there is writing to accompany me. #Site description
+server_chain: xxxxxxxxx-xxxxxx
 email:
   host: smtp.163.com
   port: 994
