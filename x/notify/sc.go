@@ -9,6 +9,10 @@ import (
 
 //ServerChan Server酱推送
 func ServerChan(comment *solitudes.Comment, article *solitudes.Article, err error) {
+	// when err == nil skip admin
+	if comment.IsAdmin && err == nil {
+		return
+	}
 	var errmsg string
 	if err != nil {
 		errmsg = `
