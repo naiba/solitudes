@@ -7,17 +7,21 @@ import (
 	"github.com/naiba/solitudes"
 )
 
-//ServerChain Server酱推送
-func ServerChain(comment *solitudes.Comment, article *solitudes.Article, err error) {
-	params := url.Values{"text": {article.Title + " got a new comment"}, "desp": {`
-	### Comment detail
-	
-	- Article:` + article.Title + `
-	- Author:` + comment.Nickname + `(` + comment.Email + `)
-	- Content:` + comment.Content + `
+//ServerChan Server酱推送
+func ServerChan(comment *solitudes.Comment, article *solitudes.Article, err error) {
+	var errmsg string
+	if err != nil {
+		errmsg = `
 
-	### Email notify
+		### Email notify
+		
+		` + err.Error()
+	}
+	params := url.Values{"text": {article.Title + " got a new comment"}, "desp": {
+		`### Comment detail
 
-	` + err.Error()}}
+- Article:` + article.Title + `
+- Author:` + comment.Nickname + `(` + comment.Email + `)
+- Content:` + comment.Content + errmsg}}
 	http.PostForm("https://sc.ftqq.com/"+solitudes.System.Config.ServerChain+".send", params)
 }

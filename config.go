@@ -19,6 +19,7 @@ type Config struct {
 		Port int
 		User string
 		Pass string
+		SSL  bool `mapstructure:"ssl"`
 	}
 	Web struct {
 		Bio           string

@@ -7,6 +7,7 @@ email:
   port: 994
   user: x@163.com
   pass: xxxxxx
+  ssl: true
 web:
   domain: localhost:8080 #Site domain
   database: #Only Postgres postgres://postgres:mypassword@postgres/solitudes?sslmode=disable

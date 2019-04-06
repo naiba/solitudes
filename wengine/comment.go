@@ -88,13 +88,13 @@ func commentHandler(c *gin.Context) {
 	//Email notify
 	solitudes.System.Pool.Submit(func() {
 		err := notify.Email(&cm, replyTo, article)
-		notify.ServerChain(&cm, article, err)
+		notify.ServerChan(&cm, article, err)
 	})
 }
 
 func verifyArticle(cf *commentForm) (*solitudes.Article, error) {
 	var article solitudes.Article
-	if err := solitudes.System.DB.Select("id,version").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
+	if err := solitudes.System.DB.Select("id,version,title,slug").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
 		return nil, err
 	}
 	if cf.Version > article.Version || cf.Version == 0 {
@@ -107,10 +107,12 @@ func verifyArticle(cf *commentForm) (*solitudes.Article, error) {
 func getCommentType(cf *commentForm) (commentType string, replyTo *solitudes.Comment, err error) {
 	if cf.ReplyTo != nil {
 		commentType = "reply"
-		if solitudes.System.DB.Take(&replyTo, "id = ?", cf.ReplyTo).Error != nil {
+		var innerReplyTo solitudes.Comment
+		if solitudes.System.DB.Take(&innerReplyTo, "id = ?", cf.ReplyTo).Error != nil {
 			err = errors.New("reply to invaild comment")
 			return
 		}
+		replyTo = &innerReplyTo
 		return
 	}
 	commentType = "comment"
