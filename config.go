@@ -13,7 +13,13 @@ type Config struct {
 	Debug     bool
 	SpaceName string `mapstructure:"space_name"`
 	SpaceDesc string `mapstructure:"space_desc"`
-	Web       struct {
+	Email     struct {
+		Host string
+		Port int
+		User string
+		Pass string
+	}
+	Web struct {
 		Bio           string
 		Database      string
 		Akismet       string

@@ -1,46 +1,52 @@
 package notify
 
 import (
-	"crypto/tls"
+	"errors"
 
 	"github.com/matcornic/hermes"
+	"github.com/naiba/solitudes"
 	"gopkg.in/gomail.v2"
 )
 
+var h = hermes.Hermes{
+	Product: hermes.Product{
+		Name: solitudes.System.Config.SpaceName,
+		Link: solitudes.System.Config.Web.Domain,
+		Logo: "https://" + solitudes.System.Config.Web.Domain + "/static/cactus/images/logo.png",
+	},
+}
+var sender = gomail.NewPlainDialer(solitudes.System.Config.Email.Host,
+	solitudes.System.Config.Email.Port, solitudes.System.Config.Email.User,
+	solitudes.System.Config.Email.Pass)
+
 //Email notify
-func Email() {
-	//Email notify
-	sender := gomail.NewDialer("smtp.example.com", 587, "user", "123456")
-	sender.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+func Email(src, dist *solitudes.Comment, article *solitudes.Article) error {
+	if src.ReplyTo == nil {
+		return errors.New("不是回复评论，无需邮件通知")
+	}
 	email := hermes.Email{
 		Body: hermes.Body{
-			Name: "Jon Snow",
-			Intros: []string{
-				"Welcome to Hermes! We're very excited to have you on board.",
-			},
+			Name: dist.Nickname,
 			Actions: []hermes.Action{
 				{
-					Instructions: "To get started with Hermes, please click here:",
+					Instructions: "To view the article click this:",
 					Button: hermes.Button{
 						Color: "#22BC66", // Optional action button color
-						Text:  "Confirm your account",
-						Link:  "https://hermes-example.com/confirm?token=d9729feb74992cc3482b350163a1a010",
+						Text:  "View comment",
+						Link:  "https://" + solitudes.System.Config.Web.Domain + "/" + article.Slug,
 					},
 				},
 			},
-			Outros: []string{
-				"Need help, or have questions? Just reply to this email, we'd love to help.",
-			},
 		},
 	}
-
 	emailBody, err := h.GenerateHTML(email)
 	if err != nil {
-		panic(err) // Tip: Handle error with something else than a panic ;)
+		return err
 	}
-
-	emailText, err := h.GeneratePlainText(email)
-	if err != nil {
-		panic(err) // Tip: Handle error with something else than a panic ;)
-	}
+	m := gomail.NewMessage()
+	m.SetHeader("From", solitudes.System.Config.Email.User)
+	m.SetHeader("To", dist.Email)
+	m.SetHeader("Subject", "Your comment in "+article.Title+" got a reply")
+	m.SetBody("text/html", emailBody)
+	return sender.DialAndSend(m)
 }

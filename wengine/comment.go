@@ -35,7 +35,7 @@ func commentHandler(c *gin.Context) {
 		return
 	}
 
-	commentType, err := getCommentType(&cf)
+	commentType, replyTo, err := getCommentType(&cf)
 	if err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
@@ -86,7 +86,10 @@ func commentHandler(c *gin.Context) {
 	}
 
 	//Email notify
-	notify.Email()
+	solitudes.System.Pool.Submit(func() {
+		notify.Email(&cm, replyTo, article)
+
+	})
 }
 
 func verifyArticle(cf *commentForm) (*solitudes.Article, error) {
@@ -101,12 +104,10 @@ func verifyArticle(cf *commentForm) (*solitudes.Article, error) {
 	return &article, nil
 }
 
-func getCommentType(cf *commentForm) (commentType string, err error) {
+func getCommentType(cf *commentForm) (commentType string, replyTo *solitudes.Comment, err error) {
 	if cf.ReplyTo != nil {
 		commentType = "reply"
-		var count int
-		solitudes.System.DB.Model(solitudes.Comment{}).Where("id = ?", cf.ReplyTo).Count(&count)
-		if count != 1 {
+		if solitudes.System.DB.Take(&replyTo, "id = ?", cf.ReplyTo).Error != nil {
 			err = errors.New("reply to invaild comment")
 			return
 		}
