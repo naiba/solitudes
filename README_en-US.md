@@ -5,7 +5,7 @@
 
 :smoking: In those days when I feel solitude, there is writing to accompany me.
 
-[![Chinese README](https://img.shields.io/badge/Chinese-README-informational.svg)](README.md) [![English README](https://img.shields.io/badge/English-README-informational.svg)](README_en-US.md)
+[![简体中文 README](https://img.shields.io/badge/简体中文-README-informational.svg)](README.md) [![English README](https://img.shields.io/badge/English-README-informational.svg)](README_en-US.md)
 
 ## Features
 

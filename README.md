@@ -5,7 +5,7 @@
 
 :smoking: 在那些孤独的日子里，还有写作陪伴着我。
 
-[![Chinese README](https://img.shields.io/badge/Chinese-README-informational.svg)](README.md) [![English README](https://img.shields.io/badge/English-README-informational.svg)](README_en-US.md)
+[![简体中文 README](https://img.shields.io/badge/简体中文-README-informational.svg)](README.md) [![English README](https://img.shields.io/badge/English-README-informational.svg)](README_en-US.md)
 
 ## 特色
 
