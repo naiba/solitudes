@@ -10,11 +10,11 @@ type Menu struct {
 
 // Config 系统配置
 type Config struct {
-	Debug       bool
-	SpaceName   string `mapstructure:"space_name"`
-	SpaceDesc   string `mapstructure:"space_desc"`
-	ServerChain string `mapstructure:"server_chain"`
-	Email       struct {
+	Debug      bool
+	SpaceName  string `mapstructure:"space_name"`
+	SpaceDesc  string `mapstructure:"space_desc"`
+	ServerChan string `mapstructure:"server_chan"`
+	Email      struct {
 		Host string
 		Port int
 		User string
