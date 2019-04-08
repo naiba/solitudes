@@ -27,5 +27,5 @@ func ServerChan(comment *solitudes.Comment, article *solitudes.Article, err erro
 - Article:` + article.Title + `
 - Author:` + comment.Nickname + `(` + comment.Email + `)
 - Content:` + comment.Content + errmsg}}
-	http.PostForm("https://sc.ftqq.com/"+solitudes.System.Config.ServerChain+".send", params)
+	http.PostForm("https://sc.ftqq.com/"+solitudes.System.Config.ServerChan+".send", params)
 }
