@@ -5,10 +5,10 @@
   <ul class="post-list">
     {{range $i,$s  := .Data.articles}}
     {{range $j,$a := $s}}
-    {{if eq $j 0}}<h2>{{$a.UpdatedAt.Year}}</h2>{{end}}
+    {{if eq $j 0}}<h2>{{$a.CreatedAt.Year}}</h2>{{end}}
     <li class="post-item">
       <div class="meta">
-        <time datetime="{{$a.UpdatedAt}}" itemprop="datePublished">{{tf $a.UpdatedAt "02 Jan 2006"}}</time>
+        <time datetime="{{$a.CreatedAt}}" itemprop="datePublished">{{tf $a.CreatedAt "02 Jan 2006"}}</time>
       </div>
       <span>
         <a href="/{{$a.Slug}}">{{$a.Title}}</a>{{if $a.ReadNum}} <small>({{$a.ReadNum}}
