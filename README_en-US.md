@@ -15,6 +15,7 @@
 - Full text search
 - Article history
 - Markdown support
+- Email, ServerChan notification
 
 ## Quick start
 
