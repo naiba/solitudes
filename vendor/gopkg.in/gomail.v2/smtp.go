@@ -31,7 +31,7 @@ type Dialer struct {
 //
 // It fallbacks to the LOGIN mechanism if it is the only mechanism advertised by
 // the server.
-func NewPlainDialer(host string, port int, username, password string, ssl bool) *Dialer {
+func NewPlainDialer(host string, port int, username, password string) *Dialer {
 	return &Dialer{
 		Host: host,
 		Port: port,
@@ -40,7 +40,7 @@ func NewPlainDialer(host string, port int, username, password string, ssl bool) 
 			password: password,
 			host:     host,
 		},
-		SSL: ssl,
+		SSL: port == 465,
 	}
 }
 

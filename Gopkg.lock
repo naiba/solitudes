@@ -203,6 +203,43 @@
   revision = "f9677308dec2b35e76737f9713df328ad11b1fea"
 
 [[projects]]
+  digest = "1:9ca9ccfaa0481e4c277fd73f872975c63b469b8edd99f616198b6362793b9d8d"
+  name = "github.com/go-playground/form"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c78c4d65be236fc54add020b980125b40aeb6386"
+  version = "v3.1.4"
+
+[[projects]]
+  digest = "1:a6d11f138423ec22f255d65cb36ca428d793ccf84ec20b18a490a8b7d1a1c2a6"
+  name = "github.com/go-playground/locales"
+  packages = [
+    ".",
+    "currency",
+    "en",
+    "zh",
+  ]
+  pruneopts = "UT"
+  revision = "f63010822830b6fe52288ee52d5a1151088ce039"
+  version = "v0.12.1"
+
+[[projects]]
+  digest = "1:d6343928d2b52be74a4ce7e932a59206ad2040ef66ba1b8f604343a5429baf7f"
+  name = "github.com/go-playground/pure"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "1eb11d9b1d07356311d782c51797ce0ae202b9ff"
+  version = "v4.1.1"
+
+[[projects]]
+  digest = "1:e022cf244bcac1b6ef933f1a2e0adcf6a6dfd7b872d8d41e4d4179bb09a87cbc"
+  name = "github.com/go-playground/universal-translator"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "b32fa301c9fe55953584134cb6853a13c87ec0a1"
+  version = "v0.16.0"
+
+[[projects]]
   digest = "1:318f1c959a8a740366fce4b1e1eb2fd914036b4af58fbd0a003349b305f118ad"
   name = "github.com/golang/protobuf"
   packages = ["proto"]
@@ -667,6 +704,12 @@
     "github.com/gin-contrib/sessions",
     "github.com/gin-contrib/sessions/cookie",
     "github.com/gin-gonic/gin",
+    "github.com/go-playground/locales",
+    "github.com/go-playground/locales/currency",
+    "github.com/go-playground/locales/en",
+    "github.com/go-playground/locales/zh",
+    "github.com/go-playground/pure",
+    "github.com/go-playground/universal-translator",
     "github.com/jinzhu/gorm",
     "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/lib/pq",

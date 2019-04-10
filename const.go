@@ -18,6 +18,8 @@ const (
 	CtxPassPreHandler = "cpph"
 	// CtxRequestParams 路由参数
 	CtxRequestParams = "crp"
+	// CtxTranslator 翻译
+	CtxTranslator = "ct"
 	// AuthCookie 用户认证使用的Cookie名
 	AuthCookie = "i_like_solitude"
 	// CacheKeyPrefixRelatedChapters 缓存键前缀：章节
