@@ -16,6 +16,7 @@
 - Article history
 - Markdown support
 - Email, ServerChan notification
+- i18n
 
 ## Quick start
 
