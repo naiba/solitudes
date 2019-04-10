@@ -1,6 +1,7 @@
 package wengine
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"reflect"
@@ -29,6 +30,9 @@ func WEngine() error {
 		},
 		"add": func(a, b int) int {
 			return a + b
+		},
+		"uint2str": func(i uint) string {
+			return fmt.Sprintf("%d", i)
 		},
 		"unsafe": func(raw string) template.HTML {
 			return template.HTML(raw)
@@ -69,6 +73,7 @@ func WEngine() error {
 			c.Abort()
 		},
 	}))
+	r.Use(soligin.Translator)
 
 	r.Any("/*shit", routerSwitch)
 

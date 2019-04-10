@@ -1,6 +1,6 @@
 {{define "default/header"}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{.Tr.Locale}}">
 
 <head>
     <meta charset="utf-8">
@@ -15,7 +15,6 @@
     <link rel="stylesheet" href="/static/cactus/css/solitudes.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flexboxgrid@6.3.1/dist/flexboxgrid.min.css"
         integrity="sha256-/8+sU56ayrJGahG9mmcUaNEghbavaceGybkdqO96Kk0=" crossorigin="anonymous">
-
     <title>{{.Title}}</title>
     <meta name="description" content="{{.Desc}}">
     <meta name="keywords" content="{{.Keywords}}">

@@ -11,8 +11,9 @@
         <time datetime="{{$a.CreatedAt}}" itemprop="datePublished">{{tf $a.CreatedAt "02 Jan 2006"}}</time>
       </div>
       <span>
-        <a href="/{{$a.Slug}}">{{$a.Title}}</a>{{if $a.ReadNum}} <small>({{$a.ReadNum}}
-          read{{if $a.CommentNum}},{{$a.CommentNum}} comment{{if gt $a.CommentNum 1}}s{{end}}{{end}})</small>{{end}}
+        <a href="/{{$a.Slug}}">{{$a.Title}}</a>{{if $a.ReadNum}}
+        <small>({{$.Tr.T "read_num" (uint2str $a.ReadNum)}}{{if $a.CommentNum}},{{$a.CommentNum}}
+          comment{{if gt $a.CommentNum 1}}s{{end}}{{end}})</small>{{end}}
       </span>
     </li>
     {{end}}

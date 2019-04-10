@@ -21,7 +21,6 @@ func (t *Translator) T(key interface{}, params ...string) string {
 	if err != nil {
 		log.Printf("issue translating key: '%v' error: '%s'", key, err)
 	}
-
 	return s
 }
 
@@ -68,10 +67,10 @@ func (t *Translator) Currency() currency.Type {
 var Trans *ut.UniversalTranslator
 
 func init() {
-	zh := zh.New()
-	Trans = ut.New(zh, zh, en.New())
+	en := en.New()
+	Trans = ut.New(en, en, zh.New())
 
-	err := Trans.Import(ut.FormatJSON, "translation")
+	err := Trans.Import(ut.FormatJSON, "resource/translation")
 	if err != nil {
 		panic(err)
 	}
