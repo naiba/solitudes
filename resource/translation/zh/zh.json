@@ -33,5 +33,10 @@
         "locale": "zh",
         "key": "search",
         "trans": "搜索"
+    },
+    {
+        "locale": "zh",
+        "key": "archive",
+        "trans": "归档"
     }
 ]

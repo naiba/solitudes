@@ -24,7 +24,7 @@ func archive(c *gin.Context) {
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
-		"title":    "Archive",
+		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("archive"),
 		"what":     "archives",
 		"articles": listArticleByYear(articles),
 		"page":     pg,

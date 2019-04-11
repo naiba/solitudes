@@ -42,5 +42,10 @@
         "locale": "en",
         "key": "search",
         "trans": "Search"
+    },
+    {
+        "locale": "en",
+        "key": "archive",
+        "trans": "Archive"
     }
 ]
