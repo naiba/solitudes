@@ -15,13 +15,23 @@
         "trans": "2006年1月2日"
     },
     {
-        "locale": "en",
+        "locale": "zh",
         "key": "comment_num",
         "trans": "{0} 评论"
     },
     {
-        "locale": "en",
+        "locale": "zh",
         "key": "no_article",
         "trans": "还没有发布过文章哦"
+    },
+    {
+        "locale": "zh",
+        "key": "pagination",
+        "trans": "第 {0}/{1} 页，共有 {2} 篇文章。"
+    },
+    {
+        "locale": "zh",
+        "key": "search",
+        "trans": "搜索"
     }
 ]

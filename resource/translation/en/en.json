@@ -32,6 +32,15 @@
         "locale": "en",
         "key": "no_article",
         "trans": "No articles have been published yet"
+    },
+    {
+        "locale": "en",
+        "key": "pagination",
+        "trans": "Page {0}/{1}, {2} articles in total."
+    },
+    {
+        "locale": "en",
+        "key": "search",
+        "trans": "Search"
     }
-    
 ]

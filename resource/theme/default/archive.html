@@ -8,29 +8,26 @@
     {{if eq $j 0}}<h2>{{$a.CreatedAt.Year}}</h2>{{end}}
     <li class="post-item">
       <div class="meta">
-        <time datetime="{{$a.CreatedAt}}" itemprop="datePublished">{{tf $a.CreatedAt (.Tr.T "date_format")}}</time>
+        <time datetime="{{$a.CreatedAt}}" itemprop="datePublished">{{tf $a.CreatedAt ($.Tr.T "date_format")}}</time>
       </div>
       <span>
         <a href="/{{$a.Slug}}">{{$a.Title}}</a>{{if $a.ReadNum}}
-        <small>({{$.Tr.T "read_num" (uint2str $a.ReadNum)}}{{if $a.CommentNum}},{{$a.CommentNum}}
-         {{.Tr.T "comment_num"}}{{end}})</small>{{end}}
+        <small>({{$.Tr.T "read_num" (uint2str $a.ReadNum)}}{{if $a.CommentNum}},{{$.Tr.T "comment_num" (uint2str $a.CommentNum)}}{{end}})</small>{{end}}
       </span>
     </li>
     {{end}}
     {{end}}
     {{if not .Data.articles}}
     <li class="post-item">
-      <span>
-        No articles have been published yet
-      </span>
+      <span>{{.Tr.T "no_article"}}</span>
     </li>
     {{end}}
   </ul>
   <div class="pagination">
     {{if gt .Data.page.Page 1}}<a href="/{{.Data.what}}/{{.Data.page.PrevPage}}/"><i
         class="fas fa-angle-left"></i></a>{{end}}
-    <span class="page-number">Page {{.Data.page.Page}} of {{.Data.page.TotalPage}}, {{.Data.page.TotalRecord}}
-      articles in total.</span>
+    <span
+      class="page-number">{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord)}}</span>
     {{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}<a
       href="/{{.Data.what}}/{{.Data.page.NextPage}}/"><i class="fas fa-angle-right"></i></a>{{end}}
   </div>

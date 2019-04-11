@@ -34,6 +34,9 @@ func WEngine() error {
 		"uint2str": func(i uint) string {
 			return fmt.Sprintf("%d", i)
 		},
+		"int2str": func(i int) string {
+			return fmt.Sprintf("%d", i)
+		},
 		"unsafe": func(raw string) template.HTML {
 			return template.HTML(raw)
 		},

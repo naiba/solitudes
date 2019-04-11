@@ -6,17 +6,16 @@
 </section>
 {{template "default/search_form" .}}
 <section id="writing">
-  <span class="h1"><a href="/archives/">{{.Tr.T "writinh"}}</a></span>
+  <span class="h1"><a href="/archives/">{{.Tr.T "writing"}}</a></span>
   <ul class="post-list">
     {{range .Data.articles}}
     <li class="post-item">
       <div class="meta">
-        <time datetime="{{.UpdatedAt}}" itemprop="datePublished">{{tf .UpdatedAt (.Tr.T "date_format")}}</time>
+        <time datetime="{{.UpdatedAt}}" itemprop="datePublished">{{tf .UpdatedAt ($.Tr.T "date_format")}}</time>
       </div>
       <span>
-        <a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}} <small>({{.ReadNum}}
-          {{.Tr.T "read_num"}}{{if .CommentNum}},{{.CommentNum}}
-          {{.Tr.T "comment_num"}}{{end}})</small>{{end}}
+        <a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}}
+        <small>({{$.Tr.T "read_num" (uint2str .ReadNum)}}{{if .CommentNum}},{{$.Tr.T "comment_num" (uint2str .CommentNum)}}{{end}})</small>{{end}}
       </span>
     </li>
     {{end}}
