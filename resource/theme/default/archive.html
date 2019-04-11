@@ -27,7 +27,7 @@
     {{if gt .Data.page.Page 1}}<a href="/{{.Data.what}}/{{.Data.page.PrevPage}}/"><i
         class="fas fa-angle-left"></i></a>{{end}}
     <span
-      class="page-number">{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord)}}</span>
+      class="page-number">{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord) "articles"}}</span>
     {{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}<a
       href="/{{.Data.what}}/{{.Data.page.NextPage}}/"><i class="fas fa-angle-right"></i></a>{{end}}
   </div>

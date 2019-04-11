@@ -12,7 +12,7 @@
     {
         "locale": "zh",
         "key": "date_format",
-        "trans": "2006年1月2日"
+        "trans": "2006年01月02日"
     },
     {
         "locale": "zh",
@@ -38,5 +38,65 @@
         "locale": "zh",
         "key": "archive",
         "trans": "归档"
+    },
+    {
+        "locale": "zh",
+        "key": "comments",
+        "trans": "评论"
+    },
+    {
+        "locale": "zh",
+        "key": "nickname",
+        "trans": "昵称"
+    },
+    {
+        "locale": "zh",
+        "key": "email",
+        "trans": "邮箱"
+    },
+    {
+        "locale": "zh",
+        "key": "website",
+        "trans": "网站"
+    },
+    {
+        "locale": "zh",
+        "key": "not_required",
+        "trans": "非必填"
+    },
+    {
+        "locale": "zh",
+        "key": "submit",
+        "trans": "保存"
+    },
+    {
+        "locale": "zh",
+        "key": "menu",
+        "trans": "菜单"
+    },
+    {
+        "locale": "zh",
+        "key": "return_top",
+        "trans": "回顶部"
+    },
+    {
+        "locale": "zh",
+        "key": "share",
+        "trans": "分享"
+    },
+    {
+        "locale": "zh",
+        "key": "toc",
+        "trans": "目录"
+    },
+    {
+        "locale": "zh",
+        "key": "previous_post",
+        "trans": "上一篇"
+    },
+    {
+        "locale": "zh",
+        "key": "next_post",
+        "trans": "下一篇"
     }
 ]

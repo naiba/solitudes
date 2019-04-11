@@ -36,10 +36,10 @@
                             onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();"
                             onclick="$('#share').toggle();return false;"></i></a></li>
             </ul>
-            <span id="i-prev" class="info" style="display:none;">Previous post</span>
-            <span id="i-next" class="info" style="display:none;">Next post</span>
-            <span id="i-top" class="info" style="display:none;">Back to top</span>
-            <span id="i-share" class="info" style="display:none;">Share post</span>
+            <span id="i-prev" class="info" style="display:none;">{{.Tr.T "previous_post"}}</span>
+            <span id="i-next" class="info" style="display:none;">{{.Tr.T "next_post"}}</span>
+            <span id="i-top" class="info" style="display:none;">{{.Tr.T "return_top"}}</span>
+            <span id="i-share" class="info" style="display:none;">{{.Tr.T "share"}}</span>
         </span>
         <br>
         <div id="share" style="display: none">
@@ -98,9 +98,8 @@
                         itemprop="datePublished">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
                     <small>·v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
-                    | <span>{{.Data.article.ReadNum}}
-                        {{.Tr.T "read_num"}}{{if .Data.article.CommentNum}},{{.Data.article.CommentNum}}
-                        {{.Tr.T "comment_num"}}{{end}}</span>
+                    |
+                    <span>{{.Tr.T "read_num" (uint2str .Data.article.ReadNum)}}{{if .Data.article.CommentNum}},{{.Tr.T "comment_num" (uint2str .Data.article.CommentNum)}}{{end}}</span>
                     {{end}}
                 </div>
                 {{if .Data.article.RawTags}}
@@ -142,7 +141,7 @@
     </article>
 
     <div id="reply-list">
-        <h1>Comments</h1>
+        <h1>{{.Tr.T "comments"}}</h1>
         {{template "default/comments_entry" .Data.article.Comments}}
     </div>
     {{if .Data.article.Comments}}
@@ -150,9 +149,8 @@
         {{if gt .Data.comment_page.Page 1}}<a
             href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}"><i
                 class="fas fa-angle-left"></i></a>{{end}}
-        <span class="page-number">Page {{.Data.comment_page.Page}} of {{.Data.comment_page.TotalPage}},
-            {{.Data.comment_page.TotalRecord}}
-            comments in total.</span>
+        <span
+            class="page-number">{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
         {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a
             href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}"><i
                 class="fas fa-angle-right"></i></a>{{end}}
@@ -165,17 +163,17 @@
         {{else}}
         <div class="row">
             <div class="col-xs-4">
-                <input placeholder="Nickname" maxlength="64" id="id_nickname">
+                <input placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname">
             </div>
             <div class="col-xs-4">
-                <input placeholder="Email (Not Required)" maxlength="254" id="id_email">
+                <input placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email">
             </div>
             <div class="col-xs-4">
-                <input placeholder="Website (Not Required)" maxlength="200" id="id_website">
+                <input placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website">
             </div>
         </div>
         {{end}}
-        <button onclick="comment(this)" class="search-button">Submit</button>
+        <button onclick="comment(this)" class="search-button">{{.Tr.T "submit"}}</button>
         <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
         <input type="hidden" id="id_reply_to" value="">
         <input type="hidden" value="{{.CSRF}}" id="id_csrf">
@@ -235,16 +233,15 @@
 
             <div id="actions-footer">
                 <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i
-                        class="fas fa-bars fa-lg" aria-hidden="true"></i> Menu</a>
+                        class="fas fa-bars fa-lg" aria-hidden="true"></i> {{.Tr.T "menu"}}</a>
                 <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i
-                        class="fas fa-list fa-lg" aria-hidden="true"></i> TOC</a>
+                        class="fas fa-list fa-lg" aria-hidden="true"></i> {{.Tr.T "toc"}}</a>
                 <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i
-                        class="fas fa-share-alt fa-lg" aria-hidden="true"></i> Share</a>
+                        class="fas fa-share-alt fa-lg" aria-hidden="true"></i> {{.Tr.T "share"}}</a>
                 <a id="top" style="display:none" class="icon" href="#"
                     onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg"
-                        aria-hidden="true"></i> Top</a>
+                        aria-hidden="true"></i> {{.Tr.T "return_top"}}</a>
             </div>
-
         </div>
     </div>
     <script>
