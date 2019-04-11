@@ -29,7 +29,7 @@
                                     <td><a target="_blank"
                                             href="/{{.Article.Slug}}/version/{{.Article.Version}}">{{.Article.Title}}</a>
                                     </td>
-                                    <td>{{tf .UploadedAt "02 Jan 2006"}}</td>
+                                    <td>{{tf .UploadedAt (.Tr.T "date_format")}}</td>
                                     <td><button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')"
                                             class="btn btn-warning btn-xs">Delete</button></td>
                                 </tr>

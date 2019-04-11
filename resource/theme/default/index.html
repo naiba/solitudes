@@ -6,24 +6,24 @@
 </section>
 {{template "default/search_form" .}}
 <section id="writing">
-  <span class="h1"><a href="/archives/">Writing</a></span>
+  <span class="h1"><a href="/archives/">{{.Tr.T "writinh"}}</a></span>
   <ul class="post-list">
     {{range .Data.articles}}
     <li class="post-item">
       <div class="meta">
-        <time datetime="{{.UpdatedAt}}" itemprop="datePublished">{{tf .UpdatedAt "02 Jan 2006"}}</time>
+        <time datetime="{{.UpdatedAt}}" itemprop="datePublished">{{tf .UpdatedAt (.Tr.T "date_format")}}</time>
       </div>
       <span>
         <a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}} <small>({{.ReadNum}}
-          read{{if .CommentNum}},{{.CommentNum}}
-          comment{{if gt .CommentNum 1}}s{{end}}{{end}})</small>{{end}}
+          {{.Tr.T "read_num"}}{{if .CommentNum}},{{.CommentNum}}
+          {{.Tr.T "comment_num"}}{{end}})</small>{{end}}
       </span>
     </li>
     {{end}}
     {{if not .Data.articles}}
     <li class="post-item">
       <span>
-        <small>No articles have been published yet</small>
+        <small>{{.Tr.T "no_article"}}</small>
       </span>
     </li>
     {{end}}

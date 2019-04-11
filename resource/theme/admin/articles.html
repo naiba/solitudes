@@ -34,7 +34,7 @@
                                     <td>{{.ReadNum}}</td>
                                     <td>{{.Slug}}</td>
                                     <td>{{.IsBook}}</td>
-                                    <td>{{tf .CreatedAt "02 Jan 2006"}}</td>
+                                    <td>{{tf .CreatedAt (.Tr.T "date_format")}}</td>
                                     <td>
                                         <div class="btn-group btn-group-xs">
                                             <a href="/admin/publish?id={{.ID}}" target="_blank"

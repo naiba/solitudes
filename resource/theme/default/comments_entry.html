@@ -10,7 +10,7 @@
                 rel="nofollow noopener">{{.Nickname}}</a>
             {{if .IsAdmin}}<img title="admin" width="16px" height="16px" style="margin-bottom:-5px;padding: 1px;"
                 src="https://rawcdn.githack.com/github/gemoji/master/images/neckbeard.png">{{end}}
-            <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt "02 Jan 2006"}}</time>
+            <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt (.Tr.T "date_format")}}</time>
             <a href="/{{.Article.Slug}}/version/{{.Version}}"><small>·v{{.Version}}</small></a>
             <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">Reply</a>
         </p>

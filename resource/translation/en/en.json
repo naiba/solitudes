@@ -3,5 +3,35 @@
         "locale": "en",
         "key": "read_num",
         "trans": "{0} read"
+    },
+    {
+        "locale": "en",
+        "key": "writing",
+        "trans": "Writing"
+    },
+    {
+        "locale": "en",
+        "key": "date_format",
+        "trans": "02 Jan 2006"
+    },
+    {
+        "locale": "en",
+        "key": "comment_num",
+        "trans": "{0} comment",
+        "type": "Cardinal",
+        "rule": "One"
+    },
+    {
+        "locale": "en",
+        "key": "comment_num",
+        "trans": "{0} comments",
+        "type": "Cardinal",
+        "rule": "Other"
+    },
+    {
+        "locale": "en",
+        "key": "no_article",
+        "trans": "No articles have been published yet"
     }
+    
 ]
