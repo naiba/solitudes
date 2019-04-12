@@ -80,8 +80,8 @@ func static(root string) gin.HandlerFunc {
 				h.Header().Set("Content-Type", "text/html,charset=utf8")
 				h.Header().Set("X-File-Server", "solitudes")
 				c.HTML(s, "default/error", soligin.Soli(c, false, gin.H{
-					"title": "404 Page Not Found",
-					"msg":   "Wow ... This page may fly to Mars.",
+					"title": "404_title",
+					"msg":   "404_msg",
 				}))
 			},
 		}, c.Request, filepath)

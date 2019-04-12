@@ -20,8 +20,8 @@ func article(c *gin.Context) {
 	var a solitudes.Article
 	if err := solitudes.System.DB.Take(&a, "slug = ?", slug[1]).Error; err == gorm.ErrRecordNotFound {
 		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
-			"title": "404 Page Not Found",
-			"msg":   "Wow ... This page may fly to Mars.",
+			"title": "404_title",
+			"msg":   "404_msg",
 		}))
 		return
 	} else if err != nil {
@@ -47,8 +47,8 @@ func article(c *gin.Context) {
 		var history solitudes.ArticleHistory
 		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, slug[2]).Error; err == gorm.ErrRecordNotFound {
 			c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
-				"title": "404 Page Not Found",
-				"msg":   "Wow ... This page may fly to Mars.",
+				"title": "404_title",
+				"msg":   "404_msg",
 			}))
 			return
 		} else if err != nil {

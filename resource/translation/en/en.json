@@ -107,5 +107,20 @@
         "locale": "en",
         "key": "next_post",
         "trans": "Next post"
+    },
+    {
+        "locale": "en",
+        "key": "chapters",
+        "trans": "Chapters"
+    },
+    {
+        "locale": "en",
+        "key": "404_title",
+        "trans": "404 Page Not Found"
+    },
+    {
+        "locale": "en",
+        "key": "404_msg",
+        "trans": "Wow ... This page may fly to Mars."
     }
 ]

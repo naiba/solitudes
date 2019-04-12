@@ -118,7 +118,7 @@
         <div class="content" itemprop="articleBody">
             {{.Data.article.Content|md}}
             {{if .Data.article.IsBook}}
-            <h4>Chapters</h4>
+            <h4>{{.Tr.T "chapters"}}</h4>
             {{template "default/article_chapters" .Data.article}}
             {{end}}
         </div>

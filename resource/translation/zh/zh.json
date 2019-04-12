@@ -98,5 +98,20 @@
         "locale": "zh",
         "key": "next_post",
         "trans": "下一篇"
+    },
+    {
+        "locale": "zh",
+        "key": "chapters",
+        "trans": "章节列表"
+    },
+    {
+        "locale": "zh",
+        "key": "404_title",
+        "trans": "404 页面不存在"
+    },
+    {
+        "locale": "zh",
+        "key": "404_msg",
+        "trans": "Wow…… 这个页面可能已到达火星。"
     }
 ]
