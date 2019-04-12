@@ -73,5 +73,30 @@
         "locale": "en",
         "key": "next",
         "trans": "Next"
+    },
+    {
+        "locale": "en",
+        "key": "manage_comments",
+        "trans": "Manage comments"
+    },
+    {
+        "locale": "en",
+        "key": "content",
+        "trans": "Content"
+    },
+    {
+        "locale": "en",
+        "key": "author",
+        "trans": "Author"
+    },
+    {
+        "locale": "en",
+        "key": "article",
+        "trans": "Article"
+    },
+    {
+        "locale": "en",
+        "key": "version",
+        "trans": "Version"
     }
 ]

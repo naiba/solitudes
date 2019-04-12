@@ -68,5 +68,30 @@
         "locale": "zh",
         "key": "next",
         "trans": "下一页"
+    },
+    {
+        "locale": "zh",
+        "key": "manage_comments",
+        "trans": "管理评论"
+    },
+    {
+        "locale": "zh",
+        "key": "content",
+        "trans": "内容"
+    },
+    {
+        "locale": "en",
+        "key": "author",
+        "trans": "作者"
+    },
+    {
+        "locale": "en",
+        "key": "article",
+        "trans": "文章"
+    },
+    {
+        "locale": "en",
+        "key": "version",
+        "trans": "版本"
     }
 ]

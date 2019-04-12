@@ -3,8 +3,8 @@
 <div class="content-wrapper">
     <section class="content-header">
         <h1>
-            Comments
-            <small>manage comment by guest</small>
+            {{.Tr.T "manage_comments"}}
+            <small>Solitudes</small>
         </h1>
     </section>
 
@@ -17,13 +17,13 @@
                             <thead>
                                 <tr role="row">
                                     <th>ID</th>
-                                    <th>Content</th>
-                                    <th>Author</th>
-                                    <th>Website</th>
-                                    <th>Article</th>
-                                    <th>Version</th>
-                                    <th>CreatedAt</th>
-                                    <th>Manage</th>
+                                    <th>{{.Tr.T "content"}}</th>
+                                    <th>{{.Tr.T "author"}}</th>
+                                    <th>{{.Tr.T "website"}}</th>
+                                    <th>{{.Tr.T "article"}}</th>
+                                    <th>{{.Tr.T "version"}}</th>
+                                    <th>{{.Tr.T "created_at"}}</th>
+                                    <th>{{.Tr.T "manage"}}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -39,7 +39,7 @@
                                     <td>{{.Version}}</td>
                                     <td>{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                                     <td><button onclick="deleteComment('{{.Article.ID}}','{{.ID}}','{{.ReplyTo}}')"
-                                            class="btn btn-warning btn-xs">Delete</button></td>
+                                            class="btn btn-warning btn-xs">{{$.Tr.T "delete"}}</button></td>
                                 </tr>
                                 {{end}}
                             </tbody>
@@ -47,8 +47,9 @@
                     </div>
                 </div>
                 <ul class="pagination">
-                    <li class="paginate_button previous"><a href="?page={{.Data.page.PrevPage}}">Previous</a></li>
-                    <li class="paginate_button next"><a href="?page={{.Data.page.NextPage}}">Next</a></li>
+                    <li class="paginate_button previous"><a
+                            href="?page={{.Data.page.PrevPage}}">{{.Tr.T "previous"}}</a></li>
+                    <li class="paginate_button next"><a href="?page={{.Data.page.NextPage}}">{{.Tr.T "next"}}</a></li>
                 </ul>
             </div>
         </div>
@@ -60,7 +61,7 @@
             return
         }
         $.ajax({
-            url: "/admin/comments?_csrf={{.CSRF }}&aid=" + aid + '&id=' + commendId + '&rpl=' + (rpl=='\x3cnil\x3e'?'':rpl),
+            url: "/admin/comments?_csrf={{.CSRF }}&aid=" + aid + '&id=' + commendId + '&rpl=' + (rpl == '\x3cnil\x3e' ? '' : rpl),
             type: 'DELETE',
             success: () => {
                 window.location.reload()
