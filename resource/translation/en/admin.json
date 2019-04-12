@@ -96,7 +96,27 @@
     },
     {
         "locale": "en",
+        "key": "articles",
+        "trans": "Articles"
+    },
+    {
+        "locale": "en",
         "key": "version",
         "trans": "Version"
+    },
+    {
+        "locale": "en",
+        "key": "sign_out",
+        "trans": "Sign out"
+    },
+    {
+        "locale": "en",
+        "key": "publish",
+        "trans": "Publish"
+    },
+    {
+        "locale": "en",
+        "key": "media",
+        "trans": "Media"
     }
 ]

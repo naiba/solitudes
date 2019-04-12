@@ -80,18 +80,38 @@
         "trans": "内容"
     },
     {
-        "locale": "en",
+        "locale": "zh",
         "key": "author",
         "trans": "作者"
     },
     {
-        "locale": "en",
+        "locale": "zh",
         "key": "article",
         "trans": "文章"
     },
     {
-        "locale": "en",
+        "locale": "zh",
+        "key": "articles",
+        "trans": "文章"
+    },
+    {
+        "locale": "zh",
         "key": "version",
         "trans": "版本"
+    },
+    {
+        "locale": "zh",
+        "key": "sign_out",
+        "trans": "注销登录"
+    },
+    {
+        "locale": "en",
+        "key": "publish",
+        "trans": "发布"
+    },
+    {
+        "locale": "en",
+        "key": "media",
+        "trans": "文件"
     }
 ]
