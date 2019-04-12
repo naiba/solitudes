@@ -3,7 +3,7 @@
 <div class="content-wrapper">
     <section class="content-header">
         <h1>
-            Dashboard
+            {{.Tr.T "dashboard"}}
             <small>known everything</small>
         </h1>
     </section>
@@ -14,48 +14,44 @@
                 <div class="small-box bg-aqua">
                     <div class="inner">
                         <h3>{{.Data.articleNum}}</h3>
-                        <p>Articles</p>
+                        <p>{{.Tr.T "articles"}}</p>
                     </div>
                     <div class="icon">
                         <i class="fa fa-newspaper-o"></i>
                     </div>
-                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
             </div>
             <div class="col-lg-3 col-xs-6">
                 <div class="small-box bg-purple">
                     <div class="inner">
                         <h3>{{.Data.lastArticlePublish}} </h3>
-                        <p>Days left from the last post</p>
+                        <p>{{.Tr.T "days_left_from_the_last_post"}}</p>
                     </div>
                     <div class="icon">
                         <i class="fa fa-clock-o"></i>
                     </div>
-                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
             </div>
             <div class="col-lg-3 col-xs-6">
                 <div class="small-box bg-aqua">
                     <div class="inner">
                         <h3>{{.Data.commentNum}}</h3>
-                        <p>Comments</p>
+                        <p>{{.Tr.T "comments"}}</p>
                     </div>
                     <div class="icon">
                         <i class="fa fa-comments-o"></i>
                     </div>
-                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
             </div>
             <div class="col-lg-3 col-xs-6">
                 <div class="small-box bg-purple">
                     <div class="inner">
                         <h3>{{.Data.lastComment}}</h3>
-                        <p>Days left from the last comment</p>
+                        <p>{{.Tr.T "days_left_from_the_last_comment"}}</p>
                     </div>
                     <div class="icon">
                         <i class="fa fa-clock-o"></i>
                     </div>
-                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
             </div>
         </div>
@@ -64,54 +60,51 @@
                 <div class="small-box bg-lime-active">
                     <div class="inner">
                         <h3>{{.Data.tagNum}}</h3>
-                        <p>Labels</p>
+                        <p>{{.Tr.T "labels"}}</p>
                     </div>
                     <div class="icon">
                         <i class="fa fa-tags"></i>
                     </div>
-                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
             </div>
             <div class="col-lg-3 col-xs-6">
                 <div class="small-box bg-navy">
                     <div class="inner">
                         <h3>{{.Data.memoryUsage}} M</h3>
-                        <p>Memory Usage</p>
+                        <p>{{.Tr.T "memory_usage"}}</p>
                     </div>
                     <div class="icon">
                         <i class="fa fa-file-o"></i>
                     </div>
-                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
             </div>
             <div class="col-lg-3 col-xs-6">
                 <div class="small-box bg-maroon">
                     <div class="inner">
                         <h3>{{.Data.gcNum}}</h3>
-                        <p>GC num</p>
+                        <p>{{.Tr.T "gc_num"}}</p>
                     </div>
                     <div class="icon">
                         <i class="fa fa-trash-o"></i>
                     </div>
-                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
             </div>
             <div class="col-lg-3 col-xs-6">
                 <div class="small-box bg-teal">
                     <div class="inner">
                         <h3>{{.Data.routineNum}}</h3>
-                        <p>Routine num</p>
+                        <p>{{.Tr.T "routine_num"}}</p>
                     </div>
                     <div class="icon">
                         <i class="fa fa-meh-o"></i>
                     </div>
-                    <p class="small-box-footer">More info <i class="fa fa-arrow-circle-right"></i></p>
                 </div>
             </div>
         </div>
         <div class="row">
             <div class="col-lg-3 col-xs-6">
-                <button onclick="rebuildBleveData()" class="btn btn-danger btn-lg">Rebuild Bleve Data</button>
+                <button onclick="rebuildBleveData()"
+                    class="btn btn-danger btn-lg">{{.Tr.T "rebuild_fulltext_search_data"}}</button>
             </div>
         </div>
     </section>

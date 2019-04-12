@@ -3,7 +3,7 @@
 <div class="content-wrapper">
     <section class="content-header">
         <h1>
-            Publish article
+            {{.Tr.T "publish_article"}}
             <small>focus</small>
         </h1>
     </section>
@@ -13,7 +13,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputTitle" class="col-sm-2 control-label">Title</label>
+                        <label for="inputTitle" class="col-sm-2 control-label">{{.Tr.T "title"}}</label>
                         <div class="col-sm-10">
                             <input type="hidden" id="csrfToken" value="{{.CSRF}}">
                             <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
@@ -24,7 +24,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputSlug" class="col-sm-2 control-label">Slug</label>
+                        <label for="inputSlug" class="col-sm-2 control-label">{{.Tr.T "slug"}}</label>
                         <div class="col-sm-10">
                             <input class="form-control" id="inputSlug" placeholder="URL slug"
                                 value="{{.Data.article.Slug}}">
@@ -33,7 +33,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputTags" class="col-sm-2 control-label">Tags</label>
+                        <label for="inputTags" class="col-sm-2 control-label">{{.Tr.T "labels"}}</label>
                         <div class="col-sm-10">
                             <input class="form-control" id="inputTags" placeholder="dev,golang,docker"
                                 value="{{.Data.article.RawTags}}">
@@ -55,7 +55,7 @@
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputCID" class="col-sm-2 control-label">BookRefer</label>
+                        <label for="inputCID" class="col-sm-2 control-label">{{.Tr.T "book_refer"}}</label>
                         <div class="col-sm-10">
                             <input class="form-control" id="inputCID"
                                 value="{{if .Data.article.BookRefer}}{{.Data.article.BookRefer}}{{end}}">
@@ -67,8 +67,8 @@
                         <div class="form-group">
                             <div class="checkbox">
                                 <label>
-                                    <input{{if .Data.article.IsBook}} checked{{end}} id="cbBook" type="checkbox"> It's a
-                                        book.
+                                    <input{{if .Data.article.IsBook}} checked{{end}} id="cbBook" type="checkbox">
+                                        {{.Tr.T "its_a_book"}}
                                 </label>
                             </div>
                         </div>
@@ -78,7 +78,7 @@
                     <div class="form-group">
                         <div class="checkbox">
                             <label>
-                                <input id="cbNewVersion" type="checkbox"> New version
+                                <input id="cbNewVersion" type="checkbox"> {{.Tr.T "new_version"}}
                             </label>
                         </div>
                     </div>
@@ -88,7 +88,7 @@
         <div id="editSection"></div>
         <div class="row" style="margin-top:10px;">
             <div class="col-xs-6 col-md-2">
-                <button onclick="publish(this)" class="btn btn-lg btn-primary">Publish</button>
+                <button onclick="publish(this)" class="btn btn-lg btn-primary">{{.Tr.T "publish"}}</button>
             </div>
         </div>
     </section>

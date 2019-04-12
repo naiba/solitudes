@@ -26,11 +26,6 @@
     },
     {
         "locale": "en",
-        "key": "manage_articles",
-        "trans": "Manage articles"
-    },
-    {
-        "locale": "en",
         "key": "title",
         "trans": "Title"
     },
@@ -118,5 +113,75 @@
         "locale": "en",
         "key": "media",
         "trans": "Media"
+    },
+    {
+        "locale": "en",
+        "key": "dashboard",
+        "trans": "Dashboard"
+    },
+    {
+        "locale": "en",
+        "key": "days_left_from_the_last_post",
+        "trans": "Days left from the last post"
+    },
+    {
+        "locale": "en",
+        "key": "days_left_from_the_last_comment",
+        "trans": "Days left from the last comment"
+    },
+    {
+        "locale": "en",
+        "key": "labels",
+        "trans": "Labels"
+    },
+    {
+        "locale": "en",
+        "key": "memory_usage",
+        "trans": "Memory Usage"
+    },
+    {
+        "locale": "en",
+        "key": "gc_num",
+        "trans": "GC num"
+    },
+    {
+        "locale": "en",
+        "key": "routine_num",
+        "trans": "Routine num"
+    },
+    {
+        "locale": "en",
+        "key": "rebuild_fulltext_search_data",
+        "trans": "Rebuild Full-text Search Data"
+    },
+    {
+        "locale": "en",
+        "key": "filename",
+        "trans": "Filename"
+    },
+    {
+        "locale": "en",
+        "key": "uploaded_at",
+        "trans": "UploadedAt"
+    },
+    {
+        "locale": "en",
+        "key": "publish_article",
+        "trans": "Publish article"
+    },
+    {
+        "locale": "en",
+        "key": "book_refer",
+        "trans": "Book Refer"
+    },
+    {
+        "locale": "en",
+        "key": "its_a_book",
+        "trans": "It's a book"
+    },
+    {
+        "locale": "en",
+        "key": "new_version",
+        "trans": "New Version"
     }
 ]

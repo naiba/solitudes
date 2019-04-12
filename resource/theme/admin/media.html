@@ -16,10 +16,10 @@
                         <table class="table table-bordered table-hover">
                             <thead>
                                 <tr role="row">
-                                    <th>Filename</th>
-                                    <th>Article</th>
-                                    <th>UploadedAt</th>
-                                    <th>Manage</th>
+                                    <th>{{.Tr.T "filename"}}</th>
+                                    <th>{{.Tr.T "article"}}</th>
+                                    <th>{{.Tr.T "uploaded_at"}}</th>
+                                    <th>{{.Tr.T "manage"}}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -31,7 +31,7 @@
                                     </td>
                                     <td>{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
                                     <td><button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')"
-                                            class="btn btn-warning btn-xs">Delete</button></td>
+                                            class="btn btn-warning btn-xs">{{$.Tr.T "delete"}}</button></td>
                                 </tr>
                                 {{end}}
                             </tbody>
@@ -39,8 +39,9 @@
                     </div>
                 </div>
                 <ul class="pagination">
-                    <li class="paginate_button previous"><a href="?page={{add .Data.page -1}}">Previous</a></li>
-                    <li class="paginate_button next"><a href="?page={{add .Data.page 1}}">Next</a></li>
+                    <li class="paginate_button previous"><a href="?page={{add .Data.page -1}}">{{.Tr.T "previous"}}</a>
+                    </li>
+                    <li class="paginate_button next"><a href="?page={{add .Data.page 1}}">{{.Tr.T "next"}}</a></li>
                 </ul>
             </div>
         </div>
@@ -52,7 +53,7 @@
             alert("You have to delete file usage in article.")
             return
         }
-        if (!confirm("Confirm delete?")){
+        if (!confirm("Confirm delete?")) {
             return
         }
         $.ajax({

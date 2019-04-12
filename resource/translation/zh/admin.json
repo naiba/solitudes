@@ -105,13 +105,83 @@
         "trans": "注销登录"
     },
     {
-        "locale": "en",
+        "locale": "zh",
         "key": "publish",
         "trans": "发布"
     },
     {
-        "locale": "en",
+        "locale": "zh",
         "key": "media",
         "trans": "文件"
+    },
+    {
+        "locale": "zh",
+        "key": "dashboard",
+        "trans": "仪表盘"
+    },
+    {
+        "locale": "zh",
+        "key": "days_left_from_the_last_post",
+        "trans": "距离上次发布文章的天数"
+    },
+    {
+        "locale": "zh",
+        "key": "days_left_from_the_last_comment",
+        "trans": "距离上次收到评论的天数"
+    },
+    {
+        "locale": "zh",
+        "key": "labels",
+        "trans": "标签"
+    },
+    {
+        "locale": "zh",
+        "key": "memory_usage",
+        "trans": "内存占用"
+    },
+    {
+        "locale": "zh",
+        "key": "gc_num",
+        "trans": "内存回收次数"
+    },
+    {
+        "locale": "zh",
+        "key": "routine_num",
+        "trans": "运行中协程数量"
+    },
+    {
+        "locale": "zh",
+        "key": "rebuild_fulltext_search_data",
+        "trans": "重建全文搜索数据"
+    },
+    {
+        "locale": "zh",
+        "key": "filename",
+        "trans": "文件名"
+    },
+    {
+        "locale": "zh",
+        "key": "uploaded_at",
+        "trans": "上传时间"
+    },
+    {
+        "locale": "zh",
+        "key": "publish_article",
+        "trans": "发布文章"
+    },
+    {
+        "locale": "zh",
+        "key": "book_refer",
+        "trans": "专栏ID"
+    },
+    {
+        "locale": "zh",
+        "key": "its_a_book",
+        "trans": "这是专栏"
+    },
+    {
+        "locale": "zh",
+        "key": "new_version",
+        "trans": "大更新"
     }
 ]
