@@ -114,8 +114,9 @@ func routerSwitch(c *gin.Context) {
 		}))
 		return
 	}
+	tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
 	c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
-		"title": "404_title",
-		"msg":   "404_msg",
+		"title": tr.T("404_title"),
+		"msg":   tr.T("404_msg"),
 	}))
 }

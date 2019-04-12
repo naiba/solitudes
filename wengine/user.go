@@ -79,9 +79,10 @@ func static(root string) gin.HandlerFunc {
 			ErrH: func(h http.ResponseWriter, s int) {
 				h.Header().Set("Content-Type", "text/html,charset=utf8")
 				h.Header().Set("X-File-Server", "solitudes")
+				tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
 				c.HTML(s, "default/error", soligin.Soli(c, false, gin.H{
-					"title": "404_title",
-					"msg":   "404_msg",
+					"title": tr.T("404_title"),
+					"msg":   tr.T("404_msg"),
 				}))
 			},
 		}, c.Request, filepath)

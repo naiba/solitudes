@@ -124,7 +124,8 @@
         </div>
         {{if .Data.article.Book}}
         <footer>
-            book::<a href="/{{.Data.article.Book.Slug}}"><b>{{.Data.article.Book.Title}}</b></a> - chapters index
+            {{.Tr.T "book"}}::<a href="/{{.Data.article.Book.Slug}}"><b>{{.Data.article.Book.Title}}</b></a> -
+            {{.Tr.T "chapters"}}
             <ul>
                 {{if .Data.article.SibilingArticle.Prev.ID}}<li>Prev: <a
                         href="/{{.Data.article.SibilingArticle.Prev.Slug}}">{{.Data.article.SibilingArticle.Prev.Title}}</a>

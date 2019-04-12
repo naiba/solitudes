@@ -115,6 +115,11 @@
     },
     {
         "locale": "en",
+        "key": "book",
+        "trans": "Book"
+    },
+    {
+        "locale": "en",
         "key": "404_title",
         "trans": "404 Page Not Found"
     },
