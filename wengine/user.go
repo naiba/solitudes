@@ -48,9 +48,7 @@ func loginHandler(c *gin.Context) {
 }
 
 func login(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/login", soligin.Soli(c, true, gin.H{
-		"title": "Login to dashboard",
-	}))
+	c.HTML(http.StatusOK, "admin/login", soligin.Soli(c, true, gin.H{}))
 }
 
 func logoutHandler(c *gin.Context) {

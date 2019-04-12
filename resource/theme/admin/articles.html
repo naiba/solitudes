@@ -3,8 +3,8 @@
 <div class="content-wrapper">
     <section class="content-header">
         <h1>
-            Recent posts
-            <small>manage articles</small>
+            {{.Tr.T "manage_articles"}}
+            <small>Solitudes</small>
         </h1>
     </section>
 
@@ -17,12 +17,12 @@
                             <thead>
                                 <tr role="row">
                                     <th>ID</th>
-                                    <th>Title</th>
-                                    <th>ReadNum</th>
-                                    <th>Slug</th>
-                                    <th>IsBook</th>
-                                    <th>CreatedAt</th>
-                                    <th>Manage</th>
+                                    <th>{{.Tr.T "title"}}</th>
+                                    <th>{{.Tr.T "read"}}</th>
+                                    <th>{{.Tr.T "slug"}}</th>
+                                    <th>{{.Tr.T "book"}}</th>
+                                    <th>{{.Tr.T "created_at"}}</th>
+                                    <th>{{.Tr.T "manage"}}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -34,13 +34,13 @@
                                     <td>{{.ReadNum}}</td>
                                     <td>{{.Slug}}</td>
                                     <td>{{.IsBook}}</td>
-                                    <td>{{tf .CreatedAt (.Tr.T "date_format")}}</td>
+                                    <td>{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                                     <td>
                                         <div class="btn-group btn-group-xs">
                                             <a href="/admin/publish?id={{.ID}}" target="_blank"
-                                                class="btn btn-warning">Edit</a>
+                                                class="btn btn-warning">{{$.Tr.T "edit"}}</a>
                                             <button onclick="deleteArticle('{{.ID}}')" type="button"
-                                                class="btn btn-danger">Delete</button>
+                                                class="btn btn-danger">{{$.Tr.T "delete"}}</button>
                                         </div>
                                     </td>
                                 </tr>
@@ -50,8 +50,9 @@
                     </div>
                 </div>
                 <ul class="pagination">
-                    <li class="paginate_button previous"><a href="?page={{.Data.page.PrevPage}}">Previous</a></li>
-                    <li class="paginate_button next"><a href="?page={{.Data.page.NextPage}}">Next</a></li>
+                    <li class="paginate_button previous"><a
+                            href="?page={{.Data.page.PrevPage}}">{{.Tr.T "previous"}}</a></li>
+                    <li class="paginate_button next"><a href="?page={{.Data.page.NextPage}}">{{.Tr.T "next"}}</a></li>
                 </ul>
             </div>
         </div>
@@ -59,7 +60,7 @@
 </div>
 <script>
     function deleteArticle(id) {
-        if (!confirm("Confirm delete?")){
+        if (!confirm("Confirm delete?")) {
             return
         }
         $.ajax({

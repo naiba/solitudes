@@ -37,7 +37,7 @@
                                             href="/{{.Article.Slug}}/version/{{.Version}}">{{.Article.Title}}</a>
                                     </td>
                                     <td>{{.Version}}</td>
-                                    <td>{{tf .CreatedAt (.Tr.T "date_format")}}</td>
+                                    <td>{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                                     <td><button onclick="deleteComment('{{.Article.ID}}','{{.ID}}','{{.ReplyTo}}')"
                                             class="btn btn-warning btn-xs">Delete</button></td>
                                 </tr>

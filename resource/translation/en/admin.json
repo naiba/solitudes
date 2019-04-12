@@ -1,0 +1,77 @@
+[
+    {
+        "locale": "en",
+        "key": "login",
+        "trans": "Login"
+    },
+    {
+        "locale": "en",
+        "key": "remember_me",
+        "trans": "Remember Me"
+    },
+    {
+        "locale": "en",
+        "key": "sign_in",
+        "trans": "Sign in"
+    },
+    {
+        "locale": "en",
+        "key": "password",
+        "trans": "Password"
+    },
+    {
+        "locale": "en",
+        "key": "manage_articles",
+        "trans": "Manage articles"
+    },
+    {
+        "locale": "en",
+        "key": "manage_articles",
+        "trans": "Manage articles"
+    },
+    {
+        "locale": "en",
+        "key": "title",
+        "trans": "Title"
+    },
+    {
+        "locale": "en",
+        "key": "read",
+        "trans": "Read"
+    },
+    {
+        "locale": "en",
+        "key": "slug",
+        "trans": "Slug"
+    },
+    {
+        "locale": "en",
+        "key": "created_at",
+        "trans": "CreatedAt"
+    },
+    {
+        "locale": "en",
+        "key": "manage",
+        "trans": "Manage"
+    },
+    {
+        "locale": "en",
+        "key": "edit",
+        "trans": "Edit"
+    },
+    {
+        "locale": "en",
+        "key": "delete",
+        "trans": "Delete"
+    },
+    {
+        "locale": "en",
+        "key": "previous",
+        "trans": "Previous"
+    },
+    {
+        "locale": "en",
+        "key": "next",
+        "trans": "Next"
+    }
+]
