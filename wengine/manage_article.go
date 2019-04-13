@@ -113,6 +113,9 @@ func publishHandler(c *gin.Context) {
 		history.ArticleID = article.ID
 		err = tx.Save(&history).Error
 	}
+	if err == nil && article.BookRefer == nil {
+		err = tx.Model(&article).UpdateColumn("book_refer", nil).Error
+	}
 	if err == nil {
 		// indexing serch engine
 		err = solitudes.System.Search.Index(article.GetIndexID(), article.ToIndexData())
