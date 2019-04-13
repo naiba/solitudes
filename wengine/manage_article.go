@@ -22,7 +22,7 @@ func manageArticle(c *gin.Context) {
 		OrderBy: []string{"updated_at DESC"},
 	}, &as)
 	c.HTML(http.StatusOK, "admin/articles", soligin.Soli(c, true, gin.H{
-		"title":    "Manage Articles",
+		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_articles"),
 		"articles": as,
 		"page":     pg,
 	}))
@@ -35,7 +35,7 @@ func publish(c *gin.Context) {
 		solitudes.System.DB.Take(&article, "id = ?", id)
 	}
 	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, true, gin.H{
-		"title":     "Publish new article",
+		"title":     c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("publish_article"),
 		"templates": solitudes.Templates,
 		"article":   article,
 	}))

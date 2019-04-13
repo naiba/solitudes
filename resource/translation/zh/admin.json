@@ -116,6 +116,11 @@
     },
     {
         "locale": "zh",
+        "key": "manage_media",
+        "trans": "管理文件"
+    },
+    {
+        "locale": "zh",
         "key": "dashboard",
         "trans": "仪表盘"
     },

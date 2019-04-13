@@ -45,7 +45,7 @@ func tags(c *gin.Context) {
 		OrderBy: []string{"updated_at DESC"},
 	}, &articles)
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
-		"title":    "Articles in \"" + pageSlice[1] + "\"",
+		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("articles_in", pageSlice[1]),
 		"what":     "tags",
 		"articles": listArticleByYear(articles),
 		"page":     pg,

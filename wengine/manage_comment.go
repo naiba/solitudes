@@ -23,7 +23,7 @@ func comments(c *gin.Context) {
 		OrderBy: []string{"created_at DESC"},
 	}, &cs)
 	c.HTML(http.StatusOK, "admin/comments", soligin.Soli(c, true, gin.H{
-		"title":    "Manage Comments",
+		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_comments"),
 		"comments": cs,
 		"page":     pg,
 	}))

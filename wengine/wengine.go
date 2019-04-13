@@ -70,7 +70,7 @@ func WEngine() error {
 		Secret: solitudes.System.Config.Web.User.Password,
 		ErrorFunc: func(c *gin.Context) {
 			c.HTML(http.StatusBadRequest, "default/error", soligin.Soli(c, false, gin.H{
-				"title": "CSRF Protectoion",
+				"title": c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("csrf_rotectoion"),
 				"msg":   "Wow ... Native.",
 			}))
 			c.Abort()
@@ -109,8 +109,8 @@ func routerSwitch(c *gin.Context) {
 			return
 		}
 		c.HTML(http.StatusMethodNotAllowed, "default/error", soligin.Soli(c, false, gin.H{
-			"title": "Method Not Allowed",
-			"msg":   "Are you lost?",
+			"title": c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("method_not_allowed"),
+			"msg":   c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("are_you_lost"),
 		}))
 		return
 	}

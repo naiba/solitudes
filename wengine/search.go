@@ -22,7 +22,7 @@ func search(c *gin.Context) {
 	res, err := solitudes.System.Search.Search(req)
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "default/error", soligin.Soli(c, false, gin.H{
-			"title": "Search Engine Error",
+			"title": c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("search_engine_error"),
 			"msg":   err.Error(),
 		}))
 		return
@@ -78,7 +78,7 @@ func search(c *gin.Context) {
 		}
 	}
 	c.HTML(http.StatusOK, "default/search", soligin.Soli(c, true, gin.H{
-		"title":   "Search result for \"" + c.Query("w") + "\"",
+		"title":   c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("search_result_title", c.Query("w")),
 		"results": result,
 	}))
 }

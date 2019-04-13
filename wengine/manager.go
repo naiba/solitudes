@@ -50,7 +50,7 @@ func manager(c *gin.Context) {
 	runtime.ReadMemStats(&m)
 
 	c.HTML(http.StatusOK, "admin/index", soligin.Soli(c, true, gin.H{
-		"title":              "Dashboard",
+		"title":              c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("dashboard"),
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
 		"lastArticlePublish": fmt.Sprintf("%.2f", time.Now().Sub(lastArticle.UpdatedAt).Hours()/24),

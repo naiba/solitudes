@@ -116,6 +116,11 @@
     },
     {
         "locale": "en",
+        "key": "manage_media",
+        "trans": "Manage media"
+    },
+    {
+        "locale": "en",
         "key": "dashboard",
         "trans": "Dashboard"
     },

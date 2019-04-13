@@ -1,6 +1,11 @@
 [
     {
         "locale": "zh",
+        "key": "articles_in",
+        "trans": "「{0}」下的文章"
+    },
+    {
+        "locale": "zh",
         "key": "read_num",
         "trans": "{0} 阅读"
     },
@@ -118,5 +123,30 @@
         "locale": "zh",
         "key": "404_msg",
         "trans": "Wow…… 这个页面可能已到达火星。"
+    },
+    {
+        "locale": "zh",
+        "key": "search_engine_error",
+        "trans": "搜索引擎出错"
+    },
+    {
+        "locale": "zh",
+        "key": "search_result_title",
+        "trans": "「{0}」的搜索结果"
+    },
+    {
+        "locale": "zh",
+        "key": "csrf_rotectoion",
+        "trans": "跨站请求保护"
+    },
+    {
+        "locale": "zh",
+        "key": "method_not_allowed",
+        "trans": "不支持的请求"
+    },
+    {
+        "locale": "zh",
+        "key": "are_you_lost",
+        "trans": "您是不是迷路了？"
     }
 ]

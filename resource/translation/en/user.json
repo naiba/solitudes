@@ -1,6 +1,11 @@
 [
     {
         "locale": "en",
+        "key": "articles_in",
+        "trans": "Articles in \"{0}\""
+    },
+    {
+        "locale": "en",
         "key": "read_num",
         "trans": "{0} read"
     },
@@ -127,5 +132,30 @@
         "locale": "en",
         "key": "404_msg",
         "trans": "Wow ... This page may fly to Mars."
+    },
+    {
+        "locale": "en",
+        "key": "search_engine_error",
+        "trans": "Search engine error"
+    },
+    {
+        "locale": "en",
+        "key": "search_result_title",
+        "trans": "Search result for \"{0}\""
+    },
+    {
+        "locale": "en",
+        "key": "csrf_rotectoion",
+        "trans": "CSRF Potectoion"
+    },
+    {
+        "locale": "en",
+        "key": "method_not_allowed",
+        "trans": "Method not allowed"
+    },
+    {
+        "locale": "en",
+        "key": "are_you_lost",
+        "trans": "Are you lost?"
     }
 ]

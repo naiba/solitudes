@@ -62,7 +62,7 @@ func media(c *gin.Context) {
 	//	return innerMedias, nil
 	//})
 	c.HTML(http.StatusOK, "admin/media", soligin.Soli(c, true, gin.H{
-		"title":  "Manage File",
+		"title":  c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_media"),
 		"medias": innerMedias,
 		"page":   page,
 	}))
