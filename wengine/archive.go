@@ -18,7 +18,7 @@ func archive(c *gin.Context) {
 	}
 	var articles []solitudes.Article
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB,
+		DB:      solitudes.System.DB.Where("book_refer is NULL"),
 		Page:    int(page),
 		Limit:   15,
 		OrderBy: []string{"created_at DESC"},
