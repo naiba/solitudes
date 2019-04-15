@@ -1,6 +1,6 @@
 workflow "Build master and deploy on push" {
   on = "push"
-  resolves = ["docker-push"]
+  resolves = ["maddox/actions/ssh@master"]
 }
 
 action "filter-master-branch" {
@@ -30,7 +30,7 @@ action "docker-push-master" {
 
 workflow "Build tag on push" {
   on = "push"
-  resolves = ["maddox/actions/ssh@master"]
+  resolves = ["docker-push-tag"]
 }
 
 action "filter-tag" {
@@ -70,7 +70,7 @@ action "docker-push" {
 
 action "maddox/actions/ssh@master" {
   uses = "maddox/actions/ssh@master"
-  needs = ["docker-push-tag"]
+  needs = ["docker-push"]
   secrets = ["PRIVATE_KEY", "PUBLIC_KEY", "HOST", "USER", "PORT"]
   args = "/NAIBA/scripts/solitdes.sh"
 }
