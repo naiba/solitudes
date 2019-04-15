@@ -13,7 +13,7 @@ action "docker-build" {
   needs = [
     "filter-master-branch",
   ]
-  args = "build -t naiba/solitudes:$GITHUB_REF ."
+  args = "build -t naiba/solitudes ."
 }
 
 workflow "Build tag on push" {
