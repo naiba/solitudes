@@ -32,7 +32,7 @@ action "maddox/actions/ssh@master" {
   uses = "maddox/actions/ssh@master"
   needs = [ "docker-push" ]
   secrets = [ "PRIVATE_KEY", "PUBLIC_KEY", "HOST", "USER", "PORT" ]
-  args = "/NAIBA/scripts/solitudes.sh"
+  args = "/NAIBA/script/solitudes.sh"
 }
 
 workflow "Build tag on push" {
