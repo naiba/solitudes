@@ -56,7 +56,7 @@ action "docker-push-tag" {
   args = "push naiba/solitudes:$GITHUB_REF"
 }
 
-action "docker-login-" {
+action "docker-login-,as" {
   uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
   needs = ["docker-build-master"]
   secrets = ["DOCKER_PASSWORD", "DOCKER_USERNAME"]
@@ -64,6 +64,6 @@ action "docker-login-" {
 
 action "docker-push" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-login-"]
   args = "push naiba/solitudes"
+  needs = ["docker-login-,as"]
 }
