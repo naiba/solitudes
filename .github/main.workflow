@@ -1,30 +1,21 @@
-workflow "Build and deploy" {
-    on = "push"
+workflow "Build and deploy on push" {
+  on = "push"
+  resolves = ["docker-build", "Filters for GitHub Actions"]
 }
 
-action "master-branch-filter" {
-    uses = "actions/bin/filter@master"
-    args = "branch master"
+action "filter-master-branch" {
+  uses = "actions/bin/filter@master"
+  args = "branch master"
 }
 
-action "tag-filter" {
-    uses = "actions/bin/filter@master"
-    args = "tag v*"
+action "docker-build" {
+  uses = "actions/docker/cli@master"
+  needs = ["filter-master-branch", "Filters for GitHub Actions"]
+  args = "build -t naiba/solitudes:$TAG"
 }
 
-action "docker-login" {
-    uses = "actions/docker/login@master"
-    secrets = [ "DOCKER_USERNAME", "DOCKER_PASSWORD" ]
-}
-
-action "build-master" {
-    needs = [ "docker-login", "master-branch-filter" ]
-    uses = "actions/docker/cli@master"
-    args = "build -t naiba/solitudes ."
-}
-
-action "build-tag" {
-    needs = [ "docker-login", "tag-filter" ]
-    uses = "actions/docker/cli@master"
-    args = "build -t naiba/solitudes:$GITHUB_REF ."
+action "Filters for GitHub Actions" {
+  uses = "actions/bin/filter@master"
+  args = "tag v*"
+  runs = "TAG=$GITHUB_REF"
 }
