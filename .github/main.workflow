@@ -1,6 +1,6 @@
 workflow "Build master and deploy on push" {
   on = "push"
-  resolves = ["maddox/actions/ssh@master"]
+  resolves = [ "maddox/actions/ssh@master" ]
 }
 
 action "filter-master-branch" {
@@ -8,7 +8,7 @@ action "filter-master-branch" {
   args = "branch master"
 }
 
-action "docker-build-master" {
+action "docker-build" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
   needs = [
     "filter-master-branch",
@@ -16,21 +16,28 @@ action "docker-build-master" {
   args = "build -t naiba/solitudes ."
 }
 
-action "docker-login-master" {
+action "docker-login" {
   uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-build-master"]
-  secrets = ["DOCKER_USERNAME", "DOCKER_PASSWORD"]
+  needs = [ "docker-build" ]
+  secrets = [ "DOCKER_USERNAME", "DOCKER_PASSWORD" ]
 }
 
-action "docker-push-master" {
+action "docker-push" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-login-master"]
+  needs = [ "docker-login" ]
   args = "push naiba/solitudes"
+}
+
+action "maddox/actions/ssh@master" {
+  uses = "maddox/actions/ssh@master"
+  needs = [ "docker-push" ]
+  secrets = [ "PRIVATE_KEY", "PUBLIC_KEY", "HOST", "USER", "PORT" ]
+  args = "/NAIBA/scripts/solitudes.sh"
 }
 
 workflow "Build tag on push" {
   on = "push"
-  resolves = ["docker-push-tag"]
+  resolves = [ "docker-push-tag" ]
 }
 
 action "filter-tag" {
@@ -40,37 +47,18 @@ action "filter-tag" {
 
 action "docker-build-tag" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["filter-tag"]
+  needs = [ "filter-tag" ]
   args = "build -t naiba/solitudes:$GITHUB_REF"
 }
 
 action "docker-login-tag" {
   uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-build-tag"]
-  secrets = ["DOCKER_USERNAME", "DOCKER_PASSWORD"]
+  needs = [ "docker-build-tag" ]
+  secrets = [ "DOCKER_USERNAME", "DOCKER_PASSWORD" ]
 }
 
 action "docker-push-tag" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-login-tag"]
+  needs = [ "docker-login-tag" ]
   args = "push naiba/solitudes:$GITHUB_REF"
-}
-
-action "docker-login" {
-  uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-build-master"]
-  secrets = ["DOCKER_PASSWORD", "DOCKER_USERNAME"]
-}
-
-action "docker-push" {
-  uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  args = "push naiba/solitudes"
-  needs = ["docker-login"]
-}
-
-action "maddox/actions/ssh@master" {
-  uses = "maddox/actions/ssh@master"
-  needs = ["docker-push"]
-  secrets = ["PRIVATE_KEY", "PUBLIC_KEY", "HOST", "USER", "PORT"]
-  args = "/NAIBA/scripts/solitdes.sh"
 }
