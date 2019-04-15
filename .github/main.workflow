@@ -30,7 +30,7 @@ action "docker-push-master" {
 
 workflow "Build tag on push" {
   on = "push"
-  resolves = ["docker-push-tag"]
+  resolves = ["maddox/actions/ssh@master"]
 }
 
 action "filter-tag" {
@@ -66,4 +66,11 @@ action "docker-push" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
   args = "push naiba/solitudes"
   needs = ["docker-login"]
+}
+
+action "maddox/actions/ssh@master" {
+  uses = "maddox/actions/ssh@master"
+  needs = ["docker-push-tag"]
+  secrets = ["PRIVATE_KEY", "PUBLIC_KEY", "HOST", "USER", "PORT"]
+  args = "/NAIBA/scripts/solitdes.sh"
 }
