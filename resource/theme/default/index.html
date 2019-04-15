@@ -14,8 +14,8 @@
         <time datetime="{{.UpdatedAt}}" itemprop="datePublished">{{tf .UpdatedAt ($.Tr.T "date_format")}}</time>
       </div>
       <span>
-        <a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}}
-        <small>({{$.Tr.T "read_num" (uint2str .ReadNum)}}{{if .CommentNum}},{{$.Tr.T "comment_num" (uint2str .CommentNum)}}{{end}})</small>{{end}}
+        {{if .IsBook}}📙{{end}}<a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}}
+        <small>(👀{{.ReadNum}}{{if .CommentNum}},💬{{.CommentNum}}{{end}})</small>{{end}}
       </span>
     </li>
     {{end}}

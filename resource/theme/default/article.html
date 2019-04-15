@@ -99,7 +99,7 @@
                     <small>·v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
                     |
-                    <span>{{.Tr.T "read_num" (uint2str .Data.article.ReadNum)}}{{if .Data.article.CommentNum}},{{.Tr.T "comment_num" (uint2str .Data.article.CommentNum)}}{{end}}</span>
+                    <span>👀{{.Data.article.ReadNum}}{{if .Data.article.CommentNum}},💬{{.Data.article.CommentNum}}{{end}}</span>
                     {{end}}
                 </div>
                 {{if .Data.article.RawTags}}

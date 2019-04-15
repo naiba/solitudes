@@ -1,7 +1,8 @@
 {{define "default/article_chapters"}}
 <ul>
     {{range .Chapters}}
-    <li><a href="/{{.Slug}}">{{.Title}}</a></li>
+    <li>{{if .IsBook}}📙{{end}}<a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}}
+        <small>(👀{{.ReadNum}}{{if .CommentNum}},💬{{.CommentNum}}{{end}})</small>{{end}}</li>
     {{if .IsBook}}
     {{template "default/article_chapters" .}}
     {{end}}
