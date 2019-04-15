@@ -18,7 +18,7 @@ action "docker-build" {
 
 workflow "Build tag on push" {
   on = "push"
-  resolves = ["GitHub Action for Docker"]
+  resolves = ["docker-push"]
 }
 
 action "filter-tag" {
@@ -30,4 +30,16 @@ action "GitHub Action for Docker" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
   needs = ["filter-tag"]
   args = "build -t naiba/solitudes:$GITHUB_REF"
+}
+
+action "docker-login" {
+  uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
+  needs = ["GitHub Action for Docker"]
+  secrets = ["DOCKER_USERNAME", "DOCKER_PASSWORD"]
+}
+
+action "docker-push" {
+  uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
+  needs = ["docker-login"]
+  args = "push naiba/solitudes"
 }
