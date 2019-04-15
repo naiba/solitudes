@@ -1,21 +1,27 @@
 workflow "Build and deploy on push" {
   on = "push"
-  resolves = ["docker-build", "Filters for GitHub Actions"]
+  resolves = [
+    "docker-build",
+    "filter-tag",
+  ]
 }
 
 action "filter-master-branch" {
-  uses = "actions/bin/filter@master"
+  uses = "actions/bin/filter@4227a6636cb419f91a0d1afb1216ecfab99e433a"
   args = "branch master"
 }
 
 action "docker-build" {
-  uses = "actions/docker/cli@master"
-  needs = ["filter-master-branch", "Filters for GitHub Actions"]
+  uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
+  needs = [
+    "filter-master-branch",
+    "filter-tag",
+  ]
   args = "build -t naiba/solitudes:$TAG"
 }
 
-action "Filters for GitHub Actions" {
-  uses = "actions/bin/filter@master"
+action "filter-tag" {
+  uses = "actions/bin/filter@4227a6636cb419f91a0d1afb1216ecfab99e433a"
   args = "tag v*"
   runs = "TAG=$GITHUB_REF"
 }
