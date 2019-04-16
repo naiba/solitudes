@@ -93,3 +93,7 @@ article footer {
         height: auto !important;
     }
 }
+
+.content {
+    min-height: unset;
+}
