@@ -1,6 +1,6 @@
 workflow "Build master and deploy on push" {
   on = "push"
-  resolves = ["deploy"]
+  resolves = [ "deploy" ]
 }
 
 action "filter-master-branch" {
@@ -18,27 +18,26 @@ action "docker-build" {
 
 action "docker-login" {
   uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-build"]
-  secrets = ["DOCKER_USERNAME", "DOCKER_PASSWORD"]
+  needs = [ "docker-build" ]
+  secrets = [ "DOCKER_USERNAME", "DOCKER_PASSWORD" ]
 }
 
 action "docker-push" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-login"]
+  needs = [ "docker-login" ]
   args = "push naiba/solitudes"
 }
 
 action "deploy" {
   uses = "maddox/actions/ssh@master"
-  needs = ["docker-push"]
-  secrets = ["PRIVATE_KEY", "PUBLIC_KEY", "HOST", "USER", "PORT"]
+  needs = [ "docker-push" ]
+  secrets = [ "PRIVATE_KEY", "PUBLIC_KEY", "HOST", "USER", "PORT" ]
   args = "/NAIBA/script/solitudes.sh"
 }
 
 workflow "Build tag on push" {
   resolves = [
     "docker-push-tag",
-    "tag-build",
   ]
   on = "push"
 }
@@ -50,14 +49,20 @@ action "filter-tag" {
 
 action "docker-build-tag" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["filter-tag"]
+  needs = [ "filter-tag" ]
   args = "build -t naiba/solitudes:$GITHUB_REF"
 }
 
 action "docker-login-tag" {
   uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-build-tag"]
-  secrets = ["DOCKER_USERNAME", "DOCKER_PASSWORD"]
+  needs = [ "docker-build-tag" ]
+  secrets = [ "DOCKER_USERNAME", "DOCKER_PASSWORD" ]
+}
+
+action "tag-build" {
+  uses = "actions/docker/tag@8cdf801b322af5f369e00d85e9cf3a7122f49108"
+  needs = [ "docker-build-tag" ]
+  args = "base naiba/solitudes --no-latest --no-sha"
 }
 
 action "docker-push-tag" {
@@ -67,10 +72,4 @@ action "docker-push-tag" {
     "tag-build",
   ]
   args = "push naiba/solitudes"
-}
-
-action "tag-build" {
-  uses = "actions/docker/tag@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = ["docker-build-tag"]
-  args = "base naiba/solitudes --no-latest --no-sha"
 }
