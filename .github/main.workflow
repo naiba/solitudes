@@ -47,16 +47,30 @@ action "filter-tag" {
   args = "ref refs/tags/v*"
 }
 
+action "docker-build-tag" {
+  uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
+  needs = [
+    "filter-tag",
+  ]
+  args = "build -t naiba/solitudes ."
+}
+
+action "docker-login-tag" {
+  uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
+  needs = [ "docker-build-tag" ]
+  secrets = [ "DOCKER_USERNAME", "DOCKER_PASSWORD" ]
+}
+
 action "docker-tag" {
   uses = "actions/docker/tag@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = [ "docker-build", "filter-tag" ]
+  needs = [ "docker-build-tag" ]
   args = "base naiba/solitudes --no-latest --no-sha"
 }
 
 action "docker-push-tag" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
   needs = [
-    "docker-login",
+    "docker-login-tag",
     "docker-tag",
   ]
   args = "push naiba/solitudes"
