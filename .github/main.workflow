@@ -40,7 +40,7 @@ workflow "Build tag on push" {
     "docker-push-tag",
     "tag-build",
   ]
-  on = "release"
+  on = "push"
 }
 
 action "filter-tag" {
