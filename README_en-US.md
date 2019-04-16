@@ -1,6 +1,6 @@
 # Solitudes
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/naiba/solitudes)](https://goreportcard.com/report/github.com/naiba/solitudes) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes?ref=badge_shield)
+[![Go Report Card](https://goreportcard.com/badge/github.com/naiba/solitudes)](https://goreportcard.com/report/github.com/naiba/solitudes) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes?ref=badge_small)
 [![Size](https://images.microbadger.com/badges/image/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes) [![Pulls](https://img.shields.io/docker/pulls/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes)
 
 :smoking: In those days when I feel solitude, there is writing to accompany me.
@@ -45,8 +45,6 @@ Has three hacks in current revolution.
 - yanyiwu/gojieba `getCurrentFilePath` func can't get running path
 
 ## Thanks
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes?ref=badge_small)
 
 - theme from [@probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
 - dashboard UI from [@AdminLTE](https://adminlte.io/)
