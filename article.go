@@ -89,9 +89,8 @@ func (t *Article) AfterFind() {
 	t.RawTags = strings.Join(t.Tags, ",")
 	if t.IsBook {
 		var wg sync.WaitGroup
-		wg.Add(2)
-		System.Pool.Submit(relatedNum("read_num", t, &wg))
-		System.Pool.Submit(relatedNum("comment_num", t, &wg))
+		wg.Add(1)
+		System.Pool.Submit(relatedNum(t, &wg, true))
 		wg.Wait()
 	}
 }
@@ -185,15 +184,19 @@ func sanitizedAnchorName(text string) string {
 	return string(anchorName)
 }
 
-type sumNum struct {
-	Total uint
-}
-
-func relatedNum(what string, p *Article, wg *sync.WaitGroup) func() {
+func relatedNum(p *Article, wg *sync.WaitGroup, root bool) func() {
 	return func() {
-		var totalNum sumNum
-		System.DB.Model(&Article{}).Select("sum("+what+") as total").Where("book_refer = ?", p.ID).Scan(&totalNum)
-		p.ReadNum += totalNum.Total
-		wg.Done()
+		var chapters []Article
+		System.DB.Select("read_num,comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
+		for i := 0; i < len(chapters); i++ {
+			if chapters[i].IsBook {
+				relatedNum(&chapters[i], wg, false)()
+			}
+			p.ReadNum += chapters[i].ReadNum
+			p.CommentNum += chapters[i].CommentNum
+		}
+		if root {
+			wg.Done()
+		}
 	}
 }
