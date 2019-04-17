@@ -102,7 +102,7 @@ func article(c *gin.Context) {
 		wg.Done()
 	})
 	wg.Wait()
-
+	a.RelatedCount()
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
 		"title":        title,
 		"keywords":     a.RawTags,

@@ -23,6 +23,9 @@ func archive(c *gin.Context) {
 		Limit:   15,
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
+	for i := 0; i < len(articles); i++ {
+		articles[i].RelatedCount()
+	}
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("archive"),
 		"what":     "archives",
@@ -44,6 +47,9 @@ func tags(c *gin.Context) {
 		Limit:   15,
 		OrderBy: []string{"updated_at DESC"},
 	}, &articles)
+	for i := 0; i < len(articles); i++ {
+		articles[i].RelatedCount()
+	}
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("articles_in", pageSlice[1]),
 		"what":     "tags",

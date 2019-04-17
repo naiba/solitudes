@@ -21,6 +21,9 @@ func manageArticle(c *gin.Context) {
 		Limit:   15,
 		OrderBy: []string{"updated_at DESC"},
 	}, &as)
+	for i := 0; i < len(as); i++ {
+		as[i].RelatedCount()
+	}
 	c.HTML(http.StatusOK, "admin/articles", soligin.Soli(c, true, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_articles"),
 		"articles": as,

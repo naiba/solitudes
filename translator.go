@@ -10,11 +10,13 @@ import (
 	ut "github.com/go-playground/universal-translator"
 )
 
+// Translator 翻译
 type Translator struct {
 	locales.Translator
 	Trans ut.Translator
 }
 
+// T 普通翻译
 func (t *Translator) T(key interface{}, params ...string) string {
 
 	s, err := t.Trans.T(key, params...)
@@ -24,6 +26,7 @@ func (t *Translator) T(key interface{}, params ...string) string {
 	return s
 }
 
+// C cardinal
 func (t *Translator) C(key interface{}, num float64, digits uint64, param string) string {
 
 	s, err := t.Trans.C(key, num, digits, param)
@@ -34,6 +37,7 @@ func (t *Translator) C(key interface{}, num float64, digits uint64, param string
 	return s
 }
 
+// O ordinal
 func (t *Translator) O(key interface{}, num float64, digits uint64, param string) string {
 
 	s, err := t.Trans.C(key, num, digits, param)
@@ -44,6 +48,7 @@ func (t *Translator) O(key interface{}, num float64, digits uint64, param string
 	return s
 }
 
+// R range
 func (t *Translator) R(key interface{}, num1 float64, digits1 uint64, num2 float64, digits2 uint64, param1, param2 string) string {
 
 	s, err := t.Trans.R(key, num1, digits1, num2, digits2, param1, param2)
@@ -54,6 +59,7 @@ func (t *Translator) R(key interface{}, num1 float64, digits1 uint64, num2 float
 	return s
 }
 
+// Currency 货币
 func (t *Translator) Currency() currency.Type {
 	switch t.Locale() {
 	case "en":

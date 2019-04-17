@@ -87,12 +87,6 @@ func (t *Article) BeforeSave() {
 // AfterFind hook
 func (t *Article) AfterFind() {
 	t.RawTags = strings.Join(t.Tags, ",")
-	if t.IsBook {
-		var wg sync.WaitGroup
-		wg.Add(1)
-		System.Pool.Submit(relatedNum(t, &wg, true))
-		wg.Wait()
-	}
 }
 
 var titleRegex = regexp.MustCompile(`^\s{0,2}(#{1,6})\s(.*)$`)
@@ -184,19 +178,30 @@ func sanitizedAnchorName(text string) string {
 	return string(anchorName)
 }
 
-func relatedNum(p *Article, wg *sync.WaitGroup, root bool) func() {
-	return func() {
-		var chapters []*Article
-		System.DB.Select("id,read_num,comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
-		for i := 0; i < len(chapters); i++ {
-			if chapters[i].IsBook {
-				relatedNum(chapters[i], wg, false)()
-			}
-			p.ReadNum += chapters[i].ReadNum
-			p.CommentNum += chapters[i].CommentNum
+// RelatedCount 合计专栏下文章计数
+func (t *Article) RelatedCount() {
+	if !t.IsBook {
+		return
+	}
+	var wg sync.WaitGroup
+	wg.Add(1)
+	System.Pool.Submit(func() {
+		innerRelatedCount(t, &wg, true)
+	})
+	wg.Wait()
+}
+
+func innerRelatedCount(p *Article, wg *sync.WaitGroup, root bool) {
+	var chapters []*Article
+	System.DB.Select("id,is_book,read_num,comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
+	for i := 0; i < len(chapters); i++ {
+		if chapters[i].IsBook {
+			innerRelatedCount(chapters[i], nil, false)
 		}
-		if root {
-			wg.Done()
-		}
+		p.ReadNum += chapters[i].ReadNum
+		p.CommentNum += chapters[i].CommentNum
+	}
+	if root {
+		wg.Done()
 	}
 }
