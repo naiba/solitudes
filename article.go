@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 	"unicode"
 
@@ -86,6 +87,13 @@ func (t *Article) BeforeSave() {
 // AfterFind hook
 func (t *Article) AfterFind() {
 	t.RawTags = strings.Join(t.Tags, ",")
+	if t.IsBook {
+		var wg sync.WaitGroup
+		wg.Add(2)
+		System.Pool.Submit(relatedNum("read_num", t, &wg))
+		System.Pool.Submit(relatedNum("comment_num", t, &wg))
+		wg.Wait()
+	}
 }
 
 var titleRegex = regexp.MustCompile(`^\s{0,2}(#{1,6})\s(.*)$`)
@@ -175,4 +183,17 @@ func sanitizedAnchorName(text string) string {
 		}
 	}
 	return string(anchorName)
+}
+
+type sumNum struct {
+	Total uint
+}
+
+func relatedNum(what string, p *Article, wg *sync.WaitGroup) func() {
+	return func() {
+		var totalNum sumNum
+		System.DB.Model(&Article{}).Select("sum("+what+") as total").Where("book_refer = ?", p.ID).Scan(&totalNum)
+		p.ReadNum += totalNum.Total
+		wg.Done()
+	}
 }
