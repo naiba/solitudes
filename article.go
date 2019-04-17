@@ -186,11 +186,11 @@ func sanitizedAnchorName(text string) string {
 
 func relatedNum(p *Article, wg *sync.WaitGroup, root bool) func() {
 	return func() {
-		var chapters []Article
+		var chapters []*Article
 		System.DB.Select("id,read_num,comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
 		for i := 0; i < len(chapters); i++ {
 			if chapters[i].IsBook {
-				relatedNum(&chapters[i], wg, false)()
+				relatedNum(chapters[i], wg, false)()
 			}
 			p.ReadNum += chapters[i].ReadNum
 			p.CommentNum += chapters[i].CommentNum
