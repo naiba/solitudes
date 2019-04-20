@@ -63,8 +63,9 @@ func index(c *gin.Context) {
 	for i := 0; i < len(as); i++ {
 		as[i].RelatedCount()
 	}
+	tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
 	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, false, gin.H{
-		"title":    "Home",
+		"title":    tr.T("home"),
 		"bio":      solitudes.System.Config.Web.Bio,
 		"articles": as,
 	}))

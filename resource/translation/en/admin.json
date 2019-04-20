@@ -1,6 +1,10 @@
 [
     {
         "locale": "en",
+        "key": "home",
+        "trans": "Home"
+    },{
+        "locale": "en",
         "key": "login",
         "trans": "Login"
     },

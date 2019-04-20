@@ -1,6 +1,11 @@
 [
     {
         "locale": "zh",
+        "key": "home",
+        "trans": "首页"
+    },
+    {
+        "locale": "zh",
         "key": "login",
         "trans": "登录"
     },
