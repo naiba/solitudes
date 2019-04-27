@@ -1,7 +1,7 @@
 # Solitudes
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/naiba/solitudes)](https://goreportcard.com/report/github.com/naiba/solitudes) [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes?ref=badge_small)
- ![Actions Status](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/naiba/solitudes) [![Size](https://images.microbadger.com/badges/image/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes) [![Pulls](https://img.shields.io/docker/pulls/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes)
+ [![Actions Status](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/naiba/solitudes)](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/naiba/solitudes) [![Size](https://images.microbadger.com/badges/image/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes) [![Pulls](https://img.shields.io/docker/pulls/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes)
 
 :smoking: In those days when I feel solitude, there is writing to accompany me.
 
