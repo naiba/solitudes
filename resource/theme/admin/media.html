@@ -27,7 +27,7 @@
                                 <tr role="row">
                                     <td>{{.Filename}}</td>
                                     <td><a target="_blank"
-                                            href="/{{.Article.Slug}}/version/{{.Article.Version}}">{{.Article.Title}}</a>
+                                            href="/{{.Article.Slug}}/v{{.Article.Version}}">{{.Article.Title}}</a>
                                     </td>
                                     <td>{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
                                     <td><button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')"

@@ -222,7 +222,7 @@ var shits = []shitGin{
 		},
 	},
 	{
-		Match: regexp.MustCompile(`^\/([^\/]*)\/version/(\d*)$`),
+		Match: regexp.MustCompile(`^\/([^\/]*)\/v(\d*)$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 		},
