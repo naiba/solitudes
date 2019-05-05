@@ -9,7 +9,7 @@
 
 ## Features
 
-- A died simple blog-engine
+- A blog engine that can publish books
 - Easy to build a book
 - SEO friendly
 - Full text search
