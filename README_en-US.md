@@ -20,7 +20,7 @@
 
 ## Quick start
 
-1. your postgres **must** enable `uuid` plugin
+1. your postgres database **must** enable `uuid` plugin
 
     ```sql
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;

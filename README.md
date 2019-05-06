@@ -19,7 +19,7 @@
 
 ## 指南
 
-1. 你的 postgres 服务器**必须**启用 `uuid` 扩展
+1. 你的 postgres 数据库**必须**启用 `uuid` 扩展
 
     ```sql
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
