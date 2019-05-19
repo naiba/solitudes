@@ -124,8 +124,10 @@ func routerSwitch(c *gin.Context) {
 }
 
 func checkPoolSubmit(wg *sync.WaitGroup, err error) {
-	if wg != nil {
-		wg.Done()
+	if err != nil {
+		log.Println(err)
+		if wg != nil {
+			wg.Done()
+		}
 	}
-	log.Println(err)
 }

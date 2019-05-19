@@ -186,7 +186,7 @@ func (t *Article) RelatedCount() {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	checkPoolSubmit(nil, System.Pool.Submit(func() {
+	checkPoolSubmit(&wg, System.Pool.Submit(func() {
 		innerRelatedCount(t, &wg, true)
 	}))
 
