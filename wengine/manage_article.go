@@ -1,6 +1,7 @@
 package wengine
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -85,7 +86,10 @@ func deleteArticle(c *gin.Context) {
 	}
 	// delete bleve data
 	for i := 0; i < len(indexIDs); i++ {
-		solitudes.System.Search.Delete(indexIDs[i])
+		err := solitudes.System.Search.Delete(indexIDs[i])
+		if err != nil {
+			log.Println("solitudes.System.Search.Delete", err)
+		}
 	}
 }
 

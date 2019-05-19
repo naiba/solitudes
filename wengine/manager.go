@@ -53,8 +53,8 @@ func manager(c *gin.Context) {
 		"title":              c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("dashboard"),
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
-		"lastArticlePublish": fmt.Sprintf("%.2f", time.Now().Sub(lastArticle.UpdatedAt).Hours()/24),
-		"lastComment":        fmt.Sprintf("%.2f", time.Now().Sub(lastComment.CreatedAt).Hours()/24),
+		"lastArticlePublish": fmt.Sprintf("%.2f", time.Since(lastArticle.UpdatedAt).Hours()/24),
+		"lastComment":        fmt.Sprintf("%.2f", time.Since(lastComment.CreatedAt).Hours()/24),
 		"tagNum":             tn.Count,
 
 		"memoryUsage": bToMb(m.Sys),

@@ -66,23 +66,35 @@ func article(c *gin.Context) {
 	}
 	var wg sync.WaitGroup
 	wg.Add(5)
-	solitudes.System.Pool.Submit(func() {
+	err := solitudes.System.Pool.Submit(func() {
 		relatedChapters(&a)
 		wg.Done()
 	})
-	solitudes.System.Pool.Submit(func() {
+	if err != nil {
+		wg.Done()
+	}
+	err = solitudes.System.Pool.Submit(func() {
 		relatedBook(&a)
 		wg.Done()
 	})
-	solitudes.System.Pool.Submit(func() {
+	if err != nil {
+		wg.Done()
+	}
+	err = solitudes.System.Pool.Submit(func() {
 		// load prevPost,nextPost
 		relatedSiblingArticle(&a)
 		wg.Done()
 	})
-	solitudes.System.Pool.Submit(func() {
+	if err != nil {
+		wg.Done()
+	}
+	err = solitudes.System.Pool.Submit(func() {
 		a.GenTOC()
 		wg.Done()
 	})
+	if err != nil {
+		wg.Done()
+	}
 	var pg *pagination.Paginator
 	solitudes.System.Pool.Submit(func() {
 		// load root comments

@@ -1,6 +1,7 @@
 package notify
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 
@@ -27,5 +28,8 @@ func ServerChan(comment *solitudes.Comment, article *solitudes.Article, err erro
 - Article:` + article.Title + `
 - Author:` + comment.Nickname + `(` + comment.Email + `)
 - Content:` + comment.Content + errmsg}}
-	http.PostForm("https://sc.ftqq.com/"+solitudes.System.Config.ServerChan+".send", params)
+	_, err = http.PostForm("https://sc.ftqq.com/"+solitudes.System.Config.ServerChan+".send", params)
+	if err != nil {
+		log.Println("http.PostForm", err)
+	}
 }

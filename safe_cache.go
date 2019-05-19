@@ -54,17 +54,17 @@ func (sc *SafeCache) GetOrBuild(key string, build func() (interface{}, error)) (
 
 	// 接收重建通知
 	done := make(chan struct{})
-	System.Pool.Submit(func() {
+	err = System.Pool.Submit(func() {
 		cond.Wait()
 		close(done)
 	})
+	if err != nil {
+		return nil, err
+	}
 	select {
 	case <-time.After(time.Second * 5):
 		return nil, errors.New("Error get cache time out")
 	case <-done:
-		if err != nil {
-			return nil, err
-		}
 		return v, err
 	}
 }

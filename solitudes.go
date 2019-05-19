@@ -162,14 +162,20 @@ func BuildArticleIndex() {
 	var hs []ArticleHistory
 	var wg sync.WaitGroup
 	wg.Add(2)
-	System.Pool.Submit(func() {
+	err := System.Pool.Submit(func() {
 		System.DB.Find(&as)
 		wg.Done()
 	})
-	System.Pool.Submit(func() {
+	if err != nil {
+		panic(err)
+	}
+	err = System.Pool.Submit(func() {
 		System.DB.Preload("Article").Find(&hs)
 		wg.Done()
 	})
+	if err != nil {
+		panic(err)
+	}
 	wg.Wait()
 	for i := 0; i < len(as); i++ {
 		err := System.Search.Index(as[i].GetIndexID(), as[i].ToIndexData())
