@@ -1,6 +1,6 @@
 # Solitudes
 
-[![GolangCI](https://golangci.com/badges/github.com/naiba/solitudes.svg)](https://golangci.com)
+[![GolangCI](https://golangci.com/badges/github.com/naiba/solitudes.svg)](https://golangci.com/r/github.com/naiba/solitudes)
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes?ref=badge_small)
 [![Actions Status](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/naiba/solitudes)](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/naiba/solitudes)
 [![Size](https://images.microbadger.com/badges/image/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes)
