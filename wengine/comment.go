@@ -86,10 +86,10 @@ func commentHandler(c *gin.Context) {
 	}
 
 	//Email notify
-	solitudes.System.Pool.Submit(func() {
+	checkPoolSubmit(nil, solitudes.System.Pool.Submit(func() {
 		err := notify.Email(&cm, replyTo, article)
 		notify.ServerChan(&cm, article, err)
-	})
+	}))
 }
 
 func verifyArticle(cf *commentForm) (*solitudes.Article, error) {

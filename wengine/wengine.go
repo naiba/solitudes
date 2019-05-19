@@ -3,9 +3,11 @@ package wengine
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"reflect"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/gin-contrib/sessions"
@@ -119,4 +121,11 @@ func routerSwitch(c *gin.Context) {
 		"title": tr.T("404_title"),
 		"msg":   tr.T("404_msg"),
 	}))
+}
+
+func checkPoolSubmit(wg *sync.WaitGroup, err error) {
+	if wg != nil {
+		wg.Done()
+	}
+	log.Println(err)
 }

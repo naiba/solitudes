@@ -66,37 +66,25 @@ func article(c *gin.Context) {
 	}
 	var wg sync.WaitGroup
 	wg.Add(5)
-	err := solitudes.System.Pool.Submit(func() {
+	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
 		relatedChapters(&a)
 		wg.Done()
-	})
-	if err != nil {
-		wg.Done()
-	}
-	err = solitudes.System.Pool.Submit(func() {
+	}))
+	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
 		relatedBook(&a)
 		wg.Done()
-	})
-	if err != nil {
-		wg.Done()
-	}
-	err = solitudes.System.Pool.Submit(func() {
+	}))
+	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
 		// load prevPost,nextPost
 		relatedSiblingArticle(&a)
 		wg.Done()
-	})
-	if err != nil {
-		wg.Done()
-	}
-	err = solitudes.System.Pool.Submit(func() {
+	}))
+	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
 		a.GenTOC()
 		wg.Done()
-	})
-	if err != nil {
-		wg.Done()
-	}
+	}))
 	var pg *pagination.Paginator
-	solitudes.System.Pool.Submit(func() {
+	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
 		// load root comments
 		pageSlice := c.Query("comment_page")
 		var page int64
@@ -112,7 +100,7 @@ func article(c *gin.Context) {
 		// load childComments
 		relatedChildComments(&a, a.Comments, true)
 		wg.Done()
-	})
+	}))
 	wg.Wait()
 	a.RelatedCount()
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{

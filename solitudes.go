@@ -1,6 +1,7 @@
 package solitudes
 
 import (
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -102,7 +103,9 @@ func newConfig() *Config {
 		panic(err)
 	}
 	var c Config
-	viper.Unmarshal(&c)
+	if err = viper.Unmarshal(&c); err != nil {
+		panic(err)
+	}
 	return &c
 }
 
@@ -162,20 +165,14 @@ func BuildArticleIndex() {
 	var hs []ArticleHistory
 	var wg sync.WaitGroup
 	wg.Add(2)
-	err := System.Pool.Submit(func() {
+	checkPoolSubmit(&wg, System.Pool.Submit(func() {
 		System.DB.Find(&as)
 		wg.Done()
-	})
-	if err != nil {
-		panic(err)
-	}
-	err = System.Pool.Submit(func() {
+	}))
+	checkPoolSubmit(&wg, System.Pool.Submit(func() {
 		System.DB.Preload("Article").Find(&hs)
 		wg.Done()
-	})
-	if err != nil {
-		panic(err)
-	}
+	}))
 	wg.Wait()
 	for i := 0; i < len(as); i++ {
 		err := System.Search.Index(as[i].GetIndexID(), as[i].ToIndexData())
@@ -189,6 +186,13 @@ func BuildArticleIndex() {
 			panic(err)
 		}
 	}
+}
+
+func checkPoolSubmit(wg *sync.WaitGroup, err error) {
+	if wg != nil {
+		wg.Done()
+	}
+	log.Println(err)
 }
 
 func init() {

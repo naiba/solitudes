@@ -2,7 +2,6 @@ package solitudes
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"sync"
@@ -186,13 +185,11 @@ func (t *Article) RelatedCount() {
 	}
 	var wg sync.WaitGroup
 	wg.Add(1)
-	err := System.Pool.Submit(func() {
+
+	checkPoolSubmit(nil, System.Pool.Submit(func() {
 		innerRelatedCount(t, &wg, true)
-	})
-	if err != nil {
-		log.Println("System.Pool.Submit", err)
-		wg.Done()
-	}
+	}))
+
 	wg.Wait()
 }
 
