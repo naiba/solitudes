@@ -261,9 +261,9 @@
                 alert('nickname & content is required.')
                 return
             }
-            localStorage.setItem("cm_nickname", $('#id_nickname').val())
-            localStorage.setItem("cm_email", $('#id_email').val())
-            localStorage.setItem("cm_website", $('#id_website').val())
+            localStorage.setItem("cm_nickname", $('#id_nickname').val() == undefind?"":$('#id_nickname').val())
+            localStorage.setItem("cm_email", $('#id_email').val() == undefind?"":$('#id_email').val())
+            localStorage.setItem("cm_website", $('#id_website').val() == undefind?"":$('#id_website').val())
             $(btn).text("Submiting ...")
             var data = {
                 nickname: $('#id_nickname').val(),
