@@ -8,8 +8,7 @@
         <p class="comment-meta title{{if .IsAdmin}} admin{{end}}">
             <a href="{{if .Website}}{{.Website}}{{else}}javascript:;{{end}}" target="_blank"
                 rel="nofollow noopener">{{.Nickname}}</a>
-            {{if .IsAdmin}}<img title="admin" width="16px" height="16px" style="margin-bottom:-5px;padding: 1px;"
-                src="https://rawcdn.githack.com/github/gemoji/master/images/neckbeard.png">{{end}}
+            {{if .IsAdmin}} 👲 {{end}}
             <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt "02 Jan 2006"}}</time>
             <a href="/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
             <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">Reply</a>
