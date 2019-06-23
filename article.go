@@ -130,10 +130,9 @@ func (t *Article) GenTOC() {
 		} else if currentToc.Level == toc.Level {
 			// 兄弟节点
 			if parent.Parent == nil {
-				parent.Parent.SubTitles = append(parent.SubTitles, &toc)
+				t.Toc = append(t.Toc, &toc)
 			} else {
 				toc.Parent = parent.Parent
-				toc.ShowLevel = parent.ShowLevel + 1
 				parent.Parent.SubTitles = append(parent.Parent.SubTitles, &toc)
 			}
 		} else {
