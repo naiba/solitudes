@@ -132,6 +132,7 @@ func (t *Article) GenTOC() {
 				t.Toc = append(t.Toc, &toc)
 			} else {
 				toc.Parent = parent.Parent
+				toc.ShowLevel = toc.Parent.Level + 1
 				toc.Parent.SubTitles = append(toc.Parent.SubTitles, &toc)
 			}
 		} else {
