@@ -124,7 +124,6 @@ func (t *Article) GenTOC() {
 				t.Toc = append(t.Toc, &toc)
 			} else {
 				toc.Parent = parent
-				toc.ShowLevel = parent.ShowLevel + 1
 				parent.SubTitles = append(parent.SubTitles, &toc)
 			}
 		} else if currentToc.Level == toc.Level {
@@ -133,7 +132,7 @@ func (t *Article) GenTOC() {
 				t.Toc = append(t.Toc, &toc)
 			} else {
 				toc.Parent = parent.Parent
-				parent.Parent.SubTitles = append(parent.Parent.SubTitles, &toc)
+				toc.Parent.SubTitles = append(toc.Parent.SubTitles, &toc)
 			}
 		} else {
 			// 子节点
