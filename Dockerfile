@@ -1,7 +1,7 @@
 FROM golang:alpine AS binarybuilder
 # Install build deps
 RUN apk --no-cache --no-progress add --virtual build-deps build-base git linux-pam-dev
-WORKDIR /go/src/github.com/naiba/solitudes/
+WORKDIR /naiba/solitudes/
 COPY . .
 RUN go mod tidy -v && \
   CGO_ENABLED=true go build -o solitudes -ldflags="-s -w -X github.com/naiba/solitudes.BuildVersion=`git rev-parse HEAD`" app/web/main.go
@@ -15,7 +15,7 @@ RUN echo http://dl-2.alpinelinux.org/alpine/edge/community/ >>/etc/apk/repositor
 WORKDIR /solitudes
 COPY resource ./resource
 COPY data/dict ./dict
-COPY --from=binarybuilder /go/src/github.com/naiba/solitudes/solitudes .
+COPY --from=binarybuilder /naiba/solitudes/solitudes .
 # Configure Docker Container
 VOLUME ["/solitudes/data"]
 EXPOSE 8080
