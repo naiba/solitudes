@@ -12,9 +12,7 @@
           <li>
             <a href="/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
             <p class="search-result">
-              {{range $k,$v:=.Match}}
-              {{if $v}}{{$k}}:{{$v|unsafe}}<br>{{end}}
-              {{end}}
+              {{.Content}}
             </p>
           </li>
           {{end}}
