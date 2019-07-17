@@ -40,7 +40,7 @@ type Article struct {
 	TemplateID byte           `form:"template" binding:"required"`
 	IsBook     bool           `form:"is_book"`
 	RawTags    string         `form:"tags" gorm:"-"`
-	Tags       pq.StringArray `gorm:"index;type:varchar(255)[]"`
+	Tags       pq.StringArray `gorm:"index;type:varchar(255)[]" binding:"-" form:"-"`
 	ReadNum    uint           `gorm:"default:0;"`
 	CommentNum uint           `gorm:"default:0;"`
 	Version    uint           `gorm:"default:1;"`
@@ -48,7 +48,7 @@ type Article struct {
 
 	Comments         []*Comment
 	ArticleHistories []*ArticleHistory
-	Toc              []*ArticleTOC    `gorm:"-"`
+	Toc              []*ArticleTOC
 	Chapters         []*Article       `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
 	Book             *Article         `gorm:"-" binding:"-" form:"-"`
 	SibilingArticle  *SibilingArticle `gorm:"-" binding:"-" form:"-"`

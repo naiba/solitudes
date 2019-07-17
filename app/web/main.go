@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/wengine"
 )
 
@@ -13,7 +14,6 @@ func main() {
 			panic(err)
 		}
 	}
-	if err := wengine.WEngine(); err != nil {
-		panic(err)
-	}
+	solitudes.BuildArticleIndex()
+	wengine.WEngine()
 }

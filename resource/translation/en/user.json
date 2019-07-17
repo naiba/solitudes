@@ -141,7 +141,7 @@
     },
     {
         "locale": "en",
-        "key": "new_version",
-        "trans": "This article has a <a href='{0}'>new version</a>."
+        "key": "has_new_version",
+        "trans": "This article has a <a href=\"{0}\">new version</a>."
     }
 ]

@@ -24,7 +24,8 @@ func search(c *gin.Context) {
 			MaxOutputs:   20,
 		}})
 
-	log.Fatal(sea)
+	log.Println(sea)
+	log.Println(solitudes.System.Search.NumIndexed())
 
 	// var articleIndex = make(map[string]struct {
 	// 	Version uint64

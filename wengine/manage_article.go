@@ -4,10 +4,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
+
+	"github.com/biezhi/gorm-paginator/pagination"
+	"github.com/gin-gonic/gin"
 )
 
 func manageArticle(c *gin.Context) {
@@ -90,19 +91,40 @@ func deleteArticle(c *gin.Context) {
 	}
 }
 
+type publishArticle struct {
+	ID         string `form:"id"`
+	Title      string `form:"title"`
+	Slug       string `form:"slug"`
+	Content    string `form:"content"`
+	Template   byte   `form:"template"`
+	Tags       string `form:"tags"`
+	IsBook     bool   `form:"is_book"`
+	NewVersion bool   `form:"new_version"`
+}
+
 func publishHandler(c *gin.Context) {
 	var err error
 	// new or edit article
-	var af solitudes.Article
+	var pa publishArticle
 
-	if err = c.ShouldBind(&af); err != nil {
+	if err = c.ShouldBind(&pa); err != nil {
 		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 
 	// edit article
 	var article *solitudes.Article
-	if article, err = fetchOriginArticle(&af); err != nil {
+	article = &solitudes.Article{
+		ID:         pa.ID,
+		Title:      pa.Title,
+		Slug:       pa.Slug,
+		Content:    pa.Content,
+		NewVersion: pa.NewVersion,
+		TemplateID: pa.Template,
+		IsBook:     pa.IsBook,
+		RawTags:    pa.Tags,
+	}
+	if article, err = fetchOriginArticle(article); err != nil {
 		c.String(http.StatusForbidden, err.Error())
 		return
 	}

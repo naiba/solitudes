@@ -2,7 +2,6 @@ package solitudes
 
 import (
 	"log"
-	"os"
 	"sync"
 	"time"
 
@@ -20,25 +19,21 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-const fullTextSearchIndexDir = "data/roitIndex"
-
 func newRiotSearch() *riot.Engine {
 	searcher := &riot.Engine{}
 	opts := types.EngineOpts{
-		Using: 1,
-		IndexerOpts: &types.IndexerOpts{
-			IndexType: types.DocIdsIndex,
-		},
-		UseStore:      true,
-		StoreFolder:   fullTextSearchIndexDir,
+		Using:   3,
+		Hmm:     true,
+		GseMode: true,
+		// UseStore:      true,
+		// StoreFolder:   fullTextSearchIndexDir,
 		GseDict:       "./dict/dictionary.txt",
 		StopTokenFile: "./dict/stop_tokens.txt",
-		StoreEngine:   "bg", // bg: badger, lbd: leveldb, bolt: bolt
+		StoreEngine: "bg", // bg: badger, lbd: leveldb, bolt: bolt
 	}
 	searcher.Init(opts)
 	searcher.Flush()
 	log.Println("RIOT: recover index number", searcher.NumDocsIndexed())
-	searcher.Close()
 	return searcher
 }
 
@@ -134,10 +129,10 @@ func provide() {
 
 // BuildArticleIndex 重建索引
 func BuildArticleIndex() {
-	System.Search.Close()
-	if err := os.RemoveAll(fullTextSearchIndexDir); err != nil {
-		panic(err)
-	}
+	// System.Search.Close()
+	// if err := os.RemoveAll(fullTextSearchIndexDir); err != nil {
+	// 	panic(err)
+	// }
 	System.Search = newRiotSearch()
 	var as []Article
 	var hs []ArticleHistory
@@ -158,6 +153,8 @@ func BuildArticleIndex() {
 	for i := 0; i < len(hs); i++ {
 		System.Search.Index(hs[i].GetIndexID(), hs[i].ToIndexData())
 	}
+	System.Search.Flush()
+	log.Println("Doc indexed", System.Search.NumIndexed())
 }
 
 func checkPoolSubmit(wg *sync.WaitGroup, err error) {
