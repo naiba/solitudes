@@ -23,10 +23,10 @@
 
 ## Quick start
 
-1. your postgres database **must** enable `uuid` plugin
+1. exec this command under your postgres database to enable `uuid` plugin
 
     ```sql
-    CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     ```
 
 2. create a data dir

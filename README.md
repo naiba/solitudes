@@ -23,10 +23,10 @@
 
 ## 指南
 
-1. 你的 postgres 数据库**必须**启用 `uuid` 扩展
+1. 在 postgres 数据库执行以下命令，启用 `uuid` 扩展
 
     ```sql
-    CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     ```
 
 2. 创建一个数据文件夹
@@ -39,19 +39,11 @@
 
 5. 打开 `https://yourdomain/login` 登录管理面板
 
-## 提醒
-
-有三处 hack，请留意
-
-- yanyiwu/gojieba#46 英文单词分词问题。
-- yanyiwu/gojieba `dep ensure` 没有将数据文件下载下来。
-- yanyiwu/gojieba `getCurrentFilePath` 函数无法正常获取运行目录。
-
 ## 感谢
 
 - 来自 [@probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus) 的主题
 - 管理面板UI [@AdminLTE](https://adminlte.io/)
-- 全文搜索引擎 [@blevesearch/bleve](https://github.com/blevesearch/bleve)
+- 全文搜索引擎 [@go-ego/riot](https://github.com/go-ego/riot)
 
 ## 许可
 

@@ -3,6 +3,8 @@ package solitudes
 import (
 	"fmt"
 	"time"
+
+	"github.com/go-ego/riot/types"
 )
 
 // ArticleHistory 文章修订历史
@@ -21,11 +23,13 @@ func (t *ArticleHistory) GetIndexID() string {
 }
 
 // ToIndexData to index data
-func (t *ArticleHistory) ToIndexData() ArticleIndex {
-	return ArticleIndex{
-		Slug:    t.Article.Slug,
-		Version: fmt.Sprintf("%d", t.Version),
+func (t *ArticleHistory) ToIndexData() types.DocData {
+	return types.DocData{
 		Content: t.Content,
-		Title:   t.Article.Title,
+		Attri: ArticleIndex{
+			Slug:    t.Article.Slug,
+			Version: fmt.Sprintf("%d", t.Version),
+			Title:   t.Article.Title,
+		},
 	}
 }

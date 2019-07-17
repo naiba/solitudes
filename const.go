@@ -3,8 +3,7 @@ package solitudes
 import (
 	"time"
 
-	"github.com/blevesearch/bleve"
-
+	"github.com/go-ego/riot"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"
@@ -37,7 +36,7 @@ type SysVeriable struct {
 	Config       *Config
 	DB           *gorm.DB
 	Cache        *cache.Cache
-	Search       bleve.Index
+	Search       *riot.Engine
 	SafeCache    *SafeCache
 	Token        string
 	TokenExpires time.Time

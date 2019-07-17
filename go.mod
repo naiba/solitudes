@@ -38,6 +38,7 @@ require (
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.4.0
 	github.com/glycerine/goconvey v0.0.0-20190410193231-58a59202ab31 // indirect
+	github.com/go-ego/riot v0.0.0-20190307162011-3d971d90bc83
 	github.com/go-kit/kit v0.9.0 // indirect
 	github.com/go-playground/form v3.1.4+incompatible // indirect
 	github.com/go-playground/locales v0.12.1

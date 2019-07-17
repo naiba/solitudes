@@ -13,54 +13,33 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/dig"
 
-	"github.com/blevesearch/bleve"
-	"github.com/yanyiwu/gojieba"
-
-	// - bleve adapter
-	_ "github.com/yanyiwu/gojieba/bleve"
+	"github.com/go-ego/riot"
+	"github.com/go-ego/riot/types"
 
 	// - db driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-const fullTextSearchIndexDir = "data/bleve.article"
+const fullTextSearchIndexDir = "data/roitIndex"
 
-func newBleveIndex() bleve.Index {
-	index, err := bleve.Open(fullTextSearchIndexDir)
-	if err == bleve.ErrorIndexPathDoesNotExist {
-		mapping := bleve.NewIndexMapping()
-		err := mapping.AddCustomTokenizer("gojieba",
-			map[string]interface{}{
-				"dictpath":     gojieba.DICT_PATH,
-				"hmmpath":      gojieba.HMM_PATH,
-				"userdictpath": gojieba.USER_DICT_PATH,
-				"idf":          gojieba.IDF_PATH,
-				"stop_words":   gojieba.STOP_WORDS_PATH,
-				"type":         "gojieba",
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
-		err = mapping.AddCustomAnalyzer("gojieba",
-			map[string]interface{}{
-				"type":      "gojieba",
-				"tokenizer": "gojieba",
-			},
-		)
-		if err != nil {
-			panic(err)
-		}
-		mapping.DefaultAnalyzer = "gojieba"
-		index, err = bleve.New(fullTextSearchIndexDir, mapping)
-		if err != nil {
-			panic(err)
-		}
-	} else if err != nil {
-		panic(err)
+func newRiotSearch() *riot.Engine {
+	searcher := &riot.Engine{}
+	opts := types.EngineOpts{
+		Using: 1,
+		IndexerOpts: &types.IndexerOpts{
+			IndexType: types.DocIdsIndex,
+		},
+		UseStore:      true,
+		StoreFolder:   fullTextSearchIndexDir,
+		GseDict:       "./dict/dictionary.txt",
+		StopTokenFile: "./dict/stop_tokens.txt",
+		StoreEngine:   "bg", // bg: badger, lbd: leveldb, bolt: bolt
 	}
-
-	return index
+	searcher.Init(opts)
+	searcher.Flush()
+	log.Println("RIOT: recover index number", searcher.NumDocsIndexed())
+	searcher.Close()
+	return searcher
 }
 
 func newCache() *cache.Cache {
@@ -111,7 +90,7 @@ func newConfig() *Config {
 }
 
 func newSystem(c *Config, d *gorm.DB, h *cache.Cache, sc *SafeCache,
-	s bleve.Index, p *ants.Pool) *SysVeriable {
+	s *riot.Engine, p *ants.Pool) *SysVeriable {
 	return &SysVeriable{
 		Config:    c,
 		DB:        d,
@@ -134,7 +113,7 @@ func provide() {
 		newConfig,
 		newDatabase,
 		newSystem,
-		newBleveIndex,
+		newRiotSearch,
 		newSafeCache,
 		newPool,
 	}
@@ -155,13 +134,11 @@ func provide() {
 
 // BuildArticleIndex 重建索引
 func BuildArticleIndex() {
-	if err := System.Search.Close(); err != nil {
-		panic(err)
-	}
+	System.Search.Close()
 	if err := os.RemoveAll(fullTextSearchIndexDir); err != nil {
 		panic(err)
 	}
-	System.Search = newBleveIndex()
+	System.Search = newRiotSearch()
 	var as []Article
 	var hs []ArticleHistory
 	var wg sync.WaitGroup
@@ -176,16 +153,10 @@ func BuildArticleIndex() {
 	}))
 	wg.Wait()
 	for i := 0; i < len(as); i++ {
-		err := System.Search.Index(as[i].GetIndexID(), as[i].ToIndexData())
-		if err != nil {
-			panic(err)
-		}
+		System.Search.Index(as[i].GetIndexID(), as[i].ToIndexData())
 	}
 	for i := 0; i < len(hs); i++ {
-		err := System.Search.Index(hs[i].GetIndexID(), hs[i].ToIndexData())
-		if err != nil {
-			panic(err)
-		}
+		System.Search.Index(hs[i].GetIndexID(), hs[i].ToIndexData())
 	}
 }
 
