@@ -29,7 +29,7 @@ action "docker-push" {
 }
 
 action "deploy" {
-  uses = "maddox/actions/ssh"
+  uses = "maddox/actions/ssh@master"
   needs = ["docker-push"]
   secrets = [
     "PRIVATE_KEY",
