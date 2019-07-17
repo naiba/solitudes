@@ -116,6 +116,7 @@
             </div>
         </header>
         <div class="content" itemprop="articleBody">
+            {{if .Data.article.NewVersion}}<p>{{.Tr.T "new_version" (.Data.article.Slug)|unsafe}}</p>{{end}}
             {{.Data.article.Content|md}}
             {{if .Data.article.IsBook}}
             <h4>{{.Tr.T "chapters"}}</h4>

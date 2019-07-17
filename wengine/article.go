@@ -60,6 +60,7 @@ func article(c *gin.Context) {
 		a.Content = history.Content
 		a.Version = history.Version
 		a.CreatedAt = history.CreatedAt
+		a.NewVersion = true
 		title = fmt.Sprintf("%s v%d", a.Title, a.Version)
 	} else {
 		title = a.Title

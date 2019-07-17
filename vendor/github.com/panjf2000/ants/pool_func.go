@@ -66,19 +66,18 @@ type PoolWithFunc struct {
 	PanicHandler func(interface{})
 }
 
-// clear expired workers periodically.
+// Clear expired workers periodically.
 func (p *PoolWithFunc) periodicallyPurge() {
 	heartbeat := time.NewTicker(p.expiryDuration)
 	defer heartbeat.Stop()
 
 	for range heartbeat.C {
+		if CLOSED == atomic.LoadInt32(&p.release) {
+			break
+		}
 		currentTime := time.Now()
 		p.lock.Lock()
 		idleWorkers := p.workers
-		if len(idleWorkers) == 0 && p.Running() == 0 && atomic.LoadInt32(&p.release) == 1 {
-			p.lock.Unlock()
-			return
-		}
 		n := -1
 		for i, w := range idleWorkers {
 			if currentTime.Sub(w.recycleTime) <= p.expiryDuration {
@@ -101,7 +100,7 @@ func (p *PoolWithFunc) periodicallyPurge() {
 
 // NewPoolWithFunc generates an instance of ants pool with a specific function.
 func NewPoolWithFunc(size int, pf func(interface{})) (*PoolWithFunc, error) {
-	return NewTimingPoolWithFunc(size, DefaultCleanIntervalTime, pf)
+	return NewTimingPoolWithFunc(size, DEFAULT_CLEAN_INTERVAL_TIME, pf)
 }
 
 // NewTimingPoolWithFunc generates an instance of ants pool with a specific function and a custom timed task.
@@ -126,7 +125,7 @@ func NewTimingPoolWithFunc(size, expiry int, pf func(interface{})) (*PoolWithFun
 
 // Invoke submits a task to pool.
 func (p *PoolWithFunc) Invoke(args interface{}) error {
-	if 1 == atomic.LoadInt32(&p.release) {
+	if CLOSED == atomic.LoadInt32(&p.release) {
 		return ErrPoolClosed
 	}
 	p.retrieveWorker().args <- args
@@ -229,11 +228,15 @@ func (p *PoolWithFunc) retrieveWorker() *WorkerWithFunc {
 }
 
 // revertWorker puts a worker back into free pool, recycling the goroutines.
-func (p *PoolWithFunc) revertWorker(worker *WorkerWithFunc) {
+func (p *PoolWithFunc) revertWorker(worker *WorkerWithFunc) bool {
+	if CLOSED == atomic.LoadInt32(&p.release) {
+		return false
+	}
 	worker.recycleTime = time.Now()
 	p.lock.Lock()
 	p.workers = append(p.workers, worker)
 	// Notify the invoker stuck in 'retrieveWorker()' of there is an available worker in the worker queue.
 	p.cond.Signal()
 	p.lock.Unlock()
+	return true
 }

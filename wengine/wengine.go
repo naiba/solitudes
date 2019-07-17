@@ -16,8 +16,8 @@ import (
 	"github.com/naiba/com"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
+	"github.com/russross/blackfriday"
 	csrf "github.com/utrack/gin-csrf"
-	"gopkg.in/russross/blackfriday.v2"
 )
 
 // WEngine web engine

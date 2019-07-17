@@ -1,6 +1,6 @@
 package pure
 ============
-<img align="right" src="https://raw.githubusercontent.com/go-playground/pure/master/logo.png">![Project status](https://img.shields.io/badge/version-4.1.1-green.svg)
+<img align="right" src="https://raw.githubusercontent.com/go-playground/pure/master/logo.png">![Project status](https://img.shields.io/badge/version-4.2.0-green.svg)
 [![Build Status](https://travis-ci.org/go-playground/pure.svg?branch=master)](https://travis-ci.org/go-playground/pure)
 [![Coverage Status](https://coveralls.io/repos/github/go-playground/pure/badge.svg?branch=master)](https://coveralls.io/github/go-playground/pure?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/go-playground/pure)](https://goreportcard.com/report/github.com/go-playground/pure)
@@ -80,7 +80,7 @@ rv.URLParam(paramname)
 
 // serve css, js etc.. pure.RequestVars(r).URLParam(pure.WildcardParam) will return the remaining path if 
 // you need to use it in a custom handler...
-p.Get("/static/*", http.FileServer(http.Dir("static/").ServeHTTP)) 
+p.Get("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))).ServeHTTP)
 
 ...
 ```

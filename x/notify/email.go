@@ -3,7 +3,7 @@ package notify
 import (
 	"errors"
 
-	"github.com/matcornic/hermes"
+	"github.com/matcornic/hermes/v2"
 	"github.com/naiba/solitudes"
 	"gopkg.in/gomail.v2"
 )
@@ -16,9 +16,14 @@ var h = hermes.Hermes{
 		Copyright: "Copyright © " + solitudes.System.Config.SpaceName + ". All rights reserved.",
 	},
 }
+
 var sender = gomail.NewPlainDialer(solitudes.System.Config.Email.Host,
 	solitudes.System.Config.Email.Port, solitudes.System.Config.Email.User,
-	solitudes.System.Config.Email.Pass, solitudes.System.Config.Email.SSL)
+	solitudes.System.Config.Email.Pass)
+
+	func init()  {
+		sender.SSL = true
+	}
 
 //Email notify
 func Email(src, dist *solitudes.Comment, article *solitudes.Article) error {

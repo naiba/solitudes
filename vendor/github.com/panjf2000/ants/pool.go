@@ -63,19 +63,18 @@ type Pool struct {
 	PanicHandler func(interface{})
 }
 
-// clear expired workers periodically.
+// Clear expired workers periodically.
 func (p *Pool) periodicallyPurge() {
 	heartbeat := time.NewTicker(p.expiryDuration)
 	defer heartbeat.Stop()
 
 	for range heartbeat.C {
+		if CLOSED == atomic.LoadInt32(&p.release) {
+			break
+		}
 		currentTime := time.Now()
 		p.lock.Lock()
 		idleWorkers := p.workers
-		if len(idleWorkers) == 0 && p.Running() == 0 && atomic.LoadInt32(&p.release) == 1 {
-			p.lock.Unlock()
-			return
-		}
 		n := -1
 		for i, w := range idleWorkers {
 			if currentTime.Sub(w.recycleTime) <= p.expiryDuration {
@@ -98,7 +97,7 @@ func (p *Pool) periodicallyPurge() {
 
 // NewPool generates an instance of ants pool.
 func NewPool(size int) (*Pool, error) {
-	return NewTimingPool(size, DefaultCleanIntervalTime)
+	return NewTimingPool(size, DEFAULT_CLEAN_INTERVAL_TIME)
 }
 
 // NewTimingPool generates an instance of ants pool with a custom timed task.
@@ -122,7 +121,7 @@ func NewTimingPool(size, expiry int) (*Pool, error) {
 
 // Submit submits a task to this pool.
 func (p *Pool) Submit(task func()) error {
-	if 1 == atomic.LoadInt32(&p.release) {
+	if CLOSED == atomic.LoadInt32(&p.release) {
 		return ErrPoolClosed
 	}
 	p.retrieveWorker().task <- task
@@ -225,11 +224,15 @@ func (p *Pool) retrieveWorker() *Worker {
 }
 
 // revertWorker puts a worker back into free pool, recycling the goroutines.
-func (p *Pool) revertWorker(worker *Worker) {
+func (p *Pool) revertWorker(worker *Worker) bool {
+	if CLOSED == atomic.LoadInt32(&p.release) {
+		return false
+	}
 	worker.recycleTime = time.Now()
 	p.lock.Lock()
 	p.workers = append(p.workers, worker)
 	// Notify the invoker stuck in 'retrieveWorker()' of there is an available worker in the worker queue.
 	p.cond.Signal()
 	p.lock.Unlock()
+	return true
 }

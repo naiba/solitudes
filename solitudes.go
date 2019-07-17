@@ -23,9 +23,10 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
+const fullTextSearchIndexDir = "data/bleve.article"
+
 func newBleveIndex() bleve.Index {
-	dataPath := "data/bleve.article"
-	index, err := bleve.Open(dataPath)
+	index, err := bleve.Open(fullTextSearchIndexDir)
 	if err == bleve.ErrorIndexPathDoesNotExist {
 		mapping := bleve.NewIndexMapping()
 		err := mapping.AddCustomTokenizer("gojieba",
@@ -51,7 +52,7 @@ func newBleveIndex() bleve.Index {
 			panic(err)
 		}
 		mapping.DefaultAnalyzer = "gojieba"
-		index, err = bleve.New(dataPath, mapping)
+		index, err = bleve.New(fullTextSearchIndexDir, mapping)
 		if err != nil {
 			panic(err)
 		}
@@ -157,7 +158,7 @@ func BuildArticleIndex() {
 	if err := System.Search.Close(); err != nil {
 		panic(err)
 	}
-	if err := os.RemoveAll("data/bleve.article"); err != nil {
+	if err := os.RemoveAll(fullTextSearchIndexDir); err != nil {
 		panic(err)
 	}
 	System.Search = newBleveIndex()

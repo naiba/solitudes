@@ -138,5 +138,10 @@
         "locale": "en",
         "key": "are_you_lost",
         "trans": "Are you lost?"
+    },
+    {
+        "locale": "en",
+        "key": "new_version",
+        "trans": "This article has a <a href='{0}'>new version</a>."
     }
 ]
