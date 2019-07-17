@@ -113,8 +113,7 @@ func publishHandler(c *gin.Context) {
 	}
 
 	// edit article
-	var article *solitudes.Article
-	article = &solitudes.Article{
+	article := &solitudes.Article{
 		ID:         pa.ID,
 		Title:      pa.Title,
 		Slug:       pa.Slug,

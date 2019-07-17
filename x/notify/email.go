@@ -17,13 +17,13 @@ var h = hermes.Hermes{
 	},
 }
 
-var sender = gomail.NewPlainDialer(solitudes.System.Config.Email.Host,
+var sender = gomail.NewDialer(solitudes.System.Config.Email.Host,
 	solitudes.System.Config.Email.Port, solitudes.System.Config.Email.User,
 	solitudes.System.Config.Email.Pass)
 
-	func init()  {
-		sender.SSL = true
-	}
+func init() {
+	sender.SSL = true
+}
 
 //Email notify
 func Email(src, dist *solitudes.Comment, article *solitudes.Article) error {

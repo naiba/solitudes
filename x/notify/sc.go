@@ -18,15 +18,15 @@ func ServerChan(comment *solitudes.Comment, article *solitudes.Article, err erro
 	if err != nil {
 		errmsg = `
 
-		### Email notify
+		### Email notify   
 		
 		` + err.Error()
 	}
 	params := url.Values{"text": {article.Title + " got a new comment"}, "desp": {
-		`### Comment detail
+		`### Comment detail   
 
-- Article:` + article.Title + `
-- Author:` + comment.Nickname + `(` + comment.Email + `)
+- Article:` + article.Title + `  
+- Author:` + comment.Nickname + `(` + comment.Email + `)   
 - Content:` + comment.Content + errmsg}}
 	_, err = http.PostForm("https://sc.ftqq.com/"+solitudes.System.Config.ServerChan+".send", params)
 	if err != nil {
