@@ -1,6 +1,6 @@
 workflow "Build master and deploy on push" {
   on = "push"
-  resolves = [ "deploy" ]
+  resolves = ["deploy"]
 }
 
 action "filter-master-branch" {
@@ -18,20 +18,26 @@ action "docker-build" {
 
 action "docker-login" {
   uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = [ "docker-build" ]
-  secrets = [ "DOCKER_USERNAME", "DOCKER_PASSWORD" ]
+  needs = ["docker-build"]
+  secrets = ["DOCKER_USERNAME", "DOCKER_PASSWORD"]
 }
 
 action "docker-push" {
   uses = "actions/docker/cli@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = [ "docker-login" ]
+  needs = ["docker-login"]
   args = "push naiba/solitudes"
 }
 
 action "deploy" {
-  uses = "maddox/actions/ssh@master"
-  needs = [ "docker-push" ]
-  secrets = [ "PRIVATE_KEY", "PUBLIC_KEY", "HOST", "USER", "PORT" ]
+  uses = "maddox/actions/ssh"
+  needs = ["docker-push"]
+  secrets = [
+    "PRIVATE_KEY",
+    "PUBLIC_KEY",
+    "USER",
+    "PORT",
+    "HOST",
+  ]
   args = "/NAIBA/script/solitudes.sh"
 }
 
@@ -57,13 +63,13 @@ action "docker-build-tag" {
 
 action "docker-login-tag" {
   uses = "actions/docker/login@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = [ "docker-build-tag" ]
-  secrets = [ "DOCKER_USERNAME", "DOCKER_PASSWORD" ]
+  needs = ["docker-build-tag"]
+  secrets = ["DOCKER_USERNAME", "DOCKER_PASSWORD"]
 }
 
 action "docker-tag" {
   uses = "actions/docker/tag@8cdf801b322af5f369e00d85e9cf3a7122f49108"
-  needs = [ "docker-build-tag" ]
+  needs = ["docker-build-tag"]
   args = "naiba/solitudes naiba/solitudes --no-latest --no-sha"
 }
 
