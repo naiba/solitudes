@@ -98,6 +98,6 @@ func upload(c *gin.Context) {
 	c.String(http.StatusOK, extName)
 }
 
-func rebuildBleveData(c *gin.Context) {
+func rebuildRiotData(c *gin.Context) {
 	solitudes.BuildArticleIndex()
 }

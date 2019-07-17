@@ -39,19 +39,11 @@
 
 5. open `https://yourdomain/login` to login Dashboard
 
-## Notice
-
-Has three hacks in current revolution.
-
-- yanyiwu/gojieba#46 english word segmentation issue.
-- yanyiwu/gojieba `dep ensure` not include `deps` and `dict` dir.
-- yanyiwu/gojieba `getCurrentFilePath` func can't get running path
-
 ## Thanks
 
 - theme from [@probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
 - dashboard UI from [@AdminLTE](https://adminlte.io/)
-- full text search engine [@blevesearch/bleve](https://github.com/blevesearch/bleve)
+- full text search engine [@go-ego/riot](https://github.com/go-ego/riot)
 
 ## License
 

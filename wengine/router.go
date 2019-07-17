@@ -157,13 +157,13 @@ var shits = []shitGin{
 		},
 	},
 	{
-		Match: regexp.MustCompile(`^\/admin\/rebuild-bleve$`),
+		Match: regexp.MustCompile(`^\/admin\/rebuild-riot$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
 			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
 		},
 		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: rebuildBleveData,
+			http.MethodGet: rebuildRiotData,
 		},
 	},
 	{

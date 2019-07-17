@@ -103,16 +103,16 @@
         </div>
         <div class="row">
             <div class="col-lg-3 col-xs-6">
-                <button onclick="rebuildBleveData()"
+                <button onclick="rebuildRiotData()"
                     class="btn btn-danger btn-lg">{{.Tr.T "rebuild_fulltext_search_data"}}</button>
             </div>
         </div>
     </section>
 </div>
 <script>
-    function rebuildBleveData() {
-        if (confirm('Rebuild Bleve data?')) {
-            $.get("/admin/rebuild-bleve").done(() => {
+    function rebuildRiotData() {
+        if (confirm('Rebuild Riot data?')) {
+            $.get("/admin/rebuild-riot").done(() => {
                 alert("Rebuild successful")
             })
         }

@@ -84,7 +84,7 @@ func deleteArticle(c *gin.Context) {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	// delete bleve data
+	// delete riot data
 	for i := 0; i < len(indexIDs); i++ {
 		solitudes.System.Search.RemoveDoc(indexIDs[i])
 		solitudes.System.Search.Flush()
