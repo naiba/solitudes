@@ -4,7 +4,7 @@
     <form action="/search/" method="get">
         <div class="row">
             <div class="col-xs-8 col-md-4">
-                <input class="search-input" name="w">
+                <input class="search-input" name="w" value="{{.Data.word}}">
             </div>
             <div class="col-xs-4 col-md-2">
                 <button class="search-button" type="submit">{{.Tr.T "search"}}</button>

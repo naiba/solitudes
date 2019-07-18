@@ -41,6 +41,7 @@ func search(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "default/search", soligin.Soli(c, true, gin.H{
 		"title":   c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("search_result_title", c.Query("w")),
+		"word":    c.Query("w"),
 		"results": result,
 	}))
 }
