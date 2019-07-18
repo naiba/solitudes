@@ -82,6 +82,12 @@ var shits = []shitGin{
 		},
 	},
 	{
+		Match: regexp.MustCompile(`^\/feed/([^\/]{1,})$`),
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodGet: feedHandler,
+		},
+	},
+	{
 		Match: regexp.MustCompile(`^\/archives/(\d*)/?$`),
 		Routes: map[string]gin.HandlerFunc{
 			http.MethodGet: archive,
