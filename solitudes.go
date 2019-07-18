@@ -29,7 +29,7 @@ func newRiotSearch() *riot.Engine {
 		// StoreFolder:   fullTextSearchIndexDir,
 		GseDict:       "./dict/dictionary.txt",
 		StopTokenFile: "./dict/stop_tokens.txt",
-		StoreEngine: "bg", // bg: badger, lbd: leveldb, bolt: bolt
+		StoreEngine:   "bg", // bg: badger, lbd: leveldb, bolt: bolt
 	}
 	searcher.Init(opts)
 	searcher.Flush()
