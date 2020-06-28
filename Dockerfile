@@ -15,6 +15,7 @@ RUN echo http://dl-2.alpinelinux.org/alpine/edge/community/ >>/etc/apk/repositor
 WORKDIR /solitudes
 COPY resource ./resource
 COPY --from=binarybuilder /naiba/solitudes/solitudes .
+COPY --from=binarybuilder /go/pkg/mod/github.com/yanyiwu/gojieba* /go/pkg/mod/github.com/yanyiwu/
 # Configure Docker Container
 VOLUME ["/solitudes/data"]
 EXPOSE 8080
