@@ -2,9 +2,11 @@ package solitudes
 
 import (
 	"log"
+	"os"
 	"sync"
 	"time"
 
+	"github.com/blevesearch/bleve"
 	"github.com/panjf2000/ants"
 
 	"github.com/jinzhu/gorm"
@@ -12,29 +14,29 @@ import (
 	"github.com/spf13/viper"
 	"go.uber.org/dig"
 
-	"github.com/go-ego/riot"
-	"github.com/go-ego/riot/types"
-
 	// - db driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-func newRiotSearch() *riot.Engine {
-	searcher := &riot.Engine{}
-	opts := types.EngineOpts{
-		Using:   3,
-		Hmm:     true,
-		GseMode: true,
-		// UseStore:      true,
-		// StoreFolder:   fullTextSearchIndexDir,
-		GseDict:       "./dict/dictionary.txt",
-		StopTokenFile: "./dict/stop_tokens.txt",
-		StoreEngine:   "bg", // bg: badger, lbd: leveldb, bolt: bolt
+func newBleveSearch() bleve.Index {
+	_, err := os.Stat(fullTextSearchIndexPath)
+	var index bleve.Index
+	if err != nil {
+		mapping := bleve.NewIndexMapping()
+		mapping.AddDocumentMapping("blog", bleve.NewDocumentMapping())
+		index, err = bleve.New(fullTextSearchIndexPath, mapping)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		index, err = bleve.Open(fullTextSearchIndexPath)
+		if err != nil {
+			panic(err)
+		}
 	}
-	searcher.Init(opts)
-	searcher.Flush()
-	log.Println("RIOT: recover index number", searcher.NumDocsIndexed())
-	return searcher
+	count, err := index.DocCount()
+	log.Println("Bleve: DocCount", count, err)
+	return index
 }
 
 func newCache() *cache.Cache {
@@ -56,9 +58,6 @@ func newPool() *ants.Pool {
 }
 
 func newDatabase(conf *Config) *gorm.DB {
-	if conf.Web.Database == "" {
-		return nil
-	}
 	db, err := gorm.Open("postgres", conf.Web.Database)
 	if err != nil {
 		panic(err)
@@ -85,7 +84,7 @@ func newConfig() *Config {
 }
 
 func newSystem(c *Config, d *gorm.DB, h *cache.Cache, sc *SafeCache,
-	s *riot.Engine, p *ants.Pool) *SysVeriable {
+	s bleve.Index, p *ants.Pool) *SysVeriable {
 	return &SysVeriable{
 		Config:    c,
 		DB:        d,
@@ -108,7 +107,7 @@ func provide() {
 		newConfig,
 		newDatabase,
 		newSystem,
-		newRiotSearch,
+		newBleveSearch,
 		newSafeCache,
 		newPool,
 	}
@@ -129,11 +128,11 @@ func provide() {
 
 // BuildArticleIndex 重建索引
 func BuildArticleIndex() {
-	// System.Search.Close()
-	// if err := os.RemoveAll(fullTextSearchIndexDir); err != nil {
-	// 	panic(err)
-	// }
-	System.Search = newRiotSearch()
+	System.Search.Close()
+	if err := os.RemoveAll(fullTextSearchIndexPath); err != nil {
+		panic(err)
+	}
+	System.Search = newBleveSearch()
 	var as []Article
 	var hs []ArticleHistory
 	var wg sync.WaitGroup
@@ -148,13 +147,13 @@ func BuildArticleIndex() {
 	}))
 	wg.Wait()
 	for i := 0; i < len(as); i++ {
-		System.Search.Index(as[i].GetIndexID(), as[i].ToIndexData())
+		System.Search.Index(as[i].GetIndexID(), as[i])
 	}
 	for i := 0; i < len(hs); i++ {
-		System.Search.Index(hs[i].GetIndexID(), hs[i].ToIndexData())
+		System.Search.Index(hs[i].GetIndexID(), hs[i])
 	}
-	System.Search.Flush()
-	log.Println("Doc indexed", System.Search.NumIndexed())
+	num, err := System.Search.DocCount()
+	log.Printf("Doc indexed %d %+v\n", num, err)
 }
 
 func checkPoolSubmit(wg *sync.WaitGroup, err error) {

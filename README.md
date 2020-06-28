@@ -1,14 +1,7 @@
 # Solitudes
 
-[![GolangCI](https://golangci.com/badges/github.com/naiba/solitudes.svg)](https://golangci.com/r/github.com/naiba/solitudes)
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes.svg?type=small)](https://app.fossa.com/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes?ref=badge_small)
-[![Actions Status](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/naiba/solitudes)](https://wdp9fww0r9.execute-api.us-west-2.amazonaws.com/production/badge/naiba/solitudes)
-[![Size](https://images.microbadger.com/badges/image/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes)
-[![Pulls](https://img.shields.io/docker/pulls/naiba/solitudes.svg)](https://microbadger.com/images/naiba/solitudes)
-
 :smoking: 在那些孤独的日子里，还有写作陪伴着我。
-
-[![简体中文 README](https://img.shields.io/badge/简体中文-README-informational.svg)](README.md) [![English README](https://img.shields.io/badge/English-README-informational.svg)](README_en-US.md)
+2020，从心出发
 
 ## 特色
 
@@ -41,10 +34,6 @@
 
 ## 感谢
 
-- 来自 [@probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus) 的主题
-- 管理面板UI [@AdminLTE](https://adminlte.io/)
-- 全文搜索引擎 [@go-ego/riot](https://github.com/go-ego/riot)
-
-## 许可
-
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fnaiba%2Fsolitudes?ref=badge_large)
+- 来自 [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus) 的主题
+- 管理面板UI [AdminLTE](https://adminlte.io/)
+- 全文搜索引擎 [blevesearch/bleve](https://github.com/blevesearch/bleve)

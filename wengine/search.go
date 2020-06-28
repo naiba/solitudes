@@ -1,13 +1,15 @@
 package wengine
 
 import (
+	"bytes"
+	"fmt"
 	"net/http"
 
+	"github.com/blevesearch/bleve"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/x/soligin"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-ego/riot/types"
 )
 
 type searchResp struct {
@@ -17,25 +19,32 @@ type searchResp struct {
 
 func search(c *gin.Context) {
 	keywords := c.Query("w")
-	sea := solitudes.System.Search.Search(types.SearchReq{
-		Text: keywords,
-		RankOpts: &types.RankOpts{
-			OutputOffset: 0,
-			MaxOutputs:   20,
-		}})
 
-	var articles []types.ScoredDoc
-	if sea.Docs != nil {
-		articles = sea.Docs.(types.ScoredDocs)
-	}
+	query := bleve.NewQueryStringQuery(keywords)
+	searchRequest := bleve.NewSearchRequest(query)
+	searchRequest.Highlight = bleve.NewHighlight()
+	searchRequest.Fields = []string{"Title", "Version", "Slug"}
+	searchRequest.Explain = true
+	searchResult, _ := solitudes.System.Search.Search(searchRequest)
+
+	fmt.Println(searchResult)
+
 	var result []searchResp
-	for _, v := range articles {
-		item := v.Attri.(solitudes.ArticleIndex)
-		if len([]rune(v.Content)) > 200 {
-			v.Content = string([]rune(v.Content)[:200])
+	for _, hit := range searchResult.Hits {
+		fmt.Printf("%+v %+v %+v %s\n", hit.ID, hit.Index, hit.Fields, hit.String())
+		item := solitudes.ArticleIndex{
+			Slug:    hit.Fields["Slug"].(string),
+			Version: hit.Fields["Version"].(float64),
+			Title:   hit.Fields["Title"].(string),
+		}
+		content := bytes.NewBufferString("")
+		for _, fragments := range hit.Fragments {
+			for _, fragment := range fragments {
+				content.WriteString(fragment + "\n")
+			}
 		}
 		result = append(result, searchResp{
-			item, v.Content,
+			item, content.String(),
 		})
 	}
 

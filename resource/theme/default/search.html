@@ -12,7 +12,7 @@
           <li>
             <a href="/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
             <p class="search-result">
-              {{.Content}}
+              {{.Content|unsafe}}
             </p>
           </li>
           {{end}}

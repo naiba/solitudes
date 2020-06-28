@@ -8,7 +8,6 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/go-ego/riot/types"
 	"github.com/lib/pq"
 )
 
@@ -60,20 +59,8 @@ type Article struct {
 // ArticleIndex index data
 type ArticleIndex struct {
 	Slug    string
-	Version string
+	Version float64
 	Title   string
-}
-
-// ToIndexData to index data
-func (t *Article) ToIndexData() types.DocData {
-	return types.DocData{
-		Content: t.Content,
-		Attri: ArticleIndex{
-			Slug:    t.Slug,
-			Version: fmt.Sprintf("%d", t.Version),
-			Title:   t.Title,
-		},
-	}
 }
 
 // GetIndexID get index data id

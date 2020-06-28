@@ -10,7 +10,7 @@ email:
   ssl: true
 web:
   domain: localhost:8080 #Site domain
-  database: #Only Postgres postgres://postgres:mypassword@postgres/solitudes?sslmode=disable
+  database: postgres://postgres:mypassword@localhost/solitudes?sslmode=disable#Only Postgres postgres://postgres:mypassword@postgres/solitudes?sslmode=disable
   akismet: #Akismet key
   bio: >
     Hi, I’m a theme for the Hexo blogging framework. I’m particularly great for a personal web page with a simple blog. In this paragraph, you can provide some information about yourself. Below, you’re most recent or highlighted writings and projects are listed.
@@ -30,7 +30,7 @@ web:
   space_keywords: blog,solitude,died-simple
   theme: dark #4 themes: classic dark light white
   user:
-    email: 1@5.nu
+    email: hi@nai.ba
     # nickname show on article author
     nickname: naiba
     # password hash on https://bcrypt-generator.com

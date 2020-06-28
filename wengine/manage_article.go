@@ -86,8 +86,7 @@ func deleteArticle(c *gin.Context) {
 	}
 	// delete riot data
 	for i := 0; i < len(indexIDs); i++ {
-		solitudes.System.Search.RemoveDoc(indexIDs[i])
-		solitudes.System.Search.Flush()
+		solitudes.System.Search.Delete(indexIDs[i])
 	}
 }
 
@@ -143,8 +142,7 @@ func publishHandler(c *gin.Context) {
 	}
 	if err == nil {
 		// indexing serch engine
-		solitudes.System.Search.Index(article.GetIndexID(), article.ToIndexData())
-		solitudes.System.Search.Flush()
+		solitudes.System.Search.Index(article.GetIndexID(), article)
 	}
 	if err != nil {
 		tx.Rollback()
