@@ -1,0 +1,169 @@
+{{define "admin/publish"}}
+{{template "admin/header" .}}
+<div class="content-wrapper">
+    <section class="content-header">
+        <h1>
+            {{.Tr.T "publish_article"}}
+            <small>focus</small>
+        </h1>
+    </section>
+
+    <section class="content container-fluid">
+        <div class="form-horizontal">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputTitle" class="col-sm-2 control-label">{{.Tr.T "title"}}</label>
+                        <div class="col-sm-10">
+                            <input type="hidden" id="csrfToken" value="{{.CSRF}}">
+                            <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
+                            <input class="form-control" id="inputTitle" placeholder="Title"
+                                value="{{.Data.article.Title}}">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputSlug" class="col-sm-2 control-label">{{.Tr.T "slug"}}</label>
+                        <div class="col-sm-10">
+                            <input class="form-control" id="inputSlug" placeholder="URL slug"
+                                value="{{.Data.article.Slug}}">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputTags" class="col-sm-2 control-label">{{.Tr.T "labels"}}</label>
+                        <div class="col-sm-10">
+                            <input class="form-control" id="inputTags" placeholder="dev,golang,docker"
+                                value="{{.Data.article.RawTags}}">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="form-group">
+                        <div class="col-sm-offset-1">
+                            <select id="selTemplate" class="form-control">
+                                {{range $k,$v := .Data.templates}}
+                                <option value="{{$k}}" {{if eq $.Data.article.TemplateID $k}} selected{{end}}>
+                                    {{$v}}
+                                </option>
+                                {{end}}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputCID" class="col-sm-2 control-label">{{.Tr.T "book_refer"}}</label>
+                        <div class="col-sm-10">
+                            <input class="form-control" id="inputCID"
+                                value="{{if .Data.article.BookRefer}}{{.Data.article.BookRefer}}{{end}}">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 ">
+                    <div class="col-xs-offset-2">
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <label>
+                                    <input{{if .Data.article.IsBook}} checked{{end}} id="cbBook" type="checkbox">
+                                        {{.Tr.T "its_a_book"}}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <div class="checkbox">
+                            <label>
+                                <input id="cbNewVersion" type="checkbox"> {{.Tr.T "new_version"}}
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="editSection"></div>
+        <div class="row" style="margin-top:10px;">
+            <div class="col-xs-6 col-md-2">
+                <button onclick="publish(this)" class="btn btn-lg btn-primary">{{.Tr.T "publish"}}</button>
+            </div>
+        </div>
+    </section>
+</div>
+<link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor.css">
+</link>
+<link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor-contents.css">
+</link>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.css">
+</link>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+</link>
+<script src="https://uicdn.toast.com/tui-editor/latest/tui-editor-Editor-full.js"></script>
+<script>
+    var editor = new tui.Editor({
+        el: document.querySelector('#editSection'),
+        initialEditType: 'markdown',
+        previewStyle: 'vertical',
+        height: 'auto',
+        usageStatistics: 'false',
+        initialValue: '{{.Data.article.Content}}',
+        hooks: {
+            addImageBlobHook: function (blob, callback) {
+                uploadImage(blob, (url) => {
+                    if (url) {
+                        callback(url, blob.name)
+                    }
+                    return false
+                })
+            }
+        },
+    });
+    function publish(btn) {
+        if ($(btn).hasClass("disabled")) {
+            return
+        }
+        $(btn).toggleClass("disabled")
+        var article = {
+            id: $("#inputID").val(),
+            title: $("#inputTitle").val(),
+            slug: $("#inputSlug").val(),
+            content: editor.getMarkdown(),
+            template: parseInt($("#selTemplate").val()),
+            tags: $("#inputTags").val(),
+            _csrf: $("#csrfToken").val(),
+            is_book: document.getElementById('cbBook').checked,
+            new_version: document.getElementById('cbNewVersion').checked,
+        }
+        $("#inputCID").val() && (article.book_refer = $("#inputCID").val())
+        $.post("", article, (data, status) => {
+            window.location.href = "/" + article.slug
+        }).fail((err) => {
+            alert("Publish failed: " + err.responseText)
+        }).always(() => {
+            $(btn).toggleClass("disabled")
+        })
+    }
+    function uploadImage(blob, cb) {
+        var fd = new FormData();
+        var csrf = '{{.CSRF}}';
+        fd.append('file', blob);
+        fd.append('_csrf', csrf)
+        $.ajax({
+            type: 'POST',
+            url: '/admin/upload',
+            data: fd,
+            processData: false,
+            contentType: false
+        }).done((data) => {
+            cb(data)
+        }).fail((e) => {
+            cb(false)
+            alert("upload failed: " + e.responseText)
+        });
+    }
+</script>
+{{template "admin/footer" .}}
+{{end}}

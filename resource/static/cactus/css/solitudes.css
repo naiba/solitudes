@@ -1,0 +1,99 @@
+.search-input {
+    padding: 4px 7px;
+    outline: none;
+    border: solid 1px #666;
+    border-radius: 5px;
+    background-color: #fafafa;
+    color: #22272a;
+    font-size: 1.1rem;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
+.search-button {
+    padding-left: 9px;
+    padding-bottom: 4px;
+    padding-top: 4px;
+    padding-right: 9px;
+    border-radius: 5px;
+    color: whitesmoke;
+    background-color: #CC2A4C;
+    font-size: 1.1rem;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+}
+
+#reply-list .comment-meta {
+    margin: 0;
+    word-wrap: break-word;
+}
+
+#reply-list time {
+    color: #666;
+}
+
+#reply-list span {
+    color: #ccc;
+}
+
+#reply-list .gravatar img {
+    margin-top: 7px;
+}
+
+#reply-list .child-node {
+    margin-left: 50px;
+}
+
+#reply-list .row {
+    margin-bottom: 10px;
+}
+
+#reply {
+    margin-top: 2rem;
+}
+
+#reply textarea {
+    width: 100%;
+    padding: 5px;
+    resize: none;
+}
+
+#reply input {
+    width: 100%;
+    padding: 2px;
+}
+
+#reply button {
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+.pagination a {
+    border: 1px dashed #cc2a41;
+}
+
+article footer {
+    border: 1px dashed #cc2a41;
+    padding: 10px;
+    margin-top: 40px;
+}
+
+.comment-meta a:nth-child(3) {
+    color: #666;
+    background: none;
+}
+
+.comment-meta.admin a:first-child {
+    color: #cc2a41;
+}
+
+@media (max-width:768px) {
+    div.footer-left {
+        height: auto !important;
+    }
+}
+
+.content {
+    min-height: unset;
+}

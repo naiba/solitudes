@@ -1,0 +1,12 @@
+{{define "default/article_chapters"}}
+<ul>
+    {{range .Chapters}}
+    <li>{{if .IsBook}}📙{{end}}<a href="/{{.Slug}}">{{.Title}}</a>
+        <small></small>({{tf .CreatedAt "02 Jan 2006"}}{{if .ReadNum}},👀{{.ReadNum}}{{if .CommentNum}},💬{{.CommentNum}}{{end}}</small>{{end}})
+    </li>
+    {{if .IsBook}}
+    {{template "default/article_chapters" .}}
+    {{end}}
+    {{end}}
+</ul>
+{{end}}

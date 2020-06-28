@@ -1,0 +1,24 @@
+{{define "default/header"}}
+<!DOCTYPE html>
+<html lang="{{.Tr.Locale}}">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <link rel="shortcut icon" href="/static/cactus/images/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/cactus/images/favicon-192x192.png" sizes="192x192">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/cactus/images/apple-touch-icon.png">
+    <link rel="stylesheet" href="/static/cactus/css/{{.Conf.Web.Theme}}.css">
+    <link rel="stylesheet" href="/static/cactus/css/rtl.css">
+    <link rel="stylesheet" href="/static/cactus/css/solitudes.css?v20190416">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flexboxgrid@6.3.1/dist/flexboxgrid.min.css"
+        integrity="sha256-/8+sU56ayrJGahG9mmcUaNEghbavaceGybkdqO96Kk0=" crossorigin="anonymous">
+    <title>{{.Title}}</title>
+    <meta name="description" content="{{.Desc}}">
+    <meta name="keywords" content="{{.Keywords}}">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    {{end}}

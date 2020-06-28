@@ -1,0 +1,72 @@
+{{define "admin/media"}}
+{{template "admin/header" .}}
+<div class="content-wrapper">
+    <section class="content-header">
+        <h1>
+            {{.Tr.T "manage_media"}}
+            <small>manage upload files</small>
+        </h1>
+    </section>
+
+    <section class="content container-fluid">
+        <div class="box">
+            <div class="box-body">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <table class="table table-bordered table-hover">
+                            <thead>
+                                <tr role="row">
+                                    <th>{{.Tr.T "filename"}}</th>
+                                    <th>{{.Tr.T "article"}}</th>
+                                    <th>{{.Tr.T "uploaded_at"}}</th>
+                                    <th>{{.Tr.T "manage"}}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .Data.medias}}
+                                <tr role="row">
+                                    <td>{{.Filename}}</td>
+                                    <td><a target="_blank"
+                                            href="/{{.Article.Slug}}/v{{.Article.Version}}">{{.Article.Title}}</a>
+                                    </td>
+                                    <td>{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
+                                    <td><button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')"
+                                            class="btn btn-warning btn-xs">{{$.Tr.T "delete"}}</button></td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <ul class="pagination">
+                    <li class="paginate_button previous"><a href="?page={{add .Data.page -1}}">{{.Tr.T "previous"}}</a>
+                    </li>
+                    <li class="paginate_button next"><a href="?page={{add .Data.page 1}}">{{.Tr.T "next"}}</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    function deleteFile(file, articleId) {
+        if (articleId !== '') {
+            alert("You have to delete file usage in article.")
+            return
+        }
+        if (!confirm("Confirm delete?")) {
+            return
+        }
+        $.ajax({
+            url: "/admin/media?_csrf={{.CSRF }}&name=" + file,
+            type: 'DELETE',
+            success: () => {
+                window.location.reload()
+            },
+            error: (e) => {
+                alert(e.responseText)
+            },
+        })
+    }
+</script>
+{{template "admin/footer" .}}
+{{end}}

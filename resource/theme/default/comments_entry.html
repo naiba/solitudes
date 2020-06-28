@@ -1,0 +1,23 @@
+{{define "default/comments_entry"}}
+{{range .}}
+<div class="row" id="comment-{{.ID}}">
+    <div class="col-xs-2 col-sm-1 gravatar">
+        <img src="https://secure.gravatar.com/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g" width="100%">
+    </div>
+    <div class="col-xs-10 col-sm-11">
+        <p class="comment-meta title{{if .IsAdmin}} admin{{end}}">
+            <a href="{{if .Website}}{{.Website}}{{else}}javascript:;{{end}}" target="_blank"
+                rel="nofollow noopener">{{.Nickname}}</a>
+            {{if .IsAdmin}} 👲 {{end}}
+            <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt "02 Jan 2006"}}</time>
+            <a href="/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
+            <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">Reply</a>
+        </p>
+        <p class="comment-meta">{{.Content}}</p>
+    </div>
+</div>
+<div class="child-node">
+    {{template "default/comments_entry" .ChildComments}}
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,36 @@
+{{define "default/archive"}}
+{{template "default/header" .}}
+{{template "default/menu" .}}
+<section id="archive">
+  <ul class="post-list">
+    {{range $i,$s  := .Data.articles}}
+    {{range $j,$a := $s}}
+    {{if eq $j 0}}<h2>{{$a.CreatedAt.Year}}</h2>{{end}}
+    <li class="post-item">
+      <div class="meta">
+        <time datetime="{{$a.CreatedAt}}" itemprop="datePublished">{{tf $a.CreatedAt ($.Tr.T "date_format")}}</time>
+      </div>
+      <span>
+        {{if $a.IsBook}}📙{{end}}<a href="/{{$a.Slug}}">{{$a.Title}}</a>{{if $a.ReadNum}}
+        <small>(👀{{$a.ReadNum}}{{if $a.CommentNum}},💬{{$a.CommentNum}}{{end}})</small>{{end}}
+      </span>
+    </li>
+    {{end}}
+    {{end}}
+    {{if not .Data.articles}}
+    <li class="post-item">
+      <span>{{.Tr.T "no_article"}}</span>
+    </li>
+    {{end}}
+  </ul>
+  <div class="pagination">
+    {{if gt .Data.page.Page 1}}<a href="/{{.Data.what}}/{{.Data.page.PrevPage}}/"><i
+        class="fas fa-angle-left"></i></a>{{end}}
+    <span
+      class="page-number">{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord) "articles"}}</span>
+    {{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}<a
+      href="/{{.Data.what}}/{{.Data.page.NextPage}}/"><i class="fas fa-angle-right"></i></a>{{end}}
+  </div>
+</section>
+{{template "default/footer" .}}
+{{end}}

@@ -1,0 +1,10 @@
+{{define "default/error"}}
+{{template "default/header" .}}
+{{template "default/menu" .}}
+<section>
+  <span class="h1">{{.Data.title}}</span>
+  <p>{{.Data.msg}}</p>
+</section>
+{{template "default/search_form" .}}
+{{template "default/footer" .}}
+{{end}}
