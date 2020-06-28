@@ -14,7 +14,6 @@ RUN echo http://dl-2.alpinelinux.org/alpine/edge/community/ >>/etc/apk/repositor
 # Copy binary to container
 WORKDIR /solitudes
 COPY resource ./resource
-COPY dict ./dict
 COPY --from=binarybuilder /naiba/solitudes/solitudes .
 # Configure Docker Container
 VOLUME ["/solitudes/data"]
