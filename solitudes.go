@@ -8,14 +8,18 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/panjf2000/ants"
+	"github.com/yanyiwu/gojieba"
 
 	"github.com/jinzhu/gorm"
 	"github.com/patrickmn/go-cache"
 	"github.com/spf13/viper"
 	"go.uber.org/dig"
 
-	// - db driver
+	// db driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+
+	// gojirba
+	_ "github.com/naiba/solitudes/x/blevejieba"
 )
 
 func newBleveSearch() bleve.Index {
@@ -23,7 +27,20 @@ func newBleveSearch() bleve.Index {
 	var index bleve.Index
 	if err != nil {
 		mapping := bleve.NewIndexMapping()
-		mapping.AddDocumentMapping("blog", bleve.NewDocumentMapping())
+		mapping.DefaultAnalyzer = "jieba"
+		if err := mapping.AddCustomTokenizer("jieba", map[string]interface{}{
+			"type":         "jieba",
+			"useHmm":       true,
+			"tokenizeMode": gojieba.SearchMode,
+		}); err != nil {
+			panic(err)
+		}
+		if err := mapping.AddCustomAnalyzer("jieba", map[string]interface{}{
+			"type":      "jieba",
+			"tokenizer": "jieba",
+		}); err != nil {
+			panic(err)
+		}
 		index, err = bleve.New(fullTextSearchIndexPath, mapping)
 		if err != nil {
 			panic(err)

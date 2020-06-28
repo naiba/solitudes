@@ -2,7 +2,6 @@ package wengine
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 
 	"github.com/blevesearch/bleve"
@@ -27,11 +26,8 @@ func search(c *gin.Context) {
 	searchRequest.Explain = true
 	searchResult, _ := solitudes.System.Search.Search(searchRequest)
 
-	fmt.Println(searchResult)
-
 	var result []searchResp
 	for _, hit := range searchResult.Hits {
-		fmt.Printf("%+v %+v %+v %s\n", hit.ID, hit.Index, hit.Fields, hit.String())
 		item := solitudes.ArticleIndex{
 			Slug:    hit.Fields["Slug"].(string),
 			Version: hit.Fields["Version"].(float64),
