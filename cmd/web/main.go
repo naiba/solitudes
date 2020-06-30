@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/wengine"
+	"github.com/naiba/solitudes/router"
 )
 
 func main() {
@@ -15,5 +15,5 @@ func main() {
 		}
 	}
 	solitudes.BuildArticleIndex()
-	wengine.WEngine()
+	router.Serve()
 }

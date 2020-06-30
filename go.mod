@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.41.0 // indirect
+	github.com/88250/lute v1.4.9
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047
@@ -33,9 +34,9 @@ require (
 	github.com/lib/pq v1.2.0
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/matcornic/hermes/v2 v2.0.2
-	github.com/mattn/go-isatty v0.0.8 // indirect
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mattn/go-sqlite3 v1.11.0 // indirect
+	github.com/microcosm-cc/bluemonday v1.0.3
 	github.com/naiba/com v0.0.0-20181213033619-927647a4f54e
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
@@ -43,13 +44,11 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
-	github.com/russross/blackfriday v2.0.0+incompatible
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.4.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/ugorji/go v1.1.7 // indirect
-	github.com/utrack/gin-csrf v0.0.0-20190424104817-40fb8d2c8fca
 	github.com/yanyiwu/gojieba v1.1.2
 	go.uber.org/dig v1.7.0
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4

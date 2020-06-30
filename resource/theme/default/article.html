@@ -117,7 +117,7 @@
         </header>
         <div class="content" itemprop="articleBody">
             {{if .Data.article.NewVersion}}<p>{{.Tr.T "has_new_version" (.Data.article.Slug)|unsafe}}</p>{{end}}
-            {{.Data.article.Content|md}}
+            {{(md .Data.article.ID .Data.article.Content)|unsafe}}
             {{if .Data.article.IsBook}}
             <h4>{{.Tr.T "chapters"}}</h4>
             {{template "default/article_chapters" .Data.article}}
@@ -178,7 +178,6 @@
         <button onclick="comment(this)" class="search-button">{{.Tr.T "submit"}}</button>
         <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
         <input type="hidden" id="id_reply_to" value="">
-        <input type="hidden" value="{{.CSRF}}" id="id_csrf">
     </div>
 
     <div id="footer-post-container">
@@ -271,7 +270,6 @@
                 email: $('#id_email').val(),
                 content: $('#id_content').val(),
                 website: $('#id_website').val(),
-                _csrf: $('#id_csrf').val(),
                 version: parseInt('{{.Data.article.Version}}'),
                 slug: $('#id_slug').val(),
             }

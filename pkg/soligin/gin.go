@@ -4,14 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	csrf "github.com/utrack/gin-csrf"
-
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
 )
 
 // Soli 输出共同的参数
-func Soli(c *gin.Context, protect bool, data map[string]interface{}) gin.H {
+func Soli(c *gin.Context, data map[string]interface{}) gin.H {
 	var title, keywords, desc string
 
 	// custom title
@@ -42,10 +40,6 @@ func Soli(c *gin.Context, protect bool, data map[string]interface{}) gin.H {
 	soli["Login"], _ = c.Get(solitudes.CtxAuthorized)
 	soli["Data"] = data
 	soli["Tr"] = c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
-
-	if protect {
-		soli["CSRF"] = csrf.GetToken(c)
-	}
 
 	return soli
 }

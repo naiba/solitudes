@@ -1,4 +1,4 @@
-package wengine
+package router
 
 import (
 	"net/http"
@@ -9,8 +9,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/x/soligin"
-	"github.com/naiba/solitudes/x/soliwriter"
+	"github.com/naiba/solitudes/pkg/soligin"
+	"github.com/naiba/solitudes/pkg/soliwriter"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -48,7 +48,7 @@ func loginHandler(c *gin.Context) {
 }
 
 func login(c *gin.Context) {
-	c.HTML(http.StatusOK, "admin/login", soligin.Soli(c, true, gin.H{}))
+	c.HTML(http.StatusOK, "admin/login", soligin.Soli(c, gin.H{}))
 }
 
 func logoutHandler(c *gin.Context) {
@@ -64,7 +64,7 @@ func index(c *gin.Context) {
 		as[i].RelatedCount()
 	}
 	tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
-	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, false, gin.H{
+	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, gin.H{
 		"title":    tr.T("home"),
 		"bio":      solitudes.System.Config.Web.Bio,
 		"articles": as,
@@ -82,7 +82,7 @@ func static(root string) gin.HandlerFunc {
 				h.Header().Set("Content-Type", "text/html,charset=utf8")
 				h.Header().Set("X-File-Server", "solitudes")
 				tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
-				c.HTML(s, "default/error", soligin.Soli(c, false, gin.H{
+				c.HTML(s, "default/error", soligin.Soli(c, gin.H{
 					"title": tr.T("404_title"),
 					"msg":   tr.T("404_msg"),
 				}))

@@ -15,7 +15,6 @@
                     <div class="form-group">
                         <label for="inputTitle" class="col-sm-2 control-label">{{.Tr.T "title"}}</label>
                         <div class="col-sm-10">
-                            <input type="hidden" id="csrfToken" value="{{.CSRF}}">
                             <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
                             <input class="form-control" id="inputTitle" placeholder="Title"
                                 value="{{.Data.article.Title}}">
@@ -93,34 +92,21 @@
         </div>
     </section>
 </div>
-<link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor.css">
-</link>
-<link rel="stylesheet" href="https://uicdn.toast.com/tui-editor/latest/tui-editor-contents.css">
-</link>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.33.0/codemirror.css">
-</link>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
-</link>
-<script src="https://uicdn.toast.com/tui-editor/latest/tui-editor-Editor-full.js"></script>
+<!-- Begin Vditor -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css"
+    integrity="sha256-XDt1XMo1cdszL2MTR+210fRPDo4JSuA3DGnk5wF0Szs=" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js"
+    integrity="sha256-RsQBHGzBu0yVnC8baqkYjMMwOcWHHK8XC0nLGW/FvFk=" crossorigin="anonymous"></script>
+<!-- End Vditor -->
 <script>
-    var editor = new tui.Editor({
-        el: document.querySelector('#editSection'),
-        initialEditType: 'markdown',
-        previewStyle: 'vertical',
-        height: 'auto',
-        usageStatistics: 'false',
-        initialValue: '{{.Data.article.Content}}',
-        hooks: {
-            addImageBlobHook: function (blob, callback) {
-                uploadImage(blob, (url) => {
-                    if (url) {
-                        callback(url, blob.name)
-                    }
-                    return false
-                })
-            }
+    const vditor = new Vditor('editSection', {
+        after() {
+            vditor.setValue('{{.Data.article.Content}}')
         },
-    });
+        upload: {
+            handler: uploadImage,
+        },
+    })
     function publish(btn) {
         if ($(btn).hasClass("disabled")) {
             return
@@ -130,10 +116,9 @@
             id: $("#inputID").val(),
             title: $("#inputTitle").val(),
             slug: $("#inputSlug").val(),
-            content: editor.getMarkdown(),
+            content: vditor.getValue(),
             template: parseInt($("#selTemplate").val()),
             tags: $("#inputTags").val(),
-            _csrf: $("#csrfToken").val(),
             is_book: document.getElementById('cbBook').checked,
             new_version: document.getElementById('cbNewVersion').checked,
         }
@@ -146,11 +131,13 @@
             $(btn).toggleClass("disabled")
         })
     }
-    function uploadImage(blob, cb) {
+    function uploadImage(files) {
         var fd = new FormData();
-        var csrf = '{{.CSRF}}';
-        fd.append('file', blob);
-        fd.append('_csrf', csrf)
+        console.log(files)
+        files.forEach(file => {
+            fd.append('file[]', file);
+        });
+        return null;
         $.ajax({
             type: 'POST',
             url: '/admin/upload',
@@ -158,10 +145,10 @@
             processData: false,
             contentType: false
         }).done((data) => {
-            cb(data)
+            return data
         }).fail((e) => {
-            cb(false)
             alert("upload failed: " + e.responseText)
+            return null
         });
     }
 </script>

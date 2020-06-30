@@ -126,11 +126,6 @@
     },
     {
         "locale": "en",
-        "key": "csrf_rotectoion",
-        "trans": "CSRF Potectoion"
-    },
-    {
-        "locale": "en",
         "key": "method_not_allowed",
         "trans": "Method not allowed"
     },

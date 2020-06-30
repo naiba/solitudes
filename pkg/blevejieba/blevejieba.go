@@ -44,14 +44,14 @@ func tokenizerConstructor(config map[string]interface{}, cache *registry.Cache) 
 	if !ok {
 		return nil, errors.New("must specify useHmm")
 	}
-	tokenizeMode, ok := config["tokenizeMode"].(gojieba.TokenizeMode)
+	tokenizeMode, ok := config["tokenizeMode"].(float64)
 	if !ok {
 		return nil, errors.New("must specify tokenizeMode")
 	}
 	tokenizer := &JiebaTokenizer{
 		jieba:        gojieba.NewJieba(),
 		useHmm:       useHmm,
-		tokenizeMode: tokenizeMode,
+		tokenizeMode: gojieba.TokenizeMode(tokenizeMode),
 	}
 	return tokenizer, nil
 }

@@ -1,4 +1,4 @@
-package wengine
+package router
 
 import (
 	"net/http"
@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/x/soligin"
+	"github.com/naiba/solitudes/pkg/soligin"
 )
 
 func comments(c *gin.Context) {
@@ -22,7 +22,7 @@ func comments(c *gin.Context) {
 		Limit:   15,
 		OrderBy: []string{"created_at DESC"},
 	}, &cs)
-	c.HTML(http.StatusOK, "admin/comments", soligin.Soli(c, true, gin.H{
+	c.HTML(http.StatusOK, "admin/comments", soligin.Soli(c, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_comments"),
 		"comments": cs,
 		"page":     pg,

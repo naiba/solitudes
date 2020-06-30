@@ -61,7 +61,7 @@
             return
         }
         $.ajax({
-            url: "/admin/comments?_csrf={{.CSRF }}&aid=" + aid + '&id=' + commendId + '&rpl=' + (rpl == '\x3cnil\x3e' ? '' : rpl),
+            url: "/admin/comments?aid=" + aid + '&id=' + commendId + '&rpl=' + (rpl == '\x3cnil\x3e' ? '' : rpl),
             type: 'DELETE',
             success: () => {
                 window.location.reload()

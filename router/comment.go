@@ -1,4 +1,4 @@
-package wengine
+package router
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/x/notify"
+	"github.com/naiba/solitudes/pkg/notify"
 )
 
 type commentForm struct {

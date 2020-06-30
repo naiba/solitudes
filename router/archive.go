@@ -1,4 +1,4 @@
-package wengine
+package router
 
 import (
 	"net/http"
@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/x/soligin"
+	"github.com/naiba/solitudes/pkg/soligin"
 
 	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gin-gonic/gin"
@@ -29,7 +29,7 @@ func archive(c *gin.Context) {
 	for i := 0; i < len(articles); i++ {
 		articles[i].RelatedCount()
 	}
-	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
+	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("archive"),
 		"what":     "archives",
 		"articles": listArticleByYear(articles),
@@ -106,7 +106,7 @@ func tags(c *gin.Context) {
 	for i := 0; i < len(articles); i++ {
 		articles[i].RelatedCount()
 	}
-	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, false, gin.H{
+	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("articles_in", pageSlice[1]),
 		"what":     "tags",
 		"articles": listArticleByYear(articles),

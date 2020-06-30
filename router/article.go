@@ -1,4 +1,4 @@
-package wengine
+package router
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/x/soligin"
+	"github.com/naiba/solitudes/pkg/soligin"
 )
 
 func article(c *gin.Context) {
@@ -20,7 +20,7 @@ func article(c *gin.Context) {
 	var a solitudes.Article
 	if err := solitudes.System.DB.Take(&a, "slug = ?", slug[1]).Error; err == gorm.ErrRecordNotFound {
 		tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
-		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
+		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, gin.H{
 			"title": tr.T("404_title"),
 			"msg":   tr.T("404_msg"),
 		}))
@@ -48,7 +48,7 @@ func article(c *gin.Context) {
 		var history solitudes.ArticleHistory
 		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, slug[2]).Error; err == gorm.ErrRecordNotFound {
 			tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
-			c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, false, gin.H{
+			c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, gin.H{
 				"title": tr.T("404_title"),
 				"msg":   tr.T("404_msg"),
 			}))
@@ -104,7 +104,7 @@ func article(c *gin.Context) {
 	}))
 	wg.Wait()
 	a.RelatedCount()
-	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, true, gin.H{
+	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, gin.H{
 		"title":        title,
 		"keywords":     a.RawTags,
 		"article":      a,

@@ -1,4 +1,4 @@
-package wengine
+package router
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/x/soligin"
+	"github.com/naiba/solitudes/pkg/soligin"
 )
 
 func manager(c *gin.Context) {
@@ -49,7 +49,7 @@ func manager(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
-	c.HTML(http.StatusOK, "admin/index", soligin.Soli(c, true, gin.H{
+	c.HTML(http.StatusOK, "admin/index", soligin.Soli(c, gin.H{
 		"title":              c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("dashboard"),
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
@@ -72,6 +72,7 @@ var validExtNames = map[string]interface{}{
 	"jpeg": nil,
 	"png":  nil,
 	"gif":  nil,
+	"mp4":  nil,
 }
 
 func upload(c *gin.Context) {

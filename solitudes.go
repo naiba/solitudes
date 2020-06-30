@@ -19,7 +19,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	// gojirba
-	_ "github.com/naiba/solitudes/x/blevejieba"
+	_ "github.com/naiba/solitudes/pkg/blevejieba"
 )
 
 func newBleveSearch() bleve.Index {
@@ -31,7 +31,7 @@ func newBleveSearch() bleve.Index {
 		if err := mapping.AddCustomTokenizer("jieba", map[string]interface{}{
 			"type":         "jieba",
 			"useHmm":       true,
-			"tokenizeMode": gojieba.SearchMode,
+			"tokenizeMode": float64(gojieba.SearchMode),
 		}); err != nil {
 			panic(err)
 		}

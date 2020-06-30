@@ -1,4 +1,4 @@
-package wengine
+package router
 
 import (
 	"io/ioutil"
@@ -13,7 +13,7 @@ import (
 	"github.com/naiba/solitudes"
 
 	"github.com/gin-gonic/gin"
-	"github.com/naiba/solitudes/x/soligin"
+	"github.com/naiba/solitudes/pkg/soligin"
 )
 
 func mediaHandler(c *gin.Context) {
@@ -61,7 +61,7 @@ func media(c *gin.Context) {
 	}
 	//	return innerMedias, nil
 	//})
-	c.HTML(http.StatusOK, "admin/media", soligin.Soli(c, true, gin.H{
+	c.HTML(http.StatusOK, "admin/media", soligin.Soli(c, gin.H{
 		"title":  c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_media"),
 		"medias": innerMedias,
 		"page":   page,

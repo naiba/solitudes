@@ -126,11 +126,6 @@
     },
     {
         "locale": "zh",
-        "key": "csrf_rotectoion",
-        "trans": "跨站请求保护"
-    },
-    {
-        "locale": "zh",
         "key": "method_not_allowed",
         "trans": "不支持的请求"
     },

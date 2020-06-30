@@ -3,7 +3,7 @@
 {{template "default/menu" .}}
 <article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
   <div class="content" itemprop="articleBody">
-    {{.Data.article.Content|md}}
+    {{(md .Data.article.ID .Data.article.Content)|unsafe}}
   </div>
 </article>
 <script>

@@ -57,7 +57,7 @@
             return
         }
         $.ajax({
-            url: "/admin/media?_csrf={{.CSRF }}&name=" + file,
+            url: "/admin/media?name=" + file,
             type: 'DELETE',
             success: () => {
                 window.location.reload()

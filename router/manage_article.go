@@ -1,11 +1,11 @@
-package wengine
+package router
 
 import (
 	"net/http"
 	"strconv"
 
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/x/soligin"
+	"github.com/naiba/solitudes/pkg/soligin"
 
 	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gin-gonic/gin"
@@ -25,7 +25,7 @@ func manageArticle(c *gin.Context) {
 	for i := 0; i < len(as); i++ {
 		as[i].RelatedCount()
 	}
-	c.HTML(http.StatusOK, "admin/articles", soligin.Soli(c, true, gin.H{
+	c.HTML(http.StatusOK, "admin/articles", soligin.Soli(c, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_articles"),
 		"articles": as,
 		"page":     pg,
@@ -38,7 +38,7 @@ func publish(c *gin.Context) {
 	if id != "" {
 		solitudes.System.DB.Take(&article, "id = ?", id)
 	}
-	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, true, gin.H{
+	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, gin.H{
 		"title":     c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("publish_article"),
 		"templates": solitudes.Templates,
 		"article":   article,

@@ -1,4 +1,4 @@
-package wengine
+package router
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/x/soligin"
+	"github.com/naiba/solitudes/pkg/soligin"
 
 	"github.com/gin-gonic/gin"
 )
@@ -44,7 +44,7 @@ func search(c *gin.Context) {
 		})
 	}
 
-	c.HTML(http.StatusOK, "default/search", soligin.Soli(c, true, gin.H{
+	c.HTML(http.StatusOK, "default/search", soligin.Soli(c, gin.H{
 		"title":   c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("search_result_title", c.Query("w")),
 		"word":    c.Query("w"),
 		"results": result,

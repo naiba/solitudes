@@ -2,7 +2,7 @@
 {{template "default/header" .}}
 {{template "default/menu" .}}
 <section id="about">
-  {{.Data.bio|md}}
+  {{(md "bio" .Data.bio)|unsafe}}
 </section>
 {{template "default/search_form" .}}
 <section id="writing">

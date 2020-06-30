@@ -5,6 +5,11 @@
 <head>
     {{template "admin/css"}}
     <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/iCheck/1.0.2/skins/square/blue.css">
+    <style>
+        .vditor--fullscreen {
+            z-index: 9999 !important;
+        }
+    </style>
     <title>{{.Title}}</title>
 </head>
 
@@ -32,7 +37,6 @@
                             <ul class="dropdown-menu">
                                 <li class="user-footer">
                                     <form method="POST" action="/logout">
-                                        <input name="_csrf" type="hidden" value="{{.CSRF}}">
                                         <button type="submit"
                                             class="btn btn-default btn-flat">{{.Tr.T "sign_out"}}</button>
                                     </form>
@@ -59,7 +63,8 @@
                 <ul class="sidebar-menu" data-widget="tree">
                     <li class="header">Your Blog</li>
                     <li><a href="/admin/publish"><i class="fa fa-plus"></i> <span>{{.Tr.T "publish"}}</span></a></li>
-                    <li><a href="/admin/articles"><i class="fa fa-newspaper-o"></i> <span>{{.Tr.T "articles"}}</span></a>
+                    <li><a href="/admin/articles"><i class="fa fa-newspaper-o"></i>
+                            <span>{{.Tr.T "articles"}}</span></a>
                     </li>
                     <li><a href="/admin/media"><i class="fa fa-folder-open"></i> <span>{{.Tr.T "media"}}</span></a></li>
                     <li><a href="/admin/comments"><i class="fa fa-comments-o"></i> <span>{{.Tr.T "comments"}}</span></a>
