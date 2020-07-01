@@ -161,7 +161,7 @@
     <div id="reply">
         <textarea cols="40" rows="6" id="id_content"></textarea>
         {{if .Login}}
-        <input type="hidden" maxlength="64" value="{{.Conf.Web.User.Nickname}}" id="id_nickname">
+        <input type="hidden" maxlength="64" id="id_nickname">
         {{else}}
         <div class="row">
             <div class="col-xs-4">
@@ -248,7 +248,7 @@
     <script>
         window.onload = function () {
             $.get("/count?action=article&slug={{.Data.article.Slug}}")
-            $('#id_nickname').val(localStorage.getItem("cm_nickname"))
+            $('#id_nickname').val(localStorage.getItem("cm_nickname")||'{{.Conf.Web.User.Nickname}}')
             $('#id_email').val(localStorage.getItem("cm_email"))
             $('#id_website').val(localStorage.getItem("cm_website"))
         }
