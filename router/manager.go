@@ -2,7 +2,9 @@ package router
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -73,30 +75,139 @@ var validExtNames = map[string]interface{}{
 	"png":  nil,
 	"gif":  nil,
 	"mp4":  nil,
+	"zip":  nil,
+	"rar":  nil,
+}
+
+var contentTypeList = map[string]string{
+	"image/gif":  "gif",
+	"image/png":  "png",
+	"image/jpeg": "jpg",
+}
+
+type uploadResp struct {
+	Msg  string `json:"msg,omitempty"`
+	Code int    `json:"code"`
+	Data struct {
+		ErrFiles []string          `json:"errFiles,omitempty"`
+		SuccMap  map[string]string `json:"succMap,omitempty"`
+	} `json:"data,omitempty"`
 }
 
 func upload(c *gin.Context) {
-	f, err := c.FormFile("file")
+	form, err := c.MultipartForm()
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusOK, uploadResp{
+			Msg:  err.Error(),
+			Code: http.StatusBadRequest,
+		})
 		return
 	}
-	fs := strings.Split(f.Filename, ".")
-	if len(fs) < 2 {
-		c.String(http.StatusInternalServerError, "Invalid file")
+
+	var errfiles []string
+	succMap := make(map[string]string)
+
+	files := form.File["file[]"]
+	for _, f := range files {
+		fs := strings.Split(f.Filename, ".")
+		if len(fs) < 2 {
+			errfiles = append(errfiles, f.Filename)
+			continue
+		}
+		extName := fs[len(fs)-1]
+		if _, ok := validExtNames[extName]; !ok {
+			errfiles = append(errfiles, f.Filename)
+			continue
+		}
+		extName = fmt.Sprintf("/upload/%d.%s", time.Now().UnixNano(), extName)
+		if err := c.SaveUploadedFile(f, "data"+extName); err != nil {
+			errfiles = append(errfiles, f.Filename)
+		} else {
+			succMap[f.Filename] = extName
+		}
+	}
+	c.JSON(http.StatusOK, uploadResp{
+		Code: 0,
+		Data: struct {
+			ErrFiles []string          "json:\"errFiles,omitempty\""
+			SuccMap  map[string]string "json:\"succMap,omitempty\""
+		}{
+			ErrFiles: errfiles,
+			SuccMap:  succMap,
+		},
+	})
+}
+
+type fetchRequest struct {
+	URL string `json:"url,omitempty" binding:"required,min=11"`
+}
+
+type fetchResp struct {
+	Msg  string `json:"msg,omitempty"`
+	Code int    `json:"code"`
+	Data struct {
+		OriginalURL string `json:"originalURL,omitempty"`
+		URL         string `json:"url,omitempty"`
+	} `json:"data,omitempty"`
+}
+
+func fetch(c *gin.Context) {
+	var fr fetchRequest
+	if err := c.ShouldBindJSON(&fr); err != nil {
+		c.JSON(http.StatusOK, fetchResp{
+			Code: http.StatusBadRequest,
+			Msg:  err.Error(),
+		})
 		return
 	}
-	extName := fs[len(fs)-1]
-	if _, ok := validExtNames[extName]; !ok {
-		c.String(http.StatusInternalServerError, "Invalid file type")
+
+	// Get the data
+	resp, err := http.Get(fr.URL)
+	if err != nil {
+		c.JSON(http.StatusOK, fetchResp{
+			Code: http.StatusBadRequest,
+			Msg:  err.Error(),
+		})
 		return
 	}
-	extName = fmt.Sprintf("/upload/%d.%s", time.Now().UnixNano(), extName)
-	if err := c.SaveUploadedFile(f, "data"+extName); err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	defer resp.Body.Close()
+
+	var filename string
+	contentType := resp.Header.Get("Content-Type")
+	if ext, ok := contentTypeList[contentType]; ok {
+		filename = fmt.Sprintf("/upload/%d.%s", time.Now().UnixNano(), ext)
+		// Create the file
+		out, err := os.Create("data/" + filename)
+		if err != nil {
+			c.JSON(http.StatusOK, fetchResp{
+				Code: http.StatusBadRequest,
+				Msg:  err.Error(),
+			})
+			return
+		}
+		defer out.Close()
+
+		// Write the body to file
+		_, err = io.Copy(out, resp.Body)
+		if err != nil {
+			c.JSON(http.StatusOK, fetchResp{
+				Code: http.StatusBadRequest,
+				Msg:  err.Error(),
+			})
+			return
+		}
 	}
-	c.String(http.StatusOK, extName)
+
+	c.JSON(http.StatusOK, fetchResp{
+		Code: 0,
+		Data: struct {
+			OriginalURL string "json:\"originalURL,omitempty\""
+			URL         string "json:\"url,omitempty\""
+		}{
+			fr.URL,
+			filename,
+		},
+	})
 }
 
 func rebuildRiotData(c *gin.Context) {

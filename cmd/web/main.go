@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/router"
 )
 
@@ -14,6 +13,5 @@ func main() {
 			panic(err)
 		}
 	}
-	solitudes.BuildArticleIndex()
 	router.Serve()
 }

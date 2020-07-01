@@ -104,7 +104,9 @@
             vditor.setValue('{{.Data.article.Content}}')
         },
         upload: {
-            handler: uploadImage,
+            accept: 'image/*,.mp4,.rar,.zip',
+            url: '/admin/upload',
+            linkToImgUrl: '/admin/fetch',
         },
     })
     function publish(btn) {
@@ -130,26 +132,6 @@
         }).always(() => {
             $(btn).toggleClass("disabled")
         })
-    }
-    function uploadImage(files) {
-        var fd = new FormData();
-        console.log(files)
-        files.forEach(file => {
-            fd.append('file[]', file);
-        });
-        return null;
-        $.ajax({
-            type: 'POST',
-            url: '/admin/upload',
-            data: fd,
-            processData: false,
-            contentType: false
-        }).done((data) => {
-            return data
-        }).fail((e) => {
-            alert("upload failed: " + e.responseText)
-            return null
-        });
     }
 </script>
 {{template "admin/footer" .}}

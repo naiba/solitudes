@@ -202,6 +202,16 @@ var shits = []shitGin{
 		},
 	},
 	{
+		Match: regexp.MustCompile(`^\/admin\/fetch$`),
+		Pre: []gin.HandlerFunc{
+			soligin.Authorize,
+			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
+		},
+		Routes: map[string]gin.HandlerFunc{
+			http.MethodPost: fetch,
+		},
+	},
+	{
 		Match: regexp.MustCompile(`^\/admin\/comments$`),
 		Pre: []gin.HandlerFunc{
 			soligin.Authorize,
