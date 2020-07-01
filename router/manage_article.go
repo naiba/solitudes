@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/soligin"
 
 	"github.com/biezhi/gorm-paginator/pagination"
@@ -15,7 +16,7 @@ func manageArticle(c *gin.Context) {
 	rawPage := c.Query("page")
 	var page int64
 	page, _ = strconv.ParseInt(rawPage, 10, 32)
-	var as []solitudes.Article
+	var as []model.Article
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB,
 		Page:    int(page),
@@ -23,7 +24,7 @@ func manageArticle(c *gin.Context) {
 		OrderBy: []string{"updated_at DESC"},
 	}, &as)
 	for i := 0; i < len(as); i++ {
-		as[i].RelatedCount()
+		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	}
 	c.HTML(http.StatusOK, "admin/articles", soligin.Soli(c, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_articles"),
@@ -34,7 +35,7 @@ func manageArticle(c *gin.Context) {
 
 func publish(c *gin.Context) {
 	id := c.Query("id")
-	var article solitudes.Article
+	var article model.Article
 	if id != "" {
 		solitudes.System.DB.Take(&article, "id = ?", id)
 	}
@@ -51,7 +52,7 @@ func deleteArticle(c *gin.Context) {
 		c.String(http.StatusForbidden, "Error article id")
 		return
 	}
-	var a solitudes.Article
+	var a model.Article
 	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
 		c.String(http.StatusForbidden, err.Error())
 		return
@@ -59,7 +60,7 @@ func deleteArticle(c *gin.Context) {
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
 	tx := solitudes.System.DB.Begin()
-	if err := tx.Delete(solitudes.Article{}, "id = ?", a.ID).Error; err != nil {
+	if err := tx.Delete(model.Article{}, "id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -68,13 +69,13 @@ func deleteArticle(c *gin.Context) {
 	for i := 0; i < len(a.ArticleHistories); i++ {
 		indexIDs = append(indexIDs, a.ArticleHistories[i].GetIndexID())
 	}
-	if err := tx.Delete(solitudes.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
+	if err := tx.Delete(model.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 	// delete comments
-	if err := tx.Delete(solitudes.Comment{}, "article_id = ?", a.ID).Error; err != nil {
+	if err := tx.Delete(model.Comment{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
@@ -98,6 +99,7 @@ type publishArticle struct {
 	Template   byte   `form:"template"`
 	Tags       string `form:"tags"`
 	IsBook     bool   `form:"is_book"`
+	BookRefer  string `form:"book_refer"`
 	NewVersion bool   `form:"new_version"`
 }
 
@@ -112,7 +114,7 @@ func publishHandler(c *gin.Context) {
 	}
 
 	// edit article
-	article := &solitudes.Article{
+	article := &model.Article{
 		ID:         pa.ID,
 		Title:      pa.Title,
 		Slug:       pa.Slug,
@@ -121,6 +123,7 @@ func publishHandler(c *gin.Context) {
 		TemplateID: pa.Template,
 		IsBook:     pa.IsBook,
 		RawTags:    pa.Tags,
+		BookRefer:  &pa.BookRefer,
 	}
 	if article, err = fetchOriginArticle(article); err != nil {
 		c.String(http.StatusForbidden, err.Error())
@@ -131,14 +134,11 @@ func publishHandler(c *gin.Context) {
 	tx := solitudes.System.DB.Begin()
 	err = tx.Save(&article).Error
 	if article.NewVersion && err == nil {
-		var history solitudes.ArticleHistory
+		var history model.ArticleHistory
 		history.Content = article.Content
 		history.Version = article.Version
 		history.ArticleID = article.ID
 		err = tx.Save(&history).Error
-	}
-	if err == nil && article.BookRefer == nil {
-		err = tx.Model(&article).UpdateColumn("book_refer", nil).Error
 	}
 	if err == nil {
 		// indexing serch engine
@@ -155,11 +155,11 @@ func publishHandler(c *gin.Context) {
 	}
 }
 
-func fetchOriginArticle(af *solitudes.Article) (*solitudes.Article, error) {
+func fetchOriginArticle(af *model.Article) (*model.Article, error) {
 	if af.ID == "" {
 		return af, nil
 	}
-	var originArticle solitudes.Article
+	var originArticle model.Article
 	if err := solitudes.System.DB.Take(&originArticle, "id = ?", af.ID).Error; err != nil {
 		return nil, err
 	}

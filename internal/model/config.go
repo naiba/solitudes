@@ -1,4 +1,4 @@
-package solitudes
+package model
 
 // Menu 自定义菜单
 type Menu struct {

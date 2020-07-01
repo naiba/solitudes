@@ -19,7 +19,9 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	// gojirba
+	"github.com/naiba/solitudes/internal/model"
 	_ "github.com/naiba/solitudes/pkg/blevejieba"
+	"github.com/naiba/solitudes/pkg/safecache"
 )
 
 func newBleveSearch() bleve.Index {
@@ -60,10 +62,8 @@ func newCache() *cache.Cache {
 	return cache.New(5*time.Minute, 10*time.Minute)
 }
 
-func newSafeCache() *SafeCache {
-	return &SafeCache{
-		List: make(map[string]*sync.Cond),
-	}
+func newSafeCache(cache *cache.Cache, pool *ants.Pool) *safecache.SafeCache {
+	return safecache.NewSafeCache(cache, pool)
 }
 
 func newPool() *ants.Pool {
@@ -74,7 +74,7 @@ func newPool() *ants.Pool {
 	return p
 }
 
-func newDatabase(conf *Config) *gorm.DB {
+func newDatabase(conf *model.Config) *gorm.DB {
 	db, err := gorm.Open("postgres", conf.Web.Database)
 	if err != nil {
 		panic(err)
@@ -85,7 +85,7 @@ func newDatabase(conf *Config) *gorm.DB {
 	return db
 }
 
-func newConfig() *Config {
+func newConfig() *model.Config {
 	viper.SetConfigName("conf")
 	viper.SetConfigType("yml")
 	viper.AddConfigPath("data/")
@@ -93,14 +93,14 @@ func newConfig() *Config {
 	if err != nil {
 		panic(err)
 	}
-	var c Config
+	var c model.Config
 	if err = viper.Unmarshal(&c); err != nil {
 		panic(err)
 	}
 	return &c
 }
 
-func newSystem(c *Config, d *gorm.DB, h *cache.Cache, sc *SafeCache,
+func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache, sc *safecache.SafeCache,
 	s bleve.Index, p *ants.Pool) *SysVeriable {
 	return &SysVeriable{
 		Config:    c,
@@ -113,7 +113,7 @@ func newSystem(c *Config, d *gorm.DB, h *cache.Cache, sc *SafeCache,
 }
 
 func migrate() {
-	if err := System.DB.AutoMigrate(Article{}, ArticleHistory{}, Comment{}).Error; err != nil {
+	if err := System.DB.AutoMigrate(model.Article{}, model.ArticleHistory{}, model.Comment{}).Error; err != nil {
 		panic(err)
 	}
 }
@@ -150,8 +150,8 @@ func BuildArticleIndex() {
 		panic(err)
 	}
 	System.Search = newBleveSearch()
-	var as []Article
-	var hs []ArticleHistory
+	var as []model.Article
+	var hs []model.ArticleHistory
 	var wg sync.WaitGroup
 	wg.Add(2)
 	checkPoolSubmit(&wg, System.Pool.Submit(func() {

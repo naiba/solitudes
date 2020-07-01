@@ -1,4 +1,4 @@
-package solitudes
+package model
 
 import "time"
 

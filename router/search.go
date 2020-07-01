@@ -6,13 +6,14 @@ import (
 
 	"github.com/blevesearch/bleve"
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/soligin"
 
 	"github.com/gin-gonic/gin"
 )
 
 type searchResp struct {
-	solitudes.ArticleIndex
+	model.ArticleIndex
 	Content string
 }
 
@@ -28,7 +29,7 @@ func search(c *gin.Context) {
 
 	var result []searchResp
 	for _, hit := range searchResult.Hits {
-		item := solitudes.ArticleIndex{
+		item := model.ArticleIndex{
 			Slug:    hit.Fields["Slug"].(string),
 			Version: hit.Fields["Version"].(float64),
 			Title:   hit.Fields["Title"].(string),

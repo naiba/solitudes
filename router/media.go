@@ -13,6 +13,7 @@ import (
 	"github.com/naiba/solitudes"
 
 	"github.com/gin-gonic/gin"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/soligin"
 )
 
@@ -25,7 +26,7 @@ func mediaHandler(c *gin.Context) {
 
 type mediaInfo struct {
 	Filename   string
-	Article    solitudes.Article
+	Article    model.Article
 	UploadedAt time.Time
 }
 
@@ -51,7 +52,7 @@ func media(c *gin.Context) {
 		item.UploadedAt = files[i].ModTime()
 		item.Filename = files[i].Name()
 		if err := solitudes.System.DB.Take(&item.Article, "content like ?", "%(/upload/"+item.Filename+")%").Error; err == gorm.ErrRecordNotFound {
-			var ah solitudes.ArticleHistory
+			var ah model.ArticleHistory
 			if solitudes.System.DB.Take(&ah, "content like ?", "%(/upload/"+item.Filename+")%").Error == nil {
 				solitudes.System.DB.Take(&item.Article, "id = ?", ah.ArticleID)
 				item.Article.Version = ah.Version

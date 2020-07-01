@@ -12,13 +12,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/soligin"
 )
 
 func manager(c *gin.Context) {
 	var articleNum, commentNum int
-	var lastArticle solitudes.Article
-	var lastComment solitudes.Comment
+	var lastArticle model.Article
+	var lastComment model.Comment
 	type tagNum struct {
 		Count int
 	}
@@ -27,11 +28,11 @@ func manager(c *gin.Context) {
 	var wg sync.WaitGroup
 	wg.Add(5)
 	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
-		solitudes.System.DB.Model(solitudes.Article{}).Count(&articleNum)
+		solitudes.System.DB.Model(model.Article{}).Count(&articleNum)
 		wg.Done()
 	}))
 	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
-		solitudes.System.DB.Model(solitudes.Comment{}).Count(&commentNum)
+		solitudes.System.DB.Model(model.Comment{}).Count(&commentNum)
 		wg.Done()
 	}))
 	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {

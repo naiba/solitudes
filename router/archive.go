@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/soligin"
 
 	"github.com/biezhi/gorm-paginator/pagination"
@@ -19,7 +20,7 @@ func archive(c *gin.Context) {
 	if len(pageSlice) == 2 {
 		page, _ = strconv.ParseInt(pageSlice[1], 10, 32)
 	}
-	var articles []solitudes.Article
+	var articles []model.Article
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB.Where("book_refer is NULL"),
 		Page:    int(page),
@@ -27,7 +28,7 @@ func archive(c *gin.Context) {
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount()
+		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	}
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("archive"),
@@ -47,7 +48,7 @@ func feedHandler(c *gin.Context) {
 		Updated:     time.Now(),
 	}
 
-	var articles []solitudes.Article
+	var articles []model.Article
 	solitudes.System.DB.Order("created_at DESC", true).Limit(20).Find(&articles)
 	for i := 0; i < len(articles); i++ {
 		feed.Items = append(feed.Items, &feeds.Item{
@@ -96,7 +97,7 @@ func tags(c *gin.Context) {
 	if len(pageSlice) == 3 {
 		page, _ = strconv.ParseInt(pageSlice[2], 10, 32)
 	}
-	var articles []solitudes.Article
+	var articles []model.Article
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", pageSlice[1]),
 		Page:    int(page),
@@ -104,7 +105,7 @@ func tags(c *gin.Context) {
 		OrderBy: []string{"updated_at DESC"},
 	}, &articles)
 	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount()
+		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	}
 	c.HTML(http.StatusOK, "default/archive", soligin.Soli(c, gin.H{
 		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("articles_in", pageSlice[1]),
@@ -114,10 +115,10 @@ func tags(c *gin.Context) {
 	}))
 }
 
-func listArticleByYear(as []solitudes.Article) [][]solitudes.Article {
-	var listed [][]solitudes.Article
+func listArticleByYear(as []model.Article) [][]model.Article {
+	var listed [][]model.Article
 	var lastYear int
-	var listItem []solitudes.Article
+	var listItem []model.Article
 	for i := 0; i < len(as); i++ {
 		currentYear := as[i].UpdatedAt.Year()
 		if currentYear != lastYear {

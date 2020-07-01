@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/soligin"
 )
 
@@ -17,7 +18,7 @@ func article(c *gin.Context) {
 	slug := c.MustGet(solitudes.CtxRequestParams).([]string)
 
 	// load article
-	var a solitudes.Article
+	var a model.Article
 	if err := solitudes.System.DB.Take(&a, "slug = ?", slug[1]).Error; err == gorm.ErrRecordNotFound {
 		tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
 		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, gin.H{
@@ -45,7 +46,7 @@ func article(c *gin.Context) {
 			c.Redirect(http.StatusFound, "/"+a.Slug)
 			return
 		}
-		var history solitudes.ArticleHistory
+		var history model.ArticleHistory
 		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, slug[2]).Error; err == gorm.ErrRecordNotFound {
 			tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
 			c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, gin.H{
@@ -103,7 +104,7 @@ func article(c *gin.Context) {
 		wg.Done()
 	}))
 	wg.Wait()
-	a.RelatedCount()
+	a.RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, gin.H{
 		"title":        title,
 		"keywords":     a.RawTags,
@@ -112,9 +113,9 @@ func article(c *gin.Context) {
 	}))
 }
 
-func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next solitudes.Article) {
+func relatedSiblingArticle(p *model.Article) (prev model.Article, next model.Article) {
 	sibiling, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedSiblingArticle+p.ID, func() (interface{}, error) {
-		var sb solitudes.SibilingArticle
+		var sb model.SibilingArticle
 		if p.BookRefer == nil {
 			solitudes.System.DB.Select("id,title,slug").Order("created_at ASC").Take(&sb.Next, "book_refer is null and created_at > ?", p.CreatedAt)
 			solitudes.System.DB.Select("id,title,slug").Order("created_at DESC").Where("book_refer is null and created_at < ?", p.CreatedAt).Take(&sb.Prev)
@@ -126,25 +127,25 @@ func relatedSiblingArticle(p *solitudes.Article) (prev solitudes.Article, next s
 		return sb, nil
 	})
 	if sibiling != nil {
-		x := sibiling.(solitudes.SibilingArticle)
+		x := sibiling.(model.SibilingArticle)
 		p.SibilingArticle = &x
 	}
 	return
 }
 
-func relatedChapters(p *solitudes.Article) {
+func relatedChapters(p *model.Article) {
 	if p.IsBook {
 		chapters, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedChapters+p.ID, func() (interface{}, error) {
 			return innerRelatedChapters(p.ID), nil
 		})
 		if chapters != nil {
-			x := chapters.([]*solitudes.Article)
+			x := chapters.([]*model.Article)
 			p.Chapters = x
 		}
 	}
 }
 
-func innerRelatedChapters(pid string) (ps []*solitudes.Article) {
+func innerRelatedChapters(pid string) (ps []*model.Article) {
 	solitudes.System.DB.Order("created_at ASC").Find(&ps, "book_refer=?", pid)
 	for i := 0; i < len(ps); i++ {
 		if ps[i].IsBook {
@@ -154,10 +155,10 @@ func innerRelatedChapters(pid string) (ps []*solitudes.Article) {
 	return
 }
 
-func relatedBook(p *solitudes.Article) {
+func relatedBook(p *model.Article) {
 	if p.BookRefer != nil {
 		book, err := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedArticle+*p.BookRefer, func() (interface{}, error) {
-			var book solitudes.Article
+			var book model.Article
 			var err error
 			if err = solitudes.System.DB.Take(&book, "id = ?", p.BookRefer).Error; err != nil {
 				return nil, err
@@ -165,22 +166,22 @@ func relatedBook(p *solitudes.Article) {
 			return book, err
 		})
 		if err == nil {
-			x := book.(solitudes.Article)
+			x := book.(model.Article)
 			p.Book = &x
 		}
 	}
 }
 
-func relatedChildComments(a *solitudes.Article, cm []*solitudes.Comment, root bool) {
+func relatedChildComments(a *model.Article, cm []*model.Comment, root bool) {
 	if root {
-		var idMaptoComment = make(map[string]*solitudes.Comment)
+		var idMaptoComment = make(map[string]*model.Comment)
 		var idArray []string
 		// map to index
 		for i := 0; i < len(cm); i++ {
 			idMaptoComment[cm[i].ID] = cm[i]
 			idArray = append(idArray, cm[i].ID)
 		}
-		var cms []*solitudes.Comment
+		var cms []*model.Comment
 		solitudes.System.DB.Raw(`WITH RECURSIVE cs AS (SELECT comments.* FROM comments WHERE comments.reply_to in (?) union ALL
 		SELECT comments.* FROM comments, cs WHERE comments.reply_to = cs.id)
 		SELECT * FROM cs ORDER BY created_at;`, idArray).Scan(&cms)

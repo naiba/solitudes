@@ -8,6 +8,9 @@ import (
 	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"
 	"go.uber.org/dig"
+
+	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/safecache"
 )
 
 const (
@@ -33,11 +36,11 @@ const (
 
 // SysVeriable 全局变量
 type SysVeriable struct {
-	Config       *Config
+	Config       *model.Config
 	DB           *gorm.DB
 	Cache        *cache.Cache
 	Search       bleve.Index
-	SafeCache    *SafeCache
+	SafeCache    *safecache.SafeCache
 	Token        string
 	TokenExpires time.Time
 	Pool         *ants.Pool

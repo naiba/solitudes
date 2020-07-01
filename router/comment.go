@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/notify"
 )
 
@@ -61,7 +62,7 @@ func commentHandler(c *gin.Context) {
 		}
 	}
 
-	var cm solitudes.Comment
+	var cm model.Comment
 	fillCommentEntry(c, isAdmin, &cm, &cf, article)
 
 	tx := solitudes.System.DB.Begin()
@@ -71,7 +72,7 @@ func commentHandler(c *gin.Context) {
 		return
 	}
 	if cm.ReplyTo == nil {
-		if err := tx.Model(solitudes.Article{}).
+		if err := tx.Model(model.Article{}).
 			Where("id = ?", cm.ArticleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
 			tx.Rollback()
@@ -92,8 +93,8 @@ func commentHandler(c *gin.Context) {
 	}))
 }
 
-func verifyArticle(cf *commentForm) (*solitudes.Article, error) {
-	var article solitudes.Article
+func verifyArticle(cf *commentForm) (*model.Article, error) {
+	var article model.Article
 	if err := solitudes.System.DB.Select("id,version,title,slug").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
 		return nil, err
 	}
@@ -104,10 +105,10 @@ func verifyArticle(cf *commentForm) (*solitudes.Article, error) {
 	return &article, nil
 }
 
-func getCommentType(cf *commentForm) (commentType string, replyTo *solitudes.Comment, err error) {
+func getCommentType(cf *commentForm) (commentType string, replyTo *model.Comment, err error) {
 	if cf.ReplyTo != nil {
 		commentType = "reply"
-		var innerReplyTo solitudes.Comment
+		var innerReplyTo model.Comment
 		if solitudes.System.DB.Take(&innerReplyTo, "id = ?", cf.ReplyTo).Error != nil {
 			err = errors.New("reply to invaild comment")
 			return
@@ -119,7 +120,7 @@ func getCommentType(cf *commentForm) (commentType string, replyTo *solitudes.Com
 	return
 }
 
-func fillCommentEntry(c *gin.Context, isAdmin bool, cm *solitudes.Comment, cf *commentForm, article *solitudes.Article) {
+func fillCommentEntry(c *gin.Context, isAdmin bool, cm *model.Comment, cf *commentForm, article *model.Article) {
 	cm.ReplyTo = cf.ReplyTo
 	cm.Content = cf.Content
 	cm.ArticleID = &article.ID

@@ -6,10 +6,11 @@ import (
 	"net/url"
 
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 )
 
 //ServerChan Server酱推送
-func ServerChan(comment *solitudes.Comment, article *solitudes.Article, err error) {
+func ServerChan(comment *model.Comment, article *model.Article, err error) {
 	// when err == nil skip admin
 	if comment.IsAdmin && err == nil {
 		return

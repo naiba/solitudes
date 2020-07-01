@@ -1,4 +1,4 @@
-package solitudes
+package model
 
 import (
 	"fmt"
@@ -8,7 +8,9 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
+	"github.com/panjf2000/ants"
 )
 
 // ArticleTOC 文章标题
@@ -167,26 +169,24 @@ func sanitizedAnchorName(text string) string {
 }
 
 // RelatedCount 合计专栏下文章计数
-func (t *Article) RelatedCount() {
+func (t *Article) RelatedCount(db *gorm.DB, pool *ants.Pool, checkPoolSubmit func(*sync.WaitGroup, error)) {
 	if !t.IsBook {
 		return
 	}
 	var wg sync.WaitGroup
 	wg.Add(1)
-
-	checkPoolSubmit(&wg, System.Pool.Submit(func() {
-		innerRelatedCount(t, &wg, true)
+	checkPoolSubmit(&wg, pool.Submit(func() {
+		innerRelatedCount(db, t, &wg, true)
 	}))
-
 	wg.Wait()
 }
 
-func innerRelatedCount(p *Article, wg *sync.WaitGroup, root bool) {
+func innerRelatedCount(db *gorm.DB, p *Article, wg *sync.WaitGroup, root bool) {
 	var chapters []*Article
-	System.DB.Select("id,is_book,read_num,comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
+	db.Select("id,is_book,read_num,comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
 	for i := 0; i < len(chapters); i++ {
 		if chapters[i].IsBook {
-			innerRelatedCount(chapters[i], nil, false)
+			innerRelatedCount(db, chapters[i], nil, false)
 		}
 		p.ReadNum += chapters[i].ReadNum
 		p.CommentNum += chapters[i].CommentNum

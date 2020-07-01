@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/soligin"
 )
 
@@ -15,7 +16,7 @@ func comments(c *gin.Context) {
 	rawPage := c.Query("page")
 	var page int64
 	page, _ = strconv.ParseInt(rawPage, 10, 32)
-	var cs []solitudes.Comment
+	var cs []model.Comment
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB.Preload("Article"),
 		Page:    int(page),
@@ -40,13 +41,13 @@ func deleteComment(c *gin.Context) {
 	}
 
 	tx := solitudes.System.DB.Begin()
-	if err := tx.Delete(&solitudes.Comment{}, "id =?", id).Error; err != nil {
+	if err := tx.Delete(&model.Comment{}, "id =?", id).Error; err != nil {
 		tx.Rollback()
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 	if rpl == "" {
-		if err := tx.Model(solitudes.Article{}).Where("id = ?", articleID).
+		if err := tx.Model(model.Article{}).Where("id = ?", articleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
 			tx.Rollback()
 			c.String(http.StatusInternalServerError, err.Error())

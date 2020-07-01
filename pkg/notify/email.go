@@ -5,6 +5,7 @@ import (
 
 	"github.com/matcornic/hermes/v2"
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"gopkg.in/gomail.v2"
 )
 
@@ -26,7 +27,7 @@ func init() {
 }
 
 //Email notify
-func Email(src, dist *solitudes.Comment, article *solitudes.Article) error {
+func Email(src, dist *model.Comment, article *model.Article) error {
 	if dist == nil || dist.Email == "" {
 		return errors.New("Not replying to a comment or being replied to a person who does not leave a mailbox, without email notification")
 	}

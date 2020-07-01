@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/soligin"
 	"github.com/naiba/solitudes/pkg/soliwriter"
 	"golang.org/x/crypto/bcrypt"
@@ -58,10 +59,10 @@ func logoutHandler(c *gin.Context) {
 }
 
 func index(c *gin.Context) {
-	var as []solitudes.Article
+	var as []model.Article
 	solitudes.System.DB.Order("updated_at DESC").Limit(10).Find(&as)
 	for i := 0; i < len(as); i++ {
-		as[i].RelatedCount()
+		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	}
 	tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
 	c.HTML(http.StatusOK, "default/index", soligin.Soli(c, gin.H{
@@ -100,7 +101,7 @@ func count(c *gin.Context) {
 		return
 	}
 	solitudes.System.Cache.Set(key, nil, time.Hour*20)
-	solitudes.System.DB.Model(solitudes.Article{}).
+	solitudes.System.DB.Model(model.Article{}).
 		Where("slug = ?", c.Query("slug")).
 		UpdateColumn("read_num", gorm.Expr("read_num + ?", 1))
 }
