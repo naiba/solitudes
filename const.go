@@ -1,8 +1,6 @@
 package solitudes
 
 import (
-	"time"
-
 	"github.com/blevesearch/bleve"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants"
@@ -16,10 +14,6 @@ import (
 const (
 	// CtxAuthorized 用户已认证
 	CtxAuthorized = "cazed"
-	// CtxPassPreHandler 通过了PreHandler
-	CtxPassPreHandler = "cpph"
-	// CtxRequestParams 路由参数
-	CtxRequestParams = "crp"
 	// CtxTranslator 翻译
 	CtxTranslator = "ct"
 	// AuthCookie 用户认证使用的Cookie名
@@ -36,14 +30,12 @@ const (
 
 // SysVeriable 全局变量
 type SysVeriable struct {
-	Config       *model.Config
-	DB           *gorm.DB
-	Cache        *cache.Cache
-	Search       bleve.Index
-	SafeCache    *safecache.SafeCache
-	Token        string
-	TokenExpires time.Time
-	Pool         *ants.Pool
+	Config    *model.Config
+	DB        *gorm.DB
+	Cache     *cache.Cache
+	Search    bleve.Index
+	SafeCache *safecache.SafeCache
+	Pool      *ants.Pool
 }
 
 const fullTextSearchIndexPath = "data/bleve"

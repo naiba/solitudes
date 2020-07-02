@@ -126,16 +126,6 @@
     },
     {
         "locale": "zh",
-        "key": "method_not_allowed",
-        "trans": "不支持的请求"
-    },
-    {
-        "locale": "zh",
-        "key": "are_you_lost",
-        "trans": "您是不是迷路了？"
-    },
-    {
-        "locale": "zh",
         "key": "has_new_version",
         "trans": "您正在看的是本文章的旧版本，这篇文章有了 <a href=\"/{0}\">新版本</a>。"
     }

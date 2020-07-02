@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/adtac/go-akismet/akismet"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -13,51 +13,55 @@ import (
 )
 
 type commentForm struct {
-	ReplyTo  *string `form:"reply_to" binding:"omitempty,uuid4"`
-	Nickname string  `form:"nickname" binding:"required"`
-	Content  string  `form:"content" binding:"required" gorm:"text"`
-	Slug     string  `form:"slug" binding:"required" gorm:"index"`
-	Website  string  `form:"website" binding:"omitempty,url"`
-	Version  uint    `form:"version" binding:"required"`
-	Email    string  `form:"email" binding:"omitempty,email"`
+	ReplyTo  *string `form:"reply_to" validate:"omitempty,uuid4"`
+	Nickname string  `form:"nickname" validate:"required"`
+	Content  string  `form:"content" validate:"required" gorm:"text"`
+	Slug     string  `form:"slug" validate:"required" gorm:"index"`
+	Website  string  `form:"website" validate:"omitempty,url"`
+	Version  uint    `form:"version" validate:"required"`
+	Email    string  `form:"email" validate:"omitempty,email"`
 }
 
-func commentHandler(c *gin.Context) {
-	isAdmin := c.GetBool(solitudes.CtxAuthorized)
+func commentHandler(c *fiber.Ctx) {
+	isAdmin := c.Locals(solitudes.CtxAuthorized).(bool)
 	var cf commentForm
-	if err := c.ShouldBind(&cf); err != nil && !isAdmin {
-		c.String(http.StatusBadRequest, err.Error())
+	if err := c.BodyParser(&cf); err != nil {
+		c.Status(http.StatusBadRequest).Write(err.Error())
+		return
+	}
+	if err := validator.StructCtx(c.Context(), &cf); err != nil {
+		c.Status(http.StatusBadRequest).Write(err.Error())
 		return
 	}
 
 	article, err := verifyArticle(&cf)
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		c.Status(http.StatusBadRequest).Write(err.Error())
 		return
 	}
 
 	commentType, replyTo, err := getCommentType(&cf)
 	if err != nil {
-		c.String(http.StatusBadRequest, err.Error())
+		c.Status(http.StatusBadRequest).Write(err.Error())
 		return
 	}
 
 	// akismet anti spam
-	if solitudes.System.Config.Web.Akismet != "" && !isAdmin {
+	if solitudes.System.Config.Akismet != "" && !isAdmin {
 		isSpam, err := akismet.Check(&akismet.Comment{
-			Blog:               "https://" + solitudes.System.Config.Web.Domain, // required
-			UserIP:             c.ClientIP(),                                    // required
-			UserAgent:          c.GetHeader("User-Agent"),                       // required
+			Blog:               "https://" + solitudes.System.Config.Site.Domain, // required
+			UserIP:             c.IP(),                                           // required
+			UserAgent:          string(c.Fasthttp.UserAgent()),                   // required
 			CommentType:        commentType,
-			Referrer:           c.GetHeader("Referer"),
-			Permalink:          "https://" + solitudes.System.Config.Web.Domain + "/" + cf.Slug,
+			Referrer:           string(c.Fasthttp.Referer()),
+			Permalink:          "https://" + solitudes.System.Config.Site.Domain + "/" + cf.Slug,
 			CommentAuthor:      cf.Nickname,
 			CommentAuthorEmail: cf.Email,
 			CommentAuthorURL:   cf.Website,
 			CommentContent:     cf.Content,
-		}, solitudes.System.Config.Web.Akismet)
+		}, solitudes.System.Config.Akismet)
 		if err != nil || isSpam {
-			c.String(http.StatusForbidden, "Rejected by Akismet Anti-Spam System")
+			c.Status(http.StatusBadRequest).Write("Rejected by Akismet Anti-Spam System")
 			return
 		}
 	}
@@ -68,7 +72,7 @@ func commentHandler(c *gin.Context) {
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Save(&cm).Error; err != nil {
 		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 	if cm.ReplyTo == nil {
@@ -76,13 +80,13 @@ func commentHandler(c *gin.Context) {
 			Where("id = ?", cm.ArticleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
 			tx.Rollback()
-			c.String(http.StatusInternalServerError, err.Error())
+			c.Status(http.StatusInternalServerError).Write(err.Error())
 			return
 		}
 	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 
@@ -120,19 +124,19 @@ func getCommentType(cf *commentForm) (commentType string, replyTo *model.Comment
 	return
 }
 
-func fillCommentEntry(c *gin.Context, isAdmin bool, cm *model.Comment, cf *commentForm, article *model.Article) {
+func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *commentForm, article *model.Article) {
 	cm.ReplyTo = cf.ReplyTo
 	cm.Content = cf.Content
 	cm.ArticleID = &article.ID
 	if isAdmin {
-		cm.Nickname = solitudes.System.Config.Web.User.Nickname
-		cm.Email = solitudes.System.Config.Web.User.Email
+		cm.Nickname = solitudes.System.Config.User.Nickname
+		cm.Email = solitudes.System.Config.User.Email
 	} else {
 		cm.Nickname = cf.Nickname
 		cm.Email = cf.Email
 		cm.Website = cf.Website
-		cm.IP = c.ClientIP()
-		cm.UserAgent = c.GetHeader("UserAgent")
+		cm.IP = c.IP()
+		cm.UserAgent = string(c.Fasthttp.UserAgent())
 	}
 	cm.IsAdmin = isAdmin
 	cm.Version = cf.Version

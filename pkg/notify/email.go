@@ -11,10 +11,10 @@ import (
 
 var h = hermes.Hermes{
 	Product: hermes.Product{
-		Name:      solitudes.System.Config.SpaceName,
-		Link:      solitudes.System.Config.Web.Domain,
-		Logo:      "https://" + solitudes.System.Config.Web.Domain + "/static/cactus/images/logo.png",
-		Copyright: "Copyright © " + solitudes.System.Config.SpaceName + ". All rights reserved.",
+		Name:      solitudes.System.Config.Site.SpaceName,
+		Link:      solitudes.System.Config.Site.Domain,
+		Logo:      "https://" + solitudes.System.Config.Site.Domain + "/static/cactus/images/logo.png",
+		Copyright: "Copyright © " + solitudes.System.Config.Site.SpaceName + ". All rights reserved.",
 	},
 }
 
@@ -50,7 +50,7 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 					Button: hermes.Button{
 						Color: "#22BC66", // Optional action button color
 						Text:  "Open",
-						Link:  "https://" + solitudes.System.Config.Web.Domain + "/" + article.Slug,
+						Link:  "https://" + solitudes.System.Config.Site.Domain + "/" + article.Slug,
 					},
 				},
 			},

@@ -17,29 +17,30 @@ require (
 	github.com/facebookgo/ensure v0.0.0-20200202191622-63f1cf65ac4c // indirect
 	github.com/facebookgo/stack v0.0.0-20160209184415-751773369052 // indirect
 	github.com/facebookgo/subset v0.0.0-20200203212716-c811ad88dec4 // indirect
-	github.com/gin-contrib/sessions v0.0.0-20190512062852-3cb4c4f2d615
-	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/gin-gonic/gin v1.4.0
-	github.com/go-playground/form v3.1.4+incompatible // indirect
 	github.com/go-playground/locales v0.12.1
-	github.com/go-playground/pure v4.2.0+incompatible
 	github.com/go-playground/universal-translator v0.16.0
+	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/go-sql-driver/mysql v1.5.0 // indirect
+	github.com/gofiber/fiber v1.12.2
+	github.com/gofiber/logger v0.2.3
+	github.com/gofiber/template v1.5.3
+	github.com/golang/protobuf v1.3.3 // indirect
+	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/feeds v1.1.1
-	github.com/gorilla/sessions v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20190408195923-01ec452cbe43 // indirect
 	github.com/jinzhu/gorm v1.9.10
 	github.com/jmhodges/levigo v1.0.0 // indirect
-	github.com/lib/pq v1.2.0
+	github.com/leodido/go-urn v1.2.0 // indirect
+	github.com/lib/pq v1.6.0
 	github.com/magiconair/properties v1.8.1 // indirect
-	github.com/matcornic/hermes/v2 v2.0.2
+	github.com/matcornic/hermes/v2 v2.1.0
 	github.com/mattn/go-runewidth v0.0.4 // indirect
-	github.com/mattn/go-sqlite3 v1.11.0 // indirect
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
 	github.com/microcosm-cc/bluemonday v1.0.3
-	github.com/naiba/com v0.0.0-20181213033619-927647a4f54e
-	github.com/onsi/ginkgo v1.8.0 // indirect
-	github.com/onsi/gomega v1.5.0 // indirect
+	github.com/onsi/ginkgo v1.10.1 // indirect
+	github.com/onsi/gomega v1.7.0 // indirect
 	github.com/panjf2000/ants v1.0.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pelletier/go-toml v1.4.0 // indirect
@@ -48,11 +49,12 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.4.0
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
-	github.com/ugorji/go v1.1.7 // indirect
+	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/yanyiwu/gojieba v1.1.2
 	go.uber.org/dig v1.7.0
-	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4
-	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
+	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
+	gopkg.in/yaml.v2 v2.2.7
 )

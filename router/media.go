@@ -8,19 +8,19 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gofiber/fiber"
 	"github.com/jinzhu/gorm"
 
 	"github.com/naiba/solitudes"
 
-	"github.com/gin-gonic/gin"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/soligin"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func mediaHandler(c *gin.Context) {
+func mediaHandler(c *fiber.Ctx) {
 	name := c.Query("name")
 	if err := os.Remove("data/upload/" + path.Clean(name)); err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 	}
 }
 
@@ -30,7 +30,7 @@ type mediaInfo struct {
 	UploadedAt time.Time
 }
 
-func media(c *gin.Context) {
+func media(c *fiber.Ctx) {
 	rawPage := c.Query("page")
 	page64, _ := strconv.ParseInt(rawPage, 10, 64)
 	page := int(page64)
@@ -62,8 +62,8 @@ func media(c *gin.Context) {
 	}
 	//	return innerMedias, nil
 	//})
-	c.HTML(http.StatusOK, "admin/media", soligin.Soli(c, gin.H{
-		"title":  c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_media"),
+	c.Status(http.StatusOK).Render("admin/media", injectSiteData(c, fiber.Map{
+		"title":  c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_media"),
 		"medias": innerMedias,
 		"page":   page,
 	}))

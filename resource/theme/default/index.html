@@ -1,9 +1,11 @@
 {{define "default/index"}}
 {{template "default/header" .}}
 {{template "default/menu" .}}
+{{if .Conf.Site.HomeTopContent}}
 <section id="about">
-  {{(md "bio" .Data.bio)|unsafe}}
+  {{(md "home-top" .Conf.Site.HomeTopContent)|unsafe}}
 </section>
+{{end}}
 {{template "default/search_form" .}}
 <section id="writing">
   <span class="h1"><a href="/archives/">{{.Tr.T "writing"}}</a></span>
@@ -28,5 +30,10 @@
     {{end}}
   </ul>
 </section>
+{{if .Conf.Site.HomeBottomContent}}
+<section>
+  {{(md "home-bottom" .Conf.Site.HomeBottomContent)|unsafe}}
+</section>
+{{end}}
 {{template "default/footer" .}}
 {{end}}

@@ -1,5 +1,12 @@
 package model
 
+import (
+	"io/ioutil"
+	"os"
+
+	"gopkg.in/yaml.v2"
+)
+
 // Menu 自定义菜单
 type Menu struct {
 	Name  string
@@ -11,25 +18,37 @@ type Menu struct {
 // Config 系统配置
 type Config struct {
 	Debug      bool
-	SpaceName  string `mapstructure:"space_name"`
-	SpaceDesc  string `mapstructure:"space_desc"`
-	ServerChan string `mapstructure:"server_chan"`
+	ServerChan string
+	Database   string
+	Akismet    string
 	Email      struct {
 		Host string
 		Port int
 		User string
 		Pass string
-		SSL  bool `mapstructure:"ssl"`
+		SSL  bool
 	}
-	Web struct {
-		Bio           string
-		Database      string
-		Akismet       string
-		User          User
-		Domain        string
-		Theme         string `mapstructure:"theme"`
-		HeaderMenus   []Menu `mapstructure:"header_menus"`
-		FooterMenus   []Menu `mapstructure:"footer_menus"`
-		SpaceKeywords string `mapstructure:"space_keywords"`
+	User User
+	Site struct {
+		SpaceName         string
+		SpaceDesc         string
+		SpaceKeywords     string
+		HomeTopContent    string
+		HomeBottomContent string
+		Domain            string
+		Theme             string
+		HeaderMenus       []Menu
+		FooterMenus       []Menu
 	}
+
+	ConfigFilePath string
+}
+
+// Save ..
+func (c *Config) Save() error {
+	b, err := yaml.Marshal(&c)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(c.ConfigFilePath, b, os.FileMode(0655))
 }

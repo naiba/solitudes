@@ -5,14 +5,14 @@ import (
 	"strconv"
 
 	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/soligin"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func comments(c *gin.Context) {
+func comments(c *fiber.Ctx) {
 	rawPage := c.Query("page")
 	var page int64
 	page, _ = strconv.ParseInt(rawPage, 10, 32)
@@ -23,39 +23,39 @@ func comments(c *gin.Context) {
 		Limit:   15,
 		OrderBy: []string{"created_at DESC"},
 	}, &cs)
-	c.HTML(http.StatusOK, "admin/comments", soligin.Soli(c, gin.H{
-		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_comments"),
+	c.Status(http.StatusOK).Render("admin/comments", injectSiteData(c, fiber.Map{
+		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_comments"),
 		"comments": cs,
 		"page":     pg,
 	}))
 }
 
-func deleteComment(c *gin.Context) {
+func deleteComment(c *fiber.Ctx) {
 	id := c.Query("id")
 	rpl := c.Query("rpl")
 	articleID := c.Query("aid")
 
 	if len(id) < 10 || len(articleID) < 10 {
-		c.String(http.StatusForbidden, "Error id")
+		c.Status(http.StatusBadRequest).Write("Error id")
 		return
 	}
 
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Delete(&model.Comment{}, "id =?", id).Error; err != nil {
 		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 	if rpl == "" {
 		if err := tx.Model(model.Article{}).Where("id = ?", articleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
 			tx.Rollback()
-			c.String(http.StatusInternalServerError, err.Error())
+			c.Status(http.StatusInternalServerError).Write(err.Error())
 			return
 		}
 	}
 	if err := tx.Commit().Error; err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 }

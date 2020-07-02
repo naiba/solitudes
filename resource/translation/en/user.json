@@ -126,16 +126,6 @@
     },
     {
         "locale": "en",
-        "key": "method_not_allowed",
-        "trans": "Method not allowed"
-    },
-    {
-        "locale": "en",
-        "key": "are_you_lost",
-        "trans": "Are you lost?"
-    },
-    {
-        "locale": "en",
         "key": "has_new_version",
         "trans": "This article has a <a href=\"/{0}\">new version</a>."
     }

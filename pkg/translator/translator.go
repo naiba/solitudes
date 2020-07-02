@@ -1,4 +1,4 @@
-package solitudes
+package translator
 
 import (
 	"log"

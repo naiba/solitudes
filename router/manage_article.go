@@ -4,15 +4,15 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gofiber/fiber"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/soligin"
+	"github.com/naiba/solitudes/pkg/translator"
 
 	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/gin-gonic/gin"
 )
 
-func manageArticle(c *gin.Context) {
+func manageArticle(c *fiber.Ctx) {
 	rawPage := c.Query("page")
 	var page int64
 	page, _ = strconv.ParseInt(rawPage, 10, 32)
@@ -26,35 +26,35 @@ func manageArticle(c *gin.Context) {
 	for i := 0; i < len(as); i++ {
 		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	}
-	c.HTML(http.StatusOK, "admin/articles", soligin.Soli(c, gin.H{
-		"title":    c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("manage_articles"),
+	c.Status(http.StatusOK).Render("admin/articles", injectSiteData(c, fiber.Map{
+		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_articles"),
 		"articles": as,
 		"page":     pg,
 	}))
 }
 
-func publish(c *gin.Context) {
+func publish(c *fiber.Ctx) {
 	id := c.Query("id")
 	var article model.Article
 	if id != "" {
 		solitudes.System.DB.Take(&article, "id = ?", id)
 	}
-	c.HTML(http.StatusOK, "admin/publish", soligin.Soli(c, gin.H{
-		"title":     c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("publish_article"),
+	c.Status(http.StatusOK).Render("admin/publish", injectSiteData(c, fiber.Map{
+		"title":     c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("publish_article"),
 		"templates": solitudes.Templates,
 		"article":   article,
 	}))
 }
 
-func deleteArticle(c *gin.Context) {
+func deleteArticle(c *fiber.Ctx) {
 	id := c.Query("id")
 	if len(id) < 10 {
-		c.String(http.StatusForbidden, "Error article id")
+		c.Status(http.StatusBadRequest).Write("Error article id")
 		return
 	}
 	var a model.Article
 	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
-		c.String(http.StatusForbidden, err.Error())
+		c.Status(http.StatusBadRequest).Write(err.Error())
 		return
 	}
 	var indexIDs []string
@@ -62,7 +62,7 @@ func deleteArticle(c *gin.Context) {
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Delete(model.Article{}, "id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 	// delete article history
@@ -71,18 +71,18 @@ func deleteArticle(c *gin.Context) {
 	}
 	if err := tx.Delete(model.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 	// delete comments
 	if err := tx.Delete(model.Comment{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 	// delete riot data
@@ -103,16 +103,18 @@ type publishArticle struct {
 	NewVersion bool   `form:"new_version"`
 }
 
-func publishHandler(c *gin.Context) {
-	var err error
-	// new or edit article
+func publishHandler(c *fiber.Ctx) {
 	var pa publishArticle
-
-	if err = c.ShouldBind(&pa); err != nil {
-		c.String(http.StatusForbidden, err.Error())
+	if err := c.BodyParser(&pa); err != nil {
+		c.Status(http.StatusBadRequest).Write(err.Error())
+		return
+	}
+	if err := validator.StructCtx(c.Context(), &pa); err != nil {
+		c.Status(http.StatusBadRequest).Write(err.Error())
 		return
 	}
 
+	var err error
 	// edit article
 	article := &model.Article{
 		ID:         pa.ID,
@@ -126,7 +128,7 @@ func publishHandler(c *gin.Context) {
 		BookRefer:  &pa.BookRefer,
 	}
 	if article, err = fetchOriginArticle(article); err != nil {
-		c.String(http.StatusForbidden, err.Error())
+		c.Status(http.StatusBadRequest).Write(err.Error())
 		return
 	}
 
@@ -146,11 +148,11 @@ func publishHandler(c *gin.Context) {
 	}
 	if err != nil {
 		tx.Rollback()
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 	if err = tx.Commit().Error; err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 }

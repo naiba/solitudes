@@ -3,7 +3,8 @@
         "locale": "en",
         "key": "home",
         "trans": "Home"
-    },{
+    },
+    {
         "locale": "en",
         "key": "login",
         "trans": "Login"
@@ -192,5 +193,115 @@
         "locale": "en",
         "key": "new_version",
         "trans": "New Version"
+    },
+    {
+        "locale": "en",
+        "key": "site_settings",
+        "trans": "Settings"
+    },
+    {
+        "locale": "en",
+        "key": "site_title",
+        "trans": "Title"
+    },
+    {
+        "locale": "en",
+        "key": "site_desc",
+        "trans": "Site Description"
+    },
+    {
+        "locale": "en",
+        "key": "site_serverchan",
+        "trans": "ServerChan Key"
+    },
+    {
+        "locale": "en",
+        "key": "site_mail_server",
+        "trans": "Mail Server"
+    },
+    {
+        "locale": "en",
+        "key": "site_mail_port",
+        "trans": "Server Port"
+    },
+    {
+        "locale": "en",
+        "key": "site_mail_user",
+        "trans": "SMTP User"
+    },
+    {
+        "locale": "en",
+        "key": "site_mail_pass",
+        "trans": "SMTP Password"
+    },
+    {
+        "locale": "en",
+        "key": "site_mail_ssl",
+        "trans": "SMTP SSL"
+    },
+    {
+        "locale": "en",
+        "key": "site_home_top_content",
+        "trans": "Content at top of home"
+    },
+    {
+        "locale": "en",
+        "key": "site_home_bottom_content",
+        "trans": "Content at bottom of home"
+    },
+    {
+        "locale": "en",
+        "key": "site_theme",
+        "trans": "Theme"
+    },
+    {
+        "locale": "en",
+        "key": "site_akismet",
+        "trans": "Akismet"
+    },
+    {
+        "locale": "en",
+        "key": "site_domain",
+        "trans": "Site Domain"
+    },
+    {
+        "locale": "en",
+        "key": "site_header_menus",
+        "trans": "Header Menus"
+    },
+    {
+        "locale": "en",
+        "key": "site_footer_menus",
+        "trans": "Header Menus"
+    },
+    {
+        "locale": "en",
+        "key": "site_keywords",
+        "trans": "Site Keywords"
+    },
+    {
+        "locale": "en",
+        "key": "save",
+        "trans": "Save"
+    },
+    {
+        "locale": "en",
+        "key": "old_password",
+        "trans": "Old Password"
+    },
+    {
+        "locale": "en",
+        "key": "new_password",
+        "trans": "New Password"
+    },
+    {
+        "locale": "en",
+        "key": "confirm_password",
+        "trans": "Comfirm Password"
+    },
+    {
+        "locale": "en",
+        "key": "input_password_if_you_want_change_it",
+        "trans": "Input password if you want change it"
     }
 ]

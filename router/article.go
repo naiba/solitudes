@@ -7,27 +7,26 @@ import (
 	"sync"
 
 	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber"
 	"github.com/jinzhu/gorm"
+
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/soligin"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func article(c *gin.Context) {
-	slug := c.MustGet(solitudes.CtxRequestParams).([]string)
-
+func article(c *fiber.Ctx) {
 	// load article
 	var a model.Article
-	if err := solitudes.System.DB.Take(&a, "slug = ?", slug[1]).Error; err == gorm.ErrRecordNotFound {
-		tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
-		c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, gin.H{
+	if err := solitudes.System.DB.Take(&a, "slug = ?", c.Params("slug")).Error; err == gorm.ErrRecordNotFound {
+		tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+		c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
 			"title": tr.T("404_title"),
 			"msg":   tr.T("404_msg"),
 		}))
 		return
 	} else if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
 	if len(a.Tags) == 0 {
@@ -36,26 +35,26 @@ func article(c *gin.Context) {
 
 	var title string
 	// load history
-	if len(slug) == 3 && slug[2] != "" {
-		version, err := strconv.ParseUint(slug[2], 10, 64)
+	if len(c.Params("version")) > 1 {
+		version, err := strconv.ParseUint(c.Params("version")[1:], 10, 64)
 		if err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			c.Status(http.StatusInternalServerError).Write(err.Error())
 			return
 		}
 		if uint(version) == a.Version {
-			c.Redirect(http.StatusFound, "/"+a.Slug)
+			c.Redirect("/"+a.Slug, http.StatusFound)
 			return
 		}
 		var history model.ArticleHistory
-		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, slug[2]).Error; err == gorm.ErrRecordNotFound {
-			tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
-			c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, gin.H{
+		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, version).Error; err == gorm.ErrRecordNotFound {
+			tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+			c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
 				"title": tr.T("404_title"),
 				"msg":   tr.T("404_msg"),
 			}))
 			return
 		} else if err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
+			c.Status(http.StatusInternalServerError).Write(err.Error())
 			return
 		}
 		a.Content = history.Content
@@ -105,7 +104,7 @@ func article(c *gin.Context) {
 	}))
 	wg.Wait()
 	a.RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
-	c.HTML(http.StatusOK, "default/"+solitudes.TemplateIndex[a.TemplateID], soligin.Soli(c, gin.H{
+	c.Status(http.StatusOK).Render("default/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
 		"title":        title,
 		"keywords":     a.RawTags,
 		"article":      a,

@@ -32,7 +32,7 @@
                                 <!-- The user image in the navbar-->
                                 <img src="/static/cactus/images/logo.png" class="user-image" alt="User Image">
                                 <!-- hidden-xs hides the username on small devices so only the image appears. -->
-                                <span class="hidden-xs">{{.Conf.Web.User.Nickname}}</span>
+                                <span class="hidden-xs">{{.Conf.User.Nickname}}</span>
                             </a>
                             <ul class="dropdown-menu">
                                 <li class="user-footer">
@@ -54,7 +54,7 @@
                         <img src="/static/cactus/images/logo.png" class="img-circle" alt="User Image">
                     </div>
                     <div class="pull-left info">
-                        <p>{{.Conf.Web.User.Nickname}}</p>
+                        <p>{{.Conf.User.Nickname}}</p>
                         <!-- Status -->
                         <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
                     </div>
@@ -68,6 +68,7 @@
                     </li>
                     <li><a href="/admin/media"><i class="fa fa-folder-open"></i> <span>{{.Tr.T "media"}}</span></a></li>
                     <li><a href="/admin/comments"><i class="fa fa-comments-o"></i> <span>{{.Tr.T "comments"}}</span></a>
+                    <li><a href="/admin/settings"><i class="fa fa-cogs"></i> <span>{{.Tr.T "site_settings"}}</span></a>
                     </li>
                 </ul>
             </section>

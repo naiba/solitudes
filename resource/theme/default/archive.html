@@ -3,7 +3,7 @@
 {{template "default/menu" .}}
 <section id="archive">
   <ul class="post-list">
-    {{range $i,$s  := .Data.articles}}
+    {{range $s  := .Data.articles}}
     {{range $j,$a := $s}}
     {{if eq $j 0}}<h2>{{$a.CreatedAt.Year}}</h2>{{end}}
     <li class="post-item">

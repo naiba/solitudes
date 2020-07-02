@@ -1,0 +1,327 @@
+{{define "admin/settings"}}
+{{template "admin/header" .}}
+<div class="content-wrapper">
+    <section class="content-header">
+        <h1>
+            {{.Tr.T "site_settings"}}
+        </h1>
+    </section>
+    <section class="content container-fluid">
+        <div class="form-horizontal">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputSiteTitle" class="col-sm-3 control-label">{{.Tr.T "site_title"}}</label>
+                        <div class="col-sm-9">
+                            <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
+                            <input class="form-control" id="inputSiteTitle" placeholder="Solitudes"
+                                value="{{.Conf.Site.SpaceName}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputSiteDesc" class="col-sm-3 control-label">{{.Tr.T "site_desc"}}</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" id="inputSiteDesc"
+                                placeholder="We love writing">{{.Conf.Site.SpaceDesc}}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputServerChan" class="col-sm-3 control-label">{{.Tr.T "site_serverchan"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputServerChan" placeholder="xxxxxxxxxxxxx"
+                                value="{{.Conf.ServerChan}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputMailServer" class="col-sm-3 control-label">{{.Tr.T "site_mail_server"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputMailServer" placeholder="smtp.163.com"
+                                value="{{.Conf.Email.Host}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputMailPort" class="col-sm-3 control-label">{{.Tr.T "site_mail_port"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" type="number" id="inputMailPort" placeholder="25"
+                                value="{{.Conf.Email.Port}}">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <div class="col-sm-9">
+                            <div class="cbMailSSL">
+                                <label>
+                                    <input{{if .Conf.Email.SSL}} checked{{end}} id="cbMailSSL" type="checkbox">
+                                        {{.Tr.T "site_mail_ssl"}}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputMailUser" class="col-sm-3 control-label">{{.Tr.T "site_mail_user"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputMailUser" placeholder="username"
+                                value="{{.Conf.Email.User}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputMailPass" class="col-sm-3 control-label">{{.Tr.T "site_mail_pass"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputMailPass" placeholder="password"
+                                value="{{.Conf.Email.Pass}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputAkismet" class="col-sm-3 control-label">{{.Tr.T "site_akismet"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputAkismet" placeholder="Akismet key"
+                                value="{{.Conf.Akismet}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputSiteDomain" class="col-sm-3 control-label">{{.Tr.T "site_domain"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputSiteDomain" placeholder="example.com"
+                                value="{{.Conf.Site.Domain}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputSiteKeywords" class="col-sm-3 control-label">{{.Tr.T "site_keywords"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputSiteKeywords" placeholder="blog,programming"
+                                value="{{.Conf.Site.SpaceKeywords}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputSiteHeaderMenus"
+                            class="col-sm-3 control-label">{{.Tr.T "site_header_menus"}}</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control"
+                                id="inputSiteHeaderMenus">{{.Conf.Site.HeaderMenus|json}}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputSiteFooterMenus"
+                            class="col-sm-3 control-label">{{.Tr.T "site_footer_menus"}}</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control"
+                                id="inputSiteFooterMenus">{{.Conf.Site.FooterMenus|json}}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="selTheme" class="col-sm-3 control-label">{{.Tr.T "site_theme"}}</label>
+                        <div class="col-sm-9">
+                            <select id="selTheme" class="form-control">
+                                <option value="dark">dark</option>
+                                <option value="classic">classic</option>
+                                <option value="light">light</option>
+                                <option value="white">white</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label for="inputHomeTop"
+                            class="col-sm-2 control-label">{{.Tr.T "site_home_top_content"}}</label>
+                        <div class="col-sm-10">
+                            <div id="inputHomeTop"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label for="inputHomeBottom"
+                            class="col-sm-2 control-label">{{.Tr.T "site_home_bottom_content"}}</label>
+                        <div class="col-sm-10">
+                            <div id="inputHomeBottom"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputOldPassword" class="col-sm-3 control-label">{{.Tr.T "old_password"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputOldPassword">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    {{.Tr.T "input_password_if_you_want_change_it"}}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputNewPassword" class="col-sm-3 control-label">{{.Tr.T "new_password"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputNewPassword">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputConfirmPassword"
+                            class="col-sm-3 control-label">{{.Tr.T "confirm_password"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputConfirmPassword">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="editSection"></div>
+        <div class="row" style="margin-top:10px;">
+            <div class="col-xs-6 col-md-2">
+                <button onclick="saveSetting(this)" class="btn btn-lg btn-primary">{{.Tr.T "save"}}</button>
+            </div>
+        </div>
+    </section>
+</div>
+<!-- Begin Vditor -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css"
+    integrity="sha256-XDt1XMo1cdszL2MTR+210fRPDo4JSuA3DGnk5wF0Szs=" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/vditor/dist/index.min.js"
+    integrity="sha256-RsQBHGzBu0yVnC8baqkYjMMwOcWHHK8XC0nLGW/FvFk=" crossorigin="anonymous"></script>
+<!-- End Vditor -->
+<script>
+    const inputHomeTop = new Vditor('inputHomeTop', {
+        after() {
+            inputHomeTop.setValue('{{.Conf.Site.HomeTopContent}}')
+        },
+        upload: {
+            accept: 'image/*,.mp4,.rar,.zip',
+            url: '/admin/upload',
+            linkToImgUrl: '/admin/fetch',
+        },
+    })
+    const inputHomeBottom = new Vditor('inputHomeBottom', {
+        after() {
+            inputHomeBottom.setValue('{{.Conf.Site.HomeBottomContent}}')
+        },
+        upload: {
+            accept: 'image/*,.mp4,.rar,.zip',
+            url: '/admin/upload',
+            linkToImgUrl: '/admin/fetch',
+        },
+    })
+    function saveSetting(btn) {
+        if ($(btn).hasClass("disabled")) {
+            return
+        }
+        $(btn).toggleClass("disabled")
+        const oldPassword = $("#inputOldPassword").val().trim()
+        const newPassword = $("#inputNewPassword").val().trim()
+        if (newPassword.length > 0) {
+            if (oldPassword.length == 0) {
+                alert('New password is empty')
+                $(btn).toggleClass("disabled")
+                return
+            }
+            if (newPassword != $("#inputConfirmPassword").val().trim()) {
+                alert('Password is not equal')
+                $(btn).toggleClass("disabled")
+                return
+            }
+        }
+        var settings = {
+            site_title: $("#inputSiteTitle").val(),
+            site_desc: $("#inputSiteDesc").val(),
+            server_chan: $("#inputServerChan").val(),
+            mail_server: $("#inputMailServer").val(),
+            mail_port: parseInt($("#inputMailPort").val()),
+            mail_ssl: document.getElementById('cbMailSSL').checked,
+            mail_user: $("#inputMailUser").val(),
+            mail_password: $("#inputMailPass").val(),
+            akismet: $("#inputAkismet").val(),
+            site_domain: $("#inputSiteDomain").val(),
+            site_keywords: $("#inputSiteKeywords").val(),
+            site_header_menus: $("#inputSiteHeaderMenus").val(),
+            site_footer_menus: $("#inputSiteFooterMenus").val(),
+            site_theme: $("#selTheme").val(),
+            site_home_top_content: inputHomeTop.getValue(),
+            site_home_bottom_content: inputHomeBottom.getValue(),
+            old_password: oldPassword,
+            new_password: newPassword,
+        }
+        fetch('', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(settings),
+        }).then((resp) => {
+            if (resp.status == 200) {
+                window.location.reload()
+            } else {
+                resp.text().then(err => {
+                    alert("Save failed: " + err)
+                    $(btn).toggleClass("disabled")
+                })
+            }
+        }).catch((err) => {
+            alert("Save failed: " + err)
+            $(btn).toggleClass("disabled")
+        })
+    }
+</script>
+{{template "admin/footer" .}}
+{{end}}

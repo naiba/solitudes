@@ -35,24 +35,24 @@ type Article struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	Slug       string         `form:"slug" binding:"required" gorm:"unique_index"`
-	Title      string         `form:"title" binding:"required"`
-	Content    string         `form:"content" binding:"required" gorm:"text"`
-	TemplateID byte           `form:"template" binding:"required"`
+	Slug       string         `form:"slug" validate:"required" gorm:"unique_index"`
+	Title      string         `form:"title" validate:"required"`
+	Content    string         `form:"content" validate:"required" gorm:"text"`
+	TemplateID byte           `form:"template" validate:"required"`
 	IsBook     bool           `form:"is_book"`
 	RawTags    string         `form:"tags" gorm:"-"`
-	Tags       pq.StringArray `gorm:"index;type:varchar(255)[]" binding:"-" form:"-"`
+	Tags       pq.StringArray `gorm:"index;type:varchar(255)[]" validate:"-" form:"-"`
 	ReadNum    uint           `gorm:"default:0;"`
 	CommentNum uint           `gorm:"default:0;"`
 	Version    uint           `gorm:"default:1;"`
-	BookRefer  *string        `form:"book_refer" binding:"omitempty,uuid4" gorm:"type:uuid;index;default:NULL"`
+	BookRefer  *string        `form:"book_refer" validate:"omitempty,uuid4" gorm:"type:uuid;index;default:NULL"`
 
 	Comments         []*Comment
 	ArticleHistories []*ArticleHistory
 	Toc              []*ArticleTOC
-	Chapters         []*Article       `gorm:"foreignkey:BookRefer" form:"-" binding:"-"`
-	Book             *Article         `gorm:"-" binding:"-" form:"-"`
-	SibilingArticle  *SibilingArticle `gorm:"-" binding:"-" form:"-"`
+	Chapters         []*Article       `gorm:"foreignkey:BookRefer" form:"-" validate:"-"`
+	Book             *Article         `gorm:"-" validate:"-" form:"-"`
+	SibilingArticle  *SibilingArticle `gorm:"-" validate:"-" form:"-"`
 
 	// for form
 	NewVersion bool `gorm:"-" form:"new_version"`

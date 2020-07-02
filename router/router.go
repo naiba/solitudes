@@ -1,297 +1,104 @@
 package router
 
 import (
-	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
-	"net/http/pprof"
-	"os"
-	"os/signal"
 	"reflect"
-	"regexp"
+	"strings"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/88250/lute"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
+	"github.com/go-playground/locales"
+	gv "github.com/go-playground/validator"
+	"github.com/gofiber/fiber"
+	"github.com/gofiber/logger"
+	"github.com/gofiber/template/html"
 	"github.com/microcosm-cc/bluemonday"
 
-	"github.com/naiba/com"
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/pkg/soligin"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
 var ugcPolict = bluemonday.UGCPolicy()
 var luteEngine = lute.New()
-
-func init() {
-	if solitudes.System.Config.Debug {
-		pprofPrefix := `^\/debug/pprof`
-		pprofRouters := []shitGin{
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet: pprofHandler(pprof.Index),
-				},
-			},
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/cmdline$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet: pprofHandler(pprof.Cmdline),
-				},
-			},
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/symbol$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet:  pprofHandler(pprof.Symbol),
-					http.MethodPost: pprofHandler(pprof.Symbol),
-				},
-			},
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/trace$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet: pprofHandler(pprof.Trace),
-				},
-			},
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/block$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet: pprofHandler(pprof.Handler("block").ServeHTTP),
-				},
-			},
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/goroutine$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet: pprofHandler(pprof.Handler("goroutine").ServeHTTP),
-				},
-			},
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/heap$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet: pprofHandler(pprof.Handler("heap").ServeHTTP),
-				},
-			},
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/mutex$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet: pprofHandler(pprof.Handler("mutex").ServeHTTP),
-				},
-			},
-			{
-				Match: regexp.MustCompile(pprofPrefix + `/threadcreate$`),
-				Routes: map[string]gin.HandlerFunc{
-					http.MethodGet: pprofHandler(pprof.Handler("threadcreate").ServeHTTP),
-				},
-			},
-		}
-		shits = append(pprofRouters, shits...)
-	}
-}
-
-var shits = []shitGin{
-	{
-		Match: regexp.MustCompile(`^\/$`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: index,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/feed/([^\/]{1,})$`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: feedHandler,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/archives/(\d*)/?$`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: archive,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/search/$`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: search,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/tags/([^\/]*)/(\d*)/?$`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: tags,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/login$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedGuest: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet:  login,
-			http.MethodPost: loginHandler,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/logout$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodPost: logoutHandler,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/count$`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: count,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/comment$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodPost: commentHandler,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/admin\/$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: manager,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/admin\/publish$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet:  publish,
-			http.MethodPost: publishHandler,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/admin\/rebuild-riot$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: rebuildRiotData,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/admin\/upload$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodPost: upload,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/admin\/fetch$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodPost: fetch,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/admin\/comments$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet:    comments,
-			http.MethodDelete: deleteComment,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/admin\/articles$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet:    manageArticle,
-			http.MethodDelete: deleteArticle,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/admin\/media$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-			soligin.Limit(soligin.LimitOption{NeedLogin: true}),
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet:    media,
-			http.MethodDelete: mediaHandler,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/static\/`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: static("resource/static"),
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/upload\/`),
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: static("data/upload"),
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/([^\/]*)\/v(\d*)$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: article,
-		},
-	},
-	{
-		Match: regexp.MustCompile(`^\/([^\/]*)$`),
-		Pre: []gin.HandlerFunc{
-			soligin.Authorize,
-		},
-		Routes: map[string]gin.HandlerFunc{
-			http.MethodGet: article,
-		},
-	},
-}
-
-func pprofHandler(h http.HandlerFunc) gin.HandlerFunc {
-	handler := http.HandlerFunc(h)
-	return func(c *gin.Context) {
-		handler.ServeHTTP(c.Writer, c.Request)
-	}
-}
+var validator = gv.New()
 
 // Serve web service
 func Serve() {
-	if !solitudes.System.Config.Debug {
-		gin.SetMode(gin.ReleaseMode)
+	engine := html.New("resource/theme", ".html")
+	setFuncMap(engine)
+	app := fiber.New(&fiber.Settings{
+		Views: engine,
+	})
+	if solitudes.System.Config.Debug {
+		app.Use(logger.New())
+		engine.Reload(true)
+		engine.Debug(true)
 	}
-	r := gin.New()
-	r.SetFuncMap(template.FuncMap{
+
+	app.Use(trans, auth)
+	app.Get("/", index)
+	app.Get("/feed/:format", feedHandler)
+	app.Get("/archives/:page?", archive)
+	app.Get("/search/", search)
+	app.Get("/tags/:tag/:page?", tags)
+	app.Get("/login", guestRequired, login)
+	app.Post("/login", guestRequired, loginHandler)
+	app.Post("/logout", loginRequired, logoutHandler)
+	app.Get("/count", count)
+	app.Post("/comment", commentHandler)
+	app.Static("/static", "resource/static")
+	app.Static("/upload", "data/upload")
+
+	admin := app.Group("/admin", loginRequired)
+	admin.Get("/", manager)
+	admin.Get("/publish", publish)
+	admin.Post("/publish", publishHandler)
+	admin.Get("/rebuild-full-text-search", rebuildFullTextSearch)
+	admin.Post("/upload", upload)
+	admin.Post("/fetch", fetch)
+	admin.Get("/comments", comments)
+	admin.Delete("/comments", deleteComment)
+	admin.Get("/articles", manageArticle)
+	admin.Delete("/articles", deleteArticle)
+	admin.Get("/media", media)
+	admin.Delete("/media", mediaHandler)
+	admin.Get("/settings", settings)
+	admin.Post("/settings", settingsHandler)
+
+	app.Get("/:slug/:version?", article)
+	app.Use(func(c *fiber.Ctx) {
+		tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+		c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
+			"title": tr.T("404_title"),
+			"msg":   tr.T("404_msg"),
+		}))
+	})
+
+	app.Listen(8080)
+}
+
+func checkPoolSubmit(wg *sync.WaitGroup, err error) {
+	if err != nil {
+		log.Println(err)
+		if wg != nil {
+			wg.Done()
+		}
+	}
+}
+
+func setFuncMap(engine *html.Engine) {
+	funcMap := template.FuncMap{
 		"md5": func(origin string) string {
-			return com.MD5(origin)
+			hasher := md5.New()
+			hasher.Write([]byte(origin))
+			return hex.EncodeToString(hasher.Sum(nil))
 		},
 		"add": func(a, b int) int {
 			return a + b
@@ -301,6 +108,10 @@ func Serve() {
 		},
 		"int2str": func(i int) string {
 			return fmt.Sprintf("%d", i)
+		},
+		"json": func(x interface{}) string {
+			b, _ := json.Marshal(x)
+			return string(b)
 		},
 		"unsafe": func(raw string) template.HTML {
 			return template.HTML(raw)
@@ -317,85 +128,93 @@ func Serve() {
 		"last": func(x int, a interface{}) bool {
 			return x == reflect.ValueOf(a).Len()-1
 		},
-	})
-	r.LoadHTMLGlob("resource/theme/**/*")
-	store := cookie.NewStore([]byte("secret"))
-	r.Use(sessions.Sessions("solisession", store))
-	r.Use(soligin.Translator)
-
-	r.Any("/*shit", routerSwitch)
-
-	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: r,
 	}
-
-	go func() {
-		// service connections
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Println("Shutdown Server ...")
-	solitudes.System.Search.Close()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatal("Server Shutdown: ", err)
+	for name, fn := range funcMap {
+		engine.AddFunc(name, fn)
 	}
-
-	log.Println("Server exiting")
 }
 
-type shitGin struct {
-	Match  *regexp.Regexp
-	Pre    []gin.HandlerFunc
-	Routes map[string]gin.HandlerFunc
+func auth(c *fiber.Ctx) {
+	token := c.Cookies(solitudes.AuthCookie)
+	if len(token) > 0 && token == solitudes.System.Config.User.Token && solitudes.System.Config.User.TokenExpires > time.Now().Unix() {
+		c.Locals(solitudes.CtxAuthorized, true)
+	} else {
+		c.Locals(solitudes.CtxAuthorized, false)
+	}
+	c.Next()
 }
 
-func routerSwitch(c *gin.Context) {
-	var params []string
-	for j := 0; j < len(shits); j++ {
-		params = shits[j].Match.FindStringSubmatch(c.Request.URL.Path)
-		if len(params) == 0 {
-			continue
-		}
-		if f, ok := shits[j].Routes[c.Request.Method]; ok {
-			c.Set(solitudes.CtxRequestParams, params)
-			for i := 0; i < len(shits[j].Pre); i++ {
-				shits[j].Pre[i](c)
-			}
-			if len(shits[j].Pre) > 0 && !c.MustGet(solitudes.CtxPassPreHandler).(bool) {
-				// 如果没有通过 pre handler
-				return
-			}
-			f(c)
-			return
-		}
-		c.HTML(http.StatusMethodNotAllowed, "default/error", soligin.Soli(c, gin.H{
-			"title": c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("method_not_allowed"),
-			"msg":   c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("are_you_lost"),
-		}))
+func loginRequired(c *fiber.Ctx) {
+	if !c.Locals(solitudes.CtxAuthorized).(bool) {
+		c.Redirect("/login", http.StatusFound)
 		return
 	}
-	tr := c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator)
-	c.HTML(http.StatusNotFound, "default/error", soligin.Soli(c, gin.H{
-		"title": tr.T("404_title"),
-		"msg":   tr.T("404_msg"),
-	}))
+	c.Next()
 }
 
-func checkPoolSubmit(wg *sync.WaitGroup, err error) {
-	if err != nil {
-		log.Println(err)
-		if wg != nil {
-			wg.Done()
-		}
+func guestRequired(c *fiber.Ctx) {
+	if c.Locals(solitudes.CtxAuthorized).(bool) {
+		c.Redirect("/admin/", http.StatusFound)
+		return
 	}
+	c.Next()
+}
+
+func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
+	var title, keywords, desc string
+
+	// custom title
+	if k, ok := data["title"]; ok && k.(string) != "" {
+		title = data["title"].(string) + " | " + solitudes.System.Config.Site.SpaceName
+	} else {
+		title = solitudes.System.Config.Site.SpaceName
+	}
+	// custom keywords
+	if k, ok := data["keywords"]; ok && k.(string) != "" {
+		keywords = data["keywords"].(string)
+	} else {
+		keywords = solitudes.System.Config.Site.SpaceKeywords
+	}
+	// custom desc
+	if k, ok := data["desc"]; ok && k.(string) != "" {
+		desc = data["desc"].(string)
+	} else {
+		desc = solitudes.System.Config.Site.SpaceDesc
+	}
+
+	var soli = make(map[string]interface{})
+	soli["Conf"] = solitudes.System.Config
+	soli["Title"] = title
+	soli["Keywords"] = keywords
+	soli["BuildVersion"] = solitudes.BuildVersion
+	soli["Desc"] = desc
+	soli["Login"] = c.Locals(solitudes.CtxAuthorized)
+	soli["Data"] = data
+	soli["Tr"] = c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+
+	return soli
+}
+
+func trans(c *fiber.Ctx) {
+	t, _ := translator.Trans.FindTranslator(getAcceptLanguages(c.Get("Accept-Language"))...)
+	c.Locals(solitudes.CtxTranslator, &translator.Translator{Trans: t, Translator: t.(locales.Translator)})
+	c.Next()
+}
+
+func getAcceptLanguages(accepted string) (languages []string) {
+	if accepted == "" {
+		return
+	}
+
+	options := strings.Split(accepted, ",")
+	l := len(options)
+
+	languages = make([]string, l)
+
+	for i := 0; i < l; i++ {
+		locale := strings.SplitN(options[i], ";", 2)
+		languages[i] = strings.Trim(locale[0], " ")
+	}
+
+	return
 }

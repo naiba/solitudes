@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/soligin"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func manager(c *gin.Context) {
+func manager(c *fiber.Ctx) {
 	var articleNum, commentNum int
 	var lastArticle model.Article
 	var lastComment model.Comment
@@ -52,8 +52,8 @@ func manager(c *gin.Context) {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
-	c.HTML(http.StatusOK, "admin/index", soligin.Soli(c, gin.H{
-		"title":              c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("dashboard"),
+	c.Status(http.StatusOK).Render("admin/index", injectSiteData(c, fiber.Map{
+		"title":              c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("dashboard"),
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
 		"lastArticlePublish": fmt.Sprintf("%.2f", time.Since(lastArticle.UpdatedAt).Hours()/24),
@@ -95,10 +95,10 @@ type uploadResp struct {
 	} `json:"data,omitempty"`
 }
 
-func upload(c *gin.Context) {
+func upload(c *fiber.Ctx) {
 	form, err := c.MultipartForm()
 	if err != nil {
-		c.JSON(http.StatusOK, uploadResp{
+		c.Status(http.StatusOK).JSON(uploadResp{
 			Msg:  err.Error(),
 			Code: http.StatusBadRequest,
 		})
@@ -121,13 +121,13 @@ func upload(c *gin.Context) {
 			continue
 		}
 		extName = fmt.Sprintf("/upload/%d.%s", time.Now().UnixNano(), extName)
-		if err := c.SaveUploadedFile(f, "data"+extName); err != nil {
+		if err := c.SaveFile(f, "data"+extName); err != nil {
 			errfiles = append(errfiles, f.Filename)
 		} else {
 			succMap[f.Filename] = extName
 		}
 	}
-	c.JSON(http.StatusOK, uploadResp{
+	c.Status(http.StatusOK).JSON(uploadResp{
 		Code: 0,
 		Data: struct {
 			ErrFiles []string          "json:\"errFiles,omitempty\""
@@ -140,7 +140,7 @@ func upload(c *gin.Context) {
 }
 
 type fetchRequest struct {
-	URL string `json:"url,omitempty" binding:"required,min=11"`
+	URL string `json:"url,omitempty" validate:"required,min=11"`
 }
 
 type fetchResp struct {
@@ -152,10 +152,17 @@ type fetchResp struct {
 	} `json:"data,omitempty"`
 }
 
-func fetch(c *gin.Context) {
+func fetch(c *fiber.Ctx) {
 	var fr fetchRequest
-	if err := c.ShouldBindJSON(&fr); err != nil {
-		c.JSON(http.StatusOK, fetchResp{
+	if err := c.BodyParser(&fr); err != nil {
+		c.Status(http.StatusOK).JSON(fetchResp{
+			Code: http.StatusBadRequest,
+			Msg:  err.Error(),
+		})
+		return
+	}
+	if err := validator.StructCtx(c.Context(), &fr); err != nil {
+		c.Status(http.StatusOK).JSON(fetchResp{
 			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		})
@@ -165,7 +172,7 @@ func fetch(c *gin.Context) {
 	// Get the data
 	resp, err := http.Get(fr.URL)
 	if err != nil {
-		c.JSON(http.StatusOK, fetchResp{
+		c.Status(http.StatusOK).JSON(fetchResp{
 			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		})
@@ -180,7 +187,7 @@ func fetch(c *gin.Context) {
 		// Create the file
 		out, err := os.Create("data/" + filename)
 		if err != nil {
-			c.JSON(http.StatusOK, fetchResp{
+			c.Status(http.StatusOK).JSON(fetchResp{
 				Code: http.StatusBadRequest,
 				Msg:  err.Error(),
 			})
@@ -191,7 +198,7 @@ func fetch(c *gin.Context) {
 		// Write the body to file
 		_, err = io.Copy(out, resp.Body)
 		if err != nil {
-			c.JSON(http.StatusOK, fetchResp{
+			c.Status(http.StatusOK).JSON(fetchResp{
 				Code: http.StatusBadRequest,
 				Msg:  err.Error(),
 			})
@@ -199,7 +206,7 @@ func fetch(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, fetchResp{
+	c.Status(http.StatusOK).JSON(fetchResp{
 		Code: 0,
 		Data: struct {
 			OriginalURL string "json:\"originalURL,omitempty\""
@@ -211,6 +218,6 @@ func fetch(c *gin.Context) {
 	})
 }
 
-func rebuildRiotData(c *gin.Context) {
+func rebuildFullTextSearch(c *fiber.Ctx) {
 	solitudes.BuildArticleIndex()
 }

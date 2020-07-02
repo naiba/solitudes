@@ -9,5 +9,7 @@ type User struct {
 		* default password: 123456
 		* gen password: https://bcrypt-generator.com/
 	*/
-	Password string
+	Password     string
+	Token        string
+	TokenExpires int64
 }

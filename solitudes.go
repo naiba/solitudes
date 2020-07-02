@@ -1,25 +1,25 @@
 package solitudes
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 	"sync"
 	"time"
 
 	"github.com/blevesearch/bleve"
-	"github.com/panjf2000/ants"
-	"github.com/yanyiwu/gojieba"
-
 	"github.com/jinzhu/gorm"
+	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"
-	"github.com/spf13/viper"
+	"github.com/yanyiwu/gojieba"
 	"go.uber.org/dig"
+	"gopkg.in/yaml.v2"
 
 	// db driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	// gojirba
 	"github.com/naiba/solitudes/internal/model"
+	// gojirba
 	_ "github.com/naiba/solitudes/pkg/blevejieba"
 	"github.com/naiba/solitudes/pkg/safecache"
 )
@@ -75,8 +75,9 @@ func newPool() *ants.Pool {
 }
 
 func newDatabase(conf *model.Config) *gorm.DB {
-	db, err := gorm.Open("postgres", conf.Web.Database)
+	db, err := gorm.Open("postgres", conf.Database)
 	if err != nil {
+		log.Println(conf)
 		panic(err)
 	}
 	if conf.Debug {
@@ -86,17 +87,17 @@ func newDatabase(conf *model.Config) *gorm.DB {
 }
 
 func newConfig() *model.Config {
-	viper.SetConfigName("conf")
-	viper.SetConfigType("yml")
-	viper.AddConfigPath("data/")
-	err := viper.ReadInConfig()
+	configFile := "data/conf.yml"
+	content, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		panic(err)
 	}
 	var c model.Config
-	if err = viper.Unmarshal(&c); err != nil {
+	err = yaml.Unmarshal(content, &c)
+	if err != nil {
 		panic(err)
 	}
+	c.ConfigFilePath = configFile
 	return &c
 }
 

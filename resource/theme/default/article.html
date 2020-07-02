@@ -8,7 +8,7 @@
     <span id="menu">
         <span id="nav">
             <ul>
-                {{range .Conf.Web.HeaderMenus}}
+                {{range .Conf.Site.HeaderMenus}}
                 <li><a href="{{.Link}}" {{if .Black}} target="_blank" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
                         {{end}}{{.Name}}</a></li>
                 {{end}}
@@ -45,34 +45,34 @@
         <div id="share" style="display: none">
             <ul>
                 <li><a class="icon"
-                        href="http://www.facebook.com/sharer.php?u=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}"><i
+                        href="http://www.facebook.com/sharer.php?u=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"><i
                             class="fab fa-facebook " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://twitter.com/share?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;text={{.Data.article.Title}}"><i
+                        href="https://twitter.com/share?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;text={{.Data.article.Title}}"><i
                             class="fab fa-twitter " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.linkedin.com/shareArticle?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                        href="http://www.linkedin.com/shareArticle?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-linkedin " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://pinterest.com/pin/create/bookmarklet/?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;is_video=false&amp;description={{.Data.article.Title}}"><i
+                        href="https://pinterest.com/pin/create/bookmarklet/?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;is_video=false&amp;description={{.Data.article.Title}}"><i
                             class="fab fa-pinterest " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="mailto:?subject={{.Data.article.Title}}&amp;body=Check out this article: https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}"><i
+                        href="mailto:?subject={{.Data.article.Title}}&amp;body=Check out this article: https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"><i
                             class="fas fa-envelope " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://getpocket.com/save?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                        href="https://getpocket.com/save?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://reddit.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                        href="http://reddit.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-reddit " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.stumbleupon.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                        href="http://www.stumbleupon.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://digg.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                        href="http://digg.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-digg " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.tumblr.com/share/link?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
+                        href="http://www.tumblr.com/share/link?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
                             class="fab fa-tumblr " aria-hidden="true"></i></a></li>
             </ul>
         </div>
@@ -91,7 +91,7 @@
             </h1>
             <div class="meta">
                 <span class="author" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-                    <span itemprop="name">{{.Conf.Web.User.Nickname}}</span>
+                    <span itemprop="name">{{.Conf.User.Nickname}}</span>
                 </span>
                 <div class="postdate">
                     <time datetime="{{.Data.article.CreatedAt}}"
@@ -184,7 +184,7 @@
         <div id="footer-post">
             <div id="nav-footer" style="display: none">
                 <ul>
-                    {{range .Conf.Web.HeaderMenus}}
+                    {{range .Conf.Site.HeaderMenus}}
                     <li><a href="{{.Link}}" {{if .Black}} target="_blank" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
                             {{end}}{{.Name}}</a></li>
                     {{end}}
@@ -200,34 +200,34 @@
             <div id="share-footer" style="display: none">
                 <ul>
                     <li><a class="icon"
-                            href="http://www.facebook.com/sharer.php?u=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}"><i
+                            href="http://www.facebook.com/sharer.php?u=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"><i
                                 class="fab fa-facebook fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="https://twitter.com/share?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;text={{.Data.article.Title}}"><i
+                            href="https://twitter.com/share?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;text={{.Data.article.Title}}"><i
                                 class="fab fa-twitter fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://www.linkedin.com/shareArticle?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                            href="http://www.linkedin.com/shareArticle?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-linkedin fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="https://pinterest.com/pin/create/bookmarklet/?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;is_video=false&amp;description={{.Data.article.Title}}"><i
+                            href="https://pinterest.com/pin/create/bookmarklet/?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;is_video=false&amp;description={{.Data.article.Title}}"><i
                                 class="fab fa-pinterest fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="mailto:?subject={{.Data.article.Title}}&amp;body=Check out this article: https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}"><i
+                            href="mailto:?subject={{.Data.article.Title}}&amp;body=Check out this article: https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"><i
                                 class="fas fa-envelope fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="https://getpocket.com/save?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                            href="https://getpocket.com/save?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-get-pocket fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://reddit.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                            href="http://reddit.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://www.stumbleupon.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                            href="http://www.stumbleupon.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://digg.com/submit?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                            href="http://digg.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
-                            href="http://www.tumblr.com/share/link?url=https://{{.Conf.Web.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
+                            href="http://www.tumblr.com/share/link?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
                                 class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
                 </ul>
             </div>
@@ -248,7 +248,7 @@
     <script>
         window.onload = function () {
             $.get("/count?action=article&slug={{.Data.article.Slug}}")
-            $('#id_nickname').val(localStorage.getItem("cm_nickname")||'{{.Conf.Web.User.Nickname}}')
+            $('#id_nickname').val(localStorage.getItem("cm_nickname")||'{{.Conf.User.Nickname}}')
             $('#id_email').val(localStorage.getItem("cm_email"))
             $('#id_website').val(localStorage.getItem("cm_website"))
         }

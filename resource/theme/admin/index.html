@@ -4,7 +4,6 @@
     <section class="content-header">
         <h1>
             {{.Tr.T "dashboard"}}
-            <small>known everything</small>
         </h1>
     </section>
 
@@ -103,16 +102,16 @@
         </div>
         <div class="row">
             <div class="col-lg-3 col-xs-6">
-                <button onclick="rebuildRiotData()"
+                <button onclick="rebuildFullTextSearch()"
                     class="btn btn-danger btn-lg">{{.Tr.T "rebuild_fulltext_search_data"}}</button>
             </div>
         </div>
     </section>
 </div>
 <script>
-    function rebuildRiotData() {
+    function rebuildFullTextSearch() {
         if (confirm('Rebuild Riot data?')) {
-            $.get("/admin/rebuild-riot").done(() => {
+            $.get("/admin/rebuild-full-text-search").done(() => {
                 alert("Rebuild successful")
             })
         }

@@ -5,11 +5,10 @@ import (
 	"net/http"
 
 	"github.com/blevesearch/bleve"
+	"github.com/gofiber/fiber"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/soligin"
-
-	"github.com/gin-gonic/gin"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
 type searchResp struct {
@@ -17,7 +16,7 @@ type searchResp struct {
 	Content string
 }
 
-func search(c *gin.Context) {
+func search(c *fiber.Ctx) {
 	keywords := c.Query("w")
 
 	query := bleve.NewQueryStringQuery(keywords)
@@ -45,8 +44,8 @@ func search(c *gin.Context) {
 		})
 	}
 
-	c.HTML(http.StatusOK, "default/search", soligin.Soli(c, gin.H{
-		"title":   c.MustGet(solitudes.CtxTranslator).(*solitudes.Translator).T("search_result_title", c.Query("w")),
+	c.Status(http.StatusOK).Render("default/search", injectSiteData(c, fiber.Map{
+		"title":   c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("search_result_title", c.Query("w")),
 		"word":    c.Query("w"),
 		"results": result,
 	}))
