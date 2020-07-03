@@ -195,6 +195,26 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
+                        <label for="inputNickname" class="col-sm-3 control-label">{{.Tr.T "nickname"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputNickname" value="{{.Conf.User.Nickname}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputEmail" class="col-sm-3 control-label">{{.Tr.T "email"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputEmail" value="{{.Conf.User.Email}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
                         <label for="inputOldPassword" class="col-sm-3 control-label">{{.Tr.T "old_password"}}</label>
                         <div class="col-sm-9">
                             <input class="form-control" id="inputOldPassword">
@@ -298,6 +318,8 @@
             site_theme: $("#selTheme").val(),
             site_home_top_content: inputHomeTop.getValue(),
             site_home_bottom_content: inputHomeBottom.getValue(),
+            nickname: $("#inputNickname").val(),
+            email: $("#inputEmail").val(),
             old_password: oldPassword,
             new_password: newPassword,
         }

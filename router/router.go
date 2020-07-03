@@ -44,7 +44,7 @@ func Serve() {
 
 	app.Use(trans, auth)
 	app.Get("/", index)
-	app.Get("/feed/:format", feedHandler)
+	app.Get("/feed/:format?", feedHandler)
 	app.Get("/archives/:page?", archive)
 	app.Get("/search/", search)
 	app.Get("/tags/:tag/:page?", tags)

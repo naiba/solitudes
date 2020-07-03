@@ -5,8 +5,8 @@
 *.so
 *.dylib
 .DS_Store
-/data/upload
-/data/bleve
+/data/*
+!/data/conf.example.yml
 
 # Test binary, build with `go test -c`
 *.test

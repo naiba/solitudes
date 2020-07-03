@@ -33,6 +33,8 @@ type settingsRequest struct {
 	SiteTheme             string `json:"site_theme,omitempty"`
 	SiteHomeTopContent    string `json:"site_home_top_content,omitempty"`
 	SiteHomeBottomContent string `json:"site_home_bottom_content,omitempty"`
+	Email                 string `json:"email,omitempty" validate:"email"`
+	Nickname              string `json:"nickname,omitempty" validate:"trim"`
 	OldPassword           string `json:"old_password,omitempty" validate:"trim"`
 	NewPassword           string `json:"new_password,omitempty" validate:"trim"`
 }
@@ -63,6 +65,8 @@ func settingsHandler(c *fiber.Ctx) {
 	solitudes.System.Config.Akismet = sr.Akismet
 	solitudes.System.Config.Site.Domain = sr.SiteDomain
 	solitudes.System.Config.Site.SpaceKeywords = sr.SiteKeywords
+	solitudes.System.Config.User.Nickname = sr.Nickname
+	solitudes.System.Config.User.Email = sr.Email
 	err := json.Unmarshal([]byte(sr.SiteHeaderMenus), &solitudes.System.Config.Site.HeaderMenus)
 	if err != nil {
 		c.Status(http.StatusBadRequest).Write(err.Error())

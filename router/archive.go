@@ -36,6 +36,14 @@ func archive(c *fiber.Ctx) {
 }
 
 func feedHandler(c *fiber.Ctx) {
+	if c.Params("format") == "" {
+		c.Status(http.StatusBadRequest).JSON(map[string]interface{}{
+			"message":         "please spec a feed format",
+			"supportedFormat": []string{"json", "rss", "atom"},
+			"feedLink":        "https://" + solitudes.System.Config.Site.Domain + "/feed/:format",
+		})
+		return
+	}
 	feed := &feeds.Feed{
 		Title:       solitudes.System.Config.Site.SpaceName,
 		Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain},
