@@ -8,7 +8,7 @@
 </article>
 <script>
   window.onload = function () {
-    $.get("/count?action=article&slug={{.Data.article.Slug}}")
+    fetch("/count?action=article&slug={{.Data.article.Slug}}")
   }
 </script>
 {{template "default/footer" .}}

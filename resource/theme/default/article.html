@@ -1,10 +1,10 @@
 {{define "default/article"}}
 {{template "default/header" .}}
 <div id="header-post">
-    <a id="menu-icon" href="#"><i class="fas fa-bars fa-lg"></i></a>
-    <a id="menu-icon-tablet" href="#"><i class="fas fa-bars fa-lg"></i></a>
-    <a id="top-icon-tablet" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"
-        style="display:none;"><i class="fas fa-chevron-up fa-lg"></i></a>
+    <span id="menu-icon"><i class="fas fa-bars fa-lg"></i></span>
+    <span id="menu-icon-tablet"><i class="fas fa-bars fa-lg"></i></span>
+    <span id="top-icon-tablet" onclick="scrollToTop(this)" style="display:none;"><i
+            class="fas fa-chevron-up fa-lg"></i></span>
     <span id="menu">
         <span id="nav">
             <ul>
@@ -20,21 +20,20 @@
                 {{if .Data.article.SibilingArticle.Prev}}
                 <li><a class="icon" href="/{{.Data.article.SibilingArticle.Prev.Slug}}"
                         title="{{.Data.article.SibilingArticle.Prev.Title}}"><i class="fas fa-chevron-left"
-                            aria-hidden="true" onmouseover="$('#i-prev').toggle();"
-                            onmouseout="$('#i-prev').toggle();"></i></a></li>
+                            aria-hidden="true" onmouseover="toggle('#i-prev')" onmouseout="toggle('#i-prev')"></i></a>
+                </li>
                 {{end}}
                 {{if .Data.article.SibilingArticle.Next}}
                 <li><a class="icon" href="/{{.Data.article.SibilingArticle.Next.Slug}}"
                         title="{{.Data.article.SibilingArticle.Next.Title}}"><i class="fas fa-chevron-right"
-                            aria-hidden="true" onmouseover="$('#i-next').toggle();"
-                            onmouseout="$('#i-next').toggle();"></i></a></li>
+                            aria-hidden="true" onmouseover="toggle('#i-next')" onmouseout="toggle('#i-next')"></i></a>
+                </li>
                 {{end}}
-                <li><a class="icon" href="#" onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i
-                            class="fas fa-chevron-up" aria-hidden="true" onmouseover="$('#i-top').toggle();"
-                            onmouseout="$('#i-top').toggle();"></i></a></li>
-                <li><a class="icon" href="#"><i class="fas fa-share-alt" aria-hidden="true"
-                            onmouseover="$('#i-share').toggle();" onmouseout="$('#i-share').toggle();"
-                            onclick="$('#share').toggle();return false;"></i></a></li>
+                <li><span class="icon">
+                        <i class="fas fa-chevron-up" aria-hidden="true" onmouseover="toggle('#i-top')"
+                            onmouseout="toggle('#i-top')" onclick="scrollToTop(this)"></i></span></li>
+                <li><span class="icon"><i class="fas fa-share-alt" aria-hidden="true" onmouseover="toggle('#i-share')"
+                            onmouseout="toggle('#i-share')" onclick="toggle('#share');return false;"></i></span></li>
             </ul>
             <span id="i-prev" class="info" style="display:none;">{{.Tr.T "previous_post"}}</span>
             <span id="i-next" class="info" style="display:none;">{{.Tr.T "next_post"}}</span>
@@ -164,15 +163,9 @@
         <input type="hidden" maxlength="64" id="id_nickname">
         {{else}}
         <div class="row">
-            <div class="col-xs-4">
-                <input placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname">
-            </div>
-            <div class="col-xs-4">
-                <input placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email">
-            </div>
-            <div class="col-xs-4">
-                <input placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website">
-            </div>
+            <input placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname">
+            <input placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email">
+            <input placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website">
         </div>
         {{end}}
         <button onclick="comment(this)" class="search-button">{{.Tr.T "submit"}}</button>
@@ -233,53 +226,67 @@
             </div>
 
             <div id="actions-footer">
-                <a id="menu" class="icon" href="#" onclick="$('#nav-footer').toggle();return false;"><i
-                        class="fas fa-bars fa-lg" aria-hidden="true"></i> {{.Tr.T "menu"}}</a>
-                <a id="toc" class="icon" href="#" onclick="$('#toc-footer').toggle();return false;"><i
-                        class="fas fa-list fa-lg" aria-hidden="true"></i> {{.Tr.T "toc"}}</a>
-                <a id="share" class="icon" href="#" onclick="$('#share-footer').toggle();return false;"><i
-                        class="fas fa-share-alt fa-lg" aria-hidden="true"></i> {{.Tr.T "share"}}</a>
-                <a id="top" style="display:none" class="icon" href="#"
-                    onclick="$('html, body').animate({ scrollTop: 0 }, 'fast');"><i class="fas fa-chevron-up fa-lg"
-                        aria-hidden="true"></i> {{.Tr.T "return_top"}}</a>
+                <span id="menu" class="icon" onclick="toggle('#nav-footer');return false;"><i class="fas fa-bars fa-lg"
+                        aria-hidden="true"></i> {{.Tr.T "menu"}}</span>
+                <span id="toc" class="icon" onclick="toggle('#toc-footer');return false;"><i class="fas fa-list fa-lg"
+                        aria-hidden="true"></i> {{.Tr.T "toc"}}</span>
+                <span id="share" class="icon" onclick="toggle('#share-footer');return false;"><i
+                        class="fas fa-share-alt fa-lg" aria-hidden="true"></i> {{.Tr.T "share"}}</span>
+                <span id="top" style="display:none" class="icon" onclick="scrollToTop(this)"><i
+                        class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> {{.Tr.T "return_top"}}</span>
             </div>
         </div>
     </div>
     <script>
         window.onload = function () {
-            $.get("/count?action=article&slug={{.Data.article.Slug}}")
-            $('#id_nickname').val(localStorage.getItem("cm_nickname")||'{{.Conf.User.Nickname}}')
-            $('#id_email').val(localStorage.getItem("cm_email"))
-            $('#id_website').val(localStorage.getItem("cm_website"))
+            fetch("/count?action=article&slug={{.Data.article.Slug}}")
+            document.querySelector("#id_nickname").value = localStorage.getItem("cm_nickname") || '{{.Conf.User.Nickname}}'
+            document.querySelector("#id_email").value = localStorage.getItem("cm_email")
+            document.querySelector("#id_website").value = localStorage.getItem("cm_website")
         }
         function reply_to(cid, nickname) {
-            $('#id_content').val('@' + nickname + ' ' + $('#id_content').val())
-            $('#id_reply_to').val(cid)
+            const idContent = document.querySelector("#id_content");
+            idContent.value = '@' + nickname + ' ' + idContent.value;
+            document.querySelector("#id_reply_to").value = cid
         }
         function comment(btn) {
-            if (!$('#id_nickname').val() || !$('#id_content').val()) {
+            if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
                 alert('nickname & content is required.')
                 return
             }
-            localStorage.setItem("cm_nickname", $('#id_nickname').val() == undefined?"":$('#id_nickname').val())
-            localStorage.setItem("cm_email", $('#id_email').val() == undefined?"":$('#id_email').val())
-            localStorage.setItem("cm_website", $('#id_website').val() == undefined?"":$('#id_website').val())
-            $(btn).text("Submiting ...")
+            const emptyArray = [null, "null"];
+            localStorage.setItem("cm_nickname", document.querySelector('#id_nickname').value in emptyArray ? "" : document.querySelector('#id_nickname').value)
+            localStorage.setItem("cm_email", document.querySelector('#id_email').value in emptyArray ? "" : document.querySelector('#id_email').value)
+            localStorage.setItem("cm_website", document.querySelector('#id_website').value in emptyArray ? "" : document.querySelector('#id_website').value)
+            btn.value = "Submiting ..."
             var data = {
-                nickname: $('#id_nickname').val(),
-                email: $('#id_email').val(),
-                content: $('#id_content').val(),
-                website: $('#id_website').val(),
+                nickname: document.querySelector('#id_nickname').value,
+                email: document.querySelector('#id_email').value,
+                content: document.querySelector('#id_content').value,
+                website: document.querySelector('#id_website').value,
                 version: parseInt('{{.Data.article.Version}}'),
-                slug: $('#id_slug').val(),
+                slug: document.querySelector('#id_slug').value,
             }
-            $('#id_reply_to').val() && (data.reply_to = $('#id_reply_to').val())
-            $.post("/comment", data, (d) => {
-                window.location.reload()
-            }).fail((e) => {
-                alert("Submit faile: " + e.responseText)
-            }).always(() => {
-                $(btn).text("Submit")
+            document.querySelector('#id_reply_to').value && (data.reply_to = document.querySelector('#id_reply_to').value)
+            fetch("/comment", {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            }).then(resp => {
+                if (resp.status == 200) {
+                    window.location.reload()
+                    return
+                }
+                resp.text().then(str => {
+                    alert("Submit faile: " + str)
+                    btn.value = "Submit"
+                })
+            }).catch(e => {
+                alert("Submit faile: " + e)
+                btn.value = "Submit"
             })
         }
     </script>

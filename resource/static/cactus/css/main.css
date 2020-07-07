@@ -6,6 +6,7 @@
     background-color: #fafafa;
     color: #22272a;
     font-size: 1.1rem;
+    width: 35%;
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
 }
@@ -36,8 +37,15 @@
     color: #ccc;
 }
 
+#reply-list .gravatar {
+    width: 44px;
+    padding: 6px;
+    margin-right: 4px;
+    float: left;
+}
+
 #reply-list .gravatar img {
-    margin-top: 7px;
+    width: 100%;
 }
 
 #reply-list .child-node {
@@ -58,14 +66,18 @@
     resize: none;
 }
 
-#reply input {
-    width: 100%;
-    padding: 2px;
+#reply>.row {
+    display: flex;
+}
+
+#reply>.row input {
+    flex: 1;
+    width: 30%;
 }
 
 #reply button {
     width: 100%;
-    margin-top: 5px;
+    margin-top: 1rem;
     margin-bottom: 10px;
 }
 
@@ -96,4 +108,14 @@ article footer {
 
 .content {
     min-height: unset;
+}
+
+@media screen and (max-width: 480px) {
+    #header #nav ul li.icon {
+        right: 0;
+    }
+
+    .search-input {
+        width: 65%;
+    }
 }
