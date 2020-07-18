@@ -1,7 +1,6 @@
 # Solitudes
 
 :smoking: 在那些孤独的日子里，还有写作陪伴着我。
-2020，从心出发
 
 ## 特色
 
@@ -12,7 +11,7 @@
 - 文章历史版本保存（可浏览可被搜索）
 - Markdown 发布文章
 - 邮件、Server酱 通知
-- 多语言支持
+- 多语言
 
 ## 指南
 
@@ -27,7 +26,7 @@
 4. 在 docker 中部署
 
     ```shell
-    docker run --name solitudes -p 8080:8080 -v /path/to/data:/solitudes/data naiba/solitudes
+    docker run --name solitudes -p 8080:8080 -v /path/to/data:/solitudes/data github.com/naiba/dockerfiles/solitudes
     ```
 
 5. 打开 `https://yourdomain/login` 登录管理面板

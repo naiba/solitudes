@@ -115,6 +115,10 @@ func publishHandler(c *fiber.Ctx) {
 	}
 
 	var err error
+	var bookRefer *string
+	if pa.BookRefer != "" {
+		bookRefer = &pa.BookRefer
+	}
 	// edit article
 	article := &model.Article{
 		ID:         pa.ID,
@@ -125,7 +129,7 @@ func publishHandler(c *fiber.Ctx) {
 		TemplateID: pa.Template,
 		IsBook:     pa.IsBook,
 		RawTags:    pa.Tags,
-		BookRefer:  &pa.BookRefer,
+		BookRefer:  bookRefer,
 	}
 	if article, err = fetchOriginArticle(article); err != nil {
 		c.Status(http.StatusBadRequest).Write(err.Error())
