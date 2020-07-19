@@ -13,6 +13,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/naiba/solitudes/internal/model"
+
 	"github.com/88250/lute"
 	"github.com/go-playground/locales"
 	gv "github.com/go-playground/validator"
@@ -25,9 +27,17 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-var ugcPolict = bluemonday.UGCPolicy()
+var bluemondayPolicy = bluemonday.UGCPolicy()
 var luteEngine = lute.New()
 var validator = gv.New()
+
+func mdRender(id string, raw string) string {
+	return luteEngine.MarkdownStr(id, raw)
+}
+
+func ugcPolicy(raw string) string {
+	return bluemondayPolicy.Sanitize(raw)
+}
 
 // Serve web service
 func Serve() {
@@ -119,11 +129,10 @@ func setFuncMap(engine *html.Engine) {
 		"tf": func(t time.Time, f string) string {
 			return t.Format(f)
 		},
-		"ugcPolicy": func(raw string) string {
-			return ugcPolict.Sanitize(raw)
-		},
-		"md": func(id string, raw string) string {
-			return luteEngine.MarkdownStr(id, raw)
+		"ugcPolicy": ugcPolicy,
+		"md":        mdRender,
+		"articleIdx": func(t model.Article) string {
+			return t.GetIndexID()
 		},
 		"last": func(x int, a interface{}) bool {
 			return x == reflect.ValueOf(a).Len()-1

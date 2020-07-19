@@ -58,7 +58,7 @@ func feedHandler(c *fiber.Ctx) {
 			Title:   articles[i].Title,
 			Link:    &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug + "/v" + strconv.Itoa(int(articles[i].Version))},
 			Author:  &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
-			Content: articles[i].Content,
+			Content: luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),
 			Created: articles[i].CreatedAt,
 			Updated: articles[i].UpdatedAt,
 		})
