@@ -37,7 +37,7 @@
           - ./data/db:/var/lib/postgresql/data
         restart: always
         environment:
-          POSTGRES_PASSWORD: mypaypassword
+          POSTGRES_PASSWORD: thisispassword
           POSTGRES_USER: solitudes
           POSTGRES_DB: solitudes
 
@@ -67,7 +67,7 @@
 
     ```yaml
     debug: true
-    database: postgres://postgres:mypassword@localhost/solitudes?sslmode=disable
+    database: postgres://solitudes:thisispassword@localhost/solitudes?sslmode=disable
     user:
       email: hi@example.com
       nickname: naiba
@@ -115,12 +115,7 @@
 6. 在 postgres 数据库启用 `uuid` 扩展，在文件夹下执行：
 
     ```sh
-    docker-compose exec db bash
-    psql -U solitudes solitudes
-    ```
-    然后复制下面的SQL语句执行
-    ```sql
-    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    docker-compose exec db psql -U solitudes solitudes -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
     ```
 
 7. 重启 Solitudes

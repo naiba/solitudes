@@ -240,30 +240,38 @@
     <script>
         window.onload = function () {
             fetch("/count?action=article&slug={{.Data.article.Slug}}")
-            document.querySelector("#id_nickname").value = localStorage.getItem("cm_nickname") || '{{.Conf.User.Nickname}}'
-            document.querySelector("#id_email").value = localStorage.getItem("cm_email")
-            document.querySelector("#id_website").value = localStorage.getItem("cm_website")
+            document.querySelector("#id_nickname").value = localStorage.getItem("cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}'
+            if (document.querySelector("#id_email")) {
+                document.querySelector("#id_email").value = localStorage.getItem("cm_email") || ''
+            }
+            if (document.querySelector("#id_website")) {
+                document.querySelector("#id_website").value = localStorage.getItem("cm_website") || ''
+            }
         }
+
         function reply_to(cid, nickname) {
             const idContent = document.querySelector("#id_content");
             idContent.value = '@' + nickname + ' ' + idContent.value;
             document.querySelector("#id_reply_to").value = cid
         }
+
         function comment(btn) {
             if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
                 alert('nickname & content is required.')
                 return
             }
-            const emptyArray = [null, "null"];
-            localStorage.setItem("cm_nickname", document.querySelector('#id_nickname').value in emptyArray ? "" : document.querySelector('#id_nickname').value)
-            localStorage.setItem("cm_email", document.querySelector('#id_email').value in emptyArray ? "" : document.querySelector('#id_email').value)
-            localStorage.setItem("cm_website", document.querySelector('#id_website').value in emptyArray ? "" : document.querySelector('#id_website').value)
+            const cm_nickname = document.querySelector('#id_nickname') ? document.querySelector('#id_nickname').value : "";
+            const cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
+            const cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
+            localStorage.setItem("cm_nickname", cm_nickname)
+            localStorage.setItem("cm_email", cm_email)
+            localStorage.setItem("cm_website", cm_website)
             btn.value = "Submiting ..."
             var data = {
-                nickname: document.querySelector('#id_nickname').value,
-                email: document.querySelector('#id_email').value,
+                nickname: cm_nickname,
+                email: cm_email,
+                website: cm_website,
                 content: document.querySelector('#id_content').value,
-                website: document.querySelector('#id_website').value,
                 version: parseInt('{{.Data.article.Version}}'),
                 slug: document.querySelector('#id_slug').value,
             }
