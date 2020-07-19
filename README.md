@@ -67,7 +67,7 @@
 
     ```yaml
     debug: true
-    database: postgres://solitudes:thisispassword@localhost/solitudes?sslmode=disable
+    database: postgres://solitudes:thisispassword@db/solitudes?sslmode=disable
     user:
       email: hi@example.com
       nickname: naiba
