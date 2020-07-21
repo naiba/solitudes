@@ -160,7 +160,7 @@ func sanitizedAnchorName(text string) string {
 				anchorName = append(anchorName, '-')
 			}
 			futureDash = false
-			anchorName = append(anchorName, unicode.ToLower(r))
+			anchorName = append(anchorName, r)
 		default:
 			futureDash = true
 		}
