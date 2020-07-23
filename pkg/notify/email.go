@@ -9,23 +9,6 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-var h = hermes.Hermes{
-	Product: hermes.Product{
-		Name:      solitudes.System.Config.Site.SpaceName,
-		Link:      solitudes.System.Config.Site.Domain,
-		Logo:      "https://" + solitudes.System.Config.Site.Domain + "/static/cactus/images/logo.png",
-		Copyright: "Copyright © " + solitudes.System.Config.Site.SpaceName + ". All rights reserved.",
-	},
-}
-
-var sender = gomail.NewDialer(solitudes.System.Config.Email.Host,
-	solitudes.System.Config.Email.Port, solitudes.System.Config.Email.User,
-	solitudes.System.Config.Email.Pass)
-
-func init() {
-	sender.SSL = true
-}
-
 //Email notify
 func Email(src, dist *model.Comment, article *model.Article) error {
 	if dist == nil || dist.Email == "" {
@@ -56,6 +39,16 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 			},
 		},
 	}
+
+	var h = hermes.Hermes{
+		Product: hermes.Product{
+			Name:      solitudes.System.Config.Site.SpaceName,
+			Link:      solitudes.System.Config.Site.Domain,
+			Logo:      "https://" + solitudes.System.Config.Site.Domain + "/static/cactus/images/logo.png",
+			Copyright: "Copyright © " + solitudes.System.Config.Site.SpaceName + ". All rights reserved.",
+		},
+	}
+
 	emailBody, err := h.GenerateHTML(email)
 	if err != nil {
 		return err
@@ -65,5 +58,11 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 	m.SetHeader("To", dist.Email)
 	m.SetHeader("Subject", "Comment in ["+article.Title+"] got new reply")
 	m.SetBody("text/html", emailBody)
+
+	var sender = gomail.NewDialer(solitudes.System.Config.Email.Host,
+		solitudes.System.Config.Email.Port, solitudes.System.Config.Email.User,
+		solitudes.System.Config.Email.Pass)
+	sender.SSL = solitudes.System.Config.Email.SSL
+
 	return sender.DialAndSend(m)
 }

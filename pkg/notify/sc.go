@@ -19,9 +19,9 @@ func ServerChan(comment *model.Comment, article *model.Article, err error) {
 	if err != nil {
 		errmsg = `
 
-		### Email notify   
-		
-		` + err.Error()
+### Email notify
+
+` + err.Error()
 	}
 	params := url.Values{"text": {article.Title + " got a new comment"}, "desp": {
 		`### Comment detail   

@@ -275,7 +275,9 @@
                 version: parseInt('{{.Data.article.Version}}'),
                 slug: document.querySelector('#id_slug').value,
             }
-            document.querySelector('#id_reply_to').value && (data.reply_to = document.querySelector('#id_reply_to').value)
+            if (document.querySelector('#id_reply_to').value) {
+                data.reply_to = document.querySelector('#id_reply_to').value
+            }
             fetch("/comment", {
                 method: 'POST',
                 headers: {

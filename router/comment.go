@@ -13,13 +13,13 @@ import (
 )
 
 type commentForm struct {
-	ReplyTo  *string `form:"reply_to" validate:"omitempty,uuid4"`
-	Nickname string  `form:"nickname" validate:"required"`
-	Content  string  `form:"content" validate:"required" gorm:"text"`
-	Slug     string  `form:"slug" validate:"required" gorm:"index"`
-	Website  string  `form:"website" validate:"omitempty,url"`
-	Version  uint    `form:"version" validate:"required"`
-	Email    string  `form:"email" validate:"omitempty,email"`
+	ReplyTo  *string `json:"reply_to" validate:"omitempty,uuid4"`
+	Nickname string  `json:"nickname" validate:"required"`
+	Content  string  `json:"content" validate:"required" gorm:"text"`
+	Slug     string  `json:"slug" validate:"required" gorm:"index"`
+	Website  string  `json:"website" validate:"omitempty,url"`
+	Version  uint    `json:"version" validate:"required"`
+	Email    string  `json:"email" validate:"omitempty,email"`
 }
 
 func commentHandler(c *fiber.Ctx) {
