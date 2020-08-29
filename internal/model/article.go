@@ -8,6 +8,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/88250/lute/util"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/panjf2000/ants"
@@ -85,6 +86,7 @@ var titleRegex = regexp.MustCompile(`^\s{0,2}(#{1,6})\s(.*)$`)
 // GenTOC 生成标题树
 func (t *Article) GenTOC() {
 	lines := strings.Split(t.Content, "\n")
+	uniqueHeadingID := make(map[string]int)
 	var matches []string
 	var currentToc *ArticleTOC
 	for j := 0; j < len(lines); j++ {
@@ -96,7 +98,7 @@ func (t *Article) GenTOC() {
 		toc.Level = len(matches[1])
 		toc.ShowLevel = 2
 		toc.Title = string(matches[2])
-		toc.Slug = sanitizedAnchorName(string(matches[2]))
+		toc.Slug = sanitizedAnchorName(uniqueHeadingID, string(matches[2]))
 		if currentToc == nil {
 			t.Toc = append(t.Toc, &toc)
 			currentToc = &toc
@@ -134,38 +136,24 @@ func (t *Article) GenTOC() {
 		}
 		currentToc = &toc
 	}
-	ensureUniqueIDs(make(map[string]int), t.Toc)
-}
-
-// 确保标题 ID 唯一
-func ensureUniqueIDs(ids map[string]int, ts []*ArticleTOC) {
-	for i := 0; i < len(ts); i++ {
-		if count, has := ids[ts[i].Slug]; has {
-			ts[i].Slug = fmt.Sprintf("%s-%d", ts[i].Slug, count+1)
-		} else {
-			ids[ts[i].Slug] = 0
-		}
-		ensureUniqueIDs(ids, ts[i].SubTitles)
-	}
 }
 
 // 生成标题 ID
-func sanitizedAnchorName(text string) string {
-	var anchorName []rune
-	futureDash := false
+func sanitizedAnchorName(unique map[string]int, text string) (ret string) {
+	text = strings.TrimSpace(text)
+	text = strings.ReplaceAll(text, util.Caret, "")
 	for _, r := range text {
-		switch {
-		case unicode.IsLetter(r) || unicode.IsNumber(r):
-			if futureDash && len(anchorName) > 0 {
-				anchorName = append(anchorName, '-')
-			}
-			futureDash = false
-			anchorName = append(anchorName, r)
-		default:
-			futureDash = true
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			ret += string(r)
+		} else {
+			ret += "-"
 		}
 	}
-	return string(anchorName)
+	for 0 < unique[ret] {
+		ret += "-"
+	}
+	unique[ret] = 1
+	return
 }
 
 // RelatedCount 合计专栏下文章计数
