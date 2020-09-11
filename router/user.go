@@ -81,27 +81,6 @@ func index(c *fiber.Ctx) {
 	}))
 }
 
-// func static(root string) fiber.Handler {
-// 	return func(c *fiber.Ctx) {
-// 		requestPath := string(c.Fasthttp.Path())
-// 		i := strings.Index(requestPath[1:], "/")
-// 		// 其实这边 gin 已经过滤了一遍了 我这边再过滤一下
-// 		filepath := path.Clean(root + requestPath[i+1:])
-// 		http.ServeFile(soliwriter.InterceptResponseWriter{
-// 			ResponseWriter: c.Fasthttp.Request.BodyWriter(),
-// 			ErrH: func(h http.ResponseWriter, s int) {
-// 				h.Header().Set("Content-Type", "text/html,charset=utf8")
-// 				h.Header().Set("X-File-Server", "solitudes")
-// 				tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-// 				c.Render(s, "default/error", injectSiteData(c, fiber.Map{
-// 					"title": tr.T("404_title"),
-// 					"msg":   tr.T("404_msg"),
-// 				}))
-// 			},
-// 		}, c.Request, filepath)
-// 	}
-// }
-
 func count(c *fiber.Ctx) {
 	if c.Query("slug") == "" {
 		return

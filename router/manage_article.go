@@ -85,7 +85,7 @@ func deleteArticle(c *fiber.Ctx) {
 		c.Status(http.StatusInternalServerError).Write(err.Error())
 		return
 	}
-	// delete riot data
+	// delete full-text search data
 	for i := 0; i < len(indexIDs); i++ {
 		solitudes.System.Search.Delete(indexIDs[i])
 	}

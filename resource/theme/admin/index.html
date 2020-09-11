@@ -110,7 +110,7 @@
 </div>
 <script>
     function rebuildFullTextSearch() {
-        if (confirm('Rebuild Riot data?')) {
+        if (confirm('Rebuild full-text search data?')) {
             $.get("/admin/rebuild-full-text-search").done(() => {
                 alert("Rebuild successful")
             })

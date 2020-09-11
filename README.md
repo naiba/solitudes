@@ -1,32 +1,32 @@
 # Solitudes
 
-:smoking: 在那些孤独的日子里，还有写作陪伴着我。
+:smoking: In those lonely days, writing accompanied me.
 
-## 特色
+## Features
 
-- 一个可以出书的博客引擎
-- 适合长篇多章节文章写作（专栏）
-- SEO 友好
-- 内置全文搜索
-- 文章历史版本保存（可浏览可被搜索）
-- Markdown 发布文章
-- 邮件、Server酱 通知
-- 多语言
+- A blog engine that can publish books
+- Suitable for writing long multi-chapter articles (columns)
+- SEO friendly
+- Built-in full-text search
+- Save historical versions of articles (browsable and searchable)
+- Markdown publish article
+- Mail, Server sauce notification
+- multi-language
 
-## 指南
+## Guide
 
-1. 在服务器中创建一个文件夹
+1. Create a folder in the server
 
     ```sh
     mkdir solitudes && cd solitudes
     ```
 
-2. 创建 `docker-compose.yaml` 文件
+2. Create the `docker-compose.yaml` file
 
     ```sh
     vi solitudes
     ```
-    按 `i` 进入编辑模式，复制以下内容粘贴进去
+    Press `i` to enter the editing mode, copy and paste the following content
     ```yaml
     version: '3.3'
 
@@ -52,18 +52,18 @@
           - ./data/solitudes:/solitudes/data
     ```
     
-2. 创建数据文件夹
+2. Create data folder
     ```sh
     mkdir -p data/solitudes
     ```
     
-4. 创建 Solitudes 配置文件
+4. Create Solitudes configuration file
 
     ```sh
     vi data/solitudes/conf.yml
     ```
 
-    按 `i` 进入编辑模式，复制以下内容粘贴进去
+    Press `i` to enter the editing mode, copy and paste the following content
 
     ```yaml
     debug: true
@@ -106,33 +106,33 @@
           black: false
     ```
 
-5. 启动环境
+5. Boot environment
 
     ```sh
     docker-compose up -d
     ```
 
-6. 在 postgres 数据库启用 `uuid` 扩展，在文件夹下执行：
+6. Enable the `UUID` extension in the Postgres database and execute it under the folder:
 
     ```sh
     docker-compose exec db psql -U solitudes solitudes -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
     ```
 
-7. 重启 Solitudes
+7. Restart Solitudes
 
     ```sh
     docker-compose restart solitudes
     ```
 
-8. 打开 `http://yourdomain/login` 登录管理面板
+8. Open `http://yourdomain/login` to log in to the management panel
 
-    默认登陆邮箱：`hi@example.com`
+    Default login email: `hi@example.com`
 
-    默认登陆密码：`123456`
+    Default login password: `123456`
 
-## 感谢
+## Thanks
 
-- 来自 [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus) 的主题
-- 管理面板UI [AdminLTE](https://adminlte.io/)
-- 全文搜索引擎 [blevesearch/bleve](https://github.com/blevesearch/bleve)
-- 黑客派 @88250 [lute](https://github.com/88250/lute) & @Vanessa219 [Vditor](https://github.com/Vanessa219/vditor)
+- Theme from [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
+- Admin Panel UI [AdminLTE](https://adminlte.io/)
+- Full-text search engine [blevesearch/bleve](https://github.com/blevesearch/bleve)
+- Hacker Pie @88250 [lute](https://github.com/88250/lute) & @Vanessa219 [Vditor](https://github.com/Vanessa219/vditor)

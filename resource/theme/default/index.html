@@ -13,7 +13,7 @@
     {{range .Data.articles}}
     <li class="post-item">
       <div class="meta">
-        <time datetime="{{.UpdatedAt}}" itemprop="datePublished">{{tf .UpdatedAt ($.Tr.T "date_format")}}</time>
+        <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.Tr.T "date_format")}}</time>
       </div>
       <span>
         {{if .IsBook}}📙{{end}}<a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}}
