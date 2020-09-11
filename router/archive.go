@@ -101,7 +101,7 @@ func tags(c *fiber.Ctx) {
 		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", c.Params("tag")),
 		Page:    int(page),
 		Limit:   15,
-		OrderBy: []string{"updated_at DESC"},
+		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	for i := 0; i < len(articles); i++ {
 		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)

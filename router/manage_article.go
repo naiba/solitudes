@@ -21,7 +21,7 @@ func manageArticle(c *fiber.Ctx) {
 		DB:      solitudes.System.DB,
 		Page:    int(page),
 		Limit:   15,
-		OrderBy: []string{"updated_at DESC"},
+		OrderBy: []string{"created_at DESC"},
 	}, &as)
 	for i := 0; i < len(as); i++ {
 		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)

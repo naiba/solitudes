@@ -70,7 +70,7 @@ func logoutHandler(c *fiber.Ctx) {
 
 func index(c *fiber.Ctx) {
 	var as []model.Article
-	solitudes.System.DB.Order("updated_at DESC").Limit(10).Find(&as)
+	solitudes.System.DB.Order("created_at DESC").Limit(10).Find(&as)
 	for i := 0; i < len(as); i++ {
 		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	}

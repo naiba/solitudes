@@ -40,7 +40,7 @@ func manager(c *fiber.Ctx) {
 		wg.Done()
 	}))
 	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
-		solitudes.System.DB.Select("updated_at").Order("updated_at DESC").Take(&lastArticle)
+		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastArticle)
 		wg.Done()
 	}))
 	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
