@@ -56,7 +56,7 @@ func manager(c *fiber.Ctx) {
 		"title":              c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("dashboard"),
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
-		"lastArticlePublish": fmt.Sprintf("%.2f", time.Since(lastArticle.UpdatedAt).Hours()/24),
+		"lastArticlePublish": fmt.Sprintf("%.2f", time.Since(lastArticle.CreatedAt).Hours()/24),
 		"lastComment":        fmt.Sprintf("%.2f", time.Since(lastComment.CreatedAt).Hours()/24),
 		"tagNum":             tn.Count,
 
