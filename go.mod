@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	cloud.google.com/go v0.41.0 // indirect
-	github.com/88250/lute v1.4.9
+	github.com/88250/lute v1.6.5
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047

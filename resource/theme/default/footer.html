@@ -1,7 +1,7 @@
 {{define "default/footer"}}
 <footer id="footer">
     <div class="footer-left">
-        Copyright &copy; 2019 {{.Conf.User.Nickname}}, Powered by <a href="https://github.com/naiba/solitudes"
+        Copyright &copy; 2019 - 2020 {{.Conf.User.Nickname}}, Powered by <a href="https://github.com/naiba/solitudes"
             target="_blank">Solitudes</a> build·{{.BuildVersion}}
     </div>
     <div class="footer-right">
@@ -21,18 +21,19 @@
 </html>
 
 <link rel="stylesheet" href="/static/cactus/lib/font-awesome/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vditor/dist/method.min.js" crossorigin="anonymous"></script>
 <script src="/static/cactus/js/main.js"></script>
+<!-- Begin Vditor -->
+<script src="https://cdn.jsdelivr.net/npm/vditor/dist/method.min.js"></script>
+<!-- End Vditor -->
 <script>
-    Vditor.mermaidRender(document)
-    Vditor.codeRender(document)
-    Vditor.chartRender(document)
-    Vditor.mindmapRender(document)
-    // Vditor.abcRender(document)
-    // Vditor.highlightRender(document)
-    Vditor.mediaRender(document)
-    Vditor.mathRender(document)
-    Vditor.graphvizRender(document)
-    // Vditor.speechRender(document)
+    const renders = [Vditor.mermaidRender, Vditor.codeRender, Vditor.chartRender, Vditor.mindmapRender,
+    Vditor.mediaRender, Vditor.mathRender, Vditor.graphvizRender];
+    for (let i = 0; i < renders.length; i++) {
+        const render = renders[i];
+        try {
+            render()
+        } catch (error) {
+        }
+    }
 </script>
 {{end}}

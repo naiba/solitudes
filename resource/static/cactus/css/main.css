@@ -17,8 +17,10 @@
     padding-top: 4px;
     padding-right: 9px;
     border-radius: 5px;
-    color: whitesmoke;
-    background-color: #CC2A4C;
+    font-weight: bolder;
+    color: black;
+    background-color: #cb997e;
+    border: none;
     font-size: 1.1rem;
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
@@ -64,6 +66,7 @@
     width: 100%;
     padding: 5px;
     resize: none;
+    background-color: #fff1e6;
 }
 
 #reply>.row {
@@ -104,10 +107,6 @@ article footer {
     div.footer-left {
         height: auto !important;
     }
-}
-
-.content {
-    min-height: unset;
 }
 
 @media screen and (max-width: 480px) {
