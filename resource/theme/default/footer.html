@@ -20,19 +20,32 @@
 
 </html>
 
-<link rel="stylesheet" href="/static/cactus/lib/font-awesome/css/all.min.css">
 <script src="/static/cactus/js/main.js"></script>
 <!-- Begin Vditor -->
+<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css" /> -->
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/method.min.js"></script>
 <!-- End Vditor -->
+
 <script>
-    const renders = [Vditor.mermaidRender, Vditor.codeRender, Vditor.chartRender, Vditor.mindmapRender,
-    Vditor.mediaRender, Vditor.mathRender, Vditor.graphvizRender];
-    for (let i = 0; i < renders.length; i++) {
-        const render = renders[i];
+    document.querySelectorAll(".language-echarts,.language-mindmap").forEach(e => {
+        e.style.height = e.offsetWidth * 0.5 + 'px';
+    })
+    const renders = {
+        "mermaidRender": Vditor.mermaidRender,
+        "codeRender": Vditor.codeRender,
+        "highlightRender": Vditor.highlightRender,
+        "mindmapRender": Vditor.mindmapRender,
+        "chartRender": Vditor.chartRender,
+        "mediaRender": Vditor.mediaRender,
+        "mathRender": Vditor.mathRender,
+        "graphvizRender": Vditor.graphvizRender
+    };
+    for (let i = 0; i < Object.keys(renders).length; i++) {
+        const render = renders[Object.keys(renders)[i]];
         try {
-            render()
+            render(document)
         } catch (error) {
+            console.log(Object.keys(renders)[i], error);
         }
     }
 </script>

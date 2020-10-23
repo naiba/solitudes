@@ -13,17 +13,16 @@
 
 .search-button {
     padding-left: 9px;
-    padding-bottom: 4px;
-    padding-top: 4px;
     padding-right: 9px;
+    padding-bottom: 5px;
+    padding-top: 5px;
     border-radius: 5px;
     font-weight: bolder;
     color: black;
     background-color: #cb997e;
     border: none;
     font-size: 1.1rem;
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
+    margin-top: 6px !important;
 }
 
 #reply-list .comment-meta {
@@ -117,4 +116,16 @@ article footer {
     .search-input {
         width: 65%;
     }
+}
+
+pre {
+    border: none;
+    padding: unset;
+    margin: unset;
+    margin-top: 14px;
+}
+
+p {
+    margin: unset;
+    margin-top: 10px;
 }

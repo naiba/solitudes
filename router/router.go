@@ -31,6 +31,10 @@ var bluemondayPolicy = bluemonday.UGCPolicy()
 var luteEngine = lute.New()
 var validator = gv.New()
 
+func init() {
+	luteEngine.SetCodeSyntaxHighlight(false)
+}
+
 func mdRender(id string, raw string) string {
 	return luteEngine.MarkdownStr(id, raw)
 }
