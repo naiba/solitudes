@@ -1,0 +1,80 @@
+{{define "admin/tags"}}
+{{template "admin/header" .}}
+<style>
+    .tags-manage>div.btn-group {
+        margin-bottom: 1rem;
+        margin-left: 1rem;
+    }
+</style>
+<div class="content-wrapper">
+    <section class="content-header">
+        <h1>
+            {{.Tr.T "manage_tags"}}
+            <small>Solitudes</small>
+        </h1>
+    </section>
+
+    <section class="content container-fluid">
+        <div class="box">
+            <div class="box-body tags-manage">
+                {{range .Data.tags}}
+                <div class="btn-group">
+                    <button class="btn">{{.}}</button>
+                    <button class="btn" onclick="renameTag('{{.}}')">
+                        <span class="fa fa-edit"></span>
+                    </button>
+                    <button class="btn" onclick="deleteTag('{{.}}')">
+                        <span class="fa fa-trash"></span>
+                    </button>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </section>
+</div>
+<script>
+    function renderColor(btnGroup) {
+        const colors = ['maroon', 'purple', 'navy', 'orange', 'olive']
+        const randColor = Math.floor(Math.random() * colors.length);
+        btnGroup.querySelectorAll("button").forEach(btn => {
+            btn.classList.add('bg-' + colors[randColor])
+            if (randColor < colors.length / 2) btn.classList.add('btn-flat')
+        })
+    }
+    function renameTag(oldTagName) {
+        const newTagName = prompt("Input new tag name")
+        if (!newTagName) {
+            return
+        }
+        $.ajax({
+            url: "/admin/tags?oldTagName=" + oldTagName + "&newTagName=" + newTagName,
+            type: 'PATCH',
+            success: () => {
+                window.location.reload()
+            },
+            error: (e) => {
+                alert(e.responseText)
+            },
+        })
+    }
+    function deleteTag(tag) {
+        if (!confirm("Confirm delete?")) {
+            return
+        }
+        $.ajax({
+            url: "/admin/tags?tagName=" + tag,
+            type: 'DELETE',
+            success: () => {
+                window.location.reload()
+            },
+            error: (e) => {
+                alert(e.responseText)
+            },
+        })
+    }
+    document.querySelectorAll("div.btn-group").forEach(g => {
+        renderColor(g)
+    })
+</script>
+{{template "admin/footer" .}}
+{{end}}

@@ -85,6 +85,9 @@ func Serve() {
 	admin.Delete("/media", mediaHandler)
 	admin.Get("/settings", settings)
 	admin.Post("/settings", settingsHandler)
+	admin.Get("/tags", tagsManagePage)
+	admin.Delete("/tags", deleteTag)
+	admin.Patch("/tags", renameTag)
 
 	app.Get("/:slug/:version?", article)
 	app.Use(func(c *fiber.Ctx) {

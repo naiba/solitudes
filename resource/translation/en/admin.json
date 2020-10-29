@@ -31,6 +31,16 @@
     },
     {
         "locale": "en",
+        "key": "manage_tags",
+        "trans": "Manage tags"
+    },
+    {
+        "locale": "en",
+        "key": "tags",
+        "trans": "Tags"
+    },
+    {
+        "locale": "en",
         "key": "title",
         "trans": "Title"
     },

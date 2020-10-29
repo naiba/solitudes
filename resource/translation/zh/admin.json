@@ -31,6 +31,16 @@
     },
     {
         "locale": "zh",
+        "key": "manage_tags",
+        "trans": "管理标签"
+    },
+    {
+        "locale": "zh",
+        "key": "tags",
+        "trans": "标签"
+    },
+    {
+        "locale": "zh",
         "key": "title",
         "trans": "标题"
     },
