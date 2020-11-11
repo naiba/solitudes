@@ -44,7 +44,7 @@
       solitudes:
         depends_on:
           - db
-        image: docker.pkg.github.com/naiba/dockerfiles/solitudes:latest
+        image: docker.pkg.github.com/naiba/solitudes/web:latest
         ports:
           - "80:8080"
         restart: always
