@@ -13,5 +13,5 @@ jobs:
 
       - name: docker build & push
         run: |
-          docker build -t docker.pkg.github.com/naiba/dockerfiles/solitudes .
-          docker push docker.pkg.github.com/naiba/dockerfiles/solitudes
+          docker build -t docker.pkg.github.com/${{ github.repository }}/web .
+          docker push docker.pkg.github.com/${{ github.repository }}/web
