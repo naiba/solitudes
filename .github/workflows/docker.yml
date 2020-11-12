@@ -9,9 +9,9 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Log into registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
+        run: echo "${{ secrets.CR_PAT }}" | docker login docker.pkg.github.com -u ${{ github.repository_owner }} --password-stdin
 
       - name: docker build & push
         run: |
-          docker build -t docker.pkg.github.com/${{ github.repository }}/web .
-          docker push docker.pkg.github.com/${{ github.repository }}/web
+          docker build -t docker.pkg.github.com/${{ github.repository_owner }}/solitudes .
+          docker push docker.pkg.github.com/${{ github.repository_owner }}/solitudes
