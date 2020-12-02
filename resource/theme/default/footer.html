@@ -43,7 +43,12 @@
     for (let i = 0; i < Object.keys(renders).length; i++) {
         const render = renders[Object.keys(renders)[i]];
         try {
-            render(document)
+            if (Object.keys(renders)[i] == "mermaidRender") {
+                let theme = "{{.Conf.Site.Theme}}" == "dark" ? "dark" : undefined;
+                render(document, undefined, theme)
+            } else {
+                render(document)
+            }
         } catch (error) {
             console.log(Object.keys(renders)[i], error);
         }
