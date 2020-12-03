@@ -17,10 +17,7 @@
     -moz-border-radius: 5px;
 }
 
-.search-button {
-    display: table-cell;
-    vertical-align: middle;
-    margin-left: 10px;
+.base-button {
     padding-left: 9px;
     padding-right: 9px;
     padding-bottom: 5px;
@@ -31,6 +28,12 @@
     background-color: #cb997e;
     border: none;
     font-size: 1.1rem;
+}
+
+#search .base-button {
+    display: table-cell;
+    vertical-align: middle;
+    margin-left: 10px;
 }
 
 #reply-list .comment-meta {
