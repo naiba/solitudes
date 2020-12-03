@@ -1,7 +1,7 @@
 {{define "default/index"}}
 {{template "default/header" .}}
 {{template "default/menu" .}}
-{{if trim(.Conf.Site.HomeTopContent)}}
+{{if trim .Conf.Site.HomeTopContent}}
 <section>
   {{(md "home-top" .Conf.Site.HomeTopContent)|unsafe}}
 </section>
@@ -30,7 +30,7 @@
     {{end}}
   </ul>
 </section>
-{{if trim(.Conf.Site.HomeBottomContent)}}
+{{if trim .Conf.Site.HomeBottomContent}}
 <section class="home-bottom">
   {{(md "home-bottom" .Conf.Site.HomeBottomContent)|unsafe}}
 </section>
