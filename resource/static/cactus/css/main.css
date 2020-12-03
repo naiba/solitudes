@@ -1,4 +1,10 @@
+#search > form > div.row  {
+    display: flex;
+}
+
 .search-input {
+    display: table-cell;
+    vertical-align: middle;
     padding: 4px 7px;
     outline: none;
     border: solid 1px #666;
@@ -6,12 +12,15 @@
     background-color: #fafafa;
     color: #22272a;
     font-size: 1.1rem;
-    width: 35%;
+    width: 38%;
     -webkit-border-radius: 5px;
     -moz-border-radius: 5px;
 }
 
 .search-button {
+    display: table-cell;
+    vertical-align: middle;
+    margin-left: 10px;
     padding-left: 9px;
     padding-right: 9px;
     padding-bottom: 5px;
@@ -22,7 +31,6 @@
     background-color: #cb997e;
     border: none;
     font-size: 1.1rem;
-    margin-top: 6px !important;
 }
 
 #reply-list .comment-meta {
