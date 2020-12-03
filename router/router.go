@@ -144,6 +144,7 @@ func setFuncMap(engine *html.Engine) {
 		"last": func(x int, a interface{}) bool {
 			return x == reflect.ValueOf(a).Len()-1
 		},
+		"trim": strings.TrimSpace,
 	}
 	for name, fn := range funcMap {
 		engine.AddFunc(name, fn)

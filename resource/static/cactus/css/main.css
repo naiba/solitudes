@@ -118,6 +118,10 @@ article footer {
     .search-input {
         width: 65%;
     }
+
+    .home-bottom {
+        margin-bottom: 10px;
+    }
 }
 
 pre {
