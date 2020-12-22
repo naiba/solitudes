@@ -1,37 +1,38 @@
 # Solitudes
 
-<a href="README_zh-CN.md">
-    <img height="20px" src="https://img.shields.io/badge/CN-flag.svg?color=555555&style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDgwMCIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPg0KPHBhdGggZmlsbD0iI2RlMjkxMCIgZD0ibTAsMGgxMjAwdjgwMGgtMTIwMHoiLz4NCjxwYXRoIGZpbGw9IiNmZmRlMDAiIGQ9Im0tMTYuNTc5Niw5OS42MDA3bDIuMzY4Ni04LjEwMzItNi45NTMtNC43ODgzIDguNDM4Ni0uMjUxNCAyLjQwNTMtOC4wOTI0IDIuODQ2Nyw3Ljk0NzkgOC40Mzk2LS4yMTMxLTYuNjc5Miw1LjE2MzQgMi44MTA2LDcuOTYwNy02Ljk3NDctNC43NTY3LTYuNzAyNSw1LjEzMzF6IiB0cmFuc2Zvcm09Im1hdHJpeCg5LjkzMzUyIC4yNzc0NyAtLjI3NzQ3IDkuOTMzNTIgMzI0LjI5MjUgLTY5NS4yNDE1KSIvPg0KPHBhdGggZmlsbD0iI2ZmZGUwMCIgaWQ9InN0YXIiIGQ9Im0zNjUuODU1MiwzMzIuNjg5NWwyOC4zMDY4LDExLjM3NTcgMTkuNjcyMi0yMy4zMTcxLTIuMDcxNiwzMC40MzY3IDI4LjI1NDksMTEuNTA0LTI5LjU4NzIsNy40MzUyLTIuMjA5NywzMC40MjY5LTE2LjIxNDItMjUuODQxNS0yOS42MjA2LDcuMzAwOSAxOS41NjYyLTIzLjQwNjEtMTYuMDk2OC0yNS45MTQ4eiIvPg0KPGcgZmlsbD0iI2ZmZGUwMCI+DQo8cGF0aCBkPSJtNTE5LjA3NzksMTc5LjMxMjlsLTMwLjA1MzQtNS4yNDE4LTE0LjM5NDUsMjYuODk3Ni00LjMwMTctMzAuMjAyMy0zMC4wMjkzLTUuMzc4MSAyNy4zOTQ4LTEzLjQyNDItNC4xNjQ3LTMwLjIyMTUgMjEuMjMyNiwyMS45MDU3IDI3LjQ1NTQtMTMuMjk5OC0xNC4yNzIzLDI2Ljk2MjcgMjEuMTMzMSwyMi4wMDE3eiIvPg0KPHBhdGggZD0ibTQ1NS4yNTkyLDMxNS45Nzk1bDkuMzczNC0yOS4wMzE0LTI0LjYzMjUtMTcuOTk3OCAzMC41MDctLjA1NjYgOS41MDUtMjguOTg4NiA5LjQ4MSwyOC45OTY0IDMwLjUwNywuMDgxOC0yNC42NDc0LDE3Ljk3NzQgOS4zNDkzLDI5LjAzOTItMjQuNzE0LTE3Ljg4NTgtMjQuNzI4OCwxNy44NjUzeiIvPg0KPC9nPg0KPHVzZSB4bGluazpocmVmPSIjc3RhciIgdHJhbnNmb3JtPSJtYXRyaXgoLjk5ODYzIC4wNTIzNCAtLjA1MjM0IC45OTg2MyAxOS40MDAwNSAtMzAwLjUzNjgxKSIvPg0KPC9zdmc+DQo=">
-  </a>
+<a href="README_en-US.md">
+    <img height="20px" src="https://img.shields.io/badge/EN-flag.svg?color=555555&style=flat&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNjAgMzAiIGhlaWdodD0iNjAwIj4NCjxkZWZzPg0KPGNsaXBQYXRoIGlkPSJ0Ij4NCjxwYXRoIGQ9Im0zMCwxNWgzMHYxNXp2MTVoLTMwemgtMzB2LTE1enYtMTVoMzB6Ii8+DQo8L2NsaXBQYXRoPg0KPC9kZWZzPg0KPHBhdGggZmlsbD0iIzAwMjQ3ZCIgZD0ibTAsMHYzMGg2MHYtMzB6Ii8+DQo8cGF0aCBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iNiIgZD0ibTAsMGw2MCwzMG0wLTMwbC02MCwzMCIvPg0KPHBhdGggc3Ryb2tlPSIjY2YxNDJiIiBzdHJva2Utd2lkdGg9IjQiIGQ9Im0wLDBsNjAsMzBtMC0zMGwtNjAsMzAiIGNsaXAtcGF0aD0idXJsKCN0KSIvPg0KPHBhdGggc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjEwIiBkPSJtMzAsMHYzMG0tMzAtMTVoNjAiLz4NCjxwYXRoIHN0cm9rZT0iI2NmMTQyYiIgc3Ryb2tlLXdpZHRoPSI2IiBkPSJtMzAsMHYzMG0tMzAtMTVoNjAiLz4NCjwvc3ZnPg0K">
+</a>
 
 
-:smoking: In those lonely days, writing accompanied me.
 
-## Features
+:smoking: 在那些寂寞的日子里，有写作伴随着我。
 
-- A blog engine that can publish books
-- Suitable for writing long multi-chapter articles (columns)
-- SEO friendly
-- Built-in full-text search
-- Save historical versions of articles (browsable and searchable)
-- Markdown publish article
-- Mail, Server-Chan notification
-- multi-language
+## 特征
 
-## Guide
+- 可以写书的博客引擎
+- 适用于撰写多章节专栏文章
+- SEO友好
+- 内置全文本搜索
+- 保存文章的历史版本（可浏览和可搜索）
+- Markdown发表文章
+- 邮件，Server酱 通知
+- 多语言
 
-1. Create a folder in the server
+## 指南
+
+1. 在服务器中创建一个文件夹
 
     ```sh
     mkdir solitudes && cd solitudes
     ```
 
-2. Create the `docker-compose.yaml` file
+2. 创建 `docker-compose.yaml` 文件
 
     ```sh
     vi solitudes
     ```
-    Press `i` to enter the editing mode, copy and paste the following content
+    按 `i` 进入编辑模式，复制并粘贴以下内容
     ```yaml
     version: '3.3'
 
@@ -57,18 +58,18 @@
           - ./data/solitudes:/solitudes/data
     ```
     
-3. Create data folder
+3. 创建数据文件夹
     ```sh
     mkdir -p data/solitudes
     ```
     
-4. Create Solitudes configuration file
+4. 创建 Solitudes 配置文件
 
     ```sh
     vi data/solitudes/conf.yml
     ```
 
-    Press `i` to enter the editing mode, copy and paste the following content
+    按 `i` 进入编辑模式，复制并粘贴以下内容
 
     ```yaml
     debug: true
@@ -111,33 +112,33 @@
           black: false
     ```
 
-5. Boot
+5. 启动
 
     ```sh
     docker-compose up -d
     ```
 
-6. Enable the `UUID` extension in the Postgres database and execute it under the folder:
+6. 在 Postgres 数据库中启用 `UUID` 扩展并在以下文件夹下执行：
 
     ```sh
     docker-compose exec db psql -U solitudes solitudes -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
     ```
 
-7. Restart Solitudes
+7. 重新启动
 
     ```sh
     docker-compose restart solitudes
     ```
 
-8. Open `http://yourdomain/login` to log in to the management panel
+8. 打开 `http://yourdomain/login` 以登录到管理面板
 
-    Default login email: `hi@example.com`
+    默认登录电子邮件：`hi@example.com`
 
-    Default login password: `123456`
+    默认登录密码：123456
 
-## Thanks
+## 致谢
 
-- Theme from [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
-- Admin Panel UI [AdminLTE](https://adminlte.io/)
-- Full-text search engine [blevesearch/bleve](https://github.com/blevesearch/bleve)
+- 主题来自 [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
+- 管理面板界面 [AdminLTE](https://adminlte.io/)
+- 全文搜索引擎 [blevesearch/bleve](https://github.com/blevesearch/bleve)
 - Hacker Pie @88250 [lute](https://github.com/88250/lute) & @Vanessa219 [Vditor](https://github.com/Vanessa219/vditor)
