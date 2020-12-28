@@ -1,4 +1,4 @@
-#search > form > div.row  {
+#search>form>div.row {
     display: flex;
 }
 
@@ -145,4 +145,12 @@ pre {
 p {
     margin: unset;
     margin-top: 10px;
+}
+
+.iframe__video {
+    border: unset;
+    width: 80%;
+    display: block;
+    margin: 0 auto;
+    height: -webkit-fill-available;
 }
