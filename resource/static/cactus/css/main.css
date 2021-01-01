@@ -149,8 +149,7 @@ p {
 
 .iframe__video {
     border: unset;
-    width: 80%;
     display: block;
     margin: 0 auto;
-    height: -webkit-fill-available;
+    width: 80%;
 }

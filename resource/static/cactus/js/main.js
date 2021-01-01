@@ -22,6 +22,13 @@ function matches(el, selector) {
 
 ready(function () {
     /**
+     * video height
+     */
+    document.querySelectorAll('.iframe__video').forEach(v => {
+        v.setAttribute('height', v.clientWidth * 9 / 16)
+    })
+
+    /**
      * Shows the responsive navigation menu on mobile.
      */
     const mobileMenu = document.querySelector("#header > #nav > ul > .icon");
