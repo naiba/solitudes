@@ -30,7 +30,7 @@
 2. 创建 `docker-compose.yaml` 文件
 
     ```sh
-    vi solitudes
+    vi docker-compose.yaml
     ```
     按 `i` 进入编辑模式，复制并粘贴以下内容
     ```yaml
