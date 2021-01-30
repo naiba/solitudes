@@ -90,15 +90,17 @@ func Serve() {
 	admin.Patch("/tags", renameTag)
 
 	app.Get("/:slug/:version?", article)
-	app.Use(func(c *fiber.Ctx) {
-		tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-		c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
-			"title": tr.T("404_title"),
-			"msg":   tr.T("404_msg"),
-		}))
-	})
+	app.Use(page404)
 
 	app.Listen(8080)
+}
+
+func page404(c *fiber.Ctx) {
+	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+	c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
+		"title": tr.T("404_title"),
+		"msg":   tr.T("404_msg"),
+	}))
 }
 
 func checkPoolSubmit(wg *sync.WaitGroup, err error) {

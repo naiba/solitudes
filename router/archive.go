@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -97,8 +98,13 @@ func tags(c *fiber.Ctx) {
 	var page int64
 	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
 	var articles []model.Article
+	tag, _ := url.QueryUnescape(c.Params("tag"))
+	if tag == "" {
+		page404(c)
+		return
+	}
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", c.Params("tag")),
+		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", tag),
 		Page:    int(page),
 		Limit:   15,
 		OrderBy: []string{"created_at DESC"},
@@ -107,7 +113,7 @@ func tags(c *fiber.Ctx) {
 		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	}
 	c.Status(http.StatusOK).Render("default/archive", injectSiteData(c, fiber.Map{
-		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("articles_in", c.Params("tag")),
+		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("articles_in", tag),
 		"what":     "tags",
 		"articles": listArticleByYear(articles),
 		"page":     pg,
