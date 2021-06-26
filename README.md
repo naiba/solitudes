@@ -38,9 +38,9 @@
 
     services:
       db:
-        image: postgres:13-alpine
+        image: postgres:alpine
         volumes:
-          - ./data/db:/var/lib/postgresql/data
+          - ./postgres-data:/var/lib/postgresql/data
         restart: always
         environment:
           POSTGRES_PASSWORD: thisispassword
@@ -55,7 +55,7 @@
           - "80:8080"
         restart: always
         volumes:
-          - ./data/solitudes:/solitudes/data
+          - ./blog-data:/solitudes/data
     ```
     
 3. 创建数据文件夹
