@@ -21,7 +21,7 @@ require (
 	github.com/go-playground/universal-translator v0.16.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
-	github.com/gofiber/fiber v1.12.2
+	github.com/gofiber/fiber v1.12.6
 	github.com/gofiber/logger v0.2.3
 	github.com/gofiber/template v1.5.3
 	github.com/golang/protobuf v1.3.3 // indirect
