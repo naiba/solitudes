@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func tagsManagePage(c *fiber.Ctx) {
+func tagsManagePage(c *fiber.Ctx) error {
 	tagsUnique := make(map[string]struct{})
 	var tags []string
 	var articles []model.Article
@@ -28,23 +28,26 @@ func tagsManagePage(c *fiber.Ctx) {
 		"title": c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_tags"),
 		"tags":  tags,
 	}))
+	return nil
 }
 
-func deleteTag(c *fiber.Ctx) {
+func deleteTag(c *fiber.Ctx) error {
 	tagName := c.Query("tagName")
 	if err := solitudes.System.DB.Exec("UPDATE articles SET tags = array_remove(tags, ?);", tagName).Error; err != nil {
-		c.Status(http.StatusForbidden).Write(err.Error())
+		c.Status(http.StatusForbidden).WriteString(err.Error())
 	}
+	return nil
 }
 
-func renameTag(c *fiber.Ctx) {
+func renameTag(c *fiber.Ctx) error {
 	oldTagName := c.Query("oldTagName")
 	newTagName := strings.TrimSpace(c.Query("newTagName"))
 	if newTagName == "" {
-		c.Status(http.StatusForbidden).Write("empty tag name")
-		return
+		c.Status(http.StatusForbidden).WriteString("empty tag name")
+		return nil
 	}
 	if err := solitudes.System.DB.Exec("UPDATE articles SET tags = array_replace(tags, ?, ?);	", oldTagName, newTagName).Error; err != nil {
-		c.Status(http.StatusForbidden).Write(err.Error())
+		c.Status(http.StatusForbidden).WriteString(err.Error())
 	}
+	return nil
 }

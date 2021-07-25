@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
@@ -12,7 +12,7 @@ import (
 	"github.com/biezhi/gorm-paginator/pagination"
 )
 
-func manageArticle(c *fiber.Ctx) {
+func manageArticle(c *fiber.Ctx) error {
 	rawPage := c.Query("page")
 	var page int64
 	page, _ = strconv.ParseInt(rawPage, 10, 32)
@@ -31,9 +31,10 @@ func manageArticle(c *fiber.Ctx) {
 		"articles": as,
 		"page":     pg,
 	}))
+	return nil
 }
 
-func publish(c *fiber.Ctx) {
+func publish(c *fiber.Ctx) error {
 	id := c.Query("id")
 	var article model.Article
 	if id != "" {
@@ -44,26 +45,27 @@ func publish(c *fiber.Ctx) {
 		"templates": solitudes.Templates,
 		"article":   article,
 	}))
+	return nil
 }
 
-func deleteArticle(c *fiber.Ctx) {
+func deleteArticle(c *fiber.Ctx) error {
 	id := c.Query("id")
 	if len(id) < 10 {
-		c.Status(http.StatusBadRequest).Write("Error article id")
-		return
+		c.Status(http.StatusBadRequest).WriteString("Error article id")
+		return nil
 	}
 	var a model.Article
 	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Delete(model.Article{}, "id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	// delete article history
 	for i := 0; i < len(a.ArticleHistories); i++ {
@@ -71,24 +73,25 @@ func deleteArticle(c *fiber.Ctx) {
 	}
 	if err := tx.Delete(model.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	// delete comments
 	if err := tx.Delete(model.Comment{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	// delete full-text search data
 	for i := 0; i < len(indexIDs); i++ {
 		solitudes.System.Search.Delete(indexIDs[i])
 	}
+	return nil
 }
 
 type publishArticle struct {
@@ -103,15 +106,15 @@ type publishArticle struct {
 	NewVersion bool   `form:"new_version"`
 }
 
-func publishHandler(c *fiber.Ctx) {
+func publishHandler(c *fiber.Ctx) error {
 	var pa publishArticle
 	if err := c.BodyParser(&pa); err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 	if err := validator.StructCtx(c.Context(), &pa); err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 
 	var err error
@@ -132,8 +135,8 @@ func publishHandler(c *fiber.Ctx) {
 		BookRefer:  bookRefer,
 	}
 	if article, err = fetchOriginArticle(article); err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 
 	// save edit history && article
@@ -152,13 +155,14 @@ func publishHandler(c *fiber.Ctx) {
 	}
 	if err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	if err = tx.Commit().Error; err != nil {
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
+	return nil
 }
 
 func fetchOriginArticle(af *model.Article) (*model.Article, error) {

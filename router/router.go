@@ -18,8 +18,8 @@ import (
 	"github.com/88250/lute"
 	"github.com/go-playground/locales"
 	gv "github.com/go-playground/validator"
-	"github.com/gofiber/fiber"
-	"github.com/gofiber/logger"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/template/html"
 	"github.com/microcosm-cc/bluemonday"
 
@@ -47,7 +47,7 @@ func ugcPolicy(raw string) string {
 func Serve() {
 	engine := html.New("resource/theme", ".html")
 	setFuncMap(engine)
-	app := fiber.New(&fiber.Settings{
+	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
 	if solitudes.System.Config.Debug {
@@ -92,15 +92,16 @@ func Serve() {
 	app.Get("/:slug/:version?", article)
 	app.Use(page404)
 
-	app.Listen(8080)
+	app.Listen(":8080")
 }
 
-func page404(c *fiber.Ctx) {
+func page404(c *fiber.Ctx) error {
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
 		"title": tr.T("404_title"),
 		"msg":   tr.T("404_msg"),
 	}))
+	return nil
 }
 
 func checkPoolSubmit(wg *sync.WaitGroup, err error) {
@@ -153,30 +154,30 @@ func setFuncMap(engine *html.Engine) {
 	}
 }
 
-func auth(c *fiber.Ctx) {
+func auth(c *fiber.Ctx) error {
 	token := c.Cookies(solitudes.AuthCookie)
 	if len(token) > 0 && token == solitudes.System.Config.User.Token && solitudes.System.Config.User.TokenExpires > time.Now().Unix() {
 		c.Locals(solitudes.CtxAuthorized, true)
 	} else {
 		c.Locals(solitudes.CtxAuthorized, false)
 	}
-	c.Next()
+	return c.Next()
 }
 
-func loginRequired(c *fiber.Ctx) {
+func loginRequired(c *fiber.Ctx) error {
 	if !c.Locals(solitudes.CtxAuthorized).(bool) {
 		c.Redirect("/login", http.StatusFound)
-		return
+		return nil
 	}
-	c.Next()
+	return c.Next()
 }
 
-func guestRequired(c *fiber.Ctx) {
+func guestRequired(c *fiber.Ctx) error {
 	if c.Locals(solitudes.CtxAuthorized).(bool) {
 		c.Redirect("/admin/", http.StatusFound)
-		return
+		return nil
 	}
-	c.Next()
+	return c.Next()
 }
 
 func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
@@ -214,10 +215,10 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	return soli
 }
 
-func trans(c *fiber.Ctx) {
+func trans(c *fiber.Ctx) error {
 	t, _ := translator.Trans.FindTranslator(getAcceptLanguages(c.Get("Accept-Language"))...)
 	c.Locals(solitudes.CtxTranslator, &translator.Translator{Trans: t, Translator: t.(locales.Translator)})
-	c.Next()
+	return c.Next()
 }
 
 func getAcceptLanguages(accepted string) (languages []string) {

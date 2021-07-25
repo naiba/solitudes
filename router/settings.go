@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/pkg/translator"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func settings(c *fiber.Ctx) {
+func settings(c *fiber.Ctx) error {
 	c.Status(http.StatusOK).Render("admin/settings", injectSiteData(c, fiber.Map{
 		"title": c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("site_settings"),
 	}))
+	return nil
 }
 
 type settingsRequest struct {
@@ -39,19 +40,19 @@ type settingsRequest struct {
 	NewPassword           string `json:"new_password,omitempty" validate:"trim"`
 }
 
-func settingsHandler(c *fiber.Ctx) {
+func settingsHandler(c *fiber.Ctx) error {
 	var flag bool
 	defer func() {
 		err := solitudes.System.Config.Save()
 		if err != nil && flag {
-			c.Status(http.StatusBadRequest).Write(err.Error())
+			c.Status(http.StatusBadRequest).WriteString(err.Error())
 			return
 		}
 	}()
 	var sr settingsRequest
 	if err := c.BodyParser(&sr); err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 
 	solitudes.System.Config.Site.SpaceName = sr.SiteTitle
@@ -69,13 +70,13 @@ func settingsHandler(c *fiber.Ctx) {
 	solitudes.System.Config.User.Email = sr.Email
 	err := json.Unmarshal([]byte(sr.SiteHeaderMenus), &solitudes.System.Config.Site.HeaderMenus)
 	if err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 	err = json.Unmarshal([]byte(sr.SiteFooterMenus), &solitudes.System.Config.Site.FooterMenus)
 	if err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 	solitudes.System.Config.Site.Theme = sr.SiteTheme
 	solitudes.System.Config.Site.HomeTopContent = sr.SiteHomeTopContent
@@ -83,16 +84,17 @@ func settingsHandler(c *fiber.Ctx) {
 
 	if len(sr.OldPassword) > 0 && len(sr.NewPassword) > 0 {
 		if bcrypt.CompareHashAndPassword([]byte(solitudes.System.Config.User.Password), []byte(sr.OldPassword)) != nil {
-			c.Status(http.StatusInternalServerError).Write("Invalid email or password")
-			return
+			c.Status(http.StatusInternalServerError).WriteString("Invalid email or password")
+			return err
 		}
 		b, err := bcrypt.GenerateFromPassword([]byte(sr.NewPassword), 1)
 		if err != nil {
-			c.Status(http.StatusInternalServerError).Write(err.Error())
-			return
+			c.Status(http.StatusInternalServerError).WriteString(err.Error())
+			return err
 		}
 		solitudes.System.Config.User.Password = string(b)
 	}
 
 	flag = true
+	return nil
 }

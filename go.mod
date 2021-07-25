@@ -21,8 +21,7 @@ require (
 	github.com/go-playground/universal-translator v0.16.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
-	github.com/gofiber/fiber v1.12.6
-	github.com/gofiber/logger v0.2.3
+	github.com/gofiber/fiber/v2 v2.15.0
 	github.com/gofiber/template v1.5.3
 	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/google/go-cmp v0.4.0 // indirect
@@ -47,7 +46,7 @@ require (
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/yanyiwu/gojieba v1.1.2
 	go.uber.org/dig v1.7.0
-	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df

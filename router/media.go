@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/gorm"
 
 	"github.com/naiba/solitudes"
@@ -17,11 +17,12 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func mediaHandler(c *fiber.Ctx) {
+func mediaHandler(c *fiber.Ctx) error {
 	name := c.Query("name")
 	if err := os.Remove("data/upload/" + path.Clean(name)); err != nil {
-		c.Status(http.StatusInternalServerError).Write(err.Error())
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 	}
+	return nil
 }
 
 type mediaInfo struct {
@@ -30,7 +31,7 @@ type mediaInfo struct {
 	UploadedAt time.Time
 }
 
-func media(c *fiber.Ctx) {
+func media(c *fiber.Ctx) error {
 	rawPage := c.Query("page")
 	page64, _ := strconv.ParseInt(rawPage, 10, 64)
 	page := int(page64)
@@ -67,4 +68,5 @@ func media(c *fiber.Ctx) {
 		"medias": innerMedias,
 		"page":   page,
 	}))
+	return nil
 }

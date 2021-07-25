@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/blevesearch/bleve"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
@@ -16,7 +16,7 @@ type searchResp struct {
 	Content string
 }
 
-func search(c *fiber.Ctx) {
+func search(c *fiber.Ctx) error {
 	keywords := c.Query("w")
 
 	query := bleve.NewQueryStringQuery(keywords)
@@ -49,4 +49,5 @@ func search(c *fiber.Ctx) {
 		"word":    c.Query("w"),
 		"results": result,
 	}))
+	return nil
 }

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
 
@@ -19,26 +19,26 @@ type loginForm struct {
 	Remember string `form:"remember"`
 }
 
-func loginHandler(c *fiber.Ctx) {
+func loginHandler(c *fiber.Ctx) error {
 	var lf loginForm
 	if err := c.BodyParser(&lf); err != nil {
-		c.Status(http.StatusForbidden).Write(err.Error())
-		return
+		c.Status(http.StatusForbidden).WriteString(err.Error())
+		return err
 	}
 	if err := validator.StructCtx(c.Context(), &lf); err != nil {
-		c.Status(http.StatusForbidden).Write(err.Error())
-		return
+		c.Status(http.StatusForbidden).WriteString(err.Error())
+		return err
 	}
 	if lf.Email != solitudes.System.Config.User.Email ||
 		bcrypt.CompareHashAndPassword([]byte(solitudes.System.Config.User.Password),
 			[]byte(lf.Password)) != nil {
-		c.Status(http.StatusForbidden).Write("Invalid email or password")
-		return
+		c.Status(http.StatusForbidden).WriteString("Invalid email or password")
+		return nil
 	}
 	token, err := bcrypt.GenerateFromPassword([]byte(lf.Password+time.Now().String()), bcrypt.DefaultCost)
 	if err != nil {
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	solitudes.System.Config.User.Token = string(token)
 	var expires time.Time
@@ -55,20 +55,23 @@ func loginHandler(c *fiber.Ctx) {
 	})
 	solitudes.System.Config.Save()
 	c.Redirect("/admin/", http.StatusFound)
+	return nil
 }
 
-func login(c *fiber.Ctx) {
+func login(c *fiber.Ctx) error {
 	c.Status(http.StatusOK).Render("admin/login", injectSiteData(c, fiber.Map{}))
+	return nil
 }
 
-func logoutHandler(c *fiber.Ctx) {
+func logoutHandler(c *fiber.Ctx) error {
 	solitudes.System.Config.User.TokenExpires = time.Now().Unix()
 	solitudes.System.Config.User.Token = ""
 	solitudes.System.Config.Save()
 	c.Redirect("/", http.StatusFound)
+	return nil
 }
 
-func index(c *fiber.Ctx) {
+func index(c *fiber.Ctx) error {
 	var as []model.Article
 	solitudes.System.DB.Order("created_at DESC").Limit(10).Find(&as)
 	for i := 0; i < len(as); i++ {
@@ -79,18 +82,20 @@ func index(c *fiber.Ctx) {
 		"title":    tr.T("home"),
 		"articles": as,
 	}))
+	return nil
 }
 
-func count(c *fiber.Ctx) {
+func count(c *fiber.Ctx) error {
 	if c.Query("slug") == "" {
-		return
+		return nil
 	}
 	key := c.IP() + c.Query("slug")
 	if _, ok := solitudes.System.Cache.Get(key); ok {
-		return
+		return nil
 	}
 	solitudes.System.Cache.Set(key, nil, time.Hour*20)
 	solitudes.System.DB.Model(model.Article{}).
 		Where("slug = ?", c.Query("slug")).
 		UpdateColumn("read_num", gorm.Expr("read_num + ?", 1))
+	return nil
 }

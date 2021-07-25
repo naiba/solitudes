@@ -5,14 +5,14 @@ import (
 	"strconv"
 
 	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func comments(c *fiber.Ctx) {
+func comments(c *fiber.Ctx) error {
 	rawPage := c.Query("page")
 	var page int64
 	page, _ = strconv.ParseInt(rawPage, 10, 32)
@@ -28,34 +28,36 @@ func comments(c *fiber.Ctx) {
 		"comments": cs,
 		"page":     pg,
 	}))
+	return nil
 }
 
-func deleteComment(c *fiber.Ctx) {
+func deleteComment(c *fiber.Ctx) error {
 	id := c.Query("id")
 	rpl := c.Query("rpl")
 	articleID := c.Query("aid")
 
 	if len(id) < 10 || len(articleID) < 10 {
-		c.Status(http.StatusBadRequest).Write("Error id")
-		return
+		c.Status(http.StatusBadRequest).WriteString("Error id")
+		return nil
 	}
 
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Delete(&model.Comment{}, "id =?", id).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	if rpl == "" {
 		if err := tx.Model(model.Article{}).Where("id = ?", articleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
 			tx.Rollback()
-			c.Status(http.StatusInternalServerError).Write(err.Error())
-			return
+			c.Status(http.StatusInternalServerError).WriteString(err.Error())
+			return err
 		}
 	}
 	if err := tx.Commit().Error; err != nil {
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
+	return nil
 }

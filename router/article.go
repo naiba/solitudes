@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/gorm"
 
 	"github.com/naiba/solitudes"
@@ -15,7 +15,7 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func article(c *fiber.Ctx) {
+func article(c *fiber.Ctx) error {
 	// load article
 	var a model.Article
 	if err := solitudes.System.DB.Take(&a, "slug = ?", c.Params("slug")).Error; err == gorm.ErrRecordNotFound {
@@ -24,10 +24,10 @@ func article(c *fiber.Ctx) {
 			"title": tr.T("404_title"),
 			"msg":   tr.T("404_msg"),
 		}))
-		return
+		return err
 	} else if err != nil {
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	if len(a.Tags) == 0 {
 		a.Tags = nil
@@ -38,12 +38,12 @@ func article(c *fiber.Ctx) {
 	if len(c.Params("version")) > 1 {
 		version, err := strconv.ParseUint(c.Params("version")[1:], 10, 64)
 		if err != nil {
-			c.Status(http.StatusInternalServerError).Write(err.Error())
-			return
+			c.Status(http.StatusInternalServerError).WriteString(err.Error())
+			return err
 		}
 		if uint(version) == a.Version {
 			c.Redirect("/"+a.Slug, http.StatusFound)
-			return
+			return err
 		}
 		var history model.ArticleHistory
 		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, version).Error; err == gorm.ErrRecordNotFound {
@@ -52,10 +52,10 @@ func article(c *fiber.Ctx) {
 				"title": tr.T("404_title"),
 				"msg":   tr.T("404_msg"),
 			}))
-			return
+			return err
 		} else if err != nil {
-			c.Status(http.StatusInternalServerError).Write(err.Error())
-			return
+			c.Status(http.StatusInternalServerError).WriteString(err.Error())
+			return err
 		}
 		a.Content = history.Content
 		a.Version = history.Version
@@ -110,6 +110,7 @@ func article(c *fiber.Ctx) {
 		"article":      a,
 		"comment_page": pg,
 	}))
+	return nil
 }
 
 func relatedSiblingArticle(p *model.Article) (prev model.Article, next model.Article) {

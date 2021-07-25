@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/biezhi/gorm-paginator/pagination"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gorilla/feeds"
 
 	"github.com/naiba/solitudes"
@@ -15,7 +15,7 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func archive(c *fiber.Ctx) {
+func archive(c *fiber.Ctx) error {
 	var page int64
 	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
 	var articles []model.Article
@@ -34,16 +34,17 @@ func archive(c *fiber.Ctx) {
 		"articles": listArticleByYear(articles),
 		"page":     pg,
 	}))
+	return nil
 }
 
-func feedHandler(c *fiber.Ctx) {
+func feedHandler(c *fiber.Ctx) error {
 	if c.Params("format") == "" {
 		c.Status(http.StatusBadRequest).JSON(map[string]interface{}{
 			"message":         "please spec a feed format",
 			"supportedFormat": []string{"json", "rss", "atom"},
 			"feedLink":        "https://" + solitudes.System.Config.Site.Domain + "/feed/:format",
 		})
-		return
+		return nil
 	}
 	feed := &feeds.Feed{
 		Title:       solitudes.System.Config.Site.SpaceName,
@@ -68,40 +69,41 @@ func feedHandler(c *fiber.Ctx) {
 	case "atom":
 		atom, err := feed.ToAtom()
 		if err != nil {
-			c.Status(http.StatusInternalServerError).Write(err)
-			return
+			c.Status(http.StatusInternalServerError).WriteString(err.Error())
+			return err
 		}
 		c.Set("Content-Type", "application/xml")
-		c.Status(http.StatusOK).Write(atom)
+		c.Status(http.StatusOK).WriteString(atom)
 	case "rss":
 		rss, err := feed.ToRss()
 		if err != nil {
-			c.Status(http.StatusInternalServerError).Write(err)
-			return
+			c.Status(http.StatusInternalServerError).WriteString(err.Error())
+			return err
 		}
 		c.Set("Content-Type", "application/xml")
-		c.Status(http.StatusOK).Write(rss)
+		c.Status(http.StatusOK).WriteString(rss)
 	case "json":
 		json, err := feed.ToJSON()
 		if err != nil {
-			c.Status(http.StatusInternalServerError).Write(err)
-			return
+			c.Status(http.StatusInternalServerError).WriteString(err.Error())
+			return err
 		}
 		c.Set("Content-Type", "application/json")
-		c.Status(http.StatusOK).Write(json)
+		c.Status(http.StatusOK).WriteString(json)
 	default:
-		c.Status(http.StatusOK).Write("Unknown type")
+		c.Status(http.StatusOK).WriteString("Unknown type")
 	}
+	return nil
 }
 
-func tags(c *fiber.Ctx) {
+func tags(c *fiber.Ctx) error {
 	var page int64
 	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
 	var articles []model.Article
 	tag, _ := url.QueryUnescape(c.Params("tag"))
 	if tag == "" {
 		page404(c)
-		return
+		return nil
 	}
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", tag),
@@ -118,6 +120,7 @@ func tags(c *fiber.Ctx) {
 		"articles": listArticleByYear(articles),
 		"page":     pg,
 	}))
+	return nil
 }
 
 func listArticleByYear(as []model.Article) [][]model.Article {

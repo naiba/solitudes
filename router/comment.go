@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/adtac/go-akismet/akismet"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -22,28 +22,28 @@ type commentForm struct {
 	Email    string  `json:"email" validate:"omitempty,email"`
 }
 
-func commentHandler(c *fiber.Ctx) {
+func commentHandler(c *fiber.Ctx) error {
 	isAdmin := c.Locals(solitudes.CtxAuthorized).(bool)
 	var cf commentForm
 	if err := c.BodyParser(&cf); err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 	if err := validator.StructCtx(c.Context(), &cf); err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 
 	article, err := verifyArticle(&cf)
 	if err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 
 	commentType, replyTo, err := getCommentType(&cf)
 	if err != nil {
-		c.Status(http.StatusBadRequest).Write(err.Error())
-		return
+		c.Status(http.StatusBadRequest).WriteString(err.Error())
+		return err
 	}
 
 	// akismet anti spam
@@ -51,9 +51,9 @@ func commentHandler(c *fiber.Ctx) {
 		isSpam, err := akismet.Check(&akismet.Comment{
 			Blog:               "https://" + solitudes.System.Config.Site.Domain, // required
 			UserIP:             c.IP(),                                           // required
-			UserAgent:          string(c.Fasthttp.UserAgent()),                   // required
+			UserAgent:          string(c.Request().Header.UserAgent()),           // required
 			CommentType:        commentType,
-			Referrer:           string(c.Fasthttp.Referer()),
+			Referrer:           string(c.Request().Header.Referer()),
 			Permalink:          "https://" + solitudes.System.Config.Site.Domain + "/" + cf.Slug,
 			CommentAuthor:      cf.Nickname,
 			CommentAuthorEmail: cf.Email,
@@ -61,8 +61,8 @@ func commentHandler(c *fiber.Ctx) {
 			CommentContent:     cf.Content,
 		}, solitudes.System.Config.Akismet)
 		if err != nil || isSpam {
-			c.Status(http.StatusBadRequest).Write("Rejected by Akismet Anti-Spam System")
-			return
+			c.Status(http.StatusBadRequest).WriteString("Rejected by Akismet Anti-Spam System")
+			return err
 		}
 	}
 
@@ -72,22 +72,22 @@ func commentHandler(c *fiber.Ctx) {
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Save(&cm).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 	if cm.ReplyTo == nil {
 		if err := tx.Model(model.Article{}).
 			Where("id = ?", cm.ArticleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
 			tx.Rollback()
-			c.Status(http.StatusInternalServerError).Write(err.Error())
-			return
+			c.Status(http.StatusInternalServerError).WriteString(err.Error())
+			return err
 		}
 	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).Write(err.Error())
-		return
+		c.Status(http.StatusInternalServerError).WriteString(err.Error())
+		return err
 	}
 
 	//Email notify
@@ -95,6 +95,7 @@ func commentHandler(c *fiber.Ctx) {
 		err := notify.Email(&cm, replyTo, article)
 		notify.ServerChan(&cm, article, err)
 	}))
+	return nil
 }
 
 func verifyArticle(cf *commentForm) (*model.Article, error) {
@@ -103,8 +104,7 @@ func verifyArticle(cf *commentForm) (*model.Article, error) {
 		return nil, err
 	}
 	if cf.Version > article.Version || cf.Version == 0 {
-		err := errors.New("Error invalid version")
-		return nil, err
+		return nil, errors.New("error invalid version")
 	}
 	return &article, nil
 }
@@ -136,7 +136,7 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 		cm.Email = cf.Email
 		cm.Website = cf.Website
 		cm.IP = c.IP()
-		cm.UserAgent = string(c.Fasthttp.UserAgent())
+		cm.UserAgent = string(c.Request().Header.UserAgent())
 	}
 	cm.IsAdmin = isAdmin
 	cm.Version = cf.Version

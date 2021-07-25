@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func manager(c *fiber.Ctx) {
+func manager(c *fiber.Ctx) error {
 	var articleNum, commentNum int
 	var lastArticle model.Article
 	var lastComment model.Comment
@@ -64,6 +64,7 @@ func manager(c *fiber.Ctx) {
 		"gcNum":       m.NumGC,
 		"routineNum":  runtime.NumGoroutine(),
 	}))
+	return nil
 }
 
 func bToMb(b uint64) uint64 {
@@ -95,14 +96,14 @@ type uploadResp struct {
 	} `json:"data,omitempty"`
 }
 
-func upload(c *fiber.Ctx) {
+func upload(c *fiber.Ctx) error {
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.Status(http.StatusOK).JSON(uploadResp{
 			Msg:  err.Error(),
 			Code: http.StatusBadRequest,
 		})
-		return
+		return err
 	}
 
 	var errfiles []string
@@ -137,6 +138,7 @@ func upload(c *fiber.Ctx) {
 			SuccMap:  succMap,
 		},
 	})
+	return nil
 }
 
 type fetchRequest struct {
@@ -152,21 +154,21 @@ type fetchResp struct {
 	} `json:"data,omitempty"`
 }
 
-func fetch(c *fiber.Ctx) {
+func fetch(c *fiber.Ctx) error {
 	var fr fetchRequest
 	if err := c.BodyParser(&fr); err != nil {
 		c.Status(http.StatusOK).JSON(fetchResp{
 			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		})
-		return
+		return err
 	}
 	if err := validator.StructCtx(c.Context(), &fr); err != nil {
 		c.Status(http.StatusOK).JSON(fetchResp{
 			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		})
-		return
+		return err
 	}
 
 	// Get the data
@@ -176,7 +178,7 @@ func fetch(c *fiber.Ctx) {
 			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		})
-		return
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -191,7 +193,7 @@ func fetch(c *fiber.Ctx) {
 				Code: http.StatusBadRequest,
 				Msg:  err.Error(),
 			})
-			return
+			return err
 		}
 		defer out.Close()
 
@@ -202,7 +204,7 @@ func fetch(c *fiber.Ctx) {
 				Code: http.StatusBadRequest,
 				Msg:  err.Error(),
 			})
-			return
+			return err
 		}
 	}
 
@@ -216,8 +218,10 @@ func fetch(c *fiber.Ctx) {
 			filename,
 		},
 	})
+	return nil
 }
 
-func rebuildFullTextSearch(c *fiber.Ctx) {
+func rebuildFullTextSearch(c *fiber.Ctx) error {
 	solitudes.BuildArticleIndex()
+	return nil
 }
