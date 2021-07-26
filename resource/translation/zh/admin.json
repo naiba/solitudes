@@ -220,12 +220,12 @@
         "trans": "站点说明"
     },
     {
-        "locale": "en",
+        "locale": "zh",
         "key": "site_wxpusher_apptoken",
         "trans": "WxPusher AppToken"
     },
     {
-        "locale": "en",
+        "locale": "zh",
         "key": "site_wxpusher_uid",
         "trans": "WxPusher UID"
     },
