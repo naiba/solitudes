@@ -34,10 +34,21 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputServerChan" class="col-sm-3 control-label">{{.Tr.T "site_serverchan"}}</label>
+                        <label for="inputWxpusherAppToken" class="col-sm-3 control-label">{{.Tr.T "site_wxpusher_apptoken"}}</label>
                         <div class="col-sm-9">
-                            <input class="form-control" id="inputServerChan" placeholder="xxxxxxxxxxxxx"
-                                value="{{.Conf.ServerChan}}">
+                            <input class="form-control" id="inputWxpusherAppToken" placeholder="xxxxxxxxxxxxx"
+                                value="{{.Conf.WxpusherAppToken}}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="inputWxpusherUID" class="col-sm-3 control-label">{{.Tr.T "site_wxpusher_uid"}}</label>
+                        <div class="col-sm-9">
+                            <input class="form-control" id="inputWxpusherUID" placeholder="xxxxxxxxxxxxx"
+                                value="{{.Conf.WxpusherUID}}">
                         </div>
                     </div>
                 </div>
@@ -303,7 +314,8 @@
         var settings = {
             site_title: $("#inputSiteTitle").val(),
             site_desc: $("#inputSiteDesc").val(),
-            server_chan: $("#inputServerChan").val(),
+            wxpusher_app_token: $("#inputWxpusherAppToken").val(),
+            wxpusher_uid: $("#inputWxpusherUID").val(),
             mail_server: $("#inputMailServer").val(),
             mail_port: parseInt($("#inputMailPort").val()),
             mail_ssl: document.getElementById('cbMailSSL').checked,

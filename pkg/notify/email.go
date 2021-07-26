@@ -12,13 +12,13 @@ import (
 //Email notify
 func Email(src, dist *model.Comment, article *model.Article) error {
 	if dist == nil || dist.Email == "" {
-		return errors.New("Not replying to a comment or being replied to a person who does not leave a mailbox, without email notification")
+		return errors.New("not replying to a comment or being replied to a person who does not leave a mailbox, without email notification")
 	}
 	if dist.Email == src.Email {
-		return errors.New("Same email from src to dist")
+		return errors.New("same email from src to dist")
 	}
 	if dist.IsAdmin {
-		return errors.New("Reply to the administrator without notification")
+		return errors.New("reply to the administrator without notification")
 	}
 	email := hermes.Email{
 		Body: hermes.Body{

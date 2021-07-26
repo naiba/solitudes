@@ -20,7 +20,8 @@ func settings(c *fiber.Ctx) error {
 type settingsRequest struct {
 	SiteTitle             string `json:"site_title,omitempty"`
 	SiteDesc              string `json:"site_desc,omitempty"`
-	ServerChan            string `json:"server_chan,omitempty"`
+	WxpusherAppToken      string `json:"wxpusher_app_token,omitempty"`
+	WxpusherUID           string `json:"wxpusher_uid,omitempty"`
 	MailServer            string `json:"mail_server,omitempty"`
 	MailPort              int    `json:"mail_port,omitempty"`
 	MailUser              string `json:"mail_user,omitempty"`
@@ -57,7 +58,8 @@ func settingsHandler(c *fiber.Ctx) error {
 
 	solitudes.System.Config.Site.SpaceName = sr.SiteTitle
 	solitudes.System.Config.Site.SpaceDesc = sr.SiteDesc
-	solitudes.System.Config.ServerChan = sr.ServerChan
+	solitudes.System.Config.WxpusherAppToken = sr.WxpusherAppToken
+	solitudes.System.Config.WxpusherUID = sr.WxpusherUID
 	solitudes.System.Config.Email.Host = sr.MailServer
 	solitudes.System.Config.Email.Port = sr.MailPort
 	solitudes.System.Config.Email.User = sr.MailUser

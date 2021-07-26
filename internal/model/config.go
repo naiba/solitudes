@@ -17,11 +17,12 @@ type Menu struct {
 
 // Config 系统配置
 type Config struct {
-	Debug      bool
-	ServerChan string
-	Database   string
-	Akismet    string
-	Email      struct {
+	Debug            bool
+	WxpusherAppToken string
+	WxpusherUID      string
+	Database         string
+	Akismet          string
+	Email            struct {
 		Host string
 		Port int
 		User string

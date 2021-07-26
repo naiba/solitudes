@@ -44,6 +44,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
 	github.com/tinylib/msgp v1.1.2 // indirect
+	github.com/wxpusher/wxpusher-sdk-go v1.0.3
 	github.com/yanyiwu/gojieba v1.1.2
 	go.uber.org/dig v1.7.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a

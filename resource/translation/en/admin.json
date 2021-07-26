@@ -221,8 +221,13 @@
     },
     {
         "locale": "en",
-        "key": "site_serverchan",
-        "trans": "ServerChan Key"
+        "key": "site_wxpusher_apptoken",
+        "trans": "WxPusher AppToken"
+    },
+    {
+        "locale": "en",
+        "key": "site_wxpusher_uid",
+        "trans": "WxPusher UID"
     },
     {
         "locale": "en",

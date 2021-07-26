@@ -15,7 +15,7 @@
 - Built-in full-text search
 - Save historical versions of articles (browsable and searchable)
 - Markdown publish article
-- Mail, Server-Chan notification
+- Mail, WxPusher WeChat notification
 - multi-language
 
 ## Guide

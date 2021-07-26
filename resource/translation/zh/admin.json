@@ -220,9 +220,14 @@
         "trans": "站点说明"
     },
     {
-        "locale": "zh",
-        "key": "site_serverchan",
-        "trans": "Server酱 Key"
+        "locale": "en",
+        "key": "site_wxpusher_apptoken",
+        "trans": "WxPusher AppToken"
+    },
+    {
+        "locale": "en",
+        "key": "site_wxpusher_uid",
+        "trans": "WxPusher UID"
     },
     {
         "locale": "zh",
