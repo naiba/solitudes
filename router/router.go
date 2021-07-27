@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes/internal/model"
 
 	"github.com/88250/lute"
@@ -49,6 +50,13 @@ func Serve() {
 	setFuncMap(engine)
 	app := fiber.New(fiber.Config{
 		Views: engine,
+		ErrorHandler: func(c *fiber.Ctx, e error) error {
+			// 404 页面
+			if e == gorm.ErrRecordNotFound {
+				return page404(c)
+			}
+			return e
+		},
 	})
 	if solitudes.System.Config.Debug {
 		app.Use(logger.New())

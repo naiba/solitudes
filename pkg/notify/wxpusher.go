@@ -29,8 +29,9 @@ func WxpusherNotify(comment *model.Comment, article *model.Article, err error) {
 - Content:` + comment.Content + errmsg
 
 	msg := wxpusherModel.NewMessage(solitudes.System.Config.WxpusherAppToken)
+	msg.SetSummary(solitudes.System.Config.Site.SpaceName + "::<<" + article.Title + ">> got a new reply from [" + comment.Nickname + "]")
 	msg.SetContent(content)
-	msg.SetContentType(1)
+	msg.SetContentType(3)
 	msg.AddUId(solitudes.System.Config.WxpusherUID)
 	wxpusher.SendMessage(msg)
 }
