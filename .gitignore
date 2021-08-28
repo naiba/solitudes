@@ -6,6 +6,7 @@
 *.dylib
 .DS_Store
 /data/*
+!/data/conf.yml.example
 
 # Test binary, build with `go test -c`
 *.test

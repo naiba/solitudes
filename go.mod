@@ -3,8 +3,7 @@ module github.com/naiba/solitudes
 go 1.12
 
 require (
-	cloud.google.com/go v0.41.0 // indirect
-	github.com/88250/lute v1.6.5
+	github.com/88250/lute v1.7.3
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047
@@ -24,7 +23,6 @@ require (
 	github.com/gofiber/fiber/v2 v2.15.0
 	github.com/gofiber/template v1.5.3
 	github.com/golang/protobuf v1.3.3 // indirect
-	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/feeds v1.1.1
 	github.com/imdario/mergo v0.3.7 // indirect
@@ -36,10 +34,10 @@ require (
 	github.com/matcornic/hermes/v2 v2.1.0
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible // indirect
-	github.com/microcosm-cc/bluemonday v1.0.5
+	github.com/microcosm-cc/bluemonday v1.0.15
 	github.com/onsi/ginkgo v1.10.1 // indirect
 	github.com/onsi/gomega v1.7.0 // indirect
-	github.com/panjf2000/ants v1.0.0
+	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0 // indirect
 	github.com/tecbot/gorocksdb v0.0.0-20191217155057-f0fad39f321c // indirect
@@ -51,5 +49,5 @@ require (
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
-	gopkg.in/yaml.v2 v2.2.7
+	gopkg.in/yaml.v2 v2.4.0
 )
