@@ -191,11 +191,16 @@ func clearNonUTF8Chars(s string) string {
 	if !utf8.ValidString(s) {
 		v := make([]rune, 0, len(s))
 		for i, r := range s {
+			// 清理非 UTF-8 字符
 			if r == utf8.RuneError {
 				_, size := utf8.DecodeRuneInString(s[i:])
 				if size == 1 {
 					continue
 				}
+			}
+			// 清理 backspace
+			if r == '\b' {
+				continue
 			}
 			v = append(v, r)
 		}
