@@ -3,6 +3,7 @@ package router
 import (
 	"net/http"
 	"strconv"
+	"unicode/utf8"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
@@ -127,7 +128,7 @@ func publishHandler(c *fiber.Ctx) error {
 		ID:         pa.ID,
 		Title:      pa.Title,
 		Slug:       pa.Slug,
-		Content:    pa.Content,
+		Content:    clearNonUTF8Chars(pa.Content),
 		NewVersion: pa.NewVersion,
 		TemplateID: pa.Template,
 		IsBook:     pa.IsBook,
@@ -184,4 +185,21 @@ func fetchOriginArticle(af *model.Article) (*model.Article, error) {
 	originArticle.BookRefer = af.BookRefer
 	originArticle.IsBook = af.IsBook
 	return &originArticle, nil
+}
+
+func clearNonUTF8Chars(s string) string {
+	if !utf8.ValidString(s) {
+		v := make([]rune, 0, len(s))
+		for i, r := range s {
+			if r == utf8.RuneError {
+				_, size := utf8.DecodeRuneInString(s[i:])
+				if size == 1 {
+					continue
+				}
+			}
+			v = append(v, r)
+		}
+		s = string(v)
+	}
+	return s
 }
