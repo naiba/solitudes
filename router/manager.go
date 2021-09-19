@@ -79,6 +79,8 @@ var validExtNames = map[string]interface{}{
 	"mp4":  nil,
 	"zip":  nil,
 	"rar":  nil,
+	"wav":  nil,
+	"mp3":  nil,
 }
 
 var contentTypeList = map[string]string{
