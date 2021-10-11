@@ -34,6 +34,10 @@ var validator = gv.New()
 
 func init() {
 	luteEngine.SetCodeSyntaxHighlight(false)
+	luteEngine.SetHeadingAnchor(true)
+	luteEngine.SetHeadingID(true)
+	luteEngine.SetSub(true)
+	luteEngine.SetSup(true)
 }
 
 func mdRender(id string, raw string) string {

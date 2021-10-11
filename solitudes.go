@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"net/http"
 
-	"github.com/blevesearch/bleve"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
