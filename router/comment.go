@@ -2,7 +2,6 @@ package router
 
 import (
 	"errors"
-	"net/http"
 
 	"github.com/adtac/go-akismet/akismet"
 	"github.com/gofiber/fiber/v2"
@@ -26,23 +25,19 @@ func commentHandler(c *fiber.Ctx) error {
 	isAdmin := c.Locals(solitudes.CtxAuthorized).(bool)
 	var cf commentForm
 	if err := c.BodyParser(&cf); err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
 	if err := validator.StructCtx(c.Context(), &cf); err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
 
 	article, err := verifyArticle(&cf)
 	if err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
 
 	commentType, replyTo, err := getCommentType(&cf)
 	if err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
 
@@ -61,8 +56,7 @@ func commentHandler(c *fiber.Ctx) error {
 			CommentContent:     cf.Content,
 		}, solitudes.System.Config.Akismet)
 		if err != nil || isSpam {
-			c.Status(http.StatusBadRequest).WriteString("Rejected by Akismet Anti-Spam System")
-			return err
+			return errors.New("rejected by Akismet Anti-Spam System")
 		}
 	}
 
@@ -72,7 +66,6 @@ func commentHandler(c *fiber.Ctx) error {
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Save(&cm).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	if cm.ReplyTo == nil {
@@ -80,13 +73,11 @@ func commentHandler(c *fiber.Ctx) error {
 			Where("id = ?", cm.ArticleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
 			tx.Rollback()
-			c.Status(http.StatusInternalServerError).WriteString(err.Error())
 			return err
 		}
 	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 

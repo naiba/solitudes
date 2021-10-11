@@ -26,7 +26,6 @@ func article(c *fiber.Ctx) error {
 		}))
 		return err
 	} else if err != nil {
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	if len(a.Tags) == 0 {
@@ -35,10 +34,9 @@ func article(c *fiber.Ctx) error {
 
 	var title string
 	// load history
-	if len(c.Params("version")) > 1 {
+	if c.Params("version") != "" {
 		version, err := strconv.ParseUint(c.Params("version")[1:], 10, 64)
 		if err != nil {
-			c.Status(http.StatusInternalServerError).WriteString(err.Error())
 			return err
 		}
 		if uint(version) == a.Version {
@@ -54,7 +52,6 @@ func article(c *fiber.Ctx) error {
 			}))
 			return err
 		} else if err != nil {
-			c.Status(http.StatusInternalServerError).WriteString(err.Error())
 			return err
 		}
 		a.Content = history.Content

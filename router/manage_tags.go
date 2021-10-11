@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -33,21 +34,14 @@ func tagsManagePage(c *fiber.Ctx) error {
 
 func deleteTag(c *fiber.Ctx) error {
 	tagName := c.Query("tagName")
-	if err := solitudes.System.DB.Exec("UPDATE articles SET tags = array_remove(tags, ?);", tagName).Error; err != nil {
-		c.Status(http.StatusForbidden).WriteString(err.Error())
-	}
-	return nil
+	return solitudes.System.DB.Exec("UPDATE articles SET tags = array_remove(tags, ?);", tagName).Error
 }
 
 func renameTag(c *fiber.Ctx) error {
 	oldTagName := c.Query("oldTagName")
 	newTagName := strings.TrimSpace(c.Query("newTagName"))
 	if newTagName == "" {
-		c.Status(http.StatusForbidden).WriteString("empty tag name")
-		return nil
+		return errors.New("empty tag name")
 	}
-	if err := solitudes.System.DB.Exec("UPDATE articles SET tags = array_replace(tags, ?, ?);	", oldTagName, newTagName).Error; err != nil {
-		c.Status(http.StatusForbidden).WriteString(err.Error())
-	}
-	return nil
+	return solitudes.System.DB.Exec("UPDATE articles SET tags = array_replace(tags, ?, ?);", oldTagName, newTagName).Error
 }

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -37,26 +38,22 @@ func deleteComment(c *fiber.Ctx) error {
 	articleID := c.Query("aid")
 
 	if len(id) < 10 || len(articleID) < 10 {
-		c.Status(http.StatusBadRequest).WriteString("Error id")
-		return nil
+		return errors.New("error id")
 	}
 
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Delete(&model.Comment{}, "id =?", id).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	if rpl == "" {
 		if err := tx.Model(model.Article{}).Where("id = ?", articleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
 			tx.Rollback()
-			c.Status(http.StatusInternalServerError).WriteString(err.Error())
 			return err
 		}
 	}
 	if err := tx.Commit().Error; err != nil {
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	return nil

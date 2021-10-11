@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -22,22 +23,18 @@ type loginForm struct {
 func loginHandler(c *fiber.Ctx) error {
 	var lf loginForm
 	if err := c.BodyParser(&lf); err != nil {
-		c.Status(http.StatusForbidden).WriteString(err.Error())
 		return err
 	}
 	if err := validator.StructCtx(c.Context(), &lf); err != nil {
-		c.Status(http.StatusForbidden).WriteString(err.Error())
 		return err
 	}
 	if lf.Email != solitudes.System.Config.User.Email ||
 		bcrypt.CompareHashAndPassword([]byte(solitudes.System.Config.User.Password),
 			[]byte(lf.Password)) != nil {
-		c.Status(http.StatusForbidden).WriteString("Invalid email or password")
-		return nil
+		return errors.New("invalid email or password")
 	}
 	token, err := bcrypt.GenerateFromPassword([]byte(lf.Password+time.Now().String()), bcrypt.DefaultCost)
 	if err != nil {
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	solitudes.System.Config.User.Token = string(token)

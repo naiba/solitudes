@@ -48,6 +48,12 @@ func ugcPolicy(raw string) string {
 func Serve() {
 	engine := html.New("resource/theme", ".html")
 	setFuncMap(engine)
+	dbErrors := map[error]bool{
+		gorm.ErrCantStartTransaction: true,
+		gorm.ErrInvalidSQL:           true,
+		gorm.ErrInvalidTransaction:   true,
+		gorm.ErrUnaddressable:        true,
+	}
 	app := fiber.New(fiber.Config{
 		Views: engine,
 		ErrorHandler: func(c *fiber.Ctx, e error) error {
@@ -55,6 +61,19 @@ func Serve() {
 			if e == gorm.ErrRecordNotFound {
 				return page404(c)
 			}
+			title := "Unknown error"
+			errMsg := e.Error()
+			if dbErrors[e] {
+				title = "DB error"
+				errMsg = "Please contact the webmaster"
+			}
+			if strings.Contains(string(c.Request().Header.Peek("Accept")), "html") {
+				return c.Status(http.StatusInternalServerError).Render("default/error", injectSiteData(c, fiber.Map{
+					"title": title,
+					"msg":   errMsg,
+				}))
+			}
+			_, e = c.Status(http.StatusInternalServerError).WriteString(errMsg)
 			return e
 		},
 	})

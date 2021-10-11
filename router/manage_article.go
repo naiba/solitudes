@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"unicode/utf8"
@@ -52,12 +53,10 @@ func publish(c *fiber.Ctx) error {
 func deleteArticle(c *fiber.Ctx) error {
 	id := c.Query("id")
 	if len(id) < 10 {
-		c.Status(http.StatusBadRequest).WriteString("Error article id")
-		return nil
+		return errors.New("error article id")
 	}
 	var a model.Article
 	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
 	var indexIDs []string
@@ -65,7 +64,6 @@ func deleteArticle(c *fiber.Ctx) error {
 	tx := solitudes.System.DB.Begin()
 	if err := tx.Delete(model.Article{}, "id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	// delete article history
@@ -74,18 +72,15 @@ func deleteArticle(c *fiber.Ctx) error {
 	}
 	if err := tx.Delete(model.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	// delete comments
 	if err := tx.Delete(model.Comment{}, "article_id = ?", a.ID).Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
 		return err
 	}
 	// delete full-text search data
@@ -110,21 +105,17 @@ type publishArticle struct {
 func publishHandler(c *fiber.Ctx) error {
 	var pa publishArticle
 	if err := c.BodyParser(&pa); err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
 	if err := validator.StructCtx(c.Context(), &pa); err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
-
-	var err error
 	var bookRefer *string
 	if pa.BookRefer != "" {
 		bookRefer = &pa.BookRefer
 	}
 	// edit article
-	article := &model.Article{
+	newArticle := &model.Article{
 		ID:         pa.ID,
 		Title:      pa.Title,
 		Slug:       pa.Slug,
@@ -135,47 +126,44 @@ func publishHandler(c *fiber.Ctx) error {
 		RawTags:    pa.Tags,
 		BookRefer:  bookRefer,
 	}
-	if article, err = fetchOriginArticle(article); err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
+	if originalArticle, err := fetchOriginArticle(newArticle); err != nil {
 		return err
-	}
-
-	// save edit history && article
-	tx := solitudes.System.DB.Begin()
-	err = tx.Save(&article).Error
-	if article.NewVersion && err == nil {
-		var history model.ArticleHistory
-		history.Content = article.Content
-		history.Version = article.Version
-		history.ArticleID = article.ID
-		err = tx.Save(&history).Error
-	}
-	if err == nil {
-		// indexing serch engine
-		solitudes.System.Search.Index(article.GetIndexID(), article)
-	}
-	if err != nil {
-		tx.Rollback()
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
-		return err
-	}
-	if err = tx.Commit().Error; err != nil {
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
-		return err
+	} else {
+		// save edit history && article
+		tx := solitudes.System.DB.Begin()
+		err = tx.Save(&newArticle).Error
+		if pa.NewVersion && err == nil {
+			var history model.ArticleHistory
+			history.Content = originalArticle.Content
+			history.Version = originalArticle.Version
+			history.ArticleID = originalArticle.ID
+			err = tx.Save(&history).Error
+		}
+		if err == nil {
+			// indexing serch engine
+			solitudes.System.Search.Index(newArticle.GetIndexID(), article)
+		}
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		if err = tx.Commit().Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func fetchOriginArticle(af *model.Article) (*model.Article, error) {
+func fetchOriginArticle(af *model.Article) (model.Article, error) {
 	if af.ID == "" {
-		return af, nil
+		return model.Article{}, nil
 	}
 	var originArticle model.Article
 	if err := solitudes.System.DB.Take(&originArticle, "id = ?", af.ID).Error; err != nil {
-		return nil, err
+		return model.Article{}, err
 	}
 	if af.NewVersion {
-		originArticle.Version++
+		af.Version = originArticle.Version + 1
 	}
 	originArticle.Title = af.Title
 	originArticle.Slug = af.Slug
@@ -184,7 +172,7 @@ func fetchOriginArticle(af *model.Article) (*model.Article, error) {
 	originArticle.RawTags = af.RawTags
 	originArticle.BookRefer = af.BookRefer
 	originArticle.IsBook = af.IsBook
-	return &originArticle, nil
+	return originArticle, nil
 }
 
 func clearNonUTF8Chars(s string) string {

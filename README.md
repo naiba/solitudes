@@ -2,11 +2,14 @@
 
 ![构建状态](https://github.com/naiba/solitudes/workflows/Build%20Docker%20Image/badge.svg)
 
-
-
 :smoking: 在那些寂寞的日子里，有写作伴随着我。
 
 奶爸的一个小梦想，写一本书。
+
+本博客引擎的特色：
+
+- **专栏（系列文章）**
+- **全文搜索**
 
 ### 鸣谢
 

@@ -19,10 +19,7 @@ import (
 
 func mediaHandler(c *fiber.Ctx) error {
 	name := c.Query("name")
-	if err := os.Remove("data/upload/" + path.Clean(name)); err != nil {
-		c.Status(http.StatusInternalServerError).WriteString(err.Error())
-	}
-	return nil
+	return os.Remove("data/upload/" + path.Clean(name))
 }
 
 type mediaInfo struct {

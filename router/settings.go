@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -42,20 +43,14 @@ type settingsRequest struct {
 }
 
 func settingsHandler(c *fiber.Ctx) error {
-	var flag bool
+	var err error
 	defer func() {
-		err := solitudes.System.Config.Save()
-		if err != nil && flag {
-			c.Status(http.StatusBadRequest).WriteString(err.Error())
-			return
-		}
+		err = solitudes.System.Config.Save()
 	}()
 	var sr settingsRequest
 	if err := c.BodyParser(&sr); err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
-
 	solitudes.System.Config.Site.SpaceName = sr.SiteTitle
 	solitudes.System.Config.Site.SpaceDesc = sr.SiteDesc
 	solitudes.System.Config.WxpusherAppToken = sr.WxpusherAppToken
@@ -70,14 +65,12 @@ func settingsHandler(c *fiber.Ctx) error {
 	solitudes.System.Config.Site.SpaceKeywords = sr.SiteKeywords
 	solitudes.System.Config.User.Nickname = sr.Nickname
 	solitudes.System.Config.User.Email = sr.Email
-	err := json.Unmarshal([]byte(sr.SiteHeaderMenus), &solitudes.System.Config.Site.HeaderMenus)
+	err = json.Unmarshal([]byte(sr.SiteHeaderMenus), &solitudes.System.Config.Site.HeaderMenus)
 	if err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
 	err = json.Unmarshal([]byte(sr.SiteFooterMenus), &solitudes.System.Config.Site.FooterMenus)
 	if err != nil {
-		c.Status(http.StatusBadRequest).WriteString(err.Error())
 		return err
 	}
 	solitudes.System.Config.Site.Theme = sr.SiteTheme
@@ -86,17 +79,14 @@ func settingsHandler(c *fiber.Ctx) error {
 
 	if len(sr.OldPassword) > 0 && len(sr.NewPassword) > 0 {
 		if bcrypt.CompareHashAndPassword([]byte(solitudes.System.Config.User.Password), []byte(sr.OldPassword)) != nil {
-			c.Status(http.StatusInternalServerError).WriteString("Invalid email or password")
-			return err
+			return errors.New("invalid email or password")
 		}
 		b, err := bcrypt.GenerateFromPassword([]byte(sr.NewPassword), 1)
 		if err != nil {
-			c.Status(http.StatusInternalServerError).WriteString(err.Error())
 			return err
 		}
 		solitudes.System.Config.User.Password = string(b)
 	}
 
-	flag = true
 	return nil
 }

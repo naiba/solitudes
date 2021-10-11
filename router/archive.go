@@ -69,7 +69,6 @@ func feedHandler(c *fiber.Ctx) error {
 	case "atom":
 		atom, err := feed.ToAtom()
 		if err != nil {
-			c.Status(http.StatusInternalServerError).WriteString(err.Error())
 			return err
 		}
 		c.Set("Content-Type", "application/xml")
@@ -77,7 +76,6 @@ func feedHandler(c *fiber.Ctx) error {
 	case "rss":
 		rss, err := feed.ToRss()
 		if err != nil {
-			c.Status(http.StatusInternalServerError).WriteString(err.Error())
 			return err
 		}
 		c.Set("Content-Type", "application/xml")
@@ -85,7 +83,6 @@ func feedHandler(c *fiber.Ctx) error {
 	case "json":
 		json, err := feed.ToJSON()
 		if err != nil {
-			c.Status(http.StatusInternalServerError).WriteString(err.Error())
 			return err
 		}
 		c.Set("Content-Type", "application/json")
