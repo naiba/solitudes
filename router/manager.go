@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/hashicorp/go-uuid"
+
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
@@ -123,7 +125,11 @@ func upload(c *fiber.Ctx) error {
 			errfiles = append(errfiles, f.Filename)
 			continue
 		}
-		extName = fmt.Sprintf("/upload/%d.%s", time.Now().UnixNano(), extName)
+		fid, err := uuid.GenerateUUID()
+		if err != nil {
+			return err
+		}
+		extName = fmt.Sprintf("/upload/%s.%s", fid, extName)
 		if err := c.SaveFile(f, "data"+extName); err != nil {
 			errfiles = append(errfiles, f.Filename)
 		} else {
@@ -173,6 +179,11 @@ func fetch(c *fiber.Ctx) error {
 		return err
 	}
 
+	fid, err := uuid.GenerateUUID()
+	if err != nil {
+		return err
+	}
+
 	// Get the data
 	resp, err := http.Get(fr.URL)
 	if err != nil {
@@ -187,7 +198,7 @@ func fetch(c *fiber.Ctx) error {
 	var filename string
 	contentType := resp.Header.Get("Content-Type")
 	if ext, ok := contentTypeList[contentType]; ok {
-		filename = fmt.Sprintf("/upload/%d.%s", time.Now().UnixNano(), ext)
+		filename = fmt.Sprintf("/upload/%s.%s", fid, ext)
 		// Create the file
 		out, err := os.Create("data/" + filename)
 		if err != nil {

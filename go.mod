@@ -19,6 +19,7 @@ require (
 	github.com/golang/protobuf v1.3.3 // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/gorilla/feeds v1.1.1
+	github.com/hashicorp/go-uuid v1.0.2
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20190408195923-01ec452cbe43 // indirect
 	github.com/jinzhu/gorm v1.9.10

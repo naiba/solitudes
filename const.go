@@ -24,8 +24,6 @@ const (
 	CacheKeyPrefixRelatedArticle = "ckpra"
 	// CacheKeyPrefixRelatedSiblingArticle 缓存键前缀：相邻文章
 	CacheKeyPrefixRelatedSiblingArticle = "ckprsa"
-	// CacheKeyPrefixUploadFiles 缓存键前缀：上传的文件
-	CacheKeyPrefixUploadFiles = "ckpuf"
 )
 
 // SysVeriable 全局变量

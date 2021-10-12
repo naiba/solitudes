@@ -1,10 +1,12 @@
 package router
 
 import (
-	"io/ioutil"
+	"errors"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -12,7 +14,6 @@ import (
 	"github.com/jinzhu/gorm"
 
 	"github.com/naiba/solitudes"
-
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 )
@@ -28,38 +29,55 @@ type mediaInfo struct {
 	UploadedAt time.Time
 }
 
+var errEnded = errors.New("file walk eneded")
+
 func media(c *fiber.Ctx) error {
 	rawPage := c.Query("page")
 	page64, _ := strconv.ParseInt(rawPage, 10, 64)
 	page := int(page64)
-	if page < 0 {
-		page = 0
+	if page < 1 {
+		page = 1
 	}
-	//medias, _ := solitudes.System.SafeCache.GetOrBuild(fmt.Sprintf("%s%d", solitudes.CacheKeyPrefixUploadFiles, page), func() (interface{}, error) {
-	files, _ := ioutil.ReadDir("data/upload")
-	end := (page + 1) * 10
-	if len(files) < end {
-		end = len(files)
+	var files []os.FileInfo
+	start := (page - 1) * 15
+	end := page * 15
+	fileIndex := 0
+	err := filepath.Walk("data/upload", func(path string, info fs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if path == "data/upload" {
+			return nil
+		}
+		if info.IsDir() {
+			return filepath.SkipDir
+		}
+		if fileIndex >= start && fileIndex < end {
+			files = append(files, info)
+		}
+		fileIndex++
+		if fileIndex >= end {
+			return errEnded
+		}
+		return nil
+	})
+	if err != nil && err != errEnded {
+		return err
 	}
 	var innerMedias []mediaInfo
-	for i := page * 10; i < end; i++ {
-		if files[i].IsDir() {
-			continue
-		}
+	for _, f := range files {
 		var item mediaInfo
-		item.UploadedAt = files[i].ModTime()
-		item.Filename = files[i].Name()
-		if err := solitudes.System.DB.Take(&item.Article, "content like ?", "%(/upload/"+item.Filename+")%").Error; err == gorm.ErrRecordNotFound {
+		item.UploadedAt = f.ModTime()
+		item.Filename = f.Name()
+		if err := solitudes.System.DB.Take(&item.Article, "content like ?", "%/upload/"+item.Filename+"%").Error; err == gorm.ErrRecordNotFound {
 			var ah model.ArticleHistory
-			if solitudes.System.DB.Take(&ah, "content like ?", "%(/upload/"+item.Filename+")%").Error == nil {
+			if solitudes.System.DB.Take(&ah, "content like ?", "%/upload/"+item.Filename+"%").Error == nil {
 				solitudes.System.DB.Take(&item.Article, "id = ?", ah.ArticleID)
 				item.Article.Version = ah.Version
 			}
 		}
 		innerMedias = append(innerMedias, item)
 	}
-	//	return innerMedias, nil
-	//})
 	c.Status(http.StatusOK).Render("admin/media", injectSiteData(c, fiber.Map{
 		"title":  c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_media"),
 		"medias": innerMedias,
