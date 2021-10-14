@@ -162,16 +162,12 @@ func fetchOriginArticle(af *model.Article) (model.Article, error) {
 	if err := solitudes.System.DB.Take(&originArticle, "id = ?", af.ID).Error; err != nil {
 		return model.Article{}, err
 	}
+	af.Version = originArticle.Version
+	af.CommentNum = originArticle.CommentNum
+	af.ReadNum = originArticle.ReadNum
 	if af.NewVersion {
 		af.Version = originArticle.Version + 1
 	}
-	originArticle.Title = af.Title
-	originArticle.Slug = af.Slug
-	originArticle.Content = af.Content
-	originArticle.TemplateID = af.TemplateID
-	originArticle.RawTags = af.RawTags
-	originArticle.BookRefer = af.BookRefer
-	originArticle.IsBook = af.IsBook
 	return originArticle, nil
 }
 
