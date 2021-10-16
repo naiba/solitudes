@@ -65,12 +65,6 @@
                         href="http://reddit.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                             class="fab fa-reddit " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.stumbleupon.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
-                            class="fab fa-stumbleupon " aria-hidden="true"></i></a></li>
-                <li><a class="icon"
-                        href="http://digg.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
-                            class="fab fa-digg " aria-hidden="true"></i></a></li>
-                <li><a class="icon"
                         href="http://www.tumblr.com/share/link?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
                             class="fab fa-tumblr " aria-hidden="true"></i></a></li>
             </ul>
@@ -93,8 +87,8 @@
                     <span itemprop="name">{{.Conf.User.Nickname}}</span>
                 </span>
                 <div class="postdate">
-                    <time datetime="{{.Data.article.CreatedAt}}"
-                        itemprop="datePublished">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
+                    <time datetime="{{.Data.article.CreatedAt}}" itemprop="datePublished">{{tf .Data.article.CreatedAt
+                        (.Tr.T "date_format")}}</time>
                     <small>·v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
                     |
@@ -150,15 +144,15 @@
         {{if gt .Data.comment_page.Page 1}}<a
             href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}"><i
                 class="fas fa-angle-left"></i></a>{{end}}
-        <span
-            class="page-number">{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
+        <span class="page-number">{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
         {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a
             href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}"><i
                 class="fas fa-angle-right"></i></a>{{end}}
     </div>
     {{end}}
     <div id="reply">
-        <textarea cols="40" rows="6" id="id_content"></textarea>
+        <textarea cols="40" rows="6" id="id_content"
+            placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
         {{if .Login}}
         <input type="hidden" maxlength="64" id="id_nickname">
         {{else}}
@@ -213,12 +207,6 @@
                     <li><a class="icon"
                             href="http://reddit.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
                                 class="fab fa-reddit fa-lg" aria-hidden="true"></i></a></li>
-                    <li><a class="icon"
-                            href="http://www.stumbleupon.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
-                                class="fab fa-stumbleupon fa-lg" aria-hidden="true"></i></a></li>
-                    <li><a class="icon"
-                            href="http://digg.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
-                                class="fab fa-digg fa-lg" aria-hidden="true"></i></a></li>
                     <li><a class="icon"
                             href="http://www.tumblr.com/share/link?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
                                 class="fab fa-tumblr fa-lg" aria-hidden="true"></i></a></li>
