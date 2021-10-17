@@ -1,34 +1,38 @@
 package model
 
 import (
-	"fmt"
 	"testing"
 )
 
 func TestGenTOC(t *testing.T) {
 	var post = &Article{
-		Content: `### 一3.1
-		#### 二3.2
-		## 一2.1
-		## 一2.2
-		# 一1.1
-		##### 二5.1
-		### 二3.3
-		## 二2.2
-		#### 三4.1
-		# 一1.2
-		# 一1.3`,
+		Content: `这个端到端加密的工具
+## 端到端加密详解
+### 名词解释
+### 用户注册
+### 用户登录
+### 个人数据
+#### 读取
+#### 写入
+### Team 数据
+#### 读取
+#### 写入
+## 概览
+### Team 成员管理
+### 目前的缺陷
+`,
 	}
 	post.GenTOC()
-	printToc(post.Toc, 0)
+	index := 0
+	validateToc(t, post.Toc, &index, []int{2, 3, 3, 3, 3, 4, 4, 3, 4, 4, 2, 3, 3})
 }
 
-func printToc(toc []*ArticleTOC, level int) {
-	for _, t := range toc {
-		for i := 0; i < level; i++ {
-			fmt.Print(" ")
+func validateToc(t *testing.T, toc []*ArticleTOC, now *int, expect []int) {
+	for _, toc_item := range toc {
+		if toc_item.Level != expect[*now] {
+			t.FailNow()
 		}
-		fmt.Print(t.Title, "\n")
-		printToc(t.SubTitles, level+1)
+		*now++
+		validateToc(t, toc_item.SubTitles, now, expect)
 	}
 }
