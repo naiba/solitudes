@@ -7,6 +7,7 @@
 .DS_Store
 /data/*
 !/data/conf.yml.example
+/main
 
 # Test binary, build with `go test -c`
 *.test
