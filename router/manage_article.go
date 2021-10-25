@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"unicode/utf8"
@@ -125,6 +126,7 @@ func publishHandler(c *fiber.Ctx) error {
 		IsBook:     pa.IsBook,
 		RawTags:    pa.Tags,
 		BookRefer:  bookRefer,
+		Version:    1,
 	}
 	if originalArticle, err := fetchOriginArticle(newArticle); err != nil {
 		return err
@@ -139,10 +141,6 @@ func publishHandler(c *fiber.Ctx) error {
 			history.ArticleID = originalArticle.ID
 			err = tx.Save(&history).Error
 		}
-		if err == nil {
-			// indexing serch engine
-			solitudes.System.Search.Index(newArticle.GetIndexID(), article)
-		}
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -150,6 +148,11 @@ func publishHandler(c *fiber.Ctx) error {
 		if err = tx.Commit().Error; err != nil {
 			return err
 		}
+		// indexing serch engine
+		numBefore, _ := solitudes.System.Search.DocCount()
+		errIndex := solitudes.System.Search.Index(newArticle.GetIndexID(), article)
+		numAfter, _ := solitudes.System.Search.DocCount()
+		log.Printf("Doc %s indexed %d --> %d %+v\n", newArticle.GetIndexID(), numBefore, numAfter, errIndex)
 	}
 	return nil
 }
