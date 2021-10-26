@@ -150,7 +150,7 @@ func publishHandler(c *fiber.Ctx) error {
 		}
 		// indexing serch engine
 		numBefore, _ := solitudes.System.Search.DocCount()
-		errIndex := solitudes.System.Search.Index(newArticle.GetIndexID(), article)
+		errIndex := solitudes.System.Search.Index(newArticle.GetIndexID(), newArticle)
 		numAfter, _ := solitudes.System.Search.DocCount()
 		log.Printf("Doc %s indexed %d --> %d %+v\n", newArticle.GetIndexID(), numBefore, numAfter, errIndex)
 	}
