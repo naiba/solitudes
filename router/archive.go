@@ -20,7 +20,7 @@ func archive(c *fiber.Ctx) error {
 	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
 	var articles []model.Article
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("book_refer is NULL"),
+		DB:      solitudes.System.DB,
 		Page:    int(page),
 		Limit:   15,
 		OrderBy: []string{"created_at DESC"},
