@@ -12,5 +12,6 @@
     const urlSearchParams = new URLSearchParams(window.location.search);
     const params = Object.fromEntries(urlSearchParams.entries());
     document.querySelector('input.search-input').value = params.w || ''
+    document.title = document.title.replace("#SOL.9527.WORD#", params.w)
 </script>
 {{end}}
