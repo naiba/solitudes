@@ -17,19 +17,24 @@ type Menu struct {
 
 // Config 系统配置
 type Config struct {
-	Debug            bool
+	Debug bool
+
+	EnableTrustedProxyCheck bool
+	TrustedProxies          []string
+	ProxyHeader             string
+
 	WxpusherAppToken string
 	WxpusherUID      string
-	Database         string
-	Akismet          string
-	Email            struct {
+
+	Database string
+	Akismet  string
+	Email    struct {
 		Host string
 		Port int
 		User string
 		Pass string
 		SSL  bool
 	}
-	User User
 	Site struct {
 		SpaceName         string
 		SpaceDesc         string
@@ -42,6 +47,7 @@ type Config struct {
 		FooterMenus       []Menu
 	}
 
+	User           User
 	ConfigFilePath string
 }
 

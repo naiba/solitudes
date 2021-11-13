@@ -59,7 +59,10 @@ func Serve() {
 		gorm.ErrUnaddressable:        true,
 	}
 	app := fiber.New(fiber.Config{
-		Views: engine,
+		EnableTrustedProxyCheck: solitudes.System.Config.EnableTrustedProxyCheck,
+		TrustedProxies:          solitudes.System.Config.TrustedProxies,
+		ProxyHeader:             solitudes.System.Config.ProxyHeader,
+		Views:                   engine,
 		ErrorHandler: func(c *fiber.Ctx, e error) error {
 			// 404 页面
 			if e == gorm.ErrRecordNotFound {
