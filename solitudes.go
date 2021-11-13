@@ -98,6 +98,7 @@ func newConfig() *model.Config {
 		panic(err)
 	}
 	c.ConfigFilePath = configFile
+	log.Println("Config", c)
 	return &c
 }
 

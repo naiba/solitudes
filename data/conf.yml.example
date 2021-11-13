@@ -1,8 +1,8 @@
 debug: true
-EnableTrustedProxyCheck: false
-TrustedProxies:
+enabletrustedproxycheck: false
+trustedproxies:
   - 192.168.160.1
-ProxyHeader: X-Forwarded-For
+proxyheader: X-Forwarded-For
 # 启用 UUID 扩展 docker-compose exec db psql -U solitudes solitudes -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
 database: postgres://solitudes:thisispassword@db/solitudes?sslmode=disable
 user:
