@@ -24,24 +24,26 @@ func search(c *fiber.Ctx) error {
 	searchRequest.Highlight = bleve.NewHighlight()
 	searchRequest.Fields = []string{"Title", "Version", "Slug"}
 	searchRequest.Explain = true
-	searchResult, _ := solitudes.System.Search.Search(searchRequest)
+	searchResult, err := solitudes.System.Search.Search(searchRequest)
 
 	var result []searchResp
-	for _, hit := range searchResult.Hits {
-		item := model.ArticleIndex{
-			Slug:    hit.Fields["Slug"].(string),
-			Version: hit.Fields["Version"].(float64),
-			Title:   hit.Fields["Title"].(string),
-		}
-		content := bytes.NewBufferString("")
-		for _, fragments := range hit.Fragments {
-			for _, fragment := range fragments {
-				content.WriteString(fragment + "\n")
+	if err == nil {
+		for _, hit := range searchResult.Hits {
+			item := model.ArticleIndex{
+				Slug:    hit.Fields["Slug"].(string),
+				Version: hit.Fields["Version"].(float64),
+				Title:   hit.Fields["Title"].(string),
 			}
+			content := bytes.NewBufferString("")
+			for _, fragments := range hit.Fragments {
+				for _, fragment := range fragments {
+					content.WriteString(fragment + "\n")
+				}
+			}
+			result = append(result, searchResp{
+				item, content.String(),
+			})
 		}
-		result = append(result, searchResp{
-			item, content.String(),
-		})
 	}
 
 	c.Status(http.StatusOK).Render("default/search", injectSiteData(c, fiber.Map{
