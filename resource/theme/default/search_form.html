@@ -3,9 +3,14 @@
     <span class="h1">{{.Tr.T "search"}}</span>
     <form action="/search/" method="get">
         <div class="row">
-            <input class="search-input" name="w" value="{{.Data.word}}">
+            <input class="search-input" name="w">
             <button class="base-button" type="submit">{{.Tr.T "search"}}</button>
         </div>
     </form>
 </section>
+<script>
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const params = Object.fromEntries(urlSearchParams.entries());
+    document.querySelector('input.search-input').value = params.w || ''
+</script>
 {{end}}

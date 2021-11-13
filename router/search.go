@@ -46,7 +46,6 @@ func search(c *fiber.Ctx) error {
 
 	c.Status(http.StatusOK).Render("default/search", injectSiteData(c, fiber.Map{
 		"title":   c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("search_result_title", c.Query("w")),
-		"word":    c.Query("w"),
 		"results": result,
 	}))
 	return nil
