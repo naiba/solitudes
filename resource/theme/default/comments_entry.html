@@ -6,9 +6,10 @@
     </div>
     <div>
         <p class="comment-meta title{{if .IsAdmin}} admin{{end}}">
-            <a href="{{if .Website}}{{.Website}}{{else}}javascript:;{{end}}" target="_blank"
-                rel="nofollow noopener">{{.Nickname}}</a>
+            {{if .Website}}<a href="{{.Website}}" target="_blank" rel="nofollow noopener">{{.Nickname}}</a>{{else}}
+            <b>{{.Nickname}}</b>
             {{if .IsAdmin}} 👲 {{end}}
+            {{end}}
             <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt "02 Jan 2006"}}</time>
             <a href="/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
             <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">Reply</a>
