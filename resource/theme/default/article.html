@@ -227,7 +227,7 @@
     </div>
     <script>
         window.onload = function () {
-            fetch("/count?action=article&slug={{.Data.article.Slug}}")
+            fetch("/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })
             document.querySelector("#id_nickname").value = localStorage.getItem("cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}'
             if (document.querySelector("#id_email")) {
                 document.querySelector("#id_email").value = localStorage.getItem("cm_email") || ''
