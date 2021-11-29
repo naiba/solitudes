@@ -68,19 +68,16 @@ func commentHandler(c *fiber.Ctx) error {
 		tx.Rollback()
 		return err
 	}
-	if cm.ReplyTo == nil {
-		if err := tx.Model(model.Article{}).
-			Where("id = ?", cm.ArticleID).
-			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
+	if err := tx.Model(model.Article{}).
+		Where("id = ?", cm.ArticleID).
+		UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
+		tx.Rollback()
+		return err
 	}
 	if err := tx.Commit().Error; err != nil {
 		tx.Rollback()
 		return err
 	}
-
 	//Email notify
 	checkPoolSubmit(nil, solitudes.System.Pool.Submit(func() {
 		err := notify.Email(&cm, replyTo, article)

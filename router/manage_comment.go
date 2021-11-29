@@ -34,7 +34,6 @@ func comments(c *fiber.Ctx) error {
 
 func deleteComment(c *fiber.Ctx) error {
 	id := c.Query("id")
-	rpl := c.Query("rpl")
 	articleID := c.Query("aid")
 
 	if len(id) < 10 || len(articleID) < 10 {
@@ -46,12 +45,10 @@ func deleteComment(c *fiber.Ctx) error {
 		tx.Rollback()
 		return err
 	}
-	if rpl == "" {
-		if err := tx.Model(model.Article{}).Where("id = ?", articleID).
-			UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
-			tx.Rollback()
-			return err
-		}
+	if err := tx.Model(model.Article{}).Where("id = ?", articleID).
+		UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
+		tx.Rollback()
+		return err
 	}
 	if err := tx.Commit().Error; err != nil {
 		return err

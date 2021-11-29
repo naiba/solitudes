@@ -86,11 +86,11 @@ func count(c *fiber.Ctx) error {
 	if c.Query("slug") == "" {
 		return nil
 	}
-	key := c.IP() + c.Query("slug")
-	if _, ok := solitudes.System.Cache.Get(key); ok {
-		return nil
-	}
-	solitudes.System.Cache.Set(key, nil, time.Hour*20)
+	// key := c.IP() + c.Query("slug")
+	// if _, ok := solitudes.System.Cache.Get(key); ok {
+	// 	return nil
+	// }
+	// solitudes.System.Cache.Set(key, nil, time.Hour*20)
 	solitudes.System.DB.Model(model.Article{}).
 		Where("slug = ?", c.Query("slug")).
 		UpdateColumn("read_num", gorm.Expr("read_num + ?", 1))
