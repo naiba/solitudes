@@ -44,7 +44,7 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 		Product: hermes.Product{
 			Name:      solitudes.System.Config.Site.SpaceName,
 			Link:      solitudes.System.Config.Site.Domain,
-			Logo:      "https://" + solitudes.System.Config.Site.Domain + "/static/cactus/images/logo.png",
+			Logo:      "https://" + solitudes.System.Config.Site.Domain + "/static/cactus/images/logo.png?20211213",
 			Copyright: "Copyright © " + solitudes.System.Config.Site.SpaceName + ". All rights reserved.",
 		},
 	}
