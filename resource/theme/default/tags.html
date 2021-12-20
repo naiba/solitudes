@@ -1,0 +1,12 @@
+{{define "default/tags"}}
+{{template "default/header" .}}
+{{template "default/menu" .}}
+<section id="tags">
+  {{range .Data.tags}}
+  <a href="/tags/{{.}}/" target="_blank">
+    {{.}}
+  </a>
+  {{end}}
+</section>
+{{template "default/footer" .}}
+{{end}}

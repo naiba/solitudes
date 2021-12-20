@@ -16,11 +16,23 @@ function toggle(sel) {
     } else { document.querySelector(sel).style.display = 'none' }
 }
 
+const randomColor = () => '#' + Math.floor(Math.random() * 16777215).toString(16);
+
 function matches(el, selector) {
     return (el.matches || el.matchesSelector || el.msMatchesSelector || el.mozMatchesSelector || el.webkitMatchesSelector || el.oMatchesSelector).call(el, selector);
 };
 
 ready(function () {
+    /**
+         * 标签云
+         */
+    const tagsCloud = document.querySelectorAll("#tags>a");
+    if (tagsCloud.length > 0) {
+        for (let i = 0; i < tagsCloud.length; i++) {
+            tagsCloud[i].style.backgroundColor = randomColor();
+        }
+    }
+
     /**
      * video height
      */

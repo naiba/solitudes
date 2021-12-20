@@ -96,6 +96,7 @@ func Serve() {
 	app.Get("/archives/:page?", archive)
 	app.Get("/search/", search)
 	app.Get("/tags/:tag/:page?", tags)
+	app.Get("/tags/", tagsCloud)
 	app.Get("/login", guestRequired, login)
 	app.Post("/login", guestRequired, loginHandler)
 	app.Post("/logout", loginRequired, logoutHandler)

@@ -36,6 +36,11 @@
     },
     {
         "locale": "en",
+        "key": "tags_cloud",
+        "trans": "Tags"
+    },
+    {
+        "locale": "en",
         "key": "comments",
         "trans": "Comments"
     },

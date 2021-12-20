@@ -15,6 +15,24 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
+func tagsCloud(c *fiber.Ctx) error {
+	var tags []string
+	rows, err := solitudes.System.DB.Raw(`select distinct unnest(articles.tags) FROM articles`).Rows()
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var line string
+			rows.Scan(&line)
+			tags = append(tags, line)
+		}
+	}
+	c.Status(http.StatusOK).Render("default/tags", injectSiteData(c, fiber.Map{
+		"title": c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("tags_cloud"),
+		"tags":  tags,
+	}))
+	return nil
+}
+
 func archive(c *fiber.Ctx) error {
 	var page int64
 	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)

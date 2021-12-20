@@ -1,151 +1,161 @@
-#search>form>div.row {
-    display: flex;
+#search > form > div.row {
+  display: flex;
 }
 
 .search-input {
-    display: table-cell;
-    vertical-align: middle;
-    padding: 4px 7px;
-    outline: none;
-    border: solid 1px #666;
-    border-radius: 5px;
-    background-color: #fafafa;
-    color: #22272a;
-    font-size: 1.1rem;
-    width: 38%;
-    -webkit-border-radius: 5px;
-    -moz-border-radius: 5px;
+  display: table-cell;
+  vertical-align: middle;
+  padding: 4px 7px;
+  outline: none;
+  border: solid 1px #666;
+  border-radius: 5px;
+  background-color: #fafafa;
+  color: #22272a;
+  font-size: 1.1rem;
+  width: 38%;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
 }
 
 .base-button {
-    padding-left: 9px;
-    padding-right: 9px;
-    padding-bottom: 5px;
-    padding-top: 5px;
-    border-radius: 5px;
-    font-weight: bolder;
-    color: black;
-    background-color: #cb997e;
-    border: none;
-    font-size: 1.1rem;
+  padding-left: 9px;
+  padding-right: 9px;
+  padding-bottom: 5px;
+  padding-top: 5px;
+  border-radius: 5px;
+  font-weight: bolder;
+  color: black;
+  background-color: #cb997e;
+  border: none;
+  font-size: 1.1rem;
 }
 
 #search .base-button {
-    display: table-cell;
-    vertical-align: middle;
-    margin-left: 10px;
+  display: table-cell;
+  vertical-align: middle;
+  margin-left: 10px;
 }
 
 #reply-list .comment-meta {
-    margin: 0;
-    word-wrap: break-word;
+  margin: 0;
+  word-wrap: break-word;
 }
 
 #reply-list time {
-    color: #666;
+  color: #666;
 }
 
 #reply-list span {
-    color: #ccc;
+  color: #ccc;
 }
 
 #reply-list .gravatar {
-    width: 44px;
-    padding: 6px;
-    margin-right: 4px;
-    float: left;
+  width: 44px;
+  padding: 6px;
+  margin-right: 4px;
+  float: left;
 }
 
 #reply-list .gravatar img {
-    width: 100%;
+  width: 100%;
 }
 
 #reply-list .child-node {
-    margin-left: 50px;
+  margin-left: 50px;
 }
 
 #reply-list .row {
-    margin-bottom: 10px;
+  margin-bottom: 10px;
 }
 
 #reply textarea,
 input {
-    border: none;
-    width: 100%;
-    padding: 5px;
-    resize: none;
-    background-color: #fff1e6;
+  border: none;
+  width: 100%;
+  padding: 5px;
+  resize: none;
+  background-color: #fff1e6;
 }
 
-#reply>.row {
-    display: flex;
-    justify-content: space-between;
+#reply > .row {
+  display: flex;
+  justify-content: space-between;
 }
 
-#reply>.row input {
-    width: 32.6%;
+#reply > .row input {
+  width: 32.6%;
 }
 
 #reply button {
-    width: 100%;
-    margin-top: 1rem;
-    margin-bottom: 10px;
+  width: 100%;
+  margin-top: 1rem;
+  margin-bottom: 10px;
 }
 
 .pagination a {
-    border: 1px dashed #cc2a41;
+  border: 1px dashed #cc2a41;
 }
 
 article footer {
-    border: 1px dashed #cc2a41;
-    padding: 10px;
-    margin-top: 40px;
+  border: 1px dashed #cc2a41;
+  padding: 10px;
+  margin-top: 40px;
 }
 
 .comment-meta a:nth-child(3) {
-    color: #666;
-    background: none;
+  color: #666;
+  background: none;
 }
 
 .comment-meta.admin a:first-child {
-    color: #cc2a41;
+  color: #cc2a41;
 }
 
-@media (max-width:768px) {
-    div.footer-left {
-        height: auto !important;
-    }
+@media (max-width: 768px) {
+  div.footer-left {
+    height: auto !important;
+  }
 }
 
 @media screen and (max-width: 480px) {
-    #header #nav ul li.icon {
-        right: 0;
-    }
+  #header #nav ul li.icon {
+    right: 0;
+  }
 
-    .search-input {
-        width: 65%;
-    }
+  .search-input {
+    width: 65%;
+  }
 
-    .home-bottom {
-        margin-bottom: 10px;
-    }
+  .home-bottom {
+    margin-bottom: 10px;
+  }
 }
 
 pre {
-    border: none;
-    padding: unset;
-    margin: unset;
-    margin-top: 14px;
+  border: none;
+  padding: unset;
+  margin: unset;
+  margin-top: 14px;
 }
 
 p {
-    margin: unset;
-    margin-top: 10px;
+  margin: unset;
+  margin-top: 10px;
 }
 
 .iframe__video {
-    border: unset;
-    display: block;
-    margin: 0 auto;
-    width: 80%;
+  border: unset;
+  display: block;
+  margin: 0 auto;
+  width: 80%;
+}
+
+#tags > a {
+  display: inline-block;
+  padding: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: bolder;
+  color: white;
+  min-width: 5rem;
+  text-align: center;
 }

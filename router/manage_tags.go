@@ -7,22 +7,18 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
 func tagsManagePage(c *fiber.Ctx) error {
-	tagsUnique := make(map[string]struct{})
 	var tags []string
-	var articles []model.Article
-	solitudes.System.DB.Select("tags").Find(&articles)
-	for i := 0; i < len(articles); i++ {
-		for j := 0; j < len(articles[i].Tags); j++ {
-			if _, has := tagsUnique[articles[i].Tags[j]]; has {
-				continue
-			}
-			tagsUnique[articles[i].Tags[j]] = struct{}{}
-			tags = append(tags, articles[i].Tags[j])
+	rows, err := solitudes.System.DB.Raw(`select distinct unnest(articles.tags) FROM articles`).Rows()
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var line string
+			rows.Scan(&line)
+			tags = append(tags, line)
 		}
 	}
 	c.Status(http.StatusOK).Render("admin/tags", injectSiteData(c, fiber.Map{

@@ -36,6 +36,11 @@
     },
     {
         "locale": "zh",
+        "key": "tags_cloud",
+        "trans": "标签云"
+    },
+    {
+        "locale": "zh",
         "key": "comments",
         "trans": "评论"
     },
