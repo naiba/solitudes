@@ -17,6 +17,7 @@ import (
 
 func tagsCloud(c *fiber.Ctx) error {
 	var tags []string
+	var counts []int
 	rows, err := solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles group by t order by count desc`).Rows()
 	if err == nil {
 		defer rows.Close()
@@ -25,11 +26,13 @@ func tagsCloud(c *fiber.Ctx) error {
 			var count int
 			rows.Scan(&count, &line)
 			tags = append(tags, line)
+			counts = append(counts, count)
 		}
 	}
 	c.Status(http.StatusOK).Render("default/tags", injectSiteData(c, fiber.Map{
-		"title": c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("tags_cloud"),
-		"tags":  tags,
+		"title":  c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("tags_cloud"),
+		"tags":   tags,
+		"counts": counts,
 	}))
 	return nil
 }
