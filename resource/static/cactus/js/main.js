@@ -29,7 +29,9 @@ ready(function () {
     const tagsCloud = document.querySelectorAll("#tags>a");
     if (tagsCloud.length > 0) {
         for (let i = 0; i < tagsCloud.length; i++) {
-            tagsCloud[i].style.backgroundColor = randomColor();
+            while (!tagsCloud[i].style.backgroundColor) {
+                tagsCloud[i].style.backgroundColor = randomColor();
+            }
         }
     }
 

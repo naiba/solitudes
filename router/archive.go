@@ -17,12 +17,13 @@ import (
 
 func tagsCloud(c *fiber.Ctx) error {
 	var tags []string
-	rows, err := solitudes.System.DB.Raw(`select distinct unnest(articles.tags) FROM articles`).Rows()
+	rows, err := solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles group by t order by count desc`).Rows()
 	if err == nil {
 		defer rows.Close()
 		for rows.Next() {
 			var line string
-			rows.Scan(&line)
+			var count int
+			rows.Scan(&count, &line)
 			tags = append(tags, line)
 		}
 	}
