@@ -78,6 +78,11 @@ func feedHandler(c *fiber.Ctx) error {
 	var articles []model.Article
 	solitudes.System.DB.Order("created_at DESC", true).Limit(20).Find(&articles)
 	for i := 0; i < len(articles); i++ {
+		// 检查私有博文
+		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
+			articles[i].Content = "Private Article"
+		}
+
 		feed.Items = append(feed.Items, &feeds.Item{
 			Title:   articles[i].Title,
 			Link:    &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug + "/v" + strconv.Itoa(int(articles[i].Version))},

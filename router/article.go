@@ -101,6 +101,12 @@ func article(c *fiber.Ctx) error {
 	}))
 	wg.Wait()
 	a.RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+
+	// 检查私有博文
+	if a.IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
+		a.Content = "Private Article"
+	}
+
 	c.Status(http.StatusOK).Render("default/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
 		"title":        title,
 		"keywords":     a.RawTags,

@@ -21,6 +21,7 @@
                                     <th>{{.Tr.T "read"}}</th>
                                     <th>{{.Tr.T "slug"}}</th>
                                     <th>{{.Tr.T "book"}}</th>
+                                    <th>Private</th>
                                     <th>{{.Tr.T "created_at"}}</th>
                                     <th>{{.Tr.T "manage"}}</th>
                                 </tr>
@@ -34,6 +35,7 @@
                                     <td>{{.ReadNum}}</td>
                                     <td>{{.Slug}}</td>
                                     <td>{{.IsBook}}</td>
+                                    <td>{{.IsPrivate}}</td>
                                     <td>{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                                     <td>
                                         <div class="btn-group btn-group-xs">

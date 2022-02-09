@@ -46,6 +46,7 @@ type Article struct {
 	CommentNum uint           `gorm:"default:0;"`
 	Version    uint           `gorm:"default:1;"`
 	BookRefer  *string        `form:"book_refer" validate:"omitempty,uuid4" gorm:"type:uuid;index;default:NULL"`
+	IsPrivate  bool           `form:"is_private"`
 
 	Comments         []*Comment
 	ArticleHistories []*ArticleHistory

@@ -72,6 +72,18 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-md-3 ">
+                    <div class="col-xs-offset-2">
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <label>
+                                    <input{{if .Data.article.IsPrivate}} checked{{end}} id="cbPrivate" type="checkbox">
+                                        Private
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-md-3">
                     <div class="form-group">
                         <div class="checkbox">
@@ -120,6 +132,7 @@
             template: parseInt($("#selTemplate").val()),
             tags: $("#inputTags").val(),
             is_book: document.getElementById('cbBook').checked,
+            is_private: document.getElementById('cbPrivate').checked,
             new_version: document.getElementById('cbNewVersion').checked,
         }
         $("#inputCID").val() && (article.book_refer = $("#inputCID").val())
