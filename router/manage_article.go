@@ -99,6 +99,7 @@ type publishArticle struct {
 	Template   byte   `form:"template"`
 	Tags       string `form:"tags"`
 	IsBook     bool   `form:"is_book"`
+	IsPrivate  bool   `form:"is_private"`
 	BookRefer  string `form:"book_refer"`
 	NewVersion bool   `form:"new_version"`
 }
@@ -124,6 +125,7 @@ func publishHandler(c *fiber.Ctx) error {
 		NewVersion: pa.NewVersion,
 		TemplateID: pa.Template,
 		IsBook:     pa.IsBook,
+		IsPrivate:  pa.IsPrivate,
 		RawTags:    pa.Tags,
 		BookRefer:  bookRefer,
 		Version:    1,
