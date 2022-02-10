@@ -16,7 +16,7 @@
         <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.Tr.T "date_format")}}</time>
       </div>
       <span>
-        {{if .IsBook}}📙{{end}}<a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}}
+        {{if .IsBook}}📙{{end}}{{if .IsPrivate}}🛡️{{end}}<a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}}
         <small>(👀{{.ReadNum}}{{if .CommentNum}},💬{{.CommentNum}}{{end}})</small>{{end}}
       </span>
     </li>
