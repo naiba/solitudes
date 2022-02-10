@@ -80,6 +80,7 @@ func feedHandler(c *fiber.Ctx) error {
 	for i := 0; i < len(articles); i++ {
 		// 检查私有博文
 		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
+			articles[i].Title = "🛡️" + articles[i].Title
 			articles[i].Content = "Private Article"
 		}
 

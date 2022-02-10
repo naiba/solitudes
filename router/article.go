@@ -104,6 +104,7 @@ func article(c *fiber.Ctx) error {
 
 	// 检查私有博文
 	if a.IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
+		a.Title = "🛡️" + a.Title
 		a.Content = "Private Article"
 	}
 
