@@ -1,6 +1,6 @@
 module github.com/naiba/solitudes
 
-go 1.17
+go 1.18
 
 require (
 	github.com/88250/lute v1.7.3
@@ -24,6 +24,7 @@ require (
 	github.com/yanyiwu/gojieba v1.1.2
 	go.uber.org/dig v1.14.0
 	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v2 v2.4.0
 )

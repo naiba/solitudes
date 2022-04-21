@@ -1,7 +1,6 @@
 package solitudes
 
 import (
-	"internal/singleflight"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"github.com/patrickmn/go-cache"
 	"github.com/yanyiwu/gojieba"
 	"go.uber.org/dig"
+	"golang.org/x/sync/singleflight"
 	"gopkg.in/yaml.v2"
 
 	// db driver
