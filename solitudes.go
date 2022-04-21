@@ -1,6 +1,7 @@
 package solitudes
 
 import (
+	"internal/singleflight"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,7 +22,6 @@ import (
 	"github.com/naiba/solitudes/internal/model"
 	// gojirba
 	_ "github.com/naiba/solitudes/pkg/blevejieba"
-	"github.com/naiba/solitudes/pkg/safecache"
 )
 
 func newBleveSearch() bleve.Index {
@@ -62,10 +62,6 @@ func newCache() *cache.Cache {
 	return cache.New(5*time.Minute, 10*time.Minute)
 }
 
-func newSafeCache(cache *cache.Cache, pool *ants.Pool) *safecache.SafeCache {
-	return safecache.NewSafeCache(cache, pool)
-}
-
 func newPool() *ants.Pool {
 	p, err := ants.NewPool(20000)
 	if err != nil {
@@ -102,14 +98,14 @@ func newConfig() *model.Config {
 	return &c
 }
 
-func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache, sc *safecache.SafeCache,
+func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache,
 	s bleve.Index, p *ants.Pool) *SysVeriable {
 	return &SysVeriable{
 		Config:    c,
 		DB:        d,
 		Cache:     h,
 		Search:    s,
-		SafeCache: sc,
+		SafeCache: new(singleflight.Group),
 		Pool:      p,
 	}
 }
@@ -127,7 +123,6 @@ func provide() {
 		newDatabase,
 		newSystem,
 		newBleveSearch,
-		newSafeCache,
 		newPool,
 	}
 	var err error

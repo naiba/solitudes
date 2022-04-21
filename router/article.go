@@ -117,7 +117,7 @@ func article(c *fiber.Ctx) error {
 }
 
 func relatedSiblingArticle(p *model.Article) (prev model.Article, next model.Article) {
-	sibiling, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedSiblingArticle+p.ID, func() (interface{}, error) {
+	sibiling, _, _ := solitudes.System.SafeCache.Do(solitudes.CacheKeyPrefixRelatedSiblingArticle+p.ID, func() (interface{}, error) {
 		var sb model.SibilingArticle
 		if p.BookRefer == nil {
 			solitudes.System.DB.Select("id,title,slug").Order("created_at ASC").Take(&sb.Next, "book_refer is null and created_at > ?", p.CreatedAt)
@@ -138,7 +138,7 @@ func relatedSiblingArticle(p *model.Article) (prev model.Article, next model.Art
 
 func relatedChapters(p *model.Article) {
 	if p.IsBook {
-		chapters, _ := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedChapters+p.ID, func() (interface{}, error) {
+		chapters, _, _ := solitudes.System.SafeCache.Do(solitudes.CacheKeyPrefixRelatedChapters+p.ID, func() (interface{}, error) {
 			return innerRelatedChapters(p.ID), nil
 		})
 		if chapters != nil {
@@ -160,7 +160,7 @@ func innerRelatedChapters(pid string) (ps []*model.Article) {
 
 func relatedBook(p *model.Article) {
 	if p.BookRefer != nil {
-		book, err := solitudes.System.SafeCache.GetOrBuild(solitudes.CacheKeyPrefixRelatedArticle+*p.BookRefer, func() (interface{}, error) {
+		book, err, _ := solitudes.System.SafeCache.Do(solitudes.CacheKeyPrefixRelatedArticle+*p.BookRefer, func() (interface{}, error) {
 			var book model.Article
 			var err error
 			if err = solitudes.System.DB.Take(&book, "id = ?", p.BookRefer).Error; err != nil {

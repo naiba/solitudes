@@ -1,6 +1,8 @@
 package solitudes
 
 import (
+	"internal/singleflight"
+
 	"github.com/blevesearch/bleve/v2"
 	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants"
@@ -8,7 +10,6 @@ import (
 	"go.uber.org/dig"
 
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/safecache"
 )
 
 const (
@@ -32,7 +33,7 @@ type SysVeriable struct {
 	DB        *gorm.DB
 	Cache     *cache.Cache
 	Search    bleve.Index
-	SafeCache *safecache.SafeCache
+	SafeCache *singleflight.Group
 	Pool      *ants.Pool
 }
 
