@@ -14,7 +14,7 @@ import (
 	"github.com/yanyiwu/gojieba"
 	"go.uber.org/dig"
 	"golang.org/x/sync/singleflight"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	// db driver
 	_ "github.com/jinzhu/gorm/dialects/postgres"
