@@ -11,6 +11,43 @@
 - **专栏（系列文章）**
 - **全文搜索**
 
+## 部署
+
+docker-compose.yml
+
+```yaml
+version: '3.3'
+
+services:
+  db:
+    image: postgres:13-alpine
+    volumes:
+        - ./postgres-data:/var/lib/postgresql/data
+    restart: always
+    environment:
+        POSTGRES_PASSWORD: thisispassword
+        POSTGRES_USER: solitudes
+        POSTGRES_DB: solitudes
+
+  solitudes:
+    depends_on:
+        - db
+    image: ghcr.io/naiba/solitudes:latest
+    ports:
+        - "8080:8080"
+    restart: always
+    volumes:
+        - ./blog-data:/solitudes/data
+        - ./blog-data/logo.png:/solitudes/resource/static/cactus/images/logo.png
+```
+
+```shell
+$ ls blog-data
+bleve  conf.yml  logo.png  upload
+# conf.yml 是配置文件，参考 data/conf.yml.example
+# logo.png 是自己 logo，替换主题自带的 logo
+```
+
 ### 鸣谢
 
 - 主题来自 [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
