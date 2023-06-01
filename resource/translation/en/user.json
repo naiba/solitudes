@@ -57,7 +57,7 @@
     {
         "locale": "en",
         "key": "may_not_reply_if_email_not_exist",
-        "trans": "If you don't leave an email, the blogger may not reply."
+        "trans": "Please leave a valid email address so we can reply to your comment. Don't worry, we won't spam you or share your email with anyone else."
     },
     {
         "locale": "en",

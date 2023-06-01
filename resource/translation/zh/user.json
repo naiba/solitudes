@@ -57,7 +57,7 @@
     {
         "locale": "zh",
         "key": "may_not_reply_if_email_not_exist",
-        "trans": "如果没有留邮箱，博主可能不会回复。"
+        "trans": "请留下正确的邮箱地址在博主回复时收到通知，方便进行后续的交流。博主要你的邮箱屁用没有。"
     },
     {
         "locale": "zh",
