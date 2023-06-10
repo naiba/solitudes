@@ -1,4 +1,4 @@
-#search > form > div.row {
+#search>form>div.row {
   display: flex;
 }
 
@@ -28,6 +28,11 @@
   background-color: #cb997e;
   border: none;
   font-size: 1.1rem;
+}
+
+.base-button:disabled {
+  color: #ccc;
+  background-color: #d8c3a5;
 }
 
 #search .base-button {
@@ -77,12 +82,12 @@ input {
   background-color: #fff1e6;
 }
 
-#reply > .row {
+#reply>.row {
   display: flex;
   justify-content: space-between;
 }
 
-#reply > .row input {
+#reply>.row input {
   width: 32.6%;
 }
 
@@ -150,7 +155,7 @@ p {
   width: 80%;
 }
 
-#tags > a {
+#tags>a {
   display: inline-block;
   padding-left: 0.5rem;
   padding-right: 0.5rem;

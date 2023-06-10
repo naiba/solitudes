@@ -92,7 +92,8 @@
                     <small>·v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
                     |
-                    <span>👀{{.Data.article.ReadNum}}{{if .Data.article.CommentNum}},💬{{.Data.article.CommentNum}}{{end}}</span>
+                    <span>👀{{.Data.article.ReadNum}}{{if
+                        .Data.article.CommentNum}},💬{{.Data.article.CommentNum}}{{end}}</span>
                     {{end}}
                 </div>
                 {{if .Data.article.RawTags}}
@@ -144,7 +145,8 @@
         {{if gt .Data.comment_page.Page 1}}<a
             href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}"><i
                 class="fas fa-angle-left"></i></a>{{end}}
-        <span class="page-number">{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
+        <span class="page-number">{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str
+            .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
         {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a
             href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}"><i
                 class="fas fa-angle-right"></i></a>{{end}}
@@ -226,8 +228,7 @@
         </div>
     </div>
     <script>
-        window.onload = function () {
-            fetch("/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })
+        (function () {
             document.querySelector("#id_nickname").value = localStorage.getItem("cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}'
             if (document.querySelector("#id_email")) {
                 document.querySelector("#id_email").value = localStorage.getItem("cm_email") || ''
@@ -235,7 +236,8 @@
             if (document.querySelector("#id_website")) {
                 document.querySelector("#id_website").value = localStorage.getItem("cm_website") || ''
             }
-        }
+            fetch("/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })
+        })()
 
         function reply_to(cid, nickname) {
             const idContent = document.querySelector("#id_content");
@@ -244,7 +246,13 @@
         }
 
         function comment(btn) {
+            if (btn.disabled) {
+                return
+            }
+            btn.disabled = true
+            btn.value = "Submiting ..."
             if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
+                btn.disabled = false
                 alert('nickname & content is required.')
                 return
             }
@@ -254,7 +262,6 @@
             localStorage.setItem("cm_nickname", cm_nickname)
             localStorage.setItem("cm_email", cm_email)
             localStorage.setItem("cm_website", cm_website)
-            btn.value = "Submiting ..."
             var data = {
                 nickname: cm_nickname,
                 email: cm_email,
@@ -280,10 +287,11 @@
                 }
                 resp.text().then(str => {
                     alert("Submit faile: " + str)
-                    btn.value = "Submit"
                 })
             }).catch(e => {
                 alert("Submit faile: " + e)
+            }).finally(() => {
+                btn.disabled = false
                 btn.value = "Submit"
             })
         }
