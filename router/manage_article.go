@@ -23,7 +23,7 @@ func manageArticle(c *fiber.Ctx) error {
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB,
 		Page:    int(page),
-		Limit:   15,
+		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &as)
 	for i := 0; i < len(as); i++ {

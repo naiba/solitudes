@@ -8,7 +8,6 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/88250/lute/util"
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/panjf2000/ants"
@@ -138,7 +137,6 @@ func (t *Article) GenTOC() {
 // 生成标题 ID
 func sanitizedAnchorName(unique map[string]int, text string) (ret string) {
 	text = strings.TrimSpace(text)
-	text = strings.ReplaceAll(text, util.Caret, "")
 	for _, r := range text {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			ret += string(r)

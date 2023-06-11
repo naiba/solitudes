@@ -21,7 +21,7 @@ import (
 	gv "github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/template/html"
+	html "github.com/gofiber/template/html/v2"
 	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/naiba/solitudes"

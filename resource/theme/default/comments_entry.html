@@ -2,7 +2,11 @@
 {{range .}}
 <div class="row" id="comment-{{.ID}}">
     <div class="gravatar">
+        {{if .Email}}
         <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g">
+        {{else}}
+        <img src="https://avatars.dicebear.com/api/avataaars/{{.Nickname}}.svg">
+        {{end}}
     </div>
     <div>
         <p class="comment-meta title{{if .IsAdmin}} admin{{end}}">

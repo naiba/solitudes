@@ -21,7 +21,7 @@ func comments(c *fiber.Ctx) error {
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB.Preload("Article"),
 		Page:    int(page),
-		Limit:   15,
+		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &cs)
 	c.Status(http.StatusOK).Render("admin/comments", injectSiteData(c, fiber.Map{

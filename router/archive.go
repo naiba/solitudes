@@ -44,7 +44,7 @@ func archive(c *fiber.Ctx) error {
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB,
 		Page:    int(page),
-		Limit:   15,
+		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	for i := 0; i < len(articles); i++ {
@@ -132,7 +132,7 @@ func tags(c *fiber.Ctx) error {
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", tag),
 		Page:    int(page),
-		Limit:   15,
+		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	for i := 0; i < len(articles); i++ {

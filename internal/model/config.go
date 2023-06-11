@@ -1,7 +1,6 @@
 package model
 
 import (
-	"io/ioutil"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -57,5 +56,5 @@ func (c *Config) Save() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(c.ConfigFilePath, b, os.FileMode(0655))
+	return os.WriteFile(c.ConfigFilePath, b, os.FileMode(0655))
 }
