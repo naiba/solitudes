@@ -72,6 +72,10 @@ func (t *Article) GetIndexID() string {
 
 // BeforeSave hook
 func (t *Article) BeforeSave() {
+	t.RawTags = strings.TrimSpace(t.RawTags)
+	if t.RawTags == "" {
+		return
+	}
 	t.Tags = strings.Split(t.RawTags, ",")
 }
 
