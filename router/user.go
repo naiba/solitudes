@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -33,7 +34,7 @@ func loginHandler(c *fiber.Ctx) error {
 			[]byte(lf.Password)) != nil {
 		return errors.New("invalid email or password")
 	}
-	token, err := bcrypt.GenerateFromPassword([]byte(lf.Password+time.Now().String()), bcrypt.DefaultCost)
+	token, err := bcrypt.GenerateFromPassword([]byte(fmt.Sprintf("%s%d", lf.Password, time.Now().UnixMicro())), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
@@ -86,6 +87,7 @@ func count(c *fiber.Ctx) error {
 	if c.Query("slug") == "" {
 		return nil
 	}
+	// FIXME 允许刷新增加计数
 	// key := c.IP() + c.Query("slug")
 	// if _, ok := solitudes.System.Cache.Get(key); ok {
 	// 	return nil
