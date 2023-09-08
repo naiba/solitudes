@@ -698,12 +698,6 @@ body {
   }
 }
 
-@media (min-width: 480px) {
-  p {
-    text-align: justify;
-  }
-}
-
 #header {
   margin: 0 auto 2rem;
   width: 100%;
@@ -1359,7 +1353,7 @@ article .content blockquote {
   padding: 0.5em 10px;
   background: inherit;
   color: #cc2a41;
-  quotes: "\201C""\201D""\2018""\2019";
+  quotes: "\201C" "\201D" "\2018" "\2019";
   font-weight: bold;
 }
 
@@ -1632,7 +1626,6 @@ article .content .caption {
   overflow: hidden;
   margin: 0.4em auto;
   max-height: 13em;
-  text-align: justify;
   font-size: 0.8em;
 }
 
