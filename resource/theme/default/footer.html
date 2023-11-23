@@ -21,37 +21,49 @@
 </html>
 
 <script src="/static/cactus/js/main.js?v20220123"></script>
-<!-- Begin Vditor -->
-<!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor/dist/index.css" /> -->
 <script src="https://cdn.jsdelivr.net/npm/vditor/dist/method.min.js"></script>
-<!-- End Vditor -->
+<link rel="stylesheet" href="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/styles/default.min.css">
+<script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+<script src="https://unpkg.com/highlightjs-copy/dist/highlightjs-copy.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/highlightjs-copy/dist/highlightjs-copy.min.css" />
 
 <script>
-    document.querySelectorAll(".language-echarts,.language-mindmap").forEach(e => {
-        e.style.height = e.offsetWidth * 0.5 + 'px';
-    })
-    const renders = {
-        "mermaidRender": Vditor.mermaidRender,
-        "codeRender": Vditor.codeRender,
-        "highlightRender": Vditor.highlightRender,
-        "mindmapRender": Vditor.mindmapRender,
-        "chartRender": Vditor.chartRender,
-        "mediaRender": Vditor.mediaRender,
-        "mathRender": Vditor.mathRender,
-        "graphvizRender": Vditor.graphvizRender
-    };
-    for (let i = 0; i < Object.keys(renders).length; i++) {
-        const render = renders[Object.keys(renders)[i]];
+    (function () {
         try {
-            if (Object.keys(renders)[i] == "mermaidRender") {
-                let theme = "{{.Conf.Site.Theme}}" == "dark" ? "dark" : undefined;
-                render(document, undefined, theme)
-            } else {
-                render(document)
+            document.querySelectorAll(".language-echarts,.language-mindmap").forEach(e => {
+                e.style.height = e.offsetWidth * 0.5 + 'px';
+            })
+        } catch (error) {
+            console.log(error);
+        }
+        try {
+
+            const renders = {
+                "mermaidRender": Vditor.mermaidRender,
+                "mindmapRender": Vditor.mindmapRender,
+                "chartRender": Vditor.chartRender,
+                "mediaRender": Vditor.mediaRender,
+                "mathRender": Vditor.mathRender,
+                "graphvizRender": Vditor.graphvizRender
+            };
+            for (let i = 0; i < Object.keys(renders).length; i++) {
+                const render = renders[Object.keys(renders)[i]];
+                try {
+                    if (Object.keys(renders)[i] == "mermaidRender") {
+                        let theme = "{{.Conf.Site.Theme}}" == "dark" ? "dark" : undefined;
+                        render(document, undefined, theme)
+                    } else {
+                        render(document)
+                    }
+                } catch (error) {
+                    console.log(Object.keys(renders)[i], error);
+                }
             }
         } catch (error) {
-            console.log(Object.keys(renders)[i], error);
+            console.log(error);
         }
-    }
+        hljs.addPlugin(new CopyButtonPlugin());
+        hljs.highlightAll();
+    })()
 </script>
 {{end}}
