@@ -69,6 +69,10 @@
   margin-left: 50px;
 }
 
+.child-node .child-node {
+  margin-left: unset !important;
+}
+
 #reply-list .row {
   margin-bottom: 10px;
 }
