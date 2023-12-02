@@ -183,6 +183,12 @@ func setFuncMap(engine *html.Engine) {
 			return x == reflect.ValueOf(a).Len()-1
 		},
 		"trim": strings.TrimSpace,
+		"artileData": func(article *model.Article, tr *translator.Translator) fiber.Map {
+			return fiber.Map{
+				"article": article,
+				"tr":      tr,
+			}
+		},
 	}
 	for name, fn := range funcMap {
 		engine.AddFunc(name, fn)

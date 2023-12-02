@@ -6,15 +6,7 @@
     {{range $s  := .Data.articles}}
     {{range $j,$a := $s}}
     {{if eq $j 0}}<h2>{{$a.CreatedAt.Year}}</h2>{{end}}
-    <li class="post-item">
-      <div class="meta">
-        <time datetime="{{$a.CreatedAt}}" itemprop="datePublished">{{tf $a.CreatedAt ($.Tr.T "date_format")}}</time>
-      </div>
-      <span>
-        {{if $a.IsBook}}📙{{end}}{{if $a.IsPrivate}}🛡️{{end}}<a href="/{{$a.Slug}}">{{$a.Title}}</a>{{if $a.ReadNum}}
-        <small>(👀{{$a.ReadNum}}{{if $a.CommentNum}},💬{{$a.CommentNum}}{{end}})</small>{{end}}
-      </span>
-    </li>
+    {{template "default/article_list_entry" (artileData $a $.Tr)}}
     {{end}}
     {{end}}
     {{if not .Data.articles}}

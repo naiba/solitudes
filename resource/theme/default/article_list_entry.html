@@ -1,0 +1,36 @@
+{{define "default/article_list_entry"}}
+<li class="post-item">
+    <div class="meta">
+        <time datetime="{{.article.CreatedAt}}" itemprop="datePublished">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
+    </div>
+    {{if .article.IsTopic}}
+    <div class="sl-topic">
+        <small>(👀{{.article.ReadNum}}{{if .article.CommentNum}},💬{{.article.CommentNum}}{{end}}) <a href="/tags/Topic/">#Topic</a> <a
+                href="/{{.article.Slug}}">
+                {{.tr.T "leave_a_comment"}}></a></small>
+        {{if .article.IsBook}}📙{{end}}{{if .article.IsPrivate}}🛡️{{end}}{{(md .article.ID .article.Content)|unsafe}}
+        {{if .article.Comments}}
+        <div class="sl-comments">
+            {{range .article.Comments}}
+            <p>
+                <span>{{if .Email}}
+                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g">
+                    {{else}}
+                    <img src="https://avatars.dicebear.com/api/avataaars/{{.Nickname}}.svg">
+                    {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}👲{{end}}:</span>&nbsp;
+                <span>{{.Content}}</span>
+                <time class="meta" datetime="{{.CreatedAt}}" itemprop="datePublished">
+                    {{tf .CreatedAt "02 Jan 2006"}}</time>
+            </p>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+    {{else}}
+    <div>
+        {{if .article.IsBook}}📙{{end}}{{if .article.IsPrivate}}🛡️{{end}}<a href="/{{.article.Slug}}">{{.article.Title}}</a>{{if .article.ReadNum}}
+        <small>(👀{{.article.ReadNum}}{{if .article.CommentNum}},💬{{.article.CommentNum}}{{end}})</small>{{end}}
+    </div>
+    {{end}}
+</li>
+{{end}}

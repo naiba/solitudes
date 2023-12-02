@@ -170,3 +170,55 @@ p {
   text-align: center;
   margin: 0.2rem;
 }
+
+.sl-topic {
+  border: 1px dashed;
+  border-radius: .9rem;
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-bottom: 1rem;
+}
+
+.sl-topic>small {
+  position: absolute;
+  right: 1rem;
+  margin-top: .5rem;
+}
+
+.sl-comments {
+  margin-top: .4rem;
+  font-size: smaller;
+}
+
+.sl-comments img {
+  width: 1rem;
+  height: 1rem;
+  margin-right: .3rem;
+}
+
+.sl-comments>p {
+  margin-top: unset;
+  display: flex;
+  align-items: baseline;
+}
+
+.sl-comments>p>time {
+  margin-left: auto;
+}
+
+.sl-comments>p>span:first-of-type {
+  display: flex;
+  align-items: center;
+}
+
+.sl-comments>p>span:first-of-type>b {
+  white-space: nowrap;
+}
+
+.sl-comments>p>span:last-of-type {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}

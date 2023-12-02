@@ -11,6 +11,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/panjf2000/ants"
+	"github.com/samber/lo"
 )
 
 // ArticleTOC 文章标题
@@ -85,6 +86,11 @@ func (t *Article) AfterFind() {
 }
 
 var titleRegex = regexp.MustCompile(`^\s{0,2}(#{1,6})\s(.*)$`)
+
+// IsTopic 是否是哔哔
+func (t *Article) IsTopic() bool {
+	return lo.Contains(t.Tags, "Topic")
+}
 
 // GenTOC 生成标题树
 func (t *Article) GenTOC() {

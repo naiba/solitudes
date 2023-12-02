@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jinzhu/gorm"
 	"golang.org/x/crypto/bcrypt"
@@ -74,6 +75,14 @@ func index(c *fiber.Ctx) error {
 	solitudes.System.DB.Order("created_at DESC").Limit(10).Find(&as)
 	for i := 0; i < len(as); i++ {
 		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+		// 如果存在 Topic tag，加载前 3 条评论
+		if as[i].IsTopic() {
+			pagination.Paging(&pagination.Param{
+				DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", as[i].ID),
+				Limit:   20,
+				OrderBy: []string{"created_at DESC"},
+			}, &as[i].Comments)
+		}
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	c.Status(http.StatusOK).Render("default/index", injectSiteData(c, fiber.Map{

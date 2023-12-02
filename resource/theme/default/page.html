@@ -6,6 +6,9 @@
     {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
   </div>
 </article>
+{{if .Login}}
+<a style="text-align: right;" href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
+{{end}}
 <script>
   window.onload = function () {
     fetch("/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })

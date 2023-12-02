@@ -9,26 +9,19 @@
 {{template "default/search_form" .}}
 <section id="writing">
   <span class="h1"><a href="/archives/">{{.Tr.T "writing"}}</a></span>
-  <ul class="post-list">
-    {{range .Data.articles}}
-    <li class="post-item">
-      <div class="meta">
-        <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.Tr.T "date_format")}}</time>
-      </div>
-      <span>
-        {{if .IsBook}}📙{{end}}{{if .IsPrivate}}🛡️{{end}}<a href="/{{.Slug}}">{{.Title}}</a>{{if .ReadNum}}
-        <small>(👀{{.ReadNum}}{{if .CommentNum}},💬{{.CommentNum}}{{end}})</small>{{end}}
-      </span>
-    </li>
-    {{end}}
+    <ul class="post-list">
     {{if not .Data.articles}}
     <li class="post-item">
       <span>
         <small>{{.Tr.T "no_article"}}</small>
       </span>
     </li>
+    {{else}}
+    {{range .Data.articles}}
+    {{template "default/article_list_entry" (artileData . $.Tr)}}
     {{end}}
-  </ul>
+    {{end}}
+    </ul>
 </section>
 {{if trim .Conf.Site.HomeBottomContent}}
 <section class="home-bottom">

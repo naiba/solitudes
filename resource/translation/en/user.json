@@ -138,5 +138,10 @@
         "locale": "en",
         "key": "has_new_version",
         "trans": "This article has a <a href=\"/{0}\">new version</a>."
+    },
+    {
+        "locale": "en",
+        "key": "leave_a_comment",
+        "trans": "Leave a comment"
     }
 ]
