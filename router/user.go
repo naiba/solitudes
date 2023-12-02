@@ -79,7 +79,7 @@ func index(c *fiber.Ctx) error {
 		if as[i].IsTopic() {
 			pagination.Paging(&pagination.Param{
 				DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", as[i].ID),
-				Limit:   20,
+				Limit:   5,
 				OrderBy: []string{"created_at DESC"},
 			}, &as[i].Comments)
 		}
