@@ -175,15 +175,17 @@ p {
   border: 1px dashed;
   border-radius: .9rem;
   width: 100%;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  padding-bottom: 1rem;
+  padding: 1rem;
 }
 
 .sl-topic>small {
-  position: absolute;
-  right: 1rem;
-  margin-top: .5rem;
+  display: block;
+  text-align: right;
+}
+
+.sl-topic p {
+  padding: unset;
+  margin: unset;
 }
 
 .sl-comments {
