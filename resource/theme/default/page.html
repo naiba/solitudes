@@ -1,14 +1,14 @@
 {{define "default/page"}}
 {{template "default/header" .}}
 {{template "default/menu" .}}
+{{if .Login}}
+<a style="text-align: right;" href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
+{{end}}
 <article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
   <div class="content" itemprop="articleBody">
     {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
   </div>
 </article>
-{{if .Login}}
-<a style="text-align: right;" href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
-{{end}}
 <script>
   window.onload = function () {
     fetch("/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })
