@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/gofiber/fiber/v2"
@@ -119,8 +121,8 @@ func publishHandler(c *fiber.Ctx) error {
 	// edit article
 	newArticle := &model.Article{
 		ID:         pa.ID,
-		Title:      pa.Title,
-		Slug:       pa.Slug,
+		Title:      strings.TrimSpace(pa.Title),
+		Slug:       strings.TrimSpace(pa.Slug),
 		Content:    clearNonUTF8Chars(pa.Content),
 		NewVersion: pa.NewVersion,
 		TemplateID: pa.Template,
@@ -130,10 +132,16 @@ func publishHandler(c *fiber.Ctx) error {
 		BookRefer:  bookRefer,
 		Version:    1,
 	}
+
+	if newArticle.IsTopic() {
+		if len(newArticle.Slug) == 0 {
+			newArticle.Slug = time.Now().Format("20060102150405")
+		}
+	}
+
 	if originalArticle, err := fetchOriginArticle(newArticle); err != nil {
 		return err
 	} else {
-		// save edit history && article
 		tx := solitudes.System.DB.Begin()
 		err = tx.Save(&newArticle).Error
 		if pa.NewVersion && err == nil {
