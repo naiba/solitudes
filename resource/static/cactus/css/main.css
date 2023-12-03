@@ -172,10 +172,10 @@ p {
 }
 
 .sl-topic {
-  border: 1px dashed;
+  border: 1px dashed #666;
   border-radius: .9rem;
   width: 100%;
-  padding: 1rem;
+  padding: .5rem;
 }
 
 .sl-topic>small {
@@ -191,6 +191,7 @@ p {
 .sl-comments {
   margin-top: .4rem;
   font-size: smaller;
+  color: #cb997e;
 }
 
 .sl-comments img {
