@@ -72,7 +72,7 @@ func logoutHandler(c *fiber.Ctx) error {
 
 func index(c *fiber.Ctx) error {
 	var as []model.Article
-	solitudes.System.DB.Order("created_at DESC").Limit(20).Find(&as)
+	solitudes.System.DB.Order("created_at DESC").Limit(10).Find(&as)
 	for i := 0; i < len(as); i++ {
 		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 		// 如果存在 Topic tag，加载前 5 条评论
