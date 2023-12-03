@@ -8,13 +8,21 @@
     <meta name="HandheldFriendly" content="True">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <link rel="shortcut icon" href="/static/cactus/images/logo.png?20211213">
-    <link rel="stylesheet" href="/static/cactus/css/{{.Conf.Site.Theme}}.css?v20230908">
+    <link id="dayTheme" rel="stylesheet" href="/static/cactus/css/{{.Conf.Site.Theme}}.css?v20230908">
     <link rel="stylesheet" href="/static/cactus/css/rtl.css">
     <link rel="stylesheet" href="/static/cactus/css/main.css?v202312031355">
     <link rel="stylesheet" href="/static/cactus/lib/font-awesome/css/all.min.css">
     <title>{{.Title}}</title>
     <meta name="description" content="{{.Desc}}">
     <meta name="keywords" content="{{.Keywords}}">
+    <script>
+        const cssVersion = "20230908"
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.getElementById('dayTheme').href = '/static/cactus/css/dark.css?v' + cssVersion;
+        } else {
+            document.getElementById('dayTheme').href = '/static/cactus/css/{{.Conf.Site.Theme}}.css?v' + cssVersion;
+        }
+    </script>
 </head>
 
 <body class="max-width mx-auto px3 ltr">
