@@ -133,9 +133,13 @@ func publishHandler(c *fiber.Ctx) error {
 		Version:    1,
 	}
 
+	newArticle.BeforeSave()
 	if newArticle.IsTopic() {
 		if len(newArticle.Slug) == 0 {
 			newArticle.Slug = time.Now().Format("20060102150405")
+		}
+		if len(newArticle.Title) == 0 {
+			newArticle.Title = newArticle.Slug
 		}
 	}
 
