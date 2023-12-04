@@ -178,6 +178,10 @@ p {
   padding: .5rem;
 }
 
+.sl-topic img {
+  max-width: 100%;
+}
+
 .sl-topic>small {
   display: block;
   text-align: right;
