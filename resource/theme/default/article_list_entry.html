@@ -9,16 +9,16 @@
         {{if .article.Comments}}
         <div class="sl-comments">
             {{range .article.Comments}}
-            <p>
-                <span>{{if .Email}}
+            <div>
+                <p>{{if .Email}}
                     <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g">
                     {{else}}
                     <img src="https://avatars.dicebear.com/api/avataaars/{{.Nickname}}.svg">
-                    {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}👲{{end}}:</span>&nbsp;
-                <span>{{.Content}}</span>
+                    {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}👲{{end}}:&nbsp;</p>
+                <p>{{.Content}}</p>
                 <time class="meta" datetime="{{.CreatedAt}}" itemprop="datePublished">
                     {{tf .CreatedAt "02 Jan 2006"}}</time>
-            </p>
+            </div>
             {{end}}
         </div>
         {{end}}
