@@ -26,7 +26,7 @@ require (
 	github.com/wxpusher/wxpusher-sdk-go v1.0.3
 	github.com/yanyiwu/gojieba v1.3.0
 	go.uber.org/dig v1.17.1
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.17.0
 	golang.org/x/sync v0.5.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
