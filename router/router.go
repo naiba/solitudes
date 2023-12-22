@@ -15,6 +15,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/samber/lo"
 
 	"github.com/88250/lute"
 	"github.com/go-playground/locales"
@@ -262,20 +263,26 @@ func trans(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func getAcceptLanguages(accepted string) (languages []string) {
+func getAcceptLanguages(accepted string) []string {
 	if accepted == "" {
-		return
+		return []string{}
 	}
 
 	options := strings.Split(accepted, ",")
 	l := len(options)
 
-	languages = make([]string, l)
+	languages := make([]string, l)
 
 	for i := 0; i < l; i++ {
 		locale := strings.SplitN(options[i], ";", 2)
 		languages[i] = strings.Trim(locale[0], " ")
 	}
 
-	return
+	if lo.ContainsBy(languages, func(item string) bool {
+		return strings.HasPrefix(item, "zh")
+	}) {
+		return []string{"zh", "en"}
+	}
+
+	return []string{"en", "zh"}
 }

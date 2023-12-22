@@ -44,6 +44,7 @@ type Config struct {
 		Theme             string
 		HeaderMenus       []Menu
 		FooterMenus       []Menu
+		CustomCode        string
 	}
 
 	User           User

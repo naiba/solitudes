@@ -34,7 +34,8 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputWxpusherAppToken" class="col-sm-3 control-label">{{.Tr.T "site_wxpusher_apptoken"}}</label>
+                        <label for="inputWxpusherAppToken" class="col-sm-3 control-label">{{.Tr.T
+                            "site_wxpusher_apptoken"}}</label>
                         <div class="col-sm-9">
                             <input class="form-control" id="inputWxpusherAppToken" placeholder="xxxxxxxxxxxxx"
                                 value="{{.Conf.WxpusherAppToken}}">
@@ -45,7 +46,8 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputWxpusherUID" class="col-sm-3 control-label">{{.Tr.T "site_wxpusher_uid"}}</label>
+                        <label for="inputWxpusherUID" class="col-sm-3 control-label">{{.Tr.T
+                            "site_wxpusher_uid"}}</label>
                         <div class="col-sm-9">
                             <input class="form-control" id="inputWxpusherUID" placeholder="xxxxxxxxxxxxx"
                                 value="{{.Conf.WxpusherUID}}">
@@ -145,8 +147,8 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputSiteHeaderMenus"
-                            class="col-sm-3 control-label">{{.Tr.T "site_header_menus"}}</label>
+                        <label for="inputSiteHeaderMenus" class="col-sm-3 control-label">{{.Tr.T
+                            "site_header_menus"}}</label>
                         <div class="col-sm-9">
                             <textarea class="form-control"
                                 id="inputSiteHeaderMenus">{{.Conf.Site.HeaderMenus|json}}</textarea>
@@ -157,8 +159,8 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputSiteFooterMenus"
-                            class="col-sm-3 control-label">{{.Tr.T "site_footer_menus"}}</label>
+                        <label for="inputSiteFooterMenus" class="col-sm-3 control-label">{{.Tr.T
+                            "site_footer_menus"}}</label>
                         <div class="col-sm-9">
                             <textarea class="form-control"
                                 id="inputSiteFooterMenus">{{.Conf.Site.FooterMenus|json}}</textarea>
@@ -169,10 +171,20 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
+                        <label for="inputSiteCustomCode" class="col-sm-3 control-label">{{.Tr.T
+                            "site_custom_code"}}</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" id="inputSiteCustomCode">{{.Conf.Site.CustomCode}}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
                         <label for="selTheme" class="col-sm-3 control-label">{{.Tr.T "site_theme"}}</label>
                         <div class="col-sm-9">
-                            <select id="selTheme" class="form-control">
-                                <option value="dark">dark</option>
+                            <select id="selTheme" value="{{.Conf.Site.Theme}}" class="form-control">
                                 <option value="classic">classic</option>
                                 <option value="light">light</option>
                                 <option value="white">white</option>
@@ -184,8 +196,8 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        <label for="inputHomeTop"
-                            class="col-sm-2 control-label">{{.Tr.T "site_home_top_content"}}</label>
+                        <label for="inputHomeTop" class="col-sm-2 control-label">{{.Tr.T
+                            "site_home_top_content"}}</label>
                         <div class="col-sm-10">
                             <div id="inputHomeTop"></div>
                         </div>
@@ -195,8 +207,8 @@
             <div class="row">
                 <div class="col-md-12">
                     <div class="form-group">
-                        <label for="inputHomeBottom"
-                            class="col-sm-2 control-label">{{.Tr.T "site_home_bottom_content"}}</label>
+                        <label for="inputHomeBottom" class="col-sm-2 control-label">{{.Tr.T
+                            "site_home_bottom_content"}}</label>
                         <div class="col-sm-10">
                             <div id="inputHomeBottom"></div>
                         </div>
@@ -249,8 +261,8 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputConfirmPassword"
-                            class="col-sm-3 control-label">{{.Tr.T "confirm_password"}}</label>
+                        <label for="inputConfirmPassword" class="col-sm-3 control-label">{{.Tr.T
+                            "confirm_password"}}</label>
                         <div class="col-sm-9">
                             <input class="form-control" id="inputConfirmPassword">
                         </div>
@@ -321,6 +333,7 @@
             mail_password: $("#inputMailPass").val(),
             akismet: $("#inputAkismet").val(),
             site_domain: $("#inputSiteDomain").val(),
+            site_custom_code: $("#inputSiteCustomCode").val(),
             site_keywords: $("#inputSiteKeywords").val(),
             site_header_menus: $("#inputSiteHeaderMenus").val(),
             site_footer_menus: $("#inputSiteFooterMenus").val(),

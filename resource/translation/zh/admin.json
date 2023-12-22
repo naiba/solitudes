@@ -291,6 +291,11 @@
     },
     {
         "locale": "zh",
+        "key": "site_custom_code",
+        "trans": "自定义代码 (HTML, <script>, <style>)"
+    },
+    {
+        "locale": "zh",
         "key": "site_keywords",
         "trans": "站点关键字"
     },

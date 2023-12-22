@@ -287,7 +287,12 @@
     {
         "locale": "en",
         "key": "site_footer_menus",
-        "trans": "Header Menus"
+        "trans": "Footer Menus"
+    },
+    {
+        "locale": "en",
+        "key": "site_custom_code",
+        "trans": "Custom Code (HTML, <script>, <style>)"
     },
     {
         "locale": "en",

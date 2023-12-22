@@ -30,6 +30,7 @@ type settingsRequest struct {
 	MailSSL               bool   `json:"mail_ssl,omitempty"`
 	Akismet               string `json:"akismet,omitempty"`
 	SiteDomain            string `json:"site_domain,omitempty"`
+	SiteCustomCode        string `json:"site_custom_code,omitempty"`
 	SiteKeywords          string `json:"site_keywords,omitempty"`
 	SiteHeaderMenus       string `json:"site_header_menus,omitempty"`
 	SiteFooterMenus       string `json:"site_footer_menus,omitempty"`
@@ -62,6 +63,7 @@ func settingsHandler(c *fiber.Ctx) error {
 	solitudes.System.Config.Email.SSL = sr.MailSSL
 	solitudes.System.Config.Akismet = sr.Akismet
 	solitudes.System.Config.Site.Domain = sr.SiteDomain
+	solitudes.System.Config.Site.CustomCode = sr.SiteCustomCode
 	solitudes.System.Config.Site.SpaceKeywords = sr.SiteKeywords
 	solitudes.System.Config.User.Nickname = sr.Nickname
 	solitudes.System.Config.User.Email = sr.Email
