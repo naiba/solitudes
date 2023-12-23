@@ -184,10 +184,11 @@
                     <div class="form-group">
                         <label for="selTheme" class="col-sm-3 control-label">{{.Tr.T "site_theme"}}</label>
                         <div class="col-sm-9">
-                            <select id="selTheme" value="{{.Conf.Site.Theme}}" class="form-control">
-                                <option value="classic">classic</option>
-                                <option value="light">light</option>
-                                <option value="white">white</option>
+                            <select id="selTheme" class="form-control">
+                                <option value="classic" {{if eq .Conf.Site.Theme "classic" }}selected{{end}}>classic
+                                </option>
+                                <option value="light" {{if eq .Conf.Site.Theme "light" }}selected{{end}}>light</option>
+                                <option value="white" {{if eq .Conf.Site.Theme "white" }}selected{{end}}>white</option>
                             </select>
                         </div>
                     </div>
