@@ -176,6 +176,7 @@ p {
   border-radius: .9rem;
   width: 100%;
   padding: .5rem;
+  word-break: break-word;
 }
 
 .sl-topic img {
