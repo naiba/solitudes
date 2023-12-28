@@ -231,3 +231,7 @@ p {
   -webkit-line-clamp: 2;
   overflow: hidden;
 }
+
+div.h1.sl-menu>a:last-of-type {
+  font-size: small;
+}

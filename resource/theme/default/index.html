@@ -7,9 +7,23 @@
 </section>
 {{end}}
 {{template "default/search_form" .}}
-<section id="writing">
-  <span class="h1"><a href="/archives/">{{.Tr.T "writing"}}</a></span>
-    <ul class="post-list">
+<main>
+  {{if .Data.topics}}
+  <div class="h1 sl-menu">
+    <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
+    <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
+  </div>
+  <ul class="post-list">
+    {{range .Data.topics}}
+    {{template "default/article_list_entry" (artileData . $.Tr)}}
+    {{end}}
+  </ul>
+  {{end}}
+  <div class="h1 sl-menu">
+    <a href="/archives/">{{.Tr.T "writing"}}</a>
+    <a href="/archives/">{{.Tr.T "view_more"}}➤</a>
+  </div>
+  <ul class="post-list">
     {{if not .Data.articles}}
     <li class="post-item">
       <span>
@@ -21,8 +35,8 @@
     {{template "default/article_list_entry" (artileData . $.Tr)}}
     {{end}}
     {{end}}
-    </ul>
-</section>
+  </ul>
+</main>
 {{if trim .Conf.Site.HomeBottomContent}}
 <section class="home-bottom">
   {{(md "home-bottom" .Conf.Site.HomeBottomContent)|unsafe}}

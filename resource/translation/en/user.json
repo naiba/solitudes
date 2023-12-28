@@ -143,5 +143,15 @@
         "locale": "en",
         "key": "leave_a_comment",
         "trans": "Leave a comment"
+    },
+    {
+        "locale": "en",
+        "key": "view_more",
+        "trans": "View more"
+    },
+    {
+        "locale": "en",
+        "key": "topic",
+        "trans": "Topic"
     }
 ]

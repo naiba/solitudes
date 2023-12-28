@@ -143,5 +143,15 @@
         "locale": "zh",
         "key": "leave_a_comment",
         "trans": "留下评论"
+    },
+    {
+        "locale": "zh",
+        "key": "view_more",
+        "trans": "查看更多"
+    },
+    {
+        "locale": "zh",
+        "key": "topic",
+        "trans": "哔哔"
     }
 ]

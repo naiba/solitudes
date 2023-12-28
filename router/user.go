@@ -71,23 +71,25 @@ func logoutHandler(c *fiber.Ctx) error {
 }
 
 func index(c *fiber.Ctx) error {
-	var as []model.Article
-	solitudes.System.DB.Order("created_at DESC").Limit(10).Find(&as)
-	for i := 0; i < len(as); i++ {
-		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
-		// 如果存在 Topic tag，加载前 5 条评论
-		if as[i].IsTopic() {
-			pagination.Paging(&pagination.Param{
-				DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", as[i].ID),
-				Limit:   5,
-				OrderBy: []string{"created_at DESC"},
-			}, &as[i].Comments)
-		}
+	var articles []model.Article
+	var topics []model.Article
+	solitudes.System.DB.Where("NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(10).Find(&articles)
+	solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(3).Find(&topics)
+	for i := 0; i < len(articles); i++ {
+		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+	}
+	for i := 0; i < len(topics); i++ {
+		pagination.Paging(&pagination.Param{
+			DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", topics[i].ID),
+			Limit:   5,
+			OrderBy: []string{"created_at DESC"},
+		}, &topics[i].Comments)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	c.Status(http.StatusOK).Render("default/index", injectSiteData(c, fiber.Map{
 		"title":    tr.T("home"),
-		"articles": as,
+		"articles": articles,
+		"topics":   topics,
 	}))
 	return nil
 }
