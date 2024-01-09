@@ -42,7 +42,7 @@ func archive(c *fiber.Ctx) error {
 	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
 	var articles []model.Article
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("NOT tags @> ARRAY[?]::varchar[]", "Topic"),
+		DB:      solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic"),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
