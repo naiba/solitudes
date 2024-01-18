@@ -590,8 +590,11 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 300px);
     overflow-wrap: break-word;
+  }
+
+  .content.index.py4 {
+    min-height: calc(100vh - 50px);
   }
 
   .content p {
@@ -1489,8 +1492,8 @@
   }
 
   #footer {
-    margin-top: 10px;
-    margin-bottom: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
     width: 100%;
     color: #666;
     vertical-align: top;
@@ -1547,7 +1550,6 @@
       justify-content: space-between;
       align-items: center;
       align-content: center;
-      margin-bottom: 20px;
     }
 
     #footer .footer-left {
