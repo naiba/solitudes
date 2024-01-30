@@ -240,10 +240,10 @@ li.vditor-task {
   list-style: none;
 }
 
-li input[type="checkbox"] {
-  width: fit-content;
+input[type="checkbox"] {
+  width: auto;
 }
 
-ul {
+ul:has(li.vditor-task) {
   padding-left: 1rem;
 }
