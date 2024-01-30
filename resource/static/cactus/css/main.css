@@ -235,3 +235,15 @@ p {
 div.h1.sl-menu>a:last-of-type {
   font-size: small;
 }
+
+li.vditor-task {
+  list-style: none;
+}
+
+li input[type="checkbox"] {
+  width: fit-content;
+}
+
+ul {
+  padding-left: 1rem;
+}
