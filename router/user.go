@@ -73,17 +73,18 @@ func logoutHandler(c *fiber.Ctx) error {
 func index(c *fiber.Ctx) error {
 	var articles []model.Article
 	var topics []model.Article
-	solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(10).Find(&articles)
 	solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(3).Find(&topics)
-	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
-	}
 	for i := 0; i < len(topics); i++ {
 		pagination.Paging(&pagination.Param{
 			DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", topics[i].ID),
 			Limit:   5,
 			OrderBy: []string{"created_at DESC"},
 		}, &topics[i].Comments)
+	}
+	articleCount := 16 - len(topics)*2
+	solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles)
+	for i := 0; i < len(articles); i++ {
+		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	c.Status(http.StatusOK).Render("default/index", injectSiteData(c, fiber.Map{
