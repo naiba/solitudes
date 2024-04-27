@@ -2,7 +2,7 @@
     {
         "locale": "zh",
         "key": "articles_in",
-        "trans": "「{0}」下的文章"
+        "trans": "「{0}」分类下的文章"
     },
     {
         "locale": "zh",
@@ -17,12 +17,12 @@
     {
         "locale": "zh",
         "key": "no_article",
-        "trans": "还没有发布过文章哦"
+        "trans": "暂无发布的文章"
     },
     {
         "locale": "zh",
         "key": "pagination",
-        "trans": "第 {0}/{1} 页，共 {2}。"
+        "trans": "第 {0}/{1} 页，共 {2} 页"
     },
     {
         "locale": "zh",
@@ -32,17 +32,17 @@
     {
         "locale": "zh",
         "key": "archive",
-        "trans": "归档"
+        "trans": "文章归档"
     },
     {
         "locale": "zh",
         "key": "tags_cloud",
-        "trans": "标签"
+        "trans": "标签云"
     },
     {
         "locale": "zh",
         "key": "comments",
-        "trans": "评论"
+        "trans": "评论区"
     },
     {
         "locale": "zh",
@@ -57,52 +57,52 @@
     {
         "locale": "zh",
         "key": "may_not_reply_if_email_not_exist",
-        "trans": "请留下正确的邮箱地址在博主回复时收到通知，方便进行后续的交流。博主要你的邮箱屁用没有。"
+        "trans": "请留下正确的邮箱地址，以便博主回复您的评论。"
     },
     {
         "locale": "zh",
         "key": "website",
-        "trans": "网站"
+        "trans": "个人网站"
     },
     {
         "locale": "zh",
         "key": "not_required",
-        "trans": "非必填"
+        "trans": "选填"
     },
     {
         "locale": "zh",
         "key": "submit",
-        "trans": "保存"
+        "trans": "提交评论"
     },
     {
         "locale": "zh",
         "key": "menu",
-        "trans": "菜单"
+        "trans": "菜单选项"
     },
     {
         "locale": "zh",
         "key": "return_top",
-        "trans": "回顶部"
+        "trans": "返回顶部"
     },
     {
         "locale": "zh",
         "key": "share",
-        "trans": "分享"
+        "trans": "分享文章"
     },
     {
         "locale": "zh",
         "key": "toc",
-        "trans": "目录"
+        "trans": "文章目录"
     },
     {
         "locale": "zh",
         "key": "previous_post",
-        "trans": "上一篇"
+        "trans": "上一篇文章"
     },
     {
         "locale": "zh",
         "key": "next_post",
-        "trans": "下一篇"
+        "trans": "下一篇文章"
     },
     {
         "locale": "zh",
@@ -112,42 +112,47 @@
     {
         "locale": "zh",
         "key": "book",
-        "trans": "专栏"
+        "trans": "专栏文章"
     },
     {
         "locale": "zh",
         "key": "404_title",
-        "trans": "404 页面不存在"
+        "trans": "404 页面未找到"
     },
     {
         "locale": "zh",
         "key": "404_msg",
-        "trans": "Wow…… 这个页面可能已到达火星。"
+        "trans": "哎呀…… 这个页面可能已经飞到了外太空。"
     },
     {
         "locale": "zh",
         "key": "search_engine_error",
-        "trans": "搜索引擎出错"
+        "trans": "搜索引擎出错了"
     },
     {
         "locale": "zh",
         "key": "search_result_title",
-        "trans": "「{0}」的搜索结果"
+        "trans": "搜索结果：「{0}」"
     },
     {
         "locale": "zh",
         "key": "has_new_version",
-        "trans": "您正在看的是本文章的旧版本，这篇文章有了 <a href=\"/{0}\">新版本</a>。"
+        "trans": "您正在查看的是本文章的 v{0} 版本，该文章已更新至 <a href=\"/{1}/v{2}\">v{3}</a> 版本。"
+    },
+    {
+        "locale": "zh",
+        "key": "has_old_version",
+        "trans": "您正在查看的是本文章的 v{0} 版本，您还可以查看历史版本：{1}。"
     },
     {
         "locale": "zh",
         "key": "leave_a_comment",
-        "trans": "留下评论"
+        "trans": "发表评论"
     },
     {
         "locale": "zh",
         "key": "view_more",
-        "trans": "查看更多"
+        "trans": "查看更多内容"
     },
     {
         "locale": "zh",

@@ -56,7 +56,7 @@ type Article struct {
 	SibilingArticle  *SibilingArticle `gorm:"-" validate:"-" form:"-"`
 
 	// for form
-	NewVersion bool `gorm:"-" form:"new_version"`
+	NewVersion uint `gorm:"-" form:"new_version"`
 }
 
 // ArticleIndex index data

@@ -16,7 +16,6 @@ import (
 )
 
 func article(c *fiber.Ctx) error {
-	// load article
 	var a model.Article
 	if err := solitudes.System.DB.Take(&a, "slug = ?", c.Params("slug")).Error; err == gorm.ErrRecordNotFound {
 		tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
@@ -54,10 +53,10 @@ func article(c *fiber.Ctx) error {
 		} else if err != nil {
 			return err
 		}
-		a.Content = history.Content
+		a.NewVersion = a.Version
 		a.Version = history.Version
+		a.Content = history.Content
 		a.CreatedAt = history.CreatedAt
-		a.NewVersion = true
 		title = fmt.Sprintf("%s v%d", a.Title, a.Version)
 	} else {
 		title = a.Title

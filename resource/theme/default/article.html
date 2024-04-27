@@ -110,7 +110,11 @@
             </div>
         </header>
         <div class="content" itemprop="articleBody">
-            {{if .Data.article.NewVersion}}<p>{{.Tr.T "has_new_version" (.Data.article.Slug)|unsafe}}</p>{{end}}
+            {{if gt .Data.article.NewVersion .Data.article.Version}}
+            <i>{{(.Tr.T "has_new_version" (.Data.article.Version|uint2str) .Data.article.Slug (.Data.article.NewVersion|uint2str) (.Data.article.NewVersion|uint2str))|unsafe}}</i>
+            {{else if gt .Data.article.Version 1}}
+            <i>{{(.Tr.T "has_old_version" (.Data.article.Version|uint2str) (oldVersions .Data.article.Version .Data.article.Slug))|unsafe}}</i>
+            {{end}}
             {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
             {{if .Data.article.IsBook}}
             <h4>{{.Tr.T "chapters"}}</h4>

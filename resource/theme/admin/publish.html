@@ -131,7 +131,7 @@
             tags: $("#inputTags").val(),
             is_book: document.getElementById('cbBook').checked,
             is_private: document.getElementById('cbPrivate').checked,
-            new_version: document.getElementById('cbNewVersion').checked,
+            new_version: document.getElementById('cbNewVersion').checked ? 1 : 0,
         }
         $("#inputCID").val() && (article.book_refer = $("#inputCID").val())
         $.post("", article, (data, status) => {

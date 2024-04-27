@@ -180,6 +180,16 @@ func setFuncMap(engine *html.Engine) {
 		"articleIdx": func(t model.Article) string {
 			return t.GetIndexID()
 		},
+		"oldVersions": func(latestVersion uint, slug string) string {
+			var sb strings.Builder
+			for i := latestVersion - 1; i > 0; i-- {
+				sb.WriteString(fmt.Sprintf(`<a href="/%s/v%d">v%d</a>`, slug, i, i))
+				if i > 1 {
+					sb.WriteString(", ")
+				}
+			}
+			return sb.String()
+		},
 		"last": func(x int, a interface{}) bool {
 			return x == reflect.ValueOf(a).Len()-1
 		},

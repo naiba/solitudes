@@ -2,6 +2,7 @@ package router
 
 import (
 	"bytes"
+	"log"
 	"net/http"
 
 	"github.com/blevesearch/bleve/v2"
@@ -29,6 +30,10 @@ func search(c *fiber.Ctx) error {
 	var result []searchResp
 	if err == nil {
 		for _, hit := range searchResult.Hits {
+			if hit.Fields["Slug"] == nil || hit.Fields["Version"] == nil || hit.Fields["Title"] == nil {
+				log.Printf("invalid search result: %+v", hit)
+				continue
+			}
 			item := model.ArticleIndex{
 				Slug:    hit.Fields["Slug"].(string),
 				Version: hit.Fields["Version"].(float64),

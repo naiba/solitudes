@@ -103,7 +103,7 @@ type publishArticle struct {
 	IsBook     bool   `form:"is_book"`
 	IsPrivate  bool   `form:"is_private"`
 	BookRefer  string `form:"book_refer"`
-	NewVersion bool   `form:"new_version"`
+	NewVersion uint   `form:"new_version"`
 }
 
 func publishHandler(c *fiber.Ctx) error {
@@ -147,13 +147,17 @@ func publishHandler(c *fiber.Ctx) error {
 		return err
 	} else {
 		tx := solitudes.System.DB.Begin()
-		err = tx.Save(&newArticle).Error
-		if pa.NewVersion && err == nil {
+		if pa.NewVersion == 1 {
+			newArticle.CreatedAt = time.Now()
 			var history model.ArticleHistory
 			history.Content = originalArticle.Content
 			history.Version = originalArticle.Version
 			history.ArticleID = originalArticle.ID
+			history.CreatedAt = originalArticle.CreatedAt
 			err = tx.Save(&history).Error
+		}
+		if err == nil {
+			err = tx.Save(&newArticle).Error
 		}
 		if err != nil {
 			tx.Rollback()
@@ -182,7 +186,7 @@ func fetchOriginArticle(af *model.Article) (model.Article, error) {
 	af.Version = originArticle.Version
 	af.CommentNum = originArticle.CommentNum
 	af.ReadNum = originArticle.ReadNum
-	if af.NewVersion {
+	if af.NewVersion == 1 {
 		af.Version = originArticle.Version + 1
 	}
 	return originArticle, nil

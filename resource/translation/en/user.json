@@ -57,7 +57,7 @@
     {
         "locale": "en",
         "key": "may_not_reply_if_email_not_exist",
-        "trans": "Please leave the correct email address so that you can receive notifications when the blogger replies, which will facilitate further communication. The blogger does not need your email for anything else."
+        "trans": "Please provide a valid email address to receive notifications when the blogger replies."
     },
     {
         "locale": "en",
@@ -82,7 +82,7 @@
     {
         "locale": "en",
         "key": "return_top",
-        "trans": "Top"
+        "trans": "Back to Top"
     },
     {
         "locale": "en",
@@ -92,17 +92,17 @@
     {
         "locale": "en",
         "key": "toc",
-        "trans": "TOC"
+        "trans": "Table of Contents"
     },
     {
         "locale": "en",
         "key": "previous_post",
-        "trans": "Previous post"
+        "trans": "Previous Post"
     },
     {
         "locale": "en",
         "key": "next_post",
-        "trans": "Next post"
+        "trans": "Next Post"
     },
     {
         "locale": "en",
@@ -122,32 +122,37 @@
     {
         "locale": "en",
         "key": "404_msg",
-        "trans": "Wow ... This page may fly to Mars."
+        "trans": "Oops... This page may have flown to Mars."
     },
     {
         "locale": "en",
         "key": "search_engine_error",
-        "trans": "Search engine error"
+        "trans": "Search Engine Error"
     },
     {
         "locale": "en",
         "key": "search_result_title",
-        "trans": "Search result for \"{0}\""
+        "trans": "Search Results for \"{0}\""
     },
     {
         "locale": "en",
         "key": "has_new_version",
-        "trans": "This article has a <a href=\"/{0}\">new version</a>."
+        "trans": "You are viewing version v{0} of this article, which has been updated to version <a href=\"/{1}/v{2}\">v{3}</a>."
+    },
+    {
+        "locale": "en",
+        "key": "has_old_version",
+        "trans": "You are viewing version v{0} of this article, which has older versions: {1}."
     },
     {
         "locale": "en",
         "key": "leave_a_comment",
-        "trans": "Leave a comment"
+        "trans": "Leave a Comment"
     },
     {
         "locale": "en",
         "key": "view_more",
-        "trans": "View more"
+        "trans": "View More"
     },
     {
         "locale": "en",
