@@ -22,7 +22,7 @@
     {
         "locale": "zh",
         "key": "pagination",
-        "trans": "第 {0}/{1} 页，共 {2} 页"
+        "trans": "第 {0}/{1} 页，共 {2} 篇"
     },
     {
         "locale": "zh",
