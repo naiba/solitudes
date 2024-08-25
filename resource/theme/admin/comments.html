@@ -38,8 +38,11 @@
                                     </td>
                                     <td>{{.Version}}</td>
                                     <td>{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
-                                    <td><button onclick="deleteComment('{{.Article.ID}}','{{.ID}}','{{.ReplyTo}}')"
-                                            class="btn btn-warning btn-xs">{{$.Tr.T "delete"}}</button></td>
+                                    <td><div class="btn-group btn-group-xs">
+                                        <button onclick="deleteComment('{{.Article.ID}}','{{.ID}}')" class="btn btn-danger btn-xs">{{$.Tr.T
+                                            "delete"}}</button>
+                                        <button onclick="reportSpam('{{.Article.ID}}','{{.ID}}')" type="button" class="btn btn-warning">SPAM</button>
+                                    </div></td>
                                 </tr>
                                 {{end}}
                             </tbody>
@@ -56,13 +59,29 @@
     </section>
 </div>
 <script>
-    function deleteComment(aid, commendId, rpl) {
+    function deleteComment(aid, commendId) {
         if (!confirm("Confirm delete?")) {
             return
         }
         $.ajax({
-            url: "/admin/comments?aid=" + aid + '&id=' + commendId + '&rpl=' + (rpl == '\x3cnil\x3e' ? '' : rpl),
+            url: "/admin/comments?aid=" + aid + '&id=' + commendId,
             type: 'DELETE',
+            success: () => {
+                window.location.reload()
+            },
+            error: (e) => {
+                alert(e.responseText)
+            },
+        })
+    }
+
+    function reportSpam(aid, commendId) {
+        if (!confirm("Confirm report SPAM?")) {
+            return
+        }
+        $.ajax({
+            url: "/admin/report-spam?aid=" + aid + '&id=' + commendId,
+            type: 'POST',
             success: () => {
                 window.location.reload()
             },

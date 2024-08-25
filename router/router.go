@@ -115,6 +115,7 @@ func Serve() {
 	admin.Post("/fetch", fetch)
 	admin.Get("/comments", comments)
 	admin.Delete("/comments", deleteComment)
+	admin.Post("/report-spam", reportSpam)
 	admin.Get("/articles", manageArticle)
 	admin.Delete("/articles", deleteArticle)
 	admin.Get("/media", media)
