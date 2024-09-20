@@ -1,7 +1,6 @@
 package solitudes
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"sync"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"
 	"github.com/yanyiwu/gojieba"
@@ -16,11 +16,7 @@ import (
 	"golang.org/x/sync/singleflight"
 	"gopkg.in/yaml.v3"
 
-	// db driver
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-
 	"github.com/naiba/solitudes/internal/model"
-	// gojirba
 	_ "github.com/naiba/solitudes/pkg/blevejieba"
 )
 
@@ -84,7 +80,7 @@ func newDatabase(conf *model.Config) *gorm.DB {
 
 func newConfig() *model.Config {
 	configFile := "data/conf.yml"
-	content, err := ioutil.ReadFile(configFile)
+	content, err := os.ReadFile(configFile)
 	if err != nil {
 		panic(err)
 	}

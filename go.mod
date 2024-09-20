@@ -8,26 +8,26 @@ require (
 	github.com/88250/lute v1.7.6
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047
 	github.com/biezhi/gorm-paginator/pagination v0.0.0-20190124091837-7a5c8ed20334
-	github.com/blevesearch/bleve/v2 v2.4.0
+	github.com/blevesearch/bleve/v2 v2.4.2
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofiber/fiber/v2 v2.52.5
-	github.com/gofiber/template/html/v2 v2.1.1
-	github.com/gorilla/feeds v1.1.2
+	github.com/gofiber/template/html/v2 v2.1.2
+	github.com/gorilla/feeds v1.2.0
 	github.com/hashicorp/go-uuid v1.0.3
 	github.com/jinzhu/gorm v1.9.16
 	github.com/lib/pq v1.10.9
+	github.com/liuzl/gocc v0.0.0-20231231122217-0372e1059ca5
 	github.com/matcornic/hermes/v2 v2.1.0
-	github.com/microcosm-cc/bluemonday v1.0.26
 	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/samber/lo v1.39.0
+	github.com/samber/lo v1.47.0
 	github.com/wxpusher/wxpusher-sdk-go v1.0.3
-	github.com/yanyiwu/gojieba v1.3.0
-	go.uber.org/dig v1.17.1
-	golang.org/x/crypto v0.22.0
-	golang.org/x/sync v0.7.0
+	github.com/yanyiwu/gojieba v1.4.4
+	go.uber.org/dig v1.18.0
+	golang.org/x/crypto v0.27.0
+	golang.org/x/sync v0.8.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -37,19 +37,19 @@ require (
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v2.20.0+incompatible // indirect
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
-	github.com/RoaringBitmap/roaring v1.2.3 // indirect
+	github.com/RoaringBitmap/roaring v1.9.3 // indirect
+	github.com/adamzy/cedar-go v0.0.0-20170805034717-80a9c64b256d // indirect
 	github.com/alecthomas/chroma v0.10.0 // indirect
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
-	github.com/aymerick/douceur v0.2.0 // indirect
-	github.com/bits-and-blooms/bitset v1.2.0 // indirect
-	github.com/blevesearch/bleve_index_api v1.1.6 // indirect
+	github.com/bits-and-blooms/bitset v1.12.0 // indirect
+	github.com/blevesearch/bleve_index_api v1.1.10 // indirect
 	github.com/blevesearch/geo v0.1.20 // indirect
-	github.com/blevesearch/go-faiss v1.0.13 // indirect
+	github.com/blevesearch/go-faiss v1.0.20 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/gtreap v0.1.1 // indirect
 	github.com/blevesearch/mmap-go v1.0.4 // indirect
-	github.com/blevesearch/scorch_segment_api/v2 v2.2.9 // indirect
+	github.com/blevesearch/scorch_segment_api/v2 v2.2.15 // indirect
 	github.com/blevesearch/segment v0.9.1 // indirect
 	github.com/blevesearch/snowballstem v0.9.0 // indirect
 	github.com/blevesearch/upsidedown_store_api v1.0.2 // indirect
@@ -59,7 +59,7 @@ require (
 	github.com/blevesearch/zapx/v13 v13.3.10 // indirect
 	github.com/blevesearch/zapx/v14 v14.3.10 // indirect
 	github.com/blevesearch/zapx/v15 v15.3.13 // indirect
-	github.com/blevesearch/zapx/v16 v16.0.12 // indirect
+	github.com/blevesearch/zapx/v16 v16.1.5 // indirect
 	github.com/dlclark/regexp2 v1.8.1 // indirect
 	github.com/gofiber/template v1.8.3 // indirect
 	github.com/gofiber/utils v1.1.0 // indirect
@@ -68,7 +68,7 @@ require (
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/uuid v1.5.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
-	github.com/gorilla/css v1.0.0 // indirect
+	github.com/gorilla/css v1.0.1 // indirect
 	github.com/huandu/xstrings v1.2.0 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/jaytaylor/html2text v0.0.0-20190408195923-01ec452cbe43 // indirect
@@ -76,6 +76,8 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/leodido/go-urn v1.2.0 // indirect
+	github.com/liuzl/cedar-go v0.0.0-20170805034717-80a9c64b256d // indirect
+	github.com/liuzl/da v0.0.0-20180704015230-14771aad5b1d // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
@@ -93,10 +95,9 @@ require (
 	github.com/vanng822/css v0.0.0-20190504095207-a21e860bcd04 // indirect
 	github.com/vanng822/go-premailer v0.0.0-20191214114701-be27abe028fe // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
-	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
-	golang.org/x/net v0.23.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/net v0.26.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect

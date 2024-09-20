@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"log"
@@ -23,13 +24,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	html "github.com/gofiber/template/html/v2"
-	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-var bluemondayPolicy = bluemonday.UGCPolicy()
 var luteEngine = lute.New()
 var validator = gv.New()
 
@@ -39,25 +38,22 @@ func init() {
 	luteEngine.SetHeadingID(true)
 	luteEngine.SetSub(true)
 	luteEngine.SetSup(true)
+	luteEngine.SetAutoSpace(true)
 }
 
 func mdRender(id string, raw string) string {
 	return luteEngine.MarkdownStr(id, raw)
 }
 
-func ugcPolicy(raw string) string {
-	return bluemondayPolicy.Sanitize(raw)
-}
-
 // Serve web service
 func Serve() {
 	engine := html.New("resource/theme", ".html")
 	setFuncMap(engine)
-	dbErrors := map[error]bool{
-		gorm.ErrCantStartTransaction: true,
-		gorm.ErrInvalidSQL:           true,
-		gorm.ErrInvalidTransaction:   true,
-		gorm.ErrUnaddressable:        true,
+	dbErrors := []error{
+		gorm.ErrCantStartTransaction,
+		gorm.ErrInvalidSQL,
+		gorm.ErrInvalidTransaction,
+		gorm.ErrUnaddressable,
 	}
 	app := fiber.New(fiber.Config{
 		EnableTrustedProxyCheck: solitudes.System.Config.EnableTrustedProxyCheck,
@@ -71,7 +67,9 @@ func Serve() {
 			}
 			title := "Unknown error"
 			errMsg := e.Error()
-			if dbErrors[e] {
+			if lo.ContainsBy(dbErrors, func(item error) bool {
+				return errors.Is(e, item)
+			}) {
 				title = "DB error"
 				errMsg = "Please contact the webmaster"
 			}
@@ -177,8 +175,7 @@ func setFuncMap(engine *html.Engine) {
 		"tf": func(t time.Time, f string) string {
 			return t.Format(f)
 		},
-		"ugcPolicy": ugcPolicy,
-		"md":        mdRender,
+		"md": mdRender,
 		"articleIdx": func(t model.Article) string {
 			return t.GetIndexID()
 		},

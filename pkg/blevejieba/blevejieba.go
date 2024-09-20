@@ -3,13 +3,22 @@ package blevejieba
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/blevesearch/bleve/v2/analysis"
 	"github.com/blevesearch/bleve/v2/registry"
+	"github.com/liuzl/gocc"
 	"github.com/yanyiwu/gojieba"
 )
 
+var goccI *gocc.OpenCC
+
 func init() {
+	var err error
+	goccI, err = gocc.New("t2s")
+	if err != nil {
+		panic(err)
+	}
 	registry.RegisterAnalyzer("jieba", analyzerConstructor)
 	registry.RegisterTokenizer("jieba", tokenizerConstructor)
 	fmt.Println("[bleve-jieba] inited")
@@ -22,6 +31,15 @@ type JiebaTokenizer struct {
 	tokenizeMode gojieba.TokenizeMode
 }
 
+func CleanText(text string) string {
+	text = strings.ToLower(text)
+	textNew, err := goccI.Convert(text)
+	if err != nil {
+		return text
+	}
+	return textNew
+}
+
 // Tokenize ..
 func (s *JiebaTokenizer) Tokenize(sentence []byte) analysis.TokenStream {
 	result := make(analysis.TokenStream, 0)
@@ -31,7 +49,7 @@ func (s *JiebaTokenizer) Tokenize(sentence []byte) analysis.TokenStream {
 			Start:    word.Start,
 			End:      word.End,
 			Position: pos + 1,
-			Term:     []byte(word.Str),
+			Term:     []byte(CleanText(word.Str)),
 			Type:     analysis.Ideographic,
 		}
 		result = append(result, &token)
