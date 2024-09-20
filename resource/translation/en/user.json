@@ -36,6 +36,11 @@
     },
     {
         "locale": "en",
+        "key": "books",
+        "trans": "Books"
+    },
+    {
+        "locale": "en",
         "key": "tags_cloud",
         "trans": "Tags"
     },

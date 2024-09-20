@@ -60,7 +60,29 @@ func archive(c *fiber.Ctx) error {
 	}
 	c.Status(http.StatusOK).Render("default/archive", injectSiteData(c, fiber.Map{
 		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("archive"),
-		"what":     "archives",
+		"what":     "archive",
+		"articles": listArticleByYear(articles),
+		"page":     pg,
+	}))
+	return nil
+}
+
+func book(c *fiber.Ctx) error {
+	var page int64
+	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
+	var articles []model.Article
+	pg := pagination.Paging(&pagination.Param{
+		DB:      solitudes.System.DB.Where("is_book is true"),
+		Page:    int(page),
+		Limit:   20,
+		OrderBy: []string{"created_at DESC"},
+	}, &articles)
+	for i := 0; i < len(articles); i++ {
+		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+	}
+	c.Status(http.StatusOK).Render("default/archive", injectSiteData(c, fiber.Map{
+		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("books"),
+		"what":     "books",
 		"articles": listArticleByYear(articles),
 		"page":     pg,
 	}))

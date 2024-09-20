@@ -20,8 +20,12 @@ site:
       link: /
       icon: ""
       black: false
-    - name: Archives
-      link: /archives/
+    - name: Archive
+      link: /archive/
+      icon: ""
+      black: false
+    - name: Books
+      link: /books/
       icon: ""
       black: false
     - name: About
