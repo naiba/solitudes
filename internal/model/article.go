@@ -144,9 +144,18 @@ func (t *Article) GenTOC() {
 	}
 }
 
+func removeLeadingHashtag(s string) string {
+	for i := 0; i < len(s); i++ {
+		if s[i] != '#' {
+			return s[i:]
+		}
+	}
+	return s
+}
+
 // 生成标题 ID
 func sanitizedAnchorName(unique map[string]int, text string) (ret string) {
-	text = strings.TrimSpace(text)
+	text = strings.TrimSpace(removeLeadingHashtag(strings.TrimSpace(text)))
 	for _, r := range text {
 		if unicode.IsLetter(r) || unicode.IsDigit(r) {
 			ret += string(r)

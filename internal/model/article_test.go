@@ -36,3 +36,19 @@ func validateToc(t *testing.T, toc []*ArticleTOC, now *int, expect []int) {
 		validateToc(t, toc_item.SubTitles, now, expect)
 	}
 }
+
+func TestSanitizedAnchorName(t *testing.T) {
+	unique := make(map[string]int)
+	if sanitizedAnchorName(unique, "# 1 测试") != "1-测试" {
+		t.FailNow()
+	}
+	if sanitizedAnchorName(unique, "# 1 测试") != "1-测试-" {
+		t.FailNow()
+	}
+	if sanitizedAnchorName(unique, "# 1 测试") != "1-测试--" {
+		t.FailNow()
+	}
+	if sanitizedAnchorName(unique, "测试") != "测试" {
+		t.FailNow()
+	}
+}
