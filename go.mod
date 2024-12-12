@@ -26,8 +26,8 @@ require (
 	github.com/wxpusher/wxpusher-sdk-go v1.0.3
 	github.com/yanyiwu/gojieba v1.4.4
 	go.uber.org/dig v1.18.0
-	golang.org/x/crypto v0.27.0
-	golang.org/x/sync v0.8.0
+	golang.org/x/crypto v0.31.0
+	golang.org/x/sync v0.10.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -96,8 +96,8 @@ require (
 	github.com/vanng822/go-premailer v0.0.0-20191214114701-be27abe028fe // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
 	golang.org/x/net v0.26.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
