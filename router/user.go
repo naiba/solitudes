@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jinzhu/gorm"
+	"github.com/naiba/solitudes/pkg/pagination"
+	"github.com/naiba/solitudes/pkg/translator"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/translator"
 )
 
 type loginForm struct {

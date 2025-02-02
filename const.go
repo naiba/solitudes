@@ -2,11 +2,11 @@ package solitudes
 
 import (
 	"github.com/blevesearch/bleve/v2"
-	"github.com/jinzhu/gorm"
 	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"
 	"go.uber.org/dig"
 	"golang.org/x/sync/singleflight"
+	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes/internal/model"
 )

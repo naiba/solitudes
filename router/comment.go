@@ -5,10 +5,10 @@ import (
 
 	"github.com/adtac/go-akismet/akismet"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/notify"
+	"gorm.io/gorm"
 )
 
 type commentForm struct {
@@ -63,21 +63,24 @@ func commentHandler(c *fiber.Ctx) error {
 	var cm model.Comment
 	fillCommentEntry(c, isAdmin, &cm, &cf, article)
 
-	tx := solitudes.System.DB.Begin()
-	if err := tx.Save(&cm).Error; err != nil {
-		tx.Rollback()
+	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Save(&cm).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Model(&model.Article{}).
+			Where("id = ?", cm.ArticleID).
+			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return err
 	}
-	if err := tx.Model(model.Article{}).
-		Where("id = ?", cm.ArticleID).
-		UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-		return err
-	}
+
 	//Email notify
 	checkPoolSubmit(nil, solitudes.System.Pool.Submit(func() {
 		err := notify.Email(&cm, replyTo, article)

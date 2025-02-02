@@ -8,19 +8,19 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/jinzhu/gorm"
 	"github.com/lib/pq"
 	"github.com/panjf2000/ants"
 	"github.com/samber/lo"
+	"gorm.io/gorm"
 )
 
 // ArticleTOC 文章标题
 type ArticleTOC struct {
 	Title     string
 	Slug      string
-	SubTitles []*ArticleTOC
-	Parent    *ArticleTOC `gorm:"-"`
-	Level     int         `gorm:"-"`
+	SubTitles []*ArticleTOC `gorm:"-"`
+	Parent    *ArticleTOC   `gorm:"-"`
+	Level     int           `gorm:"-"`
 }
 
 // SibilingArticle 相邻文章
@@ -48,12 +48,12 @@ type Article struct {
 	BookRefer  *string        `form:"book_refer" validate:"omitempty,uuid4" gorm:"type:uuid;index;default:NULL"`
 	IsPrivate  bool           `form:"is_private"`
 
-	Comments         []*Comment
-	ArticleHistories []*ArticleHistory
-	Toc              []*ArticleTOC
-	Chapters         []*Article       `gorm:"foreignkey:BookRefer" form:"-" validate:"-"`
-	Book             *Article         `gorm:"-" validate:"-" form:"-"`
-	SibilingArticle  *SibilingArticle `gorm:"-" validate:"-" form:"-"`
+	Comments         []*Comment        `gorm:"foreignKey:ArticleID"`
+	ArticleHistories []*ArticleHistory `gorm:"foreignKey:ArticleID"`
+	Toc              []*ArticleTOC     `gorm:"-"`
+	Chapters         []*Article        `gorm:"foreignkey:BookRefer" form:"-" validate:"-"`
+	Book             *Article          `gorm:"-" validate:"-" form:"-"`
+	SibilingArticle  *SibilingArticle  `gorm:"-" validate:"-" form:"-"`
 
 	// for form
 	NewVersion uint `gorm:"-" form:"new_version"`
@@ -72,17 +72,19 @@ func (t *Article) GetIndexID() string {
 }
 
 // BeforeSave hook
-func (t *Article) BeforeSave() {
+func (t *Article) BeforeSave(tx *gorm.DB) (err error) {
 	t.RawTags = strings.TrimSpace(t.RawTags)
 	if t.RawTags == "" {
-		return
+		return nil
 	}
 	t.Tags = strings.Split(t.RawTags, ",")
+	return nil
 }
 
 // AfterFind hook
-func (t *Article) AfterFind() {
+func (t *Article) AfterFind(tx *gorm.DB) (err error) {
 	t.RawTags = strings.Join(t.Tags, ",")
+	return nil
 }
 
 var titleRegex = regexp.MustCompile(`^\s{0,2}(#{1,6})\s(.*)$`)
@@ -185,7 +187,7 @@ func (t *Article) RelatedCount(db *gorm.DB, pool *ants.Pool, checkPoolSubmit fun
 
 func innerRelatedCount(db *gorm.DB, p *Article, wg *sync.WaitGroup, root bool) {
 	var chapters []*Article
-	db.Select("id,is_book,read_num,comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
+	db.Model(&Article{}).Select("id", "is_book", "read_num", "comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
 	for i := 0; i < len(chapters); i++ {
 		if chapters[i].IsBook {
 			innerRelatedCount(db, chapters[i], nil, false)
