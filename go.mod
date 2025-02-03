@@ -96,7 +96,7 @@ require (
 	github.com/vanng822/css v0.0.0-20190504095207-a21e860bcd04 // indirect
 	github.com/vanng822/go-premailer v0.0.0-20191214114701-be27abe028fe // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
-	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
 	golang.org/x/text v0.21.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
