@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jinzhu/gorm"
+	"github.com/naiba/solitudes/pkg/pagination"
+	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"

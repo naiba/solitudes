@@ -9,7 +9,7 @@ import (
 	"gopkg.in/gomail.v2"
 )
 
-//Email notify
+// Email notify
 func Email(src, dist *model.Comment, article *model.Article) error {
 	if dist == nil || dist.Email == "" {
 		return errors.New("not replying to a comment or being replied to a person who does not leave a mailbox, without email notification")

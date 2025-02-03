@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/samber/lo"
+	"gorm.io/gorm"
 
 	"github.com/88250/lute"
 	"github.com/go-playground/locales"
@@ -50,10 +50,7 @@ func Serve() {
 	engine := html.New("resource/theme", ".html")
 	setFuncMap(engine)
 	dbErrors := []error{
-		gorm.ErrCantStartTransaction,
-		gorm.ErrInvalidSQL,
 		gorm.ErrInvalidTransaction,
-		gorm.ErrUnaddressable,
 	}
 	app := fiber.New(fiber.Config{
 		EnableTrustedProxyCheck: solitudes.System.Config.EnableTrustedProxyCheck,

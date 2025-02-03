@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"
 	"github.com/yanyiwu/gojieba"
 	"go.uber.org/dig"
 	"golang.org/x/sync/singleflight"
 	"gopkg.in/yaml.v3"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes/internal/model"
 	_ "github.com/naiba/solitudes/pkg/blevejieba"
@@ -67,7 +67,7 @@ func newPool() *ants.Pool {
 }
 
 func newDatabase(conf *model.Config) *gorm.DB {
-	db, err := gorm.Open("postgres", conf.Database)
+	db, err := gorm.Open(postgres.Open(conf.Database), &gorm.Config{})
 	if err != nil {
 		log.Println(conf)
 		panic(err)
@@ -107,7 +107,7 @@ func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache,
 }
 
 func migrate() {
-	if err := System.DB.AutoMigrate(model.Article{}, model.ArticleHistory{}, model.Comment{}).Error; err != nil {
+	if err := System.DB.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.User{}); err != nil {
 		panic(err)
 	}
 }

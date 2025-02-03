@@ -6,12 +6,12 @@ import (
 	"strconv"
 
 	"github.com/adtac/go-akismet/akismet"
-	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gofiber/fiber/v2"
-	"github.com/jinzhu/gorm"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/pagination"
 	"github.com/naiba/solitudes/pkg/translator"
+	"gorm.io/gorm"
 )
 
 func comments(c *fiber.Ctx) error {
@@ -41,24 +41,24 @@ func deleteComment(c *fiber.Ctx) error {
 		return errors.New("error id")
 	}
 
-	tx := solitudes.System.DB.Begin()
-	if err := tx.Delete(&model.Comment{}, "id =?", id).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Model(model.Comment{}).Where("reply_to = ?", id).Update("reply_to", nil).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Model(model.Article{}).Where("id = ?", articleID).
-		UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Commit().Error; err != nil {
-		return err
-	}
-	return nil
+	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		// 删除评论
+		if err := tx.Delete(&model.Comment{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+		// 更新回复关系
+		if err := tx.Model(&model.Comment{}).Where("reply_to = ?", id).Update("reply_to", nil).Error; err != nil {
+			return err
+		}
+		// 更新文章评论数
+		if err := tx.Model(&model.Article{}).Where("id = ?", articleID).
+			UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return err
 }
 
 func reportSpam(c *fiber.Ctx) error {
@@ -105,22 +105,22 @@ func reportSpam(c *fiber.Ctx) error {
 		return err
 	}
 
-	tx := solitudes.System.DB.Begin()
-	if err := tx.Delete(&model.Comment{}, "id =?", id).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Model(model.Comment{}).Where("reply_to = ?", id).Update("reply_to", nil).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Model(model.Article{}).Where("id = ?", articleID).
-		UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Commit().Error; err != nil {
-		return err
-	}
-	return nil
+	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		// 删除评论
+		if err := tx.Delete(&model.Comment{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+		// 更新回复关系
+		if err := tx.Model(&model.Comment{}).Where("reply_to = ?", id).Update("reply_to", nil).Error; err != nil {
+			return err
+		}
+		// 更新文章评论数
+		if err := tx.Model(&model.Article{}).Where("id = ?", articleID).
+			UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	return err
 }
