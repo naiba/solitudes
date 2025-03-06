@@ -19,7 +19,7 @@ import (
 )
 
 func manager(c *fiber.Ctx) error {
-	var articleNum, commentNum int
+	var articleNum, commentNum int64
 	var lastArticle model.Article
 	var lastComment model.Comment
 	type tagNum struct {

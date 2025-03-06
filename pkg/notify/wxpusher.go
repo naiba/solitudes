@@ -8,7 +8,7 @@ import (
 	"github.com/naiba/solitudes/internal/model"
 )
 
-//WxpusherNotify 微信推送
+// WxpusherNotify 微信推送
 func WxpusherNotify(comment *model.Comment, article *model.Article, err error) {
 	// when err == nil skip admin
 	if comment.IsAdmin && err == nil {

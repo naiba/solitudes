@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/biezhi/gorm-paginator/pagination"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gorilla/feeds"
+	"github.com/naiba/solitudes/pkg/pagination"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -106,7 +106,7 @@ func feedHandler(c *fiber.Ctx) error {
 		Updated:     time.Now(),
 	}
 	var articles []model.Article
-	solitudes.System.DB.Order("created_at DESC", true).Limit(20).Find(&articles)
+	solitudes.System.DB.Order("created_at DESC").Limit(20).Find(&articles)
 	for i := 0; i < len(articles); i++ {
 		// 检查私有博文
 		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {

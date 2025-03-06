@@ -14,7 +14,8 @@ import (
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 
-	"github.com/biezhi/gorm-paginator/pagination"
+	"github.com/naiba/solitudes/pkg/pagination"
+	"gorm.io/gorm"
 )
 
 func manageArticle(c *fiber.Ctx) error {
@@ -64,26 +65,26 @@ func deleteArticle(c *fiber.Ctx) error {
 	}
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
-	tx := solitudes.System.DB.Begin()
-	if err := tx.Delete(model.Article{}, "id = ?", a.ID).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	// delete article history
-	for i := 0; i < len(a.ArticleHistories); i++ {
-		indexIDs = append(indexIDs, a.ArticleHistories[i].GetIndexID())
-	}
-	if err := tx.Delete(model.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	// delete comments
-	if err := tx.Delete(model.Comment{}, "article_id = ?", a.ID).Error; err != nil {
-		tx.Rollback()
-		return err
-	}
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
+	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		// 删除文章
+		if err := tx.Delete(&model.Article{}, "id = ?", a.ID).Error; err != nil {
+			return err
+		}
+		// 删除文章历史
+		for i := 0; i < len(a.ArticleHistories); i++ {
+			indexIDs = append(indexIDs, a.ArticleHistories[i].GetIndexID())
+		}
+		if err := tx.Delete(&model.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
+			return err
+		}
+		// 删除评论
+		if err := tx.Delete(&model.Comment{}, "article_id = ?", a.ID).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
 		return err
 	}
 	// delete full-text search data
@@ -133,7 +134,6 @@ func publishHandler(c *fiber.Ctx) error {
 		Version:    1,
 	}
 
-	newArticle.BeforeSave()
 	if newArticle.IsTopic() {
 		if len(newArticle.Slug) == 0 {
 			newArticle.Slug = time.Now().Format("20060102150405")
@@ -146,24 +146,28 @@ func publishHandler(c *fiber.Ctx) error {
 	if originalArticle, err := fetchOriginArticle(newArticle); err != nil {
 		return err
 	} else {
-		tx := solitudes.System.DB.Begin()
-		if pa.NewVersion == 1 {
-			newArticle.CreatedAt = time.Now()
-			var history model.ArticleHistory
-			history.Content = originalArticle.Content
-			history.Version = originalArticle.Version
-			history.ArticleID = originalArticle.ID
-			history.CreatedAt = originalArticle.CreatedAt
-			err = tx.Save(&history).Error
-		}
-		if err == nil {
-			err = tx.Save(&newArticle).Error
-		}
+		err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+			if pa.NewVersion == 1 {
+				newArticle.CreatedAt = time.Now()
+				history := model.ArticleHistory{
+					Content:   originalArticle.Content,
+					Version:   originalArticle.Version,
+					ArticleID: originalArticle.ID,
+					CreatedAt: originalArticle.CreatedAt,
+				}
+				if err := tx.Create(&history).Error; err != nil {
+					return err
+				}
+			}
+
+			if err := tx.Save(&newArticle).Error; err != nil {
+				return err
+			}
+
+			return nil
+		})
+
 		if err != nil {
-			tx.Rollback()
-			return err
-		}
-		if err = tx.Commit().Error; err != nil {
 			return err
 		}
 		// indexing serch engine
@@ -183,6 +187,8 @@ func fetchOriginArticle(af *model.Article) (model.Article, error) {
 	if err := solitudes.System.DB.Take(&originArticle, "id = ?", af.ID).Error; err != nil {
 		return model.Article{}, err
 	}
+	af.CreatedAt = originArticle.CreatedAt
+	af.UpdatedAt = time.Now()
 	af.Version = originArticle.Version
 	af.CommentNum = originArticle.CommentNum
 	af.ReadNum = originArticle.ReadNum

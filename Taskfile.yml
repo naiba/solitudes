@@ -1,0 +1,49 @@
+# https://taskfile.dev
+
+# merge 185aa88ba3df16822828b1837fa7fd29397fd2e8
+
+version: '3'
+
+vars:
+  GOPROXY: 'https://goproxy.cn,direct'
+  GOSUMDB: sum.golang.google.cn
+  GOOS: $(go env GOOS)
+  GOARCH: $(go env GOARCH)
+  BUILD_DATE: $(date +%Y%m%d%H%M)
+  GIT_BRANCH: $(git branch -r --contains | head -1 | sed -E -e "s%(HEAD ->|origin|upstream)/?%%g" | xargs)
+  GIT_COMMIT: $(git rev-parse --short HEAD || echo "abcdefgh")
+  VERSION: "{{.GIT_COMMIT}}"
+
+tasks:
+
+  mod:
+    desc: go mod tidy
+    cmds:
+      - go mod tidy
+
+  gofmt:
+    cmds:
+      - go install golang.org/x/tools/cmd/goimports@latest
+      - gofmt -s -w .
+      - goimports -w .
+
+  golint:
+    cmds:
+      - go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+      - golangci-lint run -v ./...
+
+  lint:
+    cmds:
+      - task: gofmt
+#      - task: golint
+
+  fmt:
+    cmds:
+      - task: mod
+      - task: lint
+
+  default:
+    cmds:
+      - task: fmt
+      - task: mod
+      - go build -o solitudes -ldflags "-s -w -X 'github.com/naiba/solitudes.BuildVersion={{.GIT_COMMIT}}'" cmd/web/main.go
