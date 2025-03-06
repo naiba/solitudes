@@ -51,7 +51,7 @@ services:
     restart: always
     volumes:
         - ./blog-data:/solitudes/data
-        - ./blog-data/logo.png:/solitudes/resource/static/cactus/images/logo.png
+        # - ./blog-data/logo.png:/solitudes/resource/static/cactus/images/logo.png # 自定义logo
 ```
 
 ```shell
@@ -59,7 +59,19 @@ $ ls blog-data
 bleve  conf.yml  logo.png  upload
 # conf.yml 是配置文件，参考 data/conf.yml.example
 # logo.png 是自己 logo，替换主题自带的 logo
+
 ```
+
+先启动 db 然后启用 UUID 扩展，再启动 solitudes
+
+
+```
+docker-compose up -d db
+docker-compose exec db psql -U solitudes solitudes -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
+docker-compose up -d solitudes
+```
+
+管理页面的地址是链接/admin
 
 ### 鸣谢
 

@@ -14,7 +14,7 @@ site:
   spacedesc: We love writing
   hometopcontent: "# Top:\n\nA fast, simple & powerful blog framework \U0001F44D\n"
   homebottomcontent: "# Bottom:\n\nA fast, simple & powerful blog framework \U0001F44D\n"
-  theme: dark
+  theme: white
   headermenus:
     - name: Home
       link: /
