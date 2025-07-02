@@ -6,9 +6,12 @@ import (
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/naiba/solitudes"
-	"github.com/naiba/solitudes/pkg/translator"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/notify"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
 func settings(c *fiber.Ctx) error {
@@ -52,6 +55,11 @@ func settingsHandler(c *fiber.Ctx) error {
 	if err := c.BodyParser(&sr); err != nil {
 		return err
 	}
+
+	// 检查 Telegram 配置是否发生变化
+	tgTokenChanged := solitudes.System.Config.TGBotToken != sr.TgBotToken && sr.TgBotToken != ""
+	tgChatIDChanged := solitudes.System.Config.TGChatID != sr.TgChatId && sr.TgChatId != ""
+
 	solitudes.System.Config.Site.SpaceName = sr.SiteTitle
 	solitudes.System.Config.Site.SpaceDesc = sr.SiteDesc
 	solitudes.System.Config.TGBotToken = sr.TgBotToken
@@ -90,5 +98,24 @@ func settingsHandler(c *fiber.Ctx) error {
 		solitudes.System.Config.User.Password = string(b)
 	}
 
+	if (tgTokenChanged || tgChatIDChanged) && solitudes.System.Config.TGBotToken != "" && solitudes.System.Config.TGChatID != "" {
+		sendTelegramTestMessage()
+	}
+
 	return nil
+}
+
+func sendTelegramTestMessage() {
+	testComment := &model.Comment{
+		Nickname: "System",
+		Email:    "system@test.com",
+		Content:  "🎉 Telegram notification has been configured successfully! Your bot is now ready to send notifications.",
+		IsAdmin:  false, // 设置为 false 确保消息会被发送
+	}
+
+	testArticle := &model.Article{
+		Title: "Telegram Configuration Test",
+	}
+
+	go notify.TGNotify(testComment, testArticle, nil)
 }
