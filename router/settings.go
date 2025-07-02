@@ -21,8 +21,8 @@ func settings(c *fiber.Ctx) error {
 type settingsRequest struct {
 	SiteTitle             string `json:"site_title,omitempty"`
 	SiteDesc              string `json:"site_desc,omitempty"`
-	WxpusherAppToken      string `json:"wxpusher_app_token,omitempty"`
-	WxpusherUID           string `json:"wxpusher_uid,omitempty"`
+	TgBotToken            string `json:"tg_bot_token,omitempty"`
+	TgChatId              string `json:"tg_chat_id,omitempty"`
 	MailServer            string `json:"mail_server,omitempty"`
 	MailPort              int    `json:"mail_port,omitempty"`
 	MailUser              string `json:"mail_user,omitempty"`
@@ -54,8 +54,8 @@ func settingsHandler(c *fiber.Ctx) error {
 	}
 	solitudes.System.Config.Site.SpaceName = sr.SiteTitle
 	solitudes.System.Config.Site.SpaceDesc = sr.SiteDesc
-	solitudes.System.Config.WxpusherAppToken = sr.WxpusherAppToken
-	solitudes.System.Config.WxpusherUID = sr.WxpusherUID
+	solitudes.System.Config.TGBotToken = sr.TgBotToken
+	solitudes.System.Config.TGChatID = sr.TgChatId
 	solitudes.System.Config.Email.Host = sr.MailServer
 	solitudes.System.Config.Email.Port = sr.MailPort
 	solitudes.System.Config.Email.User = sr.MailUser

@@ -19,7 +19,6 @@ require (
 	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/samber/lo v1.49.1
-	github.com/wxpusher/wxpusher-sdk-go v1.0.3
 	github.com/yanyiwu/gojieba v1.4.5
 	go.uber.org/dig v1.18.0
 	golang.org/x/crypto v0.36.0

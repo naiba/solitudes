@@ -22,8 +22,8 @@ type Config struct {
 	TrustedProxies          []string
 	ProxyHeader             string
 
-	WxpusherAppToken string
-	WxpusherUID      string
+	TGBotToken string
+	TGChatID   string
 
 	Database string
 	Akismet  string

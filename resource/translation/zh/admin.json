@@ -221,13 +221,13 @@
     },
     {
         "locale": "zh",
-        "key": "site_wxpusher_apptoken",
-        "trans": "WxPusher AppToken"
+        "key": "site_tg_bot_token",
+        "trans": "TG Bot Token"
     },
     {
         "locale": "zh",
-        "key": "site_wxpusher_uid",
-        "trans": "WxPusher UID"
+        "key": "site_tg_chat_id",
+        "trans": "TG Chat ID"
     },
     {
         "locale": "zh",

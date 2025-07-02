@@ -34,11 +34,11 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputWxpusherAppToken" class="col-sm-3 control-label">{{.Tr.T
-                            "site_wxpusher_apptoken"}}</label>
+                        <label for="inputTGBotToken" class="col-sm-3 control-label">{{.Tr.T
+                            "site_tg_bot_token"}}</label>
                         <div class="col-sm-9">
-                            <input class="form-control" id="inputWxpusherAppToken" placeholder="xxxxxxxxxxxxx"
-                                value="{{.Conf.WxpusherAppToken}}">
+                            <input class="form-control" id="inputTGBotToken" placeholder="1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                value="{{.Conf.TGBotToken}}">
                         </div>
                     </div>
                 </div>
@@ -46,11 +46,11 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="inputWxpusherUID" class="col-sm-3 control-label">{{.Tr.T
-                            "site_wxpusher_uid"}}</label>
+                        <label for="inputTGChatID" class="col-sm-3 control-label">{{.Tr.T
+                            "site_tg_chat_id"}}</label>
                         <div class="col-sm-9">
-                            <input class="form-control" id="inputWxpusherUID" placeholder="xxxxxxxxxxxxx"
-                                value="{{.Conf.WxpusherUID}}">
+                            <input class="form-control" id="inputTGChatID" placeholder="-1001234567890"
+                                value="{{.Conf.TGChatID}}">
                         </div>
                     </div>
                 </div>
@@ -325,8 +325,8 @@
         var settings = {
             site_title: $("#inputSiteTitle").val(),
             site_desc: $("#inputSiteDesc").val(),
-            wxpusher_app_token: $("#inputWxpusherAppToken").val(),
-            wxpusher_uid: $("#inputWxpusherUID").val(),
+            tg_bot_token: $("#inputTGBotToken").val(),
+            tg_chat_id: $("#inputTGChatID").val(),
             mail_server: $("#inputMailServer").val(),
             mail_port: parseInt($("#inputMailPort").val()),
             mail_ssl: document.getElementById('cbMailSSL').checked,
