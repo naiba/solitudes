@@ -59,7 +59,7 @@ require (
 	github.com/blevesearch/zapx/v16 v16.2.2 // indirect
 	github.com/dlclark/regexp2 v1.8.1 // indirect
 	github.com/gofiber/template v1.8.3 // indirect
-	github.com/gofiber/utils v1.1.0 // indirect
+	github.com/gofiber/utils v1.2.0 // indirect
 	github.com/golang/geo v0.0.0-20210211234256-740aa86cb551 // indirect
 	github.com/golang/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
