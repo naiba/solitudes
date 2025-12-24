@@ -11,9 +11,9 @@
             {{range .article.Comments}}
             <div>
                 <p>{{if .Email}}
-                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g">
+                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg">
                     {{else}}
-                    <img src="https://avatars.dicebear.com/api/avataaars/{{.Nickname}}.svg">
+                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}">
                     {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}👲{{end}}:&nbsp;</p>
                 <p>{{.Content}}</p>
                 <time class="meta" datetime="{{.CreatedAt}}" itemprop="datePublished">

@@ -5,7 +5,7 @@
         {{if .Email}}
         <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g">
         {{else}}
-        <img src="https://avatars.dicebear.com/api/avataaars/{{.Nickname}}.svg">
+        <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}">
         {{end}}
     </div>
     <div>
