@@ -29,8 +29,8 @@ func manageArticle(c *fiber.Ctx) error {
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &as)
-	for i := 0; i < len(as); i++ {
-		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+	for i := range as {
+		as[i].RelatedCount(solitudes.System.DB)
 	}
 	c.Status(http.StatusOK).Render("admin/articles", injectSiteData(c, fiber.Map{
 		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_articles"),
@@ -71,8 +71,8 @@ func deleteArticle(c *fiber.Ctx) error {
 			return err
 		}
 		// 删除文章历史
-		for i := 0; i < len(a.ArticleHistories); i++ {
-			indexIDs = append(indexIDs, a.ArticleHistories[i].GetIndexID())
+		for _, history := range a.ArticleHistories {
+			indexIDs = append(indexIDs, history.GetIndexID())
 		}
 		if err := tx.Delete(&model.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
 			return err
@@ -88,8 +88,8 @@ func deleteArticle(c *fiber.Ctx) error {
 		return err
 	}
 	// delete full-text search data
-	for i := 0; i < len(indexIDs); i++ {
-		solitudes.System.Search.Delete(indexIDs[i])
+	for _, indexID := range indexIDs {
+		solitudes.System.Search.Delete(indexID)
 	}
 	return nil
 }

@@ -47,8 +47,8 @@ func archive(c *fiber.Ctx) error {
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
-	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+	for i := range articles {
+		articles[i].RelatedCount(solitudes.System.DB)
 		// 如果存在 Topic tag，加载前 3 条评论
 		if articles[i].IsTopic() {
 			pagination.Paging(&pagination.Param{
@@ -77,8 +77,8 @@ func book(c *fiber.Ctx) error {
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
-	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+	for i := range articles {
+		articles[i].RelatedCount(solitudes.System.DB)
 	}
 	c.Status(http.StatusOK).Render("default/archive", injectSiteData(c, fiber.Map{
 		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("books"),
@@ -107,7 +107,7 @@ func feedHandler(c *fiber.Ctx) error {
 	}
 	var articles []model.Article
 	solitudes.System.DB.Order("created_at DESC").Limit(20).Find(&articles)
-	for i := 0; i < len(articles); i++ {
+	for i := range articles {
 		// 检查私有博文
 		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
 			articles[i].Content = "Private Article"
@@ -165,8 +165,8 @@ func tags(c *fiber.Ctx) error {
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
-	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+	for i := range articles {
+		articles[i].RelatedCount(solitudes.System.DB)
 		// 如果存在 Topic tag，加载前 3 条评论
 		if articles[i].IsTopic() {
 			pagination.Paging(&pagination.Param{
@@ -189,8 +189,8 @@ func listArticleByYear(as []model.Article) [][]model.Article {
 	var listed [][]model.Article
 	var lastYear int
 	var listItem []model.Article
-	for i := 0; i < len(as); i++ {
-		currentYear := as[i].CreatedAt.Year()
+	for _, article := range as {
+		currentYear := article.CreatedAt.Year()
 		if currentYear != lastYear {
 			if len(listItem) > 0 {
 				listed = append(listed, listItem)
@@ -198,7 +198,7 @@ func listArticleByYear(as []model.Article) [][]model.Article {
 			}
 			lastYear = currentYear
 		}
-		listItem = append(listItem, as[i])
+		listItem = append(listItem, article)
 	}
 	if len(listItem) > 0 {
 		listed = append(listed, listItem)

@@ -2,7 +2,6 @@ package solitudes
 
 import (
 	"github.com/blevesearch/bleve/v2"
-	"github.com/panjf2000/ants"
 	"github.com/patrickmn/go-cache"
 	"go.uber.org/dig"
 	"golang.org/x/sync/singleflight"
@@ -33,7 +32,6 @@ type SysVeriable struct {
 	Cache     *cache.Cache
 	Search    bleve.Index
 	SafeCache *singleflight.Group
-	Pool      *ants.Pool
 }
 
 const fullTextSearchIndexPath = "data/bleve"

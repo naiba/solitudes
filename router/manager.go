@@ -29,26 +29,26 @@ func manager(c *fiber.Ctx) error {
 
 	var wg sync.WaitGroup
 	wg.Add(5)
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	go func() {
+		defer wg.Done()
 		solitudes.System.DB.Model(model.Article{}).Count(&articleNum)
-		wg.Done()
-	}))
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	}()
+	go func() {
+		defer wg.Done()
 		solitudes.System.DB.Model(model.Comment{}).Count(&commentNum)
-		wg.Done()
-	}))
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	}()
+	go func() {
+		defer wg.Done()
 		solitudes.System.DB.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn)
-		wg.Done()
-	}))
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	}()
+	go func() {
+		defer wg.Done()
 		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastArticle)
-		wg.Done()
-	}))
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	}()
+	go func() {
+		defer wg.Done()
 		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment)
-		wg.Done()
-	}))
+	}()
 	wg.Wait()
 
 	var m runtime.MemStats
