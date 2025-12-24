@@ -96,11 +96,18 @@ func index(c *fiber.Ctx) error {
 		articles[i].RelatedCount(solitudes.System.DB)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+
+	// Only show "Most Read" section if we have at least 3 items
+	var mostReadData interface{}
+	if len(mostRead) >= 3 {
+		mostReadData = mostRead
+	}
+
 	c.Status(http.StatusOK).Render("default/index", injectSiteData(c, fiber.Map{
 		"title":    tr.T("home"),
 		"articles": articles,
 		"topics":   topics,
-		"mostRead": mostRead,
+		"mostRead": mostReadData,
 	}))
 	return nil
 }
