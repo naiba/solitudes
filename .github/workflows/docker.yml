@@ -83,7 +83,8 @@ jobs:
         run: |
           echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
             [ -z "$tag" ] && continue
+            echo "Creating manifest for: ${tag}"
             docker buildx imagetools create -t ${tag} \
               ${tag}-amd64 \
-              ${tag}-arm64
+              ${tag}-arm64 || exit 1
           done
