@@ -7,40 +7,30 @@
 </section>
 {{end}}
 <main>
-  <!-- Most Read Section -->
-  {{if .Data.mostRead}}
-  <div class="home-most-read">
-    <div class="h1 sl-menu">
-      <a>{{.Tr.T "most_read"}}</a>
+  <!-- Two-row, Two-column Grid Layout for Desktop -->
+  <div class="home-grid-layout">
+    <!-- Row 1, Column 1: Search -->
+    <div class="home-search-section">
+      {{template "default/search_form" .}}
     </div>
-    <ul class="post-list">
-      {{range .Data.mostRead}}
-      {{template "default/article_list_entry" (artileData . $.Tr)}}
-      {{end}}
-    </ul>
-  </div>
-  {{end}}
-  
-  {{template "default/search_form" .}}
-  
-  <!-- Responsive Layout Container -->
-  <div class="home-layout-container">
-    <!-- Topics Section - appears first on mobile, second on desktop -->
-    {{if .Data.topics}}
-    <div class="home-topics-section">
+    
+    <!-- Row 1, Column 2: Most Read -->
+    {{if .Data.mostRead}}
+    <div class="home-most-read-section">
       <div class="h1 sl-menu">
-        <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
-        <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
+        <a>{{.Tr.T "most_read"}}</a>
       </div>
       <ul class="post-list">
-        {{range .Data.topics}}
+        {{range .Data.mostRead}}
         {{template "default/article_list_entry" (artileData . $.Tr)}}
         {{end}}
       </ul>
     </div>
+    {{else}}
+    <div class="home-most-read-section"></div>
     {{end}}
     
-    <!-- Articles Section - appears second on mobile, first on desktop -->
+    <!-- Row 2, Column 1: Writing/Articles -->
     <div class="home-articles-section">
       <div class="h1 sl-menu">
         <a href="/archive/">{{.Tr.T "writing"}}</a>
@@ -60,6 +50,23 @@
         {{end}}
       </ul>
     </div>
+    
+    <!-- Row 2, Column 2: Topics -->
+    {{if .Data.topics}}
+    <div class="home-topics-section">
+      <div class="h1 sl-menu">
+        <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
+        <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
+      </div>
+      <ul class="post-list">
+        {{range .Data.topics}}
+        {{template "default/article_list_entry" (artileData . $.Tr)}}
+        {{end}}
+      </ul>
+    </div>
+    {{else}}
+    <div class="home-topics-section"></div>
+    {{end}}
   </div>
 </main>
 {{if trim .Conf.Site.HomeBottomContent}}

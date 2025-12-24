@@ -128,53 +128,61 @@ body {
   font-size: 1.1rem;
 }
 
-/* 响应式布局容器 - Responsive layout container */
-.home-layout-container {
+/* Mobile: Single column, stacked layout */
+.home-grid-layout {
   display: flex;
   flex-direction: column;
   gap: 0;
 }
 
-/* Mobile: Topics first, Articles second */
+.home-search-section,
+.home-most-read-section,
+.home-articles-section,
 .home-topics-section {
-  order: 1;
+  width: 100%;
 }
 
-.home-articles-section {
-  order: 2;
-}
-
-/* Desktop: Two-column grid layout */
+/* Desktop: 2x2 Grid layout */
 @media (min-width: 769px) {
   .max-width {
     max-width: 72rem;
   }
   
-  .home-layout-container {
+  .home-grid-layout {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
     gap: 2rem;
     margin-top: 2rem;
   }
   
-  /* Desktop: Articles left (order 1), Topics right (order 2) */
-  .home-articles-section {
-    order: 1;
+  /* Row 1: Search (left) and Most Read (right) */
+  .home-search-section {
     grid-column: 1;
+    grid-row: 1;
+  }
+  
+  .home-most-read-section {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  /* Row 2: Articles (left) and Topics (right) */
+  .home-articles-section {
+    grid-column: 1;
+    grid-row: 2;
   }
   
   .home-topics-section {
-    order: 2;
     grid-column: 2;
+    grid-row: 2;
   }
   
+  .home-search-section,
+  .home-most-read-section,
   .home-articles-section,
   .home-topics-section {
     min-width: 0; /* Prevent grid item overflow */
-  }
-  
-  .home-most-read {
-    margin-bottom: 2rem;
   }
 }
 
