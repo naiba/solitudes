@@ -18,7 +18,7 @@ import (
 
 	"github.com/88250/lute"
 	"github.com/go-playground/locales"
-	gv "github.com/go-playground/validator"
+	gv "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	html "github.com/gofiber/template/html/v2"
