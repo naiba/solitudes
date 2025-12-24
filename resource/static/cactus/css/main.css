@@ -128,42 +128,48 @@ body {
   font-size: 1.1rem;
 }
 
-/* 移动设备保持单栏布局 - Mobile keeps single column */
-@media (max-width: 768px) {
-  .home-two-column {
-    display: block;
-  }
-  
-  .home-right-column {
-    display: none; /* Hide duplicate topics section on mobile */
-  }
-  
-  .mobile-topics {
-    display: block; /* Show topics at top on mobile */
-  }
+/* 响应式布局容器 - Responsive layout container */
+.home-layout-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-/* 针对非移动设备加宽界面 - Widen for non-mobile */
+/* Mobile: Topics first, Articles second */
+.home-topics-section {
+  order: 1;
+}
+
+.home-articles-section {
+  order: 2;
+}
+
+/* Desktop: Two-column grid layout */
 @media (min-width: 769px) {
   .max-width {
     max-width: 72rem;
   }
   
-  /* Hide mobile topics section on desktop */
-  .mobile-topics {
-    display: none;
-  }
-  
-  /* 两栏布局容器 - Two column layout for desktop */
-  .home-two-column {
+  .home-layout-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 2rem;
     margin-top: 2rem;
   }
   
-  .home-left-column,
-  .home-right-column {
+  /* Desktop: Articles left (order 1), Topics right (order 2) */
+  .home-articles-section {
+    order: 1;
+    grid-column: 1;
+  }
+  
+  .home-topics-section {
+    order: 2;
+    grid-column: 2;
+  }
+  
+  .home-articles-section,
+  .home-topics-section {
     min-width: 0; /* Prevent grid item overflow */
   }
   

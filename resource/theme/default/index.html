@@ -7,21 +7,6 @@
 </section>
 {{end}}
 <main>
-  <!-- Topics section for mobile (shown at top on mobile only) -->
-  {{if .Data.topics}}
-  <div class="mobile-topics">
-    <div class="h1 sl-menu">
-      <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
-      <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
-    </div>
-    <ul class="post-list">
-      {{range .Data.topics}}
-      {{template "default/article_list_entry" (artileData . $.Tr)}}
-      {{end}}
-    </ul>
-  </div>
-  {{end}}
-  
   <!-- Most Read Section -->
   {{if .Data.mostRead}}
   <div class="home-most-read">
@@ -38,9 +23,25 @@
   
   {{template "default/search_form" .}}
   
-  <!-- Two Column Layout for Desktop -->
-  <div class="home-two-column">
-    <div class="home-left-column">
+  <!-- Responsive Layout Container -->
+  <div class="home-layout-container">
+    <!-- Topics Section - appears first on mobile, second on desktop -->
+    {{if .Data.topics}}
+    <div class="home-topics-section">
+      <div class="h1 sl-menu">
+        <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
+        <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
+      </div>
+      <ul class="post-list">
+        {{range .Data.topics}}
+        {{template "default/article_list_entry" (artileData . $.Tr)}}
+        {{end}}
+      </ul>
+    </div>
+    {{end}}
+    
+    <!-- Articles Section - appears second on mobile, first on desktop -->
+    <div class="home-articles-section">
       <div class="h1 sl-menu">
         <a href="/archive/">{{.Tr.T "writing"}}</a>
         <a href="/archive/">{{.Tr.T "view_more"}}➤</a>
@@ -58,20 +59,6 @@
         {{end}}
         {{end}}
       </ul>
-    </div>
-    
-    <div class="home-right-column">
-      {{if .Data.topics}}
-      <div class="h1 sl-menu">
-        <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
-        <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
-      </div>
-      <ul class="post-list">
-        {{range .Data.topics}}
-        {{template "default/article_list_entry" (artileData . $.Tr)}}
-        {{end}}
-      </ul>
-      {{end}}
     </div>
   </div>
 </main>
