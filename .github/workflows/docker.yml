@@ -81,7 +81,8 @@ jobs:
 
       - name: Create and push multi-arch manifest
         run: |
-          for tag in ${{ steps.meta.outputs.tags }}; do
+          echo "${{ steps.meta.outputs.tags }}" | while IFS= read -r tag; do
+            [ -z "$tag" ] && continue
             docker buildx imagetools create -t ${tag} \
               ${tag}-amd64 \
               ${tag}-arm64
