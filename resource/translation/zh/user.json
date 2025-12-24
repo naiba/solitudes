@@ -163,5 +163,15 @@
         "locale": "zh",
         "key": "topic",
         "trans": "哔哔"
+    },
+    {
+        "locale": "zh",
+        "key": "most_read",
+        "trans": "阅读最多"
+    },
+    {
+        "locale": "zh",
+        "key": "home",
+        "trans": "首页"
     }
 ]
