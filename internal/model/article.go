@@ -188,7 +188,7 @@ func (t *Article) RelatedCount(db *gorm.DB) {
 func innerRelatedCount(db *gorm.DB, p *Article, root bool) {
 	var chapters []*Article
 	db.Model(&Article{}).Select("id", "is_book", "read_num", "comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
-	for i := 0; i < len(chapters); i++ {
+	for i := range chapters {
 		if chapters[i].IsBook {
 			innerRelatedCount(db, chapters[i], false)
 		}

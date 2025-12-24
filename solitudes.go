@@ -111,8 +111,8 @@ func provide() {
 		newBleveSearch,
 	}
 	var err error
-	for i := 0; i < len(providers); i++ {
-		err = Injector.Provide(providers[i])
+	for _, provider := range providers {
+		err = Injector.Provide(provider)
 		if err != nil {
 			panic(err)
 		}
@@ -145,10 +145,10 @@ func BuildArticleIndex() {
 		System.DB.Preload("Article").Find(&hs)
 	}()
 	wg.Wait()
-	for i := 0; i < len(as); i++ {
+	for i := range as {
 		System.Search.Index(as[i].GetIndexID(), as[i])
 	}
-	for i := 0; i < len(hs); i++ {
+	for i := range hs {
 		System.Search.Index(hs[i].GetIndexID(), hs[i])
 	}
 	num, err := System.Search.DocCount()
