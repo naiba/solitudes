@@ -168,10 +168,5 @@
         "locale": "en",
         "key": "most_read",
         "trans": "Most Read"
-    },
-    {
-        "locale": "en",
-        "key": "home",
-        "trans": "Home"
     }
 ]
