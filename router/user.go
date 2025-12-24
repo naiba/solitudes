@@ -84,8 +84,8 @@ func index(c *fiber.Ctx) error {
 		}, &topics[i].Comments)
 	}
 
-	// Fetch top 3 most read articles
-	solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("read_num DESC").Limit(3).Find(&mostRead)
+	// Fetch top 3 most read articles and books
+	solitudes.System.DB.Where("array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("read_num DESC").Limit(3).Find(&mostRead)
 	for i := range mostRead {
 		mostRead[i].RelatedCount(solitudes.System.DB)
 	}
