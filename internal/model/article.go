@@ -9,7 +9,6 @@ import (
 	"unicode"
 
 	"github.com/lib/pq"
-	"github.com/panjf2000/ants"
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
@@ -173,29 +172,27 @@ func sanitizedAnchorName(unique map[string]int, text string) (ret string) {
 }
 
 // RelatedCount 合计专栏下文章计数
-func (t *Article) RelatedCount(db *gorm.DB, pool *ants.Pool, checkPoolSubmit func(*sync.WaitGroup, error)) {
+func (t *Article) RelatedCount(db *gorm.DB) {
 	if !t.IsBook {
 		return
 	}
 	var wg sync.WaitGroup
 	wg.Add(1)
-	checkPoolSubmit(&wg, pool.Submit(func() {
-		innerRelatedCount(db, t, &wg, true)
-	}))
+	go func() {
+		defer wg.Done()
+		innerRelatedCount(db, t, true)
+	}()
 	wg.Wait()
 }
 
-func innerRelatedCount(db *gorm.DB, p *Article, wg *sync.WaitGroup, root bool) {
+func innerRelatedCount(db *gorm.DB, p *Article, root bool) {
 	var chapters []*Article
 	db.Model(&Article{}).Select("id", "is_book", "read_num", "comment_num").Where("book_refer = ?", p.ID).Find(&chapters)
 	for i := 0; i < len(chapters); i++ {
 		if chapters[i].IsBook {
-			innerRelatedCount(db, chapters[i], nil, false)
+			innerRelatedCount(db, chapters[i], false)
 		}
 		p.ReadNum += chapters[i].ReadNum
 		p.CommentNum += chapters[i].CommentNum
-	}
-	if root {
-		wg.Done()
 	}
 }

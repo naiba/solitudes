@@ -7,11 +7,9 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"reflect"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/naiba/solitudes/internal/model"
@@ -135,15 +133,6 @@ func page404(c *fiber.Ctx) error {
 		"msg":   tr.T("404_msg"),
 	}))
 	return nil
-}
-
-func checkPoolSubmit(wg *sync.WaitGroup, err error) {
-	if err != nil {
-		log.Println(err)
-		if wg != nil {
-			wg.Done()
-		}
-	}
 }
 
 func setFuncMap(engine *html.Engine) {

@@ -30,7 +30,7 @@ func manageArticle(c *fiber.Ctx) error {
 		OrderBy: []string{"created_at DESC"},
 	}, &as)
 	for i := 0; i < len(as); i++ {
-		as[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+		as[i].RelatedCount(solitudes.System.DB)
 	}
 	c.Status(http.StatusOK).Render("admin/articles", injectSiteData(c, fiber.Map{
 		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_articles"),

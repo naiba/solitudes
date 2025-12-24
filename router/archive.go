@@ -48,7 +48,7 @@ func archive(c *fiber.Ctx) error {
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+		articles[i].RelatedCount(solitudes.System.DB)
 		// 如果存在 Topic tag，加载前 3 条评论
 		if articles[i].IsTopic() {
 			pagination.Paging(&pagination.Param{
@@ -78,7 +78,7 @@ func book(c *fiber.Ctx) error {
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+		articles[i].RelatedCount(solitudes.System.DB)
 	}
 	c.Status(http.StatusOK).Render("default/archive", injectSiteData(c, fiber.Map{
 		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("books"),
@@ -166,7 +166,7 @@ func tags(c *fiber.Ctx) error {
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+		articles[i].RelatedCount(solitudes.System.DB)
 		// 如果存在 Topic tag，加载前 3 条评论
 		if articles[i].IsTopic() {
 			pagination.Paging(&pagination.Param{

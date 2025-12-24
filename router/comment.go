@@ -82,10 +82,10 @@ func commentHandler(c *fiber.Ctx) error {
 	}
 
 	//Email notify
-	checkPoolSubmit(nil, solitudes.System.Pool.Submit(func() {
+	go func() {
 		err := notify.Email(&cm, replyTo, article)
 		notify.TGNotify(&cm, article, err)
-	}))
+	}()
 	return nil
 }
 

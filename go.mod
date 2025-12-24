@@ -16,7 +16,6 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/liuzl/gocc v0.0.0-20231231122217-0372e1059ca5
 	github.com/matcornic/hermes/v2 v2.1.0
-	github.com/panjf2000/ants v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/samber/lo v1.49.1
 	github.com/yanyiwu/gojieba v1.4.5

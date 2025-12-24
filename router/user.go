@@ -84,7 +84,7 @@ func index(c *fiber.Ctx) error {
 	articleCount := 16 - len(topics)*2
 	solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles)
 	for i := 0; i < len(articles); i++ {
-		articles[i].RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+		articles[i].RelatedCount(solitudes.System.DB)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	c.Status(http.StatusOK).Render("default/index", injectSiteData(c, fiber.Map{

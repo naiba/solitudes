@@ -63,25 +63,26 @@ func article(c *fiber.Ctx) error {
 	}
 	var wg sync.WaitGroup
 	wg.Add(5)
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	go func() {
+		defer wg.Done()
 		relatedChapters(&a)
-		wg.Done()
-	}))
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	}()
+	go func() {
+		defer wg.Done()
 		relatedBook(&a)
-		wg.Done()
-	}))
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	}()
+	go func() {
+		defer wg.Done()
 		// load prevPost,nextPost
 		relatedSiblingArticle(&a)
-		wg.Done()
-	}))
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	}()
+	go func() {
+		defer wg.Done()
 		a.GenTOC()
-		wg.Done()
-	}))
+	}()
 	var pg *pagination.Paginator
-	checkPoolSubmit(&wg, solitudes.System.Pool.Submit(func() {
+	go func() {
+		defer wg.Done()
 		// load root comments
 		pageSlice := c.Query("comment_page")
 		var page int64
@@ -96,10 +97,9 @@ func article(c *fiber.Ctx) error {
 		}, &a.Comments)
 		// load childComments
 		relatedChildComments(&a, a.Comments, true)
-		wg.Done()
-	}))
+	}()
 	wg.Wait()
-	a.RelatedCount(solitudes.System.DB, solitudes.System.Pool, checkPoolSubmit)
+	a.RelatedCount(solitudes.System.DB)
 
 	// 检查私有博文
 	if a.IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
