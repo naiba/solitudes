@@ -45,16 +45,23 @@ var System *SysVeriable
 // BuildVersion 构建版本
 var BuildVersion = "_BuildVersion_"
 
+const (
+	// ArticleTemplateID represents the article template ID
+	ArticleTemplateID byte = 1
+	// PageTemplateID represents the page template ID
+	PageTemplateID byte = 2
+)
+
 // Templates 文章模板
 var Templates = map[byte]string{
-	1: "Article template",
-	2: "Page template",
+	ArticleTemplateID: "Article template",
+	PageTemplateID:    "Page template",
 }
 
 // TemplateIndex 模板索引
 var TemplateIndex = map[byte]string{
-	1: "article",
-	2: "page",
+	ArticleTemplateID: "article",
+	PageTemplateID:    "page",
 }
 
 func init() {
