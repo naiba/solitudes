@@ -133,6 +133,25 @@ body {
   font-size: 1.1rem !important;
 }
 
+/* "阅读最多"标题和"搜索"标题字体大小一致 - Most Read and Search title same size */
+.home-most-read-section .h1.sl-menu,
+.home-search-section .h1 {
+  font-size: 1.5em;
+}
+
+/* 非移动端搜索输入框加长 - Wider search input on desktop */
+@media (min-width: 769px) {
+  .search-input {
+    width: 60% !important;
+  }
+}
+
+/* 归档页面底部页码文字加大 - Increase pagination font size */
+.pagination .page-number,
+.pagination a {
+  font-size: 1.1rem !important;
+}
+
 /* 文章标题字体大小优化 - Article heading font size optimization */
 article .content h1 {
   font-size: 2rem;
