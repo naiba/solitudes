@@ -163,7 +163,7 @@ body {
   
   .home-left-column,
   .home-right-column {
-    min-width: 0; /* 防止 grid item 溢出 */
+    min-width: 0; /* Prevent grid item overflow */
   }
   
   .home-most-read {
