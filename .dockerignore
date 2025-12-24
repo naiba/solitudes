@@ -1,0 +1,43 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+.github
+
+# Build artifacts
+solitudes
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test files
+*_test.go
+tests/
+
+# Development files
+.air.toml
+Taskfile.yml
+*.md
+README.md
+
+# Data and uploads
+data/
+upload/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.log
