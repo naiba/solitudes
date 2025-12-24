@@ -128,6 +128,60 @@ body {
   font-size: 1.1rem;
 }
 
+/* 顶部菜单字体加大 - Increase top menu font size */
+#header #nav {
+  font-size: 1.1rem !important;
+}
+
+/* 文章标题字体大小优化 - Article heading font size optimization */
+article .content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+}
+
+article .content h2 {
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin-top: 1.4rem;
+  margin-bottom: 0.9rem;
+  line-height: 1.3;
+}
+
+article .content h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.3rem;
+  margin-bottom: 0.8rem;
+  line-height: 1.3;
+}
+
+article .content h4 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-top: 1.2rem;
+  margin-bottom: 0.7rem;
+  line-height: 1.3;
+}
+
+article .content h5 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1.1rem;
+  margin-bottom: 0.6rem;
+  line-height: 1.3;
+}
+
+article .content h6 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
 /* Mobile: Single column, stacked layout */
 .home-grid-layout {
   display: flex;
