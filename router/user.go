@@ -73,6 +73,8 @@ func logoutHandler(c *fiber.Ctx) error {
 func index(c *fiber.Ctx) error {
 	var articles []model.Article
 	var topics []model.Article
+	var mostRead []model.Article
+
 	solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(3).Find(&topics)
 	for i := range topics {
 		pagination.Paging(&pagination.Param{
@@ -81,16 +83,31 @@ func index(c *fiber.Ctx) error {
 			OrderBy: []string{"created_at DESC"},
 		}, &topics[i].Comments)
 	}
+
+	// Fetch top 3 most read articles and books
+	solitudes.System.DB.Where("array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("read_num DESC").Limit(3).Find(&mostRead)
+	for i := range mostRead {
+		mostRead[i].RelatedCount(solitudes.System.DB)
+	}
+
 	articleCount := 16 - len(topics)*2
 	solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles)
 	for i := range articles {
 		articles[i].RelatedCount(solitudes.System.DB)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+
+	// Only show "Most Read" section if we have at least 3 items
+	var mostReadData interface{}
+	if len(mostRead) >= 3 {
+		mostReadData = mostRead
+	}
+
 	c.Status(http.StatusOK).Render("default/index", injectSiteData(c, fiber.Map{
 		"title":    tr.T("home"),
 		"articles": articles,
 		"topics":   topics,
+		"mostRead": mostReadData,
 	}))
 	return nil
 }

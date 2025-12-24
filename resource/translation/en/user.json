@@ -163,5 +163,10 @@
         "locale": "en",
         "key": "topic",
         "trans": "Topic"
+    },
+    {
+        "locale": "en",
+        "key": "most_read",
+        "trans": "Most Read"
     }
 ]

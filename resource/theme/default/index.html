@@ -6,36 +6,68 @@
   {{(md "home-top" .Conf.Site.HomeTopContent)|unsafe}}
 </section>
 {{end}}
-{{template "default/search_form" .}}
 <main>
-  {{if .Data.topics}}
-  <div class="h1 sl-menu">
-    <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
-    <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
-  </div>
-  <ul class="post-list">
-    {{range .Data.topics}}
-    {{template "default/article_list_entry" (artileData . $.Tr)}}
-    {{end}}
-  </ul>
-  {{end}}
-  <div class="h1 sl-menu">
-    <a href="/archive/">{{.Tr.T "writing"}}</a>
-    <a href="/archive/">{{.Tr.T "view_more"}}➤</a>
-  </div>
-  <ul class="post-list">
-    {{if not .Data.articles}}
-    <li class="post-item">
-      <span>
-        <small>{{.Tr.T "no_article"}}</small>
-      </span>
-    </li>
+  <!-- Two-row, Two-column Grid Layout for Desktop -->
+  <div class="home-grid-layout">
+    <!-- Row 1, Column 1: Search -->
+    <div class="home-search-section">
+      {{template "default/search_form" .}}
+    </div>
+    
+    <!-- Row 1, Column 2: Most Read -->
+    {{if .Data.mostRead}}
+    <div class="home-most-read-section">
+      <div class="h1 sl-menu">
+        <span>{{.Tr.T "most_read"}}</span>
+      </div>
+      <ul class="post-list">
+        {{range .Data.mostRead}}
+        {{template "default/article_list_entry" (artileData . $.Tr)}}
+        {{end}}
+      </ul>
+    </div>
     {{else}}
-    {{range .Data.articles}}
-    {{template "default/article_list_entry" (artileData . $.Tr)}}
+    <div class="home-most-read-section"></div>
     {{end}}
+    
+    <!-- Row 2, Column 1: Writing/Articles -->
+    <div class="home-articles-section">
+      <div class="h1 sl-menu">
+        <a href="/archive/">{{.Tr.T "writing"}}</a>
+        <a href="/archive/">{{.Tr.T "view_more"}}➤</a>
+      </div>
+      <ul class="post-list">
+        {{if not .Data.articles}}
+        <li class="post-item">
+          <span>
+            <small>{{.Tr.T "no_article"}}</small>
+          </span>
+        </li>
+        {{else}}
+        {{range .Data.articles}}
+        {{template "default/article_list_entry" (artileData . $.Tr)}}
+        {{end}}
+        {{end}}
+      </ul>
+    </div>
+    
+    <!-- Row 2, Column 2: Topics -->
+    {{if .Data.topics}}
+    <div class="home-topics-section">
+      <div class="h1 sl-menu">
+        <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
+        <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
+      </div>
+      <ul class="post-list">
+        {{range .Data.topics}}
+        {{template "default/article_list_entry" (artileData . $.Tr)}}
+        {{end}}
+      </ul>
+    </div>
+    {{else}}
+    <div class="home-topics-section"></div>
     {{end}}
-  </ul>
+  </div>
 </main>
 {{if trim .Conf.Site.HomeBottomContent}}
 <section class="home-bottom">
