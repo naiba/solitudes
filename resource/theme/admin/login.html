@@ -70,9 +70,21 @@
         });
         
         function refreshCaptcha() {
-            $.get('/captcha', function(data) {
-                $('#captchaId').val(data.captchaId);
-                $('#captchaImage').attr('src', data.captchaImage);
+            $.ajax({
+                url: '/captcha',
+                type: 'GET',
+                success: function(data) {
+                    $('#captchaId').val(data.captchaId);
+                    $('#captchaImage').attr('src', data.captchaImage);
+                    $('#captchaImage').attr('alt', 'Captcha loaded');
+                },
+                error: function(xhr) {
+                    console.error('Failed to load captcha:', xhr);
+                    $('#captchaImage').attr('alt', 'Failed to load captcha. Click to retry.');
+                    $('#captchaImage').attr('src', 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQwIiBoZWlnaHQ9IjgwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNmNGY0ZjQiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Q2xpY2sgdG8gcmVsb2FkPC90ZXh0Pjwvc3ZnPg==');
+                    // Retry after 2 seconds
+                    setTimeout(refreshCaptcha, 2000);
+                }
             });
         }
     </script>
