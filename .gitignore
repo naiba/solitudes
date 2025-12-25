@@ -16,3 +16,13 @@
 *.out
 solitudes
 solitudes-app
+
+# Logs
+*.log
+app.log
+
+# Backup files
+*.backup
+*~
+*.swp
+*.swo
