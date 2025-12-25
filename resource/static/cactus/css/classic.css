@@ -548,12 +548,6 @@ body td {
   border-bottom: none;
 }
 
-@font-face {
-  font-style: normal;
-  font-family: "Meslo LG";
-  src: local("Meslo LG S"), url("../lib/meslo-LG/MesloLGS-Regular.ttf") format("truetype");
-}
-
 *,
 *:before,
 *:after {
@@ -577,7 +571,7 @@ body {
   font-display: swap;
   font-weight: 400;
   font-size: 14px;
-  font-family: "Menlo", "Meslo LG", monospace;
+  font-family: "SF Mono", "Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
   line-height: 1.725;
   text-rendering: geometricPrecision;
   flex: 1;
@@ -1678,9 +1672,9 @@ pre {
   padding-bottom: 0;
   border: 1px dotted #666;
   border-radius: 4px;
-  font-size: 13px;
-  font-family: "Menlo", "Meslo LG", monospace;
-  line-height: 22px;
+  font-size: 14px;
+  font-family: "SF Mono", "Fira Code", "JetBrains Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  line-height: 1.6;
   -webkit-border-radius: 4px;
 }
 

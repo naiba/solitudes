@@ -35,10 +35,10 @@
                         <td>
                             <div class="flex gap-2">
                                 <button onclick="deleteComment('{{.Article.ID}}','{{.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
-                                    <i class="fa fa-trash"></i> {{$.Tr.T "delete"}}
+                                    <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
                                 </button>
                                 <button onclick="reportSpam('{{.Article.ID}}','{{.ID}}')" class="px-3 py-1 text-sm bg-orange-500 text-white rounded hover:bg-orange-600">
-                                    <i class="fa fa-exclamation-triangle"></i> SPAM
+                                    <i class="fas fa-exclamation-triangle"></i> SPAM
                                 </button>
                             </div>
                         </td>
@@ -49,11 +49,11 @@
         </div>
         <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
             <a href="?page={{.Data.page.PrevPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                <i class="fa fa-chevron-left"></i> {{.Tr.T "previous"}}
+                <i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
             <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">Page {{.Data.page.Page}}</span>
             <a href="?page={{.Data.page.NextPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                {{.Tr.T "next"}} <i class="fa fa-chevron-right"></i>
+                {{.Tr.T "next"}} <i class="fas fa-chevron-right"></i>
             </a>
         </div>
     </div>

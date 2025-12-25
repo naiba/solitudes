@@ -15,44 +15,44 @@
     <nav class="admin-topnav">
         <div class="admin-topnav-inner">
             <a href="/admin/" class="admin-logo">
-                <i class="fa fa-pencil-square-o"></i>
+                <i class="fas fa-pen-square"></i>
                 <span>Solitudes</span>
             </a>
             
             <ul class="admin-nav-links">
                 <li><a href="/admin/" class="{{if eq .Title "仪表盘"}}active{{end}}">
-                    <i class="fa fa-dashboard"></i>
+                    <i class="fas fa-tachometer-alt"></i>
                     <span>{{.Tr.T "dashboard"}}</span>
                 </a></li>
                 <li><a href="/admin/publish" class="{{if eq .Title "发布文章"}}active{{end}}">
-                    <i class="fa fa-plus"></i>
+                    <i class="fas fa-plus"></i>
                     <span>{{.Tr.T "publish"}}</span>
                 </a></li>
                 <li><a href="/admin/articles" class="{{if eq .Title "管理文章"}}active{{end}}">
-                    <i class="fa fa-list"></i>
+                    <i class="fas fa-list"></i>
                     <span>{{.Tr.T "articles"}}</span>
                 </a></li>
                 <li><a href="/admin/comments" class="{{if eq .Title "管理评论"}}active{{end}}">
-                    <i class="fa fa-comments-o"></i>
+                    <i class="far fa-comments"></i>
                     <span>{{.Tr.T "comments"}}</span>
                 </a></li>
                 <li><a href="/admin/media" class="{{if eq .Title "管理文件"}}active{{end}}">
-                    <i class="fa fa-file-image-o"></i>
+                    <i class="far fa-file-image"></i>
                     <span>{{.Tr.T "media"}}</span>
                 </a></li>
                 <li><a href="/admin/tags" class="{{if eq .Title "管理标签"}}active{{end}}">
-                    <i class="fa fa-tags"></i>
+                    <i class="fas fa-tags"></i>
                     <span>{{.Tr.T "tags"}}</span>
                 </a></li>
                 <li><a href="/admin/settings" class="{{if eq .Title "配置"}}active{{end}}">
-                    <i class="fa fa-cog"></i>
+                    <i class="fas fa-cog"></i>
                     <span>{{.Tr.T "site_settings"}}</span>
                 </a></li>
             </ul>
             
             <div class="admin-user-menu">
                 <a href="/" target="_blank" class="text-gray-600 hover:text-gray-900 transition">
-                    <i class="fa fa-external-link"></i>
+                    <i class="fas fa-external-link-alt"></i>
                     <span class="hidden sm:inline ml-1">{{.Tr.T "view_site"}}</span>
                 </a>
                 <div class="admin-user-info">
@@ -61,7 +61,7 @@
                 </div>
                 <form method="POST" action="/logout" style="display: inline;">
                     <button type="submit" class="text-gray-600 hover:text-red-600 transition">
-                        <i class="fa fa-sign-out"></i>
+                        <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </form>
             </div>
