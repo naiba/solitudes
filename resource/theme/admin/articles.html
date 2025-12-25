@@ -13,6 +13,7 @@
             <div class="box-body">
                 <div class="row">
                     <div class="col-sm-12">
+                        <div class="table-responsive">
                         <table class="table table-bordered table-hover">
                             <thead>
                                 <tr role="row">
@@ -49,6 +50,7 @@
                                 {{end}}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
                 <ul class="pagination">
@@ -65,15 +67,12 @@
         if (!confirm("Confirm delete?")) {
             return
         }
-        $.ajax({
+        ajaxRequest({
             url: "/admin/articles?id=" + id,
             type: 'DELETE',
             success: () => {
                 window.location.reload()
-            },
-            error: (e) => {
-                alert(e.responseText)
-            },
+            }
         })
     }
 </script>

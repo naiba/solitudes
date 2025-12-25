@@ -46,30 +46,24 @@
         if (!newTagName) {
             return
         }
-        $.ajax({
+        ajaxRequest({
             url: "/admin/tags?oldTagName=" + oldTagName + "&newTagName=" + newTagName,
             type: 'PATCH',
             success: () => {
                 window.location.reload()
-            },
-            error: (e) => {
-                alert(e.responseText)
-            },
+            }
         })
     }
     function deleteTag(tag) {
         if (!confirm("Confirm delete?")) {
             return
         }
-        $.ajax({
+        ajaxRequest({
             url: "/admin/tags?tagName=" + tag,
             type: 'DELETE',
             success: () => {
                 window.location.reload()
-            },
-            error: (e) => {
-                alert(e.responseText)
-            },
+            }
         })
     }
     document.querySelectorAll("div.btn-group").forEach(g => {

@@ -323,5 +323,20 @@
         "locale": "en",
         "key": "input_password_if_you_want_change_it",
         "trans": "Input password if you want change it"
+    },
+    {
+        "locale": "en",
+        "key": "captcha",
+        "trans": "Captcha"
+    },
+    {
+        "locale": "en",
+        "key": "enter_captcha",
+        "trans": "Enter captcha code"
+    },
+    {
+        "locale": "en",
+        "key": "refresh_captcha",
+        "trans": "Refresh captcha"
     }
 ]

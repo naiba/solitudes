@@ -10,6 +10,54 @@
 </div>
 
 {{template "admin/js"}}
+<script>
+    // Global utility functions for better UX
+    window.showLoading = function() {
+        document.getElementById('loadingOverlay').classList.add('active');
+    };
+    
+    window.hideLoading = function() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    };
+    
+    // Enhanced AJAX with loading states and error handling
+    window.ajaxRequest = function(options) {
+        showLoading();
+        const defaultOptions = {
+            error: function(xhr) {
+                hideLoading();
+                alert(xhr.responseText || 'An error occurred');
+            },
+            complete: function() {
+                hideLoading();
+            }
+        };
+        $.ajax(Object.assign(defaultOptions, options));
+    };
+    
+    // Form validation helper
+    window.validateForm = function(formId) {
+        const form = document.getElementById(formId);
+        if (!form) return false;
+        
+        let isValid = true;
+        const requiredFields = form.querySelectorAll('[required]');
+        
+        requiredFields.forEach(function(field) {
+            const formGroup = field.closest('.form-group');
+            if (!field.value.trim()) {
+                formGroup.classList.add('has-error');
+                formGroup.classList.remove('has-success');
+                isValid = false;
+            } else {
+                formGroup.classList.remove('has-error');
+                formGroup.classList.add('has-success');
+            }
+        });
+        
+        return isValid;
+    };
+</script>
 </body>
 
 </html>
