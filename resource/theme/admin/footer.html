@@ -26,27 +26,13 @@
         };
         $.ajax(Object.assign(defaultOptions, options));
     };
-    
-    // Form validation helper
-    window.validateForm = function(formId) {
-        const form = document.getElementById(formId);
-        if (!form) return false;
-        
-        let isValid = true;
-        const requiredFields = form.querySelectorAll('[required]');
-        
-        requiredFields.forEach(function(field) {
-            if (!field.value.trim()) {
-                field.classList.add('border-red-500');
-                isValid = false;
-            } else {
-                field.classList.remove('border-red-500');
-            }
-        });
-        
-        return isValid;
-    };
 </script>
+
+<footer class="py-6 text-center text-sm text-gray-500 border-t border-gray-200 mt-8">
+    Copyright &copy; <a href="https://{{.Conf.Site.Domain}}" class="hover:text-gray-700">{{.Conf.Site.SpaceName}}</a>, 
+    Powered by <a href="https://github.com/naiba/solitudes" target="_blank" class="hover:text-gray-700">Solitudes</a> 
+    build·{{.BuildVersion}}
+</footer>
 </body>
 </html>
 {{end}}

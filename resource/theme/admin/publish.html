@@ -1,7 +1,7 @@
 {{define "admin/publish"}}
 {{template "admin/header" .}}
 
-<div class="admin-container-narrow">
+<div class="admin-container">
     <div class="page-header">
         <h1 class="page-title">{{.Tr.T "publish_article"}}</h1>
         <p class="page-subtitle">Focus on your writing</p>
@@ -18,31 +18,27 @@
             value="{{.Data.article.Title}}"
             autocomplete="off">
         
-        <!-- Metadata Section - Collapsible -->
-        <div class="mb-4">
-            <button 
-                type="button" 
-                onclick="document.getElementById('metadata').classList.toggle('hidden')"
-                class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2">
-                <i class="fa fa-cog"></i>
-                <span>Article Settings</span>
-                <i class="fa fa-chevron-down"></i>
-            </button>
-        </div>
+        <!-- Metadata Section -->
+        <details class="mb-6 border border-gray-200 rounded-lg" open>
+            <summary class="px-4 py-3 bg-gray-50 font-medium text-gray-700 rounded-t-lg cursor-pointer select-none list-none">
+                <i class="fa fa-cog mr-2"></i>
+                Article Settings
+                <i class="fa fa-chevron-down float-right mt-1"></i>
+            </summary>
 
-        <div id="metadata" class="space-y-4 mb-6 pb-6 border-b border-gray-200">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="inputSlug" class="block text-sm font-medium text-gray-700 mb-1">
-                        {{.Tr.T "slug"}} (URL)
-                    </label>
-                    <input 
-                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
-                        id="inputSlug" 
-                        placeholder="my-article-slug" 
-                        value="{{.Data.article.Slug}}"
-                        autocomplete="off">
-                    <p class="text-xs text-gray-500 mt-1">Lowercase, hyphens only</p>
+            <div class="p-4 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="inputSlug" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{.Tr.T "slug"}} (URL)
+                        </label>
+                        <input 
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
+                            id="inputSlug" 
+                            placeholder="my-article-slug" 
+                            value="{{.Data.article.Slug}}"
+                            autocomplete="off">
+                        <p class="text-xs text-gray-500 mt-1">Lowercase, hyphens only</p>
                 </div>
 
                 <div>
@@ -119,19 +115,14 @@
                     <span class="text-sm text-gray-700">{{.Tr.T "new_version"}}</span>
                 </label>
             </div>
-        </div>
+            </div>
+        </details>
 
         <!-- Editor -->
-        <div id="editSection" class="min-h-[400px]"></div>
+        <div id="editSection" style="min-height: 400px;"></div>
 
         <!-- Publish Button -->
-        <div class="mt-6 flex justify-between items-center">
-            <button 
-                type="button"
-                onclick="document.getElementById('metadata').classList.toggle('hidden')"
-                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
-                <i class="fa fa-cog mr-1"></i> Settings
-            </button>
+        <div class="mt-6 flex justify-end">
             <button 
                 onclick="publish(this)" 
                 class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">

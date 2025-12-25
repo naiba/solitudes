@@ -10,14 +10,15 @@
     <div class="wf-card">
         <div class="wf-card-body">
             <div class="flex flex-wrap gap-3">
-                {{range .Data.tags}}
+                {{range $i, $tag := .Data.tags}}
                 <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                    <span class="font-medium text-gray-700">{{.}}</span>
+                    <span class="font-medium text-gray-700">{{$tag}}</span>
+                    <span class="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">{{index $.Data.counts $i}}</span>
                     <div class="flex gap-1">
-                        <button onclick="renameTag('{{.}}')" class="p-1 text-blue-600 hover:text-blue-800" title="Rename">
+                        <button onclick="renameTag('{{$tag}}')" class="p-1 text-blue-600 hover:text-blue-800" title="Rename">
                             <i class="fa fa-edit"></i>
                         </button>
-                        <button onclick="deleteTag('{{.}}')" class="p-1 text-red-600 hover:text-red-800" title="Delete">
+                        <button onclick="deleteTag('{{$tag}}')" class="p-1 text-red-600 hover:text-red-800" title="Delete">
                             <i class="fa fa-trash"></i>
                         </button>
                     </div>

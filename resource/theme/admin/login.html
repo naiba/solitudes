@@ -26,15 +26,15 @@
                 
                 <div class="form-group">
                     <label class="form-label">{{.Tr.T "captcha"}}</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <input type="text" name="captcha" class="form-control" placeholder='{{.Tr.T "enter_captcha"}}' required maxlength="5" style="flex: 1;">
-                        <button type="button" class="btn btn-secondary" onclick="refreshCaptcha()" title="{{.Tr.T "refresh_captcha"}}">
+                    <div class="flex gap-2">
+                        <input type="text" name="captcha" class="form-control flex-1" placeholder='{{.Tr.T "enter_captcha"}}' required maxlength="5">
+                        <button type="button" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors" onclick="refreshCaptcha()" title="{{.Tr.T "refresh_captcha"}}">
                             <i class="fa fa-refresh"></i>
                         </button>
                     </div>
                     <input type="hidden" name="captchaId" id="captchaId">
-                    <div class="captcha-container" style="margin-top: 0.5rem;">
-                        <img id="captchaImage" src="" alt="Captcha" style="max-width: 100%; cursor: pointer;" onclick="refreshCaptcha()">
+                    <div class="captcha-container mt-2">
+                        <img id="captchaImage" src="" alt="Captcha" class="max-w-full cursor-pointer" onclick="refreshCaptcha()">
                     </div>
                 </div>
                 
@@ -43,12 +43,18 @@
                     <label for="remember">{{.Tr.T "remember_me"}}</label>
                 </div>
                 
-                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                <button type="submit" class="w-full px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors">
                     {{.Tr.T "sign_in"}}
                 </button>
             </form>
         </div>
     </div>
+    
+    <footer class="py-6 text-center text-sm text-gray-500">
+        Copyright &copy; <a href="https://{{.Conf.Site.Domain}}" class="hover:text-gray-700">{{.Conf.Site.SpaceName}}</a>, 
+        Powered by <a href="https://github.com/naiba/solitudes" target="_blank" class="hover:text-gray-700">Solitudes</a> 
+        build·{{.BuildVersion}}
+    </footer>
     
     {{template "admin/js"}}
     <script>

@@ -311,16 +311,35 @@ p {
   width: 80%;
 }
 
+#tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
 #tags>a {
   display: inline-block;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-  font-size: 1.2rem;
-  font-weight: bolder;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
   color: white;
-  min-width: 5rem;
+  min-width: 6rem;
   text-align: center;
-  margin: 0.2rem;
+  border-radius: 0.5rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#tags>a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+#tags>a small {
+  display: inline-block;
+  margin-left: 0.5rem;
+  opacity: 0.8;
+  font-size: 0.85rem;
 }
 
 .sl-topic {

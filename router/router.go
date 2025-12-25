@@ -186,6 +186,17 @@ func setFuncMap(engine *html.Engine) {
 				"tr":      tr,
 			}
 		},
+		"substr": func(s string, start, length int) string {
+			runes := []rune(s)
+			if start < 0 || start >= len(runes) {
+				return ""
+			}
+			end := start + length
+			if end > len(runes) {
+				end = len(runes)
+			}
+			return string(runes[start:end])
+		},
 	}
 	for name, fn := range funcMap {
 		engine.AddFunc(name, fn)
