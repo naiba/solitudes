@@ -1,46 +1,28 @@
 {{define "admin/tags"}}
 {{template "admin/header" .}}
-<style>
-    .tags-manage>div.btn-group {
-        margin-bottom: 1rem;
-        margin-left: 1rem;
-    }
-</style>
-<div class="content-wrapper">
-    <section class="content-header">
-        <h1>
-            {{.Tr.T "manage_tags"}}
-            <small>Solitudes</small>
-        </h1>
-    </section>
 
-    <section class="content container-fluid">
-        <div class="box">
-            <div class="box-body tags-manage">
-                {{range .Data.tags}}
-                <div class="btn-group">
-                    <button class="btn">{{.}}</button>
-                    <button class="btn" onclick="renameTag('{{.}}')">
-                        <span class="fa fa-edit"></span>
-                    </button>
-                    <button class="btn" onclick="deleteTag('{{.}}')">
-                        <span class="fa fa-trash"></span>
-                    </button>
-                </div>
-                {{end}}
+<div class="admin-card">
+    <div class="admin-card-header">
+        {{.Tr.T "manage_tags"}}
+    </div>
+    <div class="admin-card-body">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+            {{range .Data.tags}}
+            <div class="btn-group" style="border: 1px solid var(--border-color); border-radius: var(--border-radius); overflow: hidden;">
+                <span class="btn btn-secondary" style="cursor: default;">{{.}}</span>
+                <button class="btn btn-secondary" onclick="renameTag('{{.}}')" title="Rename">
+                    <i class="fa fa-edit"></i>
+                </button>
+                <button class="btn btn-danger" onclick="deleteTag('{{.}}')" title="Delete">
+                    <i class="fa fa-trash"></i>
+                </button>
             </div>
+            {{end}}
         </div>
-    </section>
+    </div>
 </div>
+
 <script>
-    function renderColor(btnGroup) {
-        const colors = ['maroon', 'purple', 'navy', 'orange', 'olive']
-        const randColor = Math.floor(Math.random() * colors.length);
-        btnGroup.querySelectorAll("button").forEach(btn => {
-            btn.classList.add('bg-' + colors[randColor])
-            if (randColor < colors.length / 2) btn.classList.add('btn-flat')
-        })
-    }
     function renameTag(oldTagName) {
         const newTagName = prompt("Input new tag name")
         if (!newTagName) {
@@ -54,6 +36,7 @@
             }
         })
     }
+    
     function deleteTag(tag) {
         if (!confirm("Confirm delete?")) {
             return
@@ -66,9 +49,7 @@
             }
         })
     }
-    document.querySelectorAll("div.btn-group").forEach(g => {
-        renderColor(g)
-    })
 </script>
+
 {{template "admin/footer" .}}
 {{end}}
