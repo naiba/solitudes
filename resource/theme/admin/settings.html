@@ -1,284 +1,181 @@
 {{define "admin/settings"}}
 {{template "admin/header" .}}
-<div class="content-wrapper">
-    <section class="content-header">
-        <h1>
-            {{.Tr.T "site_settings"}}
-        </h1>
-    </section>
-    <section class="content container-fluid">
-        <div class="form-horizontal">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputSiteTitle" class="col-sm-3 control-label">{{.Tr.T "site_title"}}</label>
-                        <div class="col-sm-9">
-                            <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
-                            <input class="form-control" id="inputSiteTitle" placeholder="Solitudes"
-                                value="{{.Conf.Site.SpaceName}}">
-                        </div>
+
+<div class="admin-container-narrow">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "site_settings"}}</h1>
+        <p class="page-subtitle">Configure your blog</p>
+    </div>
+
+    <form id="settingsForm" class="space-y-6">
+        <!-- Site Information -->
+        <div class="wf-card">
+            <div class="wf-card-header">Site Information</div>
+            <div class="wf-card-body space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_title"}}</label>
+                    <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
+                    <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputSiteTitle" placeholder="Solitudes" value="{{.Conf.Site.SpaceName}}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_desc"}}</label>
+                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputSiteDesc" rows="3" placeholder="We love writing">{{.Conf.Site.SpaceDesc}}</textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_domain"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputSiteDomain" placeholder="example.com" value="{{.Conf.Site.Domain}}">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_keywords"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputSiteKeywords" placeholder="blog,programming" value="{{.Conf.Site.SpaceKeywords}}">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_theme"}}</label>
+                    <select id="selTheme" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                        <option value="classic" {{if eq .Conf.Site.Theme "classic" }}selected{{end}}>classic</option>
+                        <option value="light" {{if eq .Conf.Site.Theme "light" }}selected{{end}}>light</option>
+                        <option value="white" {{if eq .Conf.Site.Theme "white" }}selected{{end}}>white</option>
+                    </select>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputSiteDesc" class="col-sm-3 control-label">{{.Tr.T "site_desc"}}</label>
-                        <div class="col-sm-9">
-                            <textarea class="form-control" id="inputSiteDesc"
-                                placeholder="We love writing">{{.Conf.Site.SpaceDesc}}</textarea>
-                        </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="wf-card">
+            <div class="wf-card-header">Notifications</div>
+            <div class="wf-card-body space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_tg_bot_token"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputTGBotToken" placeholder="Bot Token" value="{{.Conf.TGBotToken}}">
                     </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputTGBotToken" class="col-sm-3 control-label">{{.Tr.T
-                            "site_tg_bot_token"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputTGBotToken" placeholder="1234567890:ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                                value="{{.Conf.TGBotToken}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputTGChatID" class="col-sm-3 control-label">{{.Tr.T
-                            "site_tg_chat_id"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputTGChatID" placeholder="-1001234567890"
-                                value="{{.Conf.TGChatID}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputMailServer" class="col-sm-3 control-label">{{.Tr.T "site_mail_server"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputMailServer" placeholder="smtp.163.com"
-                                value="{{.Conf.Email.Host}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputMailPort" class="col-sm-3 control-label">{{.Tr.T "site_mail_port"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" type="number" id="inputMailPort" placeholder="25"
-                                value="{{.Conf.Email.Port}}">
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <div class="col-sm-9">
-                            <div class="cbMailSSL">
-                                <label>
-                                    <input{{if .Conf.Email.SSL}} checked{{end}} id="cbMailSSL" type="checkbox">
-                                        {{.Tr.T "site_mail_ssl"}}
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputMailUser" class="col-sm-3 control-label">{{.Tr.T "site_mail_user"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputMailUser" placeholder="username"
-                                value="{{.Conf.Email.User}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputMailPass" class="col-sm-3 control-label">{{.Tr.T "site_mail_pass"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputMailPass" placeholder="password"
-                                value="{{.Conf.Email.Pass}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputAkismet" class="col-sm-3 control-label">{{.Tr.T "site_akismet"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputAkismet" placeholder="Akismet key"
-                                value="{{.Conf.Akismet}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputSiteDomain" class="col-sm-3 control-label">{{.Tr.T "site_domain"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputSiteDomain" placeholder="example.com"
-                                value="{{.Conf.Site.Domain}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputSiteKeywords" class="col-sm-3 control-label">{{.Tr.T "site_keywords"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputSiteKeywords" placeholder="blog,programming"
-                                value="{{.Conf.Site.SpaceKeywords}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputSiteHeaderMenus" class="col-sm-3 control-label">{{.Tr.T
-                            "site_header_menus"}}</label>
-                        <div class="col-sm-9">
-                            <textarea class="form-control"
-                                id="inputSiteHeaderMenus">{{.Conf.Site.HeaderMenus|json}}</textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputSiteFooterMenus" class="col-sm-3 control-label">{{.Tr.T
-                            "site_footer_menus"}}</label>
-                        <div class="col-sm-9">
-                            <textarea class="form-control"
-                                id="inputSiteFooterMenus">{{.Conf.Site.FooterMenus|json}}</textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputSiteCustomCode" class="col-sm-3 control-label">{{.Tr.T
-                            "site_custom_code"}}</label>
-                        <div class="col-sm-9">
-                            <textarea class="form-control" id="inputSiteCustomCode">{{.Conf.Site.CustomCode}}</textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="selTheme" class="col-sm-3 control-label">{{.Tr.T "site_theme"}}</label>
-                        <div class="col-sm-9">
-                            <select id="selTheme" class="form-control">
-                                <option value="classic" {{if eq .Conf.Site.Theme "classic" }}selected{{end}}>classic
-                                </option>
-                                <option value="light" {{if eq .Conf.Site.Theme "light" }}selected{{end}}>light</option>
-                                <option value="white" {{if eq .Conf.Site.Theme "white" }}selected{{end}}>white</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="form-group">
-                        <label for="inputHomeTop" class="col-sm-2 control-label">{{.Tr.T
-                            "site_home_top_content"}}</label>
-                        <div class="col-sm-10">
-                            <div id="inputHomeTop"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="form-group">
-                        <label for="inputHomeBottom" class="col-sm-2 control-label">{{.Tr.T
-                            "site_home_bottom_content"}}</label>
-                        <div class="col-sm-10">
-                            <div id="inputHomeBottom"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputNickname" class="col-sm-3 control-label">{{.Tr.T "nickname"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputNickname" value="{{.Conf.User.Nickname}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputEmail" class="col-sm-3 control-label">{{.Tr.T "email"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputEmail" value="{{.Conf.User.Email}}">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputOldPassword" class="col-sm-3 control-label">{{.Tr.T "old_password"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputOldPassword">
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    {{.Tr.T "input_password_if_you_want_change_it"}}
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputNewPassword" class="col-sm-3 control-label">{{.Tr.T "new_password"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputNewPassword">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputConfirmPassword" class="col-sm-3 control-label">{{.Tr.T
-                            "confirm_password"}}</label>
-                        <div class="col-sm-9">
-                            <input class="form-control" id="inputConfirmPassword">
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_tg_chat_id"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputTGChatID" placeholder="Chat ID" value="{{.Conf.TGChatID}}">
                     </div>
                 </div>
             </div>
         </div>
-        <div id="editSection"></div>
-        <div class="row" style="margin-top:10px;">
-            <div class="col-xs-6 col-md-2">
-                <button onclick="saveSetting(this)" class="btn btn-lg btn-primary">{{.Tr.T "save"}}</button>
+
+        <!-- Email Settings -->
+        <div class="wf-card">
+            <div class="wf-card-header">Email Settings</div>
+            <div class="wf-card-body space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_mail_server"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputMailServer" placeholder="smtp.163.com" value="{{.Conf.Email.Host}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_mail_port"}}</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputMailPort" placeholder="25" value="{{.Conf.Email.Port}}">
+                    </div>
+                </div>
+                <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input{{if .Conf.Email.SSL}} checked{{end}} id="cbMailSSL" type="checkbox" class="rounded border-gray-300">
+                        <span class="text-sm text-gray-700">{{.Tr.T "site_mail_ssl"}}</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_mail_user"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputMailUser" placeholder="username" value="{{.Conf.Email.User}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_mail_pass"}}</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputMailPass" placeholder="password" value="{{.Conf.Email.Pass}}">
+                    </div>
+                </div>
             </div>
         </div>
-    </section>
+
+        <!-- Spam Protection -->
+        <div class="wf-card">
+            <div class="wf-card-header">Spam Protection</div>
+            <div class="wf-card-body">
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_akismet"}}</label>
+                <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputAkismet" placeholder="Akismet key" value="{{.Conf.Akismet}}">
+            </div>
+        </div>
+
+        <!-- Menus & Custom Code -->
+        <div class="wf-card">
+            <div class="wf-card-header">Menus & Custom Code</div>
+            <div class="wf-card-body space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_header_menus"}}</label>
+                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 font-mono text-sm" id="inputSiteHeaderMenus" rows="6">{{.Conf.Site.HeaderMenus|json}}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_footer_menus"}}</label>
+                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 font-mono text-sm" id="inputSiteFooterMenus" rows="6">{{.Conf.Site.FooterMenus|json}}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_custom_code"}}</label>
+                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 font-mono text-sm" id="inputSiteCustomCode" rows="8">{{.Conf.Site.CustomCode}}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Home Page Content -->
+        <div class="wf-card">
+            <div class="wf-card-header">Home Page Content</div>
+            <div class="wf-card-body space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_home_top_content"}}</label>
+                    <div id="inputHomeTop"></div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_home_bottom_content"}}</label>
+                    <div id="inputHomeBottom"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Account -->
+        <div class="wf-card">
+            <div class="wf-card-header">User Account</div>
+            <div class="wf-card-body space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "nickname"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputNickname" value="{{.Conf.User.Nickname}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "email"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputEmail" value="{{.Conf.User.Email}}">
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">{{.Tr.T "input_password_if_you_want_change_it"}}</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "old_password"}}</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputOldPassword">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "new_password"}}</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputNewPassword">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "confirm_password"}}</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputConfirmPassword">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex justify-end">
+            <button type="button" onclick="saveSetting(this)" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                <i class="fa fa-save mr-2"></i>{{.Tr.T "save"}}
+            </button>
+        </div>
+    </form>
 </div>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.css" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.js" crossorigin="anonymous"></script>
 <script>
@@ -292,6 +189,7 @@
             url: '/admin/upload',
             linkToImgUrl: '/admin/fetch',
         },
+        height: 300,
     })
     const inputHomeBottom = new Vditor('inputHomeBottom', {
         after() {
@@ -302,6 +200,7 @@
             url: '/admin/upload',
             linkToImgUrl: '/admin/fetch',
         },
+        height: 300,
     })
     function saveSetting(btn) {
         if ($(btn).hasClass("disabled")) {
@@ -312,7 +211,7 @@
         const newPassword = $("#inputNewPassword").val().trim()
         if (newPassword.length > 0) {
             if (oldPassword.length == 0) {
-                alert('New password is empty')
+                alert('Old password is empty')
                 $(btn).toggleClass("disabled")
                 return
             }

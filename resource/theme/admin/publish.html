@@ -1,108 +1,146 @@
 {{define "admin/publish"}}
 {{template "admin/header" .}}
-<div class="content-wrapper">
-    <section class="content-header">
-        <h1>
-            {{.Tr.T "publish_article"}}
-        </h1>
-    </section>
 
-    <section class="content container-fluid">
-        <div class="form-horizontal">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputTitle" class="col-sm-2 control-label">{{.Tr.T "title"}}</label>
-                        <div class="col-sm-10">
-                            <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
-                            <input class="form-control" id="inputTitle" placeholder="Title"
-                                value="{{.Data.article.Title}}">
-                        </div>
-                    </div>
+<div class="admin-container-narrow">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "publish_article"}}</h1>
+        <p class="page-subtitle">Focus on your writing</p>
+    </div>
+
+    <div class="editor-container">
+        <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
+        
+        <!-- Title Input - Large and Prominent -->
+        <input 
+            class="editor-title-input w-full" 
+            id="inputTitle" 
+            placeholder="Article Title" 
+            value="{{.Data.article.Title}}"
+            autocomplete="off">
+        
+        <!-- Metadata Section - Collapsible -->
+        <div class="mb-4">
+            <button 
+                type="button" 
+                onclick="document.getElementById('metadata').classList.toggle('hidden')"
+                class="text-sm text-gray-600 hover:text-gray-900 flex items-center gap-2">
+                <i class="fa fa-cog"></i>
+                <span>Article Settings</span>
+                <i class="fa fa-chevron-down"></i>
+            </button>
+        </div>
+
+        <div id="metadata" class="space-y-4 mb-6 pb-6 border-b border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="inputSlug" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{.Tr.T "slug"}} (URL)
+                    </label>
+                    <input 
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
+                        id="inputSlug" 
+                        placeholder="my-article-slug" 
+                        value="{{.Data.article.Slug}}"
+                        autocomplete="off">
+                    <p class="text-xs text-gray-500 mt-1">Lowercase, hyphens only</p>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputSlug" class="col-sm-2 control-label">{{.Tr.T "slug"}}</label>
-                        <div class="col-sm-10">
-                            <input class="form-control" id="inputSlug" placeholder="URL slug"
-                                value="{{.Data.article.Slug}}">
-                        </div>
-                    </div>
+
+                <div>
+                    <label for="inputTags" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{.Tr.T "labels"}}
+                    </label>
+                    <input 
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
+                        id="inputTags" 
+                        placeholder="dev,golang,docker" 
+                        value="{{.Data.article.RawTags}}"
+                        autocomplete="off">
+                    <p class="text-xs text-gray-500 mt-1">Comma-separated tags</p>
                 </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputTags" class="col-sm-2 control-label">{{.Tr.T "labels"}}</label>
-                        <div class="col-sm-10">
-                            <input class="form-control" id="inputTags" placeholder="dev,golang,docker"
-                                value="{{.Data.article.RawTags}}">
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-5">
-                    <div class="form-group">
-                        <div class="col-sm-offset-1">
-                            <select id="selTemplate" class="form-control">
-                                {{range $k,$v := .Data.templates}}
-                                <option value="{{$k}}" {{if eq $.Data.article.TemplateID $k}} selected{{end}}>
-                                    {{$v}}
-                                </option>
-                                {{end}}
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label for="inputCID" class="col-sm-2 control-label">{{.Tr.T "book_refer"}}</label>
-                        <div class="col-sm-10">
-                            <input class="form-control" id="inputCID"
-                                value="{{if .Data.article.BookRefer}}{{.Data.article.BookRefer}}{{end}}">
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="col-xs-offset-3">
-                        <div class="form-group">
-                            <div class="checkbox">
-                                <label>
-                                    <input{{if .Data.article.IsBook}} checked{{end}} id="cbBook" type="checkbox">
-                                        {{.Tr.T "its_a_book"}}
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="col-xs-offset-2">
-                        <div class="form-group">
-                            <div class="checkbox">
-                                <label>
-                                    <input{{if .Data.article.IsPrivate}} checked{{end}} id="cbPrivate" type="checkbox">
-                                        Private
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="form-group">
-                        <div class="checkbox">
-                            <label>
-                                <input id="cbNewVersion" type="checkbox"> {{.Tr.T "new_version"}}
-                            </label>
-                        </div>
+            </div>
+
+            <!-- Topic Instructions -->
+            <div class="help-block help-block-info">
+                <div class="flex items-start gap-2">
+                    <i class="fa fa-lightbulb-o text-blue-600 mt-1"></i>
+                    <div class="flex-1">
+                        <strong class="text-sm">Topic (哔哔) Publishing Tip:</strong>
+                        <p class="text-sm mt-1">
+                            For topics/moments, use the tag <span class="topic-badge">Topic</span> (case-sensitive).
+                        </p>
+                        <p class="text-sm mt-1">
+                            <strong>Auto-generation rules:</strong>
+                        </p>
+                        <ul class="text-sm mt-1 ml-4" style="list-style: disc;">
+                            <li>If slug is empty → auto-generates timestamp <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">20241225103045</code></li>
+                            <li>If title is also empty → uses the auto-generated slug as title</li>
+                        </ul>
+                        <p class="text-sm mt-2">
+                            Example: Leave both empty with Topic tag → slug and title become <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">20241225103045</code>
+                        </p>
                     </div>
                 </div>
             </div>
-        </div>
-        <div id="editSection"></div>
-        <div class="row" style="margin-top:10px;">
-            <div class="col-xs-6 col-md-2">
-                <button onclick="publish(this)" class="btn btn-lg btn-primary">{{.Tr.T "publish"}}</button>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="selTemplate" class="block text-sm font-medium text-gray-700 mb-1">Template</label>
+                    <select id="selTemplate" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500">
+                        {{range $k,$v := .Data.templates}}
+                        <option value="{{$k}}" {{if eq $.Data.article.TemplateID $k}} selected{{end}}>{{$v}}</option>
+                        {{end}}
+                    </select>
+                </div>
+
+                <div>
+                    <label for="inputCID" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{.Tr.T "book_refer"}} (UUID)
+                    </label>
+                    <input 
+                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
+                        id="inputCID" 
+                        placeholder="Book/Series UUID"
+                        value="{{if .Data.article.BookRefer}}{{.Data.article.BookRefer}}{{end}}"
+                        autocomplete="off">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-4">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input{{if .Data.article.IsBook}} checked{{end}} id="cbBook" type="checkbox" class="rounded border-gray-300">
+                    <span class="text-sm text-gray-700">{{.Tr.T "its_a_book"}}</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input{{if .Data.article.IsPrivate}} checked{{end}} id="cbPrivate" type="checkbox" class="rounded border-gray-300">
+                    <span class="text-sm text-gray-700">Private</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input id="cbNewVersion" type="checkbox" class="rounded border-gray-300">
+                    <span class="text-sm text-gray-700">{{.Tr.T "new_version"}}</span>
+                </label>
             </div>
         </div>
-    </section>
+
+        <!-- Editor -->
+        <div id="editSection" class="min-h-[400px]"></div>
+
+        <!-- Publish Button -->
+        <div class="mt-6 flex justify-between items-center">
+            <button 
+                type="button"
+                onclick="document.getElementById('metadata').classList.toggle('hidden')"
+                class="px-4 py-2 text-sm text-gray-600 hover:text-gray-900">
+                <i class="fa fa-cog mr-1"></i> Settings
+            </button>
+            <button 
+                onclick="publish(this)" 
+                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                <i class="fa fa-paper-plane mr-2"></i>{{.Tr.T "publish"}}
+            </button>
+        </div>
+    </div>
 </div>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.css" crossorigin="anonymous">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.js" crossorigin="anonymous"></script>
 <script>
@@ -116,7 +154,9 @@
             url: '/admin/upload',
             linkToImgUrl: '/admin/fetch',
         },
+        height: 500,
     })
+    
     function publish(btn) {
         if ($(btn).hasClass("disabled")) {
             return
@@ -143,5 +183,6 @@
         })
     }
 </script>
+
 {{template "admin/footer" .}}
 {{end}}

@@ -76,6 +76,5 @@ docker-compose up -d solitudes
 ### 鸣谢
 
 - 主题来自 [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
-- 管理面板界面 [AdminLTE](https://adminlte.io/)
 - 全文搜索引擎 [blevesearch/bleve](https://github.com/blevesearch/bleve)
 - Hacker Pie @88250 [lute](https://github.com/88250/lute) & @Vanessa219 [Vditor](https://github.com/Vanessa219/vditor)

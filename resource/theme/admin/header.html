@@ -1,10 +1,8 @@
 {{define "admin/header"}}
 <!DOCTYPE html>
 <html>
-
 <head>
     {{template "admin/css"}}
-    <link rel="stylesheet" href="https://cdnjs.loli.net/ajax/libs/iCheck/1.0.2/skins/square/blue.css">
     <style>
         .vditor--fullscreen {
             z-index: 9999 !important;
@@ -12,70 +10,68 @@
     </style>
     <title>{{.Title}}</title>
 </head>
-
-<body class="hold-transition skin-blue-light sidebar-mini">
-    <div class="wrapper">
-        <header class="main-header">
-            <a href="/admin/" class="logo">
-                <span class="logo-mini"><b>S</b>E</span>
-                <span class="logo-lg"><b>Solitudes</b>Engine</span>
+<body class="bg-gray-50">
+    <!-- Top Navigation -->
+    <nav class="admin-topnav">
+        <div class="admin-topnav-inner">
+            <a href="/admin/" class="admin-logo">
+                <i class="fa fa-pencil-square-o"></i>
+                <span>Solitudes</span>
             </a>
-            <nav class="navbar navbar-static-top" role="navigation">
-                <a href="#" class="sidebar-toggle" data-toggle="push-menu" role="button">
-                    <span class="sr-only">Toggle navigation</span>
+            
+            <ul class="admin-nav-links">
+                <li><a href="/admin/" class="{{if eq .Title "仪表盘"}}active{{end}}">
+                    <i class="fa fa-dashboard"></i>
+                    <span>{{.Tr.T "dashboard"}}</span>
+                </a></li>
+                <li><a href="/admin/publish" class="{{if eq .Title "发布文章"}}active{{end}}">
+                    <i class="fa fa-plus"></i>
+                    <span>{{.Tr.T "publish"}}</span>
+                </a></li>
+                <li><a href="/admin/articles" class="{{if eq .Title "管理文章"}}active{{end}}">
+                    <i class="fa fa-list"></i>
+                    <span>{{.Tr.T "articles"}}</span>
+                </a></li>
+                <li><a href="/admin/comments" class="{{if eq .Title "管理评论"}}active{{end}}">
+                    <i class="fa fa-comments-o"></i>
+                    <span>{{.Tr.T "comments"}}</span>
+                </a></li>
+                <li><a href="/admin/media" class="{{if eq .Title "管理文件"}}active{{end}}">
+                    <i class="fa fa-file-image-o"></i>
+                    <span>{{.Tr.T "media"}}</span>
+                </a></li>
+                <li><a href="/admin/tags" class="{{if eq .Title "管理标签"}}active{{end}}">
+                    <i class="fa fa-tags"></i>
+                    <span>{{.Tr.T "tags"}}</span>
+                </a></li>
+                <li><a href="/admin/settings" class="{{if eq .Title "配置"}}active{{end}}">
+                    <i class="fa fa-cog"></i>
+                    <span>{{.Tr.T "site_settings"}}</span>
+                </a></li>
+            </ul>
+            
+            <div class="admin-user-menu">
+                <a href="/" target="_blank" class="text-gray-600 hover:text-gray-900 transition">
+                    <i class="fa fa-external-link"></i>
+                    <span class="hidden sm:inline ml-1">{{.Tr.T "view_site"}}</span>
                 </a>
-                <div class="navbar-custom-menu">
-                    <ul class="nav navbar-nav">
-                        <li class="dropdown user user-menu">
-                            <!-- Menu Toggle Button -->
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                                <!-- The user image in the navbar-->
-                                <img src="/static/cactus/images/logo.png?20211213" class="user-image" alt="User Image">
-                                <!-- hidden-xs hides the username on small devices so only the image appears. -->
-                                <span class="hidden-xs">{{.Conf.User.Nickname}}</span>
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li class="user-footer">
-                                    <form method="POST" action="/logout">
-                                        <button type="submit"
-                                            class="btn btn-default btn-flat">{{.Tr.T "sign_out"}}</button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
+                <div class="admin-user-info">
+                    <div class="admin-user-avatar">{{substr .Conf.User.Nickname 0 1}}</div>
+                    <span class="hidden sm:inline text-sm text-gray-700">{{.Conf.User.Nickname}}</span>
                 </div>
-            </nav>
-        </header>
-        <aside class="main-sidebar">
-            <section class="sidebar">
-                <div class="user-panel">
-                    <div class="pull-left image">
-                        <img src="/static/cactus/images/logo.png?20211213" class="img-circle" alt="User Image">
-                    </div>
-                    <div class="pull-left info">
-                        <p>{{.Conf.User.Nickname}}</p>
-                        <!-- Status -->
-                        <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
-                    </div>
-                </div>
-
-                <ul class="sidebar-menu" data-widget="tree">
-                    <li class="header">Your Blog</li>
-                    <li><a href="/admin/publish"><i class="fa fa-plus"></i> <span>{{.Tr.T "publish"}}</span></a></li>
-                    <li><a href="/admin/articles"><i class="fa fa-newspaper-o"></i>
-                            <span>{{.Tr.T "articles"}}</span></a>
-                    </li>
-                    <li><a href="/admin/media"><i class="fa fa-folder-open"></i> <span>{{.Tr.T "media"}}</span></a></li>
-                    <li><a href="/admin/comments"><i class="fa fa-comments-o"></i> <span>{{.Tr.T "comments"}}</span></a>
-                    <li><a href="/admin/tags"><i class="fa fa-tag"></i> <span>{{.Tr.T "tags"}}</span></a>
-                    <li><a href="/admin/settings"><i class="fa fa-cogs"></i> <span>{{.Tr.T "site_settings"}}</span></a>
-                    </li>
-                </ul>
-            </section>
-        </aside>
+                <form method="POST" action="/logout" style="display: inline;">
+                    <button type="submit" class="text-gray-600 hover:text-red-600 transition">
+                        <i class="fa fa-sign-out"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="admin-main">
         <!-- Loading overlay -->
         <div class="loading-overlay" id="loadingOverlay">
             <div class="loading-spinner"></div>
         </div>
-        {{end}}
+{{end}}

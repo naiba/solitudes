@@ -338,5 +338,10 @@
         "locale": "zh",
         "key": "refresh_captcha",
         "trans": "刷新验证码"
+    },
+    {
+        "locale": "zh",
+        "key": "view_site",
+        "trans": "查看网站"
     }
 ]

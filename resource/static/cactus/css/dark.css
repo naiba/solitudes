@@ -1697,4 +1697,11 @@
     border-radius: 2px;
     -webkit-border-radius: 2px;
   }
+
+  /* Theme color variables - dark theme */
+  :root {
+    --theme-accent-color: #2bbc8a;
+    --theme-accent-hover: rgba(43, 188, 138, 0.8);
+    --theme-accent-disabled: rgba(43, 188, 138, 0.4);
+  }
 }

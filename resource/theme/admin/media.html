@@ -1,53 +1,51 @@
 {{define "admin/media"}}
 {{template "admin/header" .}}
-<div class="content-wrapper">
-    <section class="content-header">
-        <h1>
-            {{.Tr.T "manage_media"}}
-        </h1>
-    </section>
 
-    <section class="content container-fluid">
-        <div class="box">
-            <div class="box-body">
-                <div class="row">
-                    <div class="col-sm-12">
-                        <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead>
-                                <tr role="row">
-                                    <th>{{.Tr.T "filename"}}</th>
-                                    <th>{{.Tr.T "article"}}</th>
-                                    <th>{{.Tr.T "uploaded_at"}}</th>
-                                    <th>{{.Tr.T "manage"}}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {{range .Data.medias}}
-                                <tr role="row">
-                                    <td>{{.Filename}}</td>
-                                    <td><a target="_blank"
-                                            href="/{{.Article.Slug}}/v{{.Article.Version}}">{{.Article.Title}}</a>
-                                    </td>
-                                    <td>{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
-                                    <td><button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')"
-                                            class="btn btn-warning btn-xs">{{$.Tr.T "delete"}}</button></td>
-                                </tr>
-                                {{end}}
-                            </tbody>
-                        </table>
-                        </div>
-                    </div>
-                </div>
-                <ul class="pagination">
-                    <li class="paginate_button previous"><a href="?page={{add .Data.page -1}}">{{.Tr.T "previous"}}</a>
-                    </li>
-                    <li class="paginate_button next"><a href="?page={{add .Data.page 1}}">{{.Tr.T "next"}}</a></li>
-                </ul>
-            </div>
+<div class="admin-container">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "manage_media"}}</h1>
+        <p class="page-subtitle">Manage uploaded files and media</p>
+    </div>
+
+    <div class="wf-card">
+        <div class="overflow-x-auto">
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>{{.Tr.T "filename"}}</th>
+                        <th>{{.Tr.T "article"}}</th>
+                        <th>{{.Tr.T "uploaded_at"}}</th>
+                        <th>{{.Tr.T "manage"}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Data.medias}}
+                    <tr>
+                        <td class="font-mono text-sm text-gray-700">{{.Filename}}</td>
+                        <td><a target="_blank" href="/{{.Article.Slug}}/v{{.Article.Version}}" class="text-blue-600 hover:underline">{{.Article.Title}}</a></td>
+                        <td class="text-gray-600 text-sm">{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
+                        <td>
+                            <button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+                                <i class="fa fa-trash"></i> {{$.Tr.T "delete"}}
+                            </button>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
         </div>
-    </section>
+        <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
+            <a href="?page={{add .Data.page -1}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                <i class="fa fa-chevron-left"></i> {{.Tr.T "previous"}}
+            </a>
+            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">Page {{.Data.page}}</span>
+            <a href="?page={{add .Data.page 1}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                {{.Tr.T "next"}} <i class="fa fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
 </div>
+
 <script>
     function deleteFile(file, articleId) {
         if (articleId !== '') {
@@ -66,5 +64,6 @@
         })
     }
 </script>
+
 {{template "admin/footer" .}}
 {{end}}

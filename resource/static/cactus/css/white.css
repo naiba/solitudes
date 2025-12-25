@@ -1696,3 +1696,9 @@ code {
   border-radius: 2px;
   -webkit-border-radius: 2px;
 }
+/* Theme color variables - white theme */
+:root {
+  --theme-accent-color: rgba(86, 124, 119, 0.8);
+  --theme-accent-hover: rgba(86, 124, 119, 1);
+  --theme-accent-disabled: rgba(86, 124, 119, 0.4);
+}

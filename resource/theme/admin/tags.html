@@ -1,46 +1,34 @@
 {{define "admin/tags"}}
 {{template "admin/header" .}}
-<style>
-    .tags-manage>div.btn-group {
-        margin-bottom: 1rem;
-        margin-left: 1rem;
-    }
-</style>
-<div class="content-wrapper">
-    <section class="content-header">
-        <h1>
-            {{.Tr.T "manage_tags"}}
-            <small>Solitudes</small>
-        </h1>
-    </section>
 
-    <section class="content container-fluid">
-        <div class="box">
-            <div class="box-body tags-manage">
+<div class="admin-container">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "manage_tags"}}</h1>
+        <p class="page-subtitle">Manage your article tags</p>
+    </div>
+
+    <div class="wf-card">
+        <div class="wf-card-body">
+            <div class="flex flex-wrap gap-3">
                 {{range .Data.tags}}
-                <div class="btn-group">
-                    <button class="btn">{{.}}</button>
-                    <button class="btn" onclick="renameTag('{{.}}')">
-                        <span class="fa fa-edit"></span>
-                    </button>
-                    <button class="btn" onclick="deleteTag('{{.}}')">
-                        <span class="fa fa-trash"></span>
-                    </button>
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
+                    <span class="font-medium text-gray-700">{{.}}</span>
+                    <div class="flex gap-1">
+                        <button onclick="renameTag('{{.}}')" class="p-1 text-blue-600 hover:text-blue-800" title="Rename">
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <button onclick="deleteTag('{{.}}')" class="p-1 text-red-600 hover:text-red-800" title="Delete">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
                 {{end}}
             </div>
         </div>
-    </section>
+    </div>
 </div>
+
 <script>
-    function renderColor(btnGroup) {
-        const colors = ['maroon', 'purple', 'navy', 'orange', 'olive']
-        const randColor = Math.floor(Math.random() * colors.length);
-        btnGroup.querySelectorAll("button").forEach(btn => {
-            btn.classList.add('bg-' + colors[randColor])
-            if (randColor < colors.length / 2) btn.classList.add('btn-flat')
-        })
-    }
     function renameTag(oldTagName) {
         const newTagName = prompt("Input new tag name")
         if (!newTagName) {
@@ -54,6 +42,7 @@
             }
         })
     }
+    
     function deleteTag(tag) {
         if (!confirm("Confirm delete?")) {
             return
@@ -66,9 +55,7 @@
             }
         })
     }
-    document.querySelectorAll("div.btn-group").forEach(g => {
-        renderColor(g)
-    })
 </script>
+
 {{template "admin/footer" .}}
 {{end}}

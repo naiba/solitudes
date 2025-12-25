@@ -127,7 +127,7 @@
     {
         "locale": "en",
         "key": "404_msg",
-        "trans": "Oops... This page may have flown to Mars."
+        "trans": "Oops... This page may have flown into outer space."
     },
     {
         "locale": "en",
@@ -147,7 +147,7 @@
     {
         "locale": "en",
         "key": "has_old_version",
-        "trans": "You are viewing version v{0} of this article, which has older versions: {1}."
+        "trans": "You are viewing version v{0} of this article. You can also view historical versions: {1}."
     },
     {
         "locale": "en",

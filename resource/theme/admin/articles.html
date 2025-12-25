@@ -1,67 +1,64 @@
 {{define "admin/articles"}}
 {{template "admin/header" .}}
-<div class="content-wrapper">
-    <section class="content-header">
-        <h1>
-            {{.Tr.T "manage_articles"}}
-            <small>Solitudes</small>
-        </h1>
-    </section>
 
-    <section class="content container-fluid">
-        <div class="box">
-            <div class="box-body">
-                <div class="row">
-                    <div class="col-sm-12">
-                        <div class="table-responsive">
-                        <table class="table table-bordered table-hover">
-                            <thead>
-                                <tr role="row">
-                                    <th>ID</th>
-                                    <th>{{.Tr.T "title"}}</th>
-                                    <th>{{.Tr.T "read"}}</th>
-                                    <th>{{.Tr.T "slug"}}</th>
-                                    <th>{{.Tr.T "book"}}</th>
-                                    <th>Private</th>
-                                    <th>{{.Tr.T "created_at"}}</th>
-                                    <th>{{.Tr.T "manage"}}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {{range .Data.articles}}
-                                <tr role="row">
-                                    <td>{{.ID}}</td>
-                                    <td><a target="_blank" href="/{{.Slug}}/v{{.Version}}">{{.Title}}</a>
-                                    </td>
-                                    <td>{{.ReadNum}}</td>
-                                    <td>{{.Slug}}</td>
-                                    <td>{{.IsBook}}</td>
-                                    <td>{{.IsPrivate}}</td>
-                                    <td>{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
-                                    <td>
-                                        <div class="btn-group btn-group-xs">
-                                            <a href="/admin/publish?id={{.ID}}"
-                                                class="btn btn-warning">{{$.Tr.T "edit"}}</a>
-                                            <button onclick="deleteArticle('{{.ID}}')" type="button"
-                                                class="btn btn-danger">{{$.Tr.T "delete"}}</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {{end}}
-                            </tbody>
-                        </table>
-                        </div>
-                    </div>
-                </div>
-                <ul class="pagination">
-                    <li class="paginate_button previous"><a
-                            href="?page={{.Data.page.PrevPage}}">{{.Tr.T "previous"}}</a></li>
-                    <li class="paginate_button next"><a href="?page={{.Data.page.NextPage}}">{{.Tr.T "next"}}</a></li>
-                </ul>
-            </div>
+<div class="admin-container">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "manage_articles"}}</h1>
+        <p class="page-subtitle">Manage your published articles</p>
+    </div>
+
+    <div class="wf-card">
+        <div class="overflow-x-auto">
+            <table class="wf-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>{{.Tr.T "title"}}</th>
+                        <th>{{.Tr.T "read"}}</th>
+                        <th>{{.Tr.T "slug"}}</th>
+                        <th>{{.Tr.T "book"}}</th>
+                        <th>Private</th>
+                        <th>{{.Tr.T "created_at"}}</th>
+                        <th>{{.Tr.T "manage"}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Data.articles}}
+                    <tr>
+                        <td class="text-gray-600">{{.ID}}</td>
+                        <td><a target="_blank" href="/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a></td>
+                        <td class="text-gray-600">{{.ReadNum}}</td>
+                        <td class="text-gray-500 text-sm">{{.Slug}}</td>
+                        <td class="text-center">{{if .IsBook}}<i class="fa fa-check text-green-600"></i>{{end}}</td>
+                        <td class="text-center">{{if .IsPrivate}}<i class="fa fa-lock text-gray-600"></i>{{end}}</td>
+                        <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
+                        <td>
+                            <div class="flex gap-2">
+                                <a href="/admin/publish?id={{.ID}}" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                                    <i class="fa fa-edit"></i> {{$.Tr.T "edit"}}
+                                </a>
+                                <button onclick="deleteArticle('{{.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+                                    <i class="fa fa-trash"></i> {{$.Tr.T "delete"}}
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
         </div>
-    </section>
+        <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
+            <a href="?page={{.Data.page.PrevPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                <i class="fa fa-chevron-left"></i> {{.Tr.T "previous"}}
+            </a>
+            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">Page {{.Data.page.Page}}</span>
+            <a href="?page={{.Data.page.NextPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+                {{.Tr.T "next"}} <i class="fa fa-chevron-right"></i>
+            </a>
+        </div>
+    </div>
 </div>
+
 <script>
     function deleteArticle(id) {
         if (!confirm("Confirm delete?")) {
@@ -76,5 +73,6 @@
         })
     }
 </script>
+
 {{template "admin/footer" .}}
 {{end}}

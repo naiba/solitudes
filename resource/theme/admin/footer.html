@@ -1,17 +1,9 @@
 {{define "admin/footer"}}
-<footer class="main-footer">
-    <div class="pull-right hidden-xs">
-        When I feel solitude, there is writing to accompany me.
-    </div>
-    <strong>Copyright &copy; <a href="https://github.com/naiba/solitudes" target="_blank">Solitudes</a>.</strong>
-    All
-    rights reserved.
-</footer>
-</div>
+    </main>
 
 {{template "admin/js"}}
 <script>
-    // Global utility functions for better UX
+    // Global utility functions
     window.showLoading = function() {
         document.getElementById('loadingOverlay').classList.add('active');
     };
@@ -20,7 +12,7 @@
         document.getElementById('loadingOverlay').classList.remove('active');
     };
     
-    // Enhanced AJAX with loading states and error handling
+    // Enhanced AJAX with loading states
     window.ajaxRequest = function(options) {
         showLoading();
         const defaultOptions = {
@@ -44,14 +36,11 @@
         const requiredFields = form.querySelectorAll('[required]');
         
         requiredFields.forEach(function(field) {
-            const formGroup = field.closest('.form-group');
             if (!field.value.trim()) {
-                formGroup.classList.add('has-error');
-                formGroup.classList.remove('has-success');
+                field.classList.add('border-red-500');
                 isValid = false;
             } else {
-                formGroup.classList.remove('has-error');
-                formGroup.classList.add('has-success');
+                field.classList.remove('border-red-500');
             }
         });
         
@@ -59,6 +48,5 @@
     };
 </script>
 </body>
-
 </html>
 {{end}}
