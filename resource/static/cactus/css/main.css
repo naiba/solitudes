@@ -320,8 +320,8 @@ p {
 
 #tags>a {
   display: inline-block;
-  padding: 0.45rem 1rem;
-  font-size: 0.95rem;
+  padding: 0.5rem 1.1rem;
+  font-size: 1rem;
   font-weight: 500;
   color: white;
   text-align: center;
@@ -338,7 +338,7 @@ p {
   display: inline-block;
   margin-left: 0.35rem;
   opacity: 0.8;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .sl-topic {
