@@ -57,15 +57,12 @@
         if (!confirm("Confirm delete?")) {
             return
         }
-        $.ajax({
+        ajaxRequest({
             url: "/admin/media?name=" + file,
             type: 'DELETE',
             success: () => {
                 window.location.reload()
-            },
-            error: (e) => {
-                alert(e.responseText)
-            },
+            }
         })
     }
 </script>

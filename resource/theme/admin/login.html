@@ -16,14 +16,29 @@
         <div class="login-box-body">
             <p class="login-box-msg">Sign in to be solitude.</p>
 
-            <form method="post">
+            <form method="post" id="loginForm">
                 <div class="form-group has-feedback">
-                    <input type="email" name="email" class="form-control" placeholder='{{.Tr.T "email"}}'>
+                    <input type="email" name="email" class="form-control" placeholder='{{.Tr.T "email"}}' required>
                     <span class="glyphicon glyphicon-envelope form-control-feedback"></span>
                 </div>
                 <div class="form-group has-feedback">
-                    <input type="password" name="password" class="form-control" placeholder='{{.Tr.T "password"}}'>
+                    <input type="password" name="password" class="form-control" placeholder='{{.Tr.T "password"}}' required>
                     <span class="glyphicon glyphicon-lock form-control-feedback"></span>
+                </div>
+                <div class="form-group">
+                    <label>{{.Tr.T "captcha"}}</label>
+                    <div class="input-group">
+                        <input type="text" name="captcha" class="form-control" placeholder='{{.Tr.T "enter_captcha"}}' required maxlength="5">
+                        <span class="input-group-btn">
+                            <button type="button" class="btn btn-default" onclick="refreshCaptcha()" title="{{.Tr.T "refresh_captcha"}}">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                        </span>
+                    </div>
+                    <input type="hidden" name="captchaId" id="captchaId">
+                    <div style="margin-top: 10px; text-align: center; min-height: 80px; background: #f4f4f4; border-radius: 3px; display: flex; align-items: center; justify-content: center;">
+                        <img id="captchaImage" src="" alt="Captcha" style="max-width: 100%; cursor: pointer;" onclick="refreshCaptcha()">
+                    </div>
                 </div>
                 <div class="row">
                     <div class="col-xs-8">
@@ -49,7 +64,17 @@
                 radioClass: 'iradio_square-blue',
                 increaseArea: '20%'
             });
+            
+            // Load captcha on page load
+            refreshCaptcha();
         });
+        
+        function refreshCaptcha() {
+            $.get('/captcha', function(data) {
+                $('#captchaId').val(data.captchaId);
+                $('#captchaImage').attr('src', data.captchaImage);
+            });
+        }
     </script>
 </body>
 

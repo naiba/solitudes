@@ -323,5 +323,20 @@
         "locale": "zh",
         "key": "input_password_if_you_want_change_it",
         "trans": "如果您想修改密码，输入您的旧密码"
+    },
+    {
+        "locale": "zh",
+        "key": "captcha",
+        "trans": "验证码"
+    },
+    {
+        "locale": "zh",
+        "key": "enter_captcha",
+        "trans": "输入验证码"
+    },
+    {
+        "locale": "zh",
+        "key": "refresh_captcha",
+        "trans": "刷新验证码"
     }
 ]

@@ -65,15 +65,12 @@
         if (!confirm("Confirm delete?")) {
             return
         }
-        $.ajax({
+        ajaxRequest({
             url: "/admin/comments?aid=" + aid + '&id=' + commendId,
             type: 'DELETE',
             success: () => {
                 window.location.reload()
-            },
-            error: (e) => {
-                alert(e.responseText)
-            },
+            }
         })
     }
 
@@ -81,15 +78,12 @@
         if (!confirm("Confirm report SPAM?")) {
             return
         }
-        $.ajax({
+        ajaxRequest({
             url: "/admin/report-spam?aid=" + aid + '&id=' + commendId,
             type: 'POST',
             success: () => {
                 window.location.reload()
-            },
-            error: (e) => {
-                alert(e.responseText)
-            },
+            }
         })
     }
 </script>

@@ -111,8 +111,12 @@
 <script>
     function rebuildFullTextSearch() {
         if (confirm('Rebuild full-text search data?')) {
-            $.get("/admin/rebuild-full-text-search").done(() => {
-                alert("Rebuild successful")
+            ajaxRequest({
+                url: "/admin/rebuild-full-text-search",
+                type: 'GET',
+                success: () => {
+                    alert("Rebuild successful")
+                }
             })
         }
     }

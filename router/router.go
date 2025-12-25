@@ -95,6 +95,7 @@ func Serve() {
 	app.Get("/login", guestRequired, login)
 	app.Post("/login", guestRequired, loginHandler)
 	app.Post("/logout", loginRequired, logoutHandler)
+	app.Get("/captcha", generateCaptcha)
 	app.Post("/count", count)
 	app.Post("/comment", commentHandler)
 	app.Static("/static", "resource/static")

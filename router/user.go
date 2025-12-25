@@ -17,9 +17,11 @@ import (
 )
 
 type loginForm struct {
-	Email    string `form:"email" validate:"required,email"`
-	Password string `form:"password" validate:"required"`
-	Remember string `form:"remember"`
+	Email     string `form:"email" validate:"required,email"`
+	Password  string `form:"password" validate:"required"`
+	Remember  string `form:"remember"`
+	CaptchaID string `form:"captchaId" validate:"required"`
+	Captcha   string `form:"captcha" validate:"required"`
 }
 
 func loginHandler(c *fiber.Ctx) error {
@@ -29,6 +31,10 @@ func loginHandler(c *fiber.Ctx) error {
 	}
 	if err := validator.StructCtx(c.Context(), &lf); err != nil {
 		return err
+	}
+	// Verify captcha first
+	if !verifyCaptcha(lf.CaptchaID, lf.Captcha) {
+		return errors.New("invalid captcha")
 	}
 	if lf.Email != solitudes.System.Config.User.Email ||
 		bcrypt.CompareHashAndPassword([]byte(solitudes.System.Config.User.Password),
