@@ -10,45 +10,68 @@
     </style>
     <title>{{.Title}}</title>
 </head>
-<body>
-    <div class="admin-wrapper">
-        <aside class="admin-sidebar" id="adminSidebar">
-            <div class="admin-logo">
-                <h1>Solitudes</h1>
-            </div>
-            <div class="admin-user">
-                <div class="admin-user-avatar">{{substr .Conf.User.Nickname 0 1}}</div>
-                <div class="admin-user-info">
-                    <h3>{{.Conf.User.Nickname}}</h3>
-                    <p>Administrator</p>
-                </div>
-            </div>
-            <nav class="admin-nav">
-                <ul>
-                    <li><a href="/admin/"><i class="fa fa-dashboard"></i><span>{{.Tr.T "dashboard"}}</span></a></li>
-                    <li><a href="/admin/publish"><i class="fa fa-plus"></i><span>{{.Tr.T "publish"}}</span></a></li>
-                    <li><a href="/admin/articles"><i class="fa fa-newspaper-o"></i><span>{{.Tr.T "articles"}}</span></a></li>
-                    <li><a href="/admin/media"><i class="fa fa-folder-open"></i><span>{{.Tr.T "media"}}</span></a></li>
-                    <li><a href="/admin/comments"><i class="fa fa-comments-o"></i><span>{{.Tr.T "comments"}}</span></a></li>
-                    <li><a href="/admin/tags"><i class="fa fa-tag"></i><span>{{.Tr.T "tags"}}</span></a></li>
-                    <li><a href="/admin/settings"><i class="fa fa-cogs"></i><span>{{.Tr.T "site_settings"}}</span></a></li>
-                </ul>
-            </nav>
-        </aside>
-        
-        <main class="admin-content">
-            <div class="admin-header">
-                <h1>{{.Title}}</h1>
-                <div class="admin-header-actions">
-                    <a href="/" target="_blank" class="btn btn-secondary btn-sm"><i class="fa fa-home"></i> {{.Tr.T "view_site"}}</a>
-                    <form method="POST" action="/logout" style="display: inline;">
-                        <button type="submit" class="btn btn-secondary btn-sm"><i class="fa fa-sign-out"></i> {{.Tr.T "sign_out"}}</button>
-                    </form>
-                </div>
-            </div>
+<body class="bg-gray-50">
+    <!-- Top Navigation -->
+    <nav class="admin-topnav">
+        <div class="admin-topnav-inner">
+            <a href="/admin/" class="admin-logo">
+                <i class="fa fa-pencil-square-o"></i>
+                <span>Solitudes</span>
+            </a>
             
-            <!-- Loading overlay -->
-            <div class="loading-overlay" id="loadingOverlay">
-                <div class="loading-spinner"></div>
+            <ul class="admin-nav-links">
+                <li><a href="/admin/" class="{{if eq .Title "仪表盘"}}active{{end}}">
+                    <i class="fa fa-dashboard"></i>
+                    <span>{{.Tr.T "dashboard"}}</span>
+                </a></li>
+                <li><a href="/admin/publish" class="{{if eq .Title "发布文章"}}active{{end}}">
+                    <i class="fa fa-plus"></i>
+                    <span>{{.Tr.T "publish"}}</span>
+                </a></li>
+                <li><a href="/admin/articles" class="{{if eq .Title "管理文章"}}active{{end}}">
+                    <i class="fa fa-list"></i>
+                    <span>{{.Tr.T "articles"}}</span>
+                </a></li>
+                <li><a href="/admin/comments" class="{{if eq .Title "管理评论"}}active{{end}}">
+                    <i class="fa fa-comments-o"></i>
+                    <span>{{.Tr.T "comments"}}</span>
+                </a></li>
+                <li><a href="/admin/media" class="{{if eq .Title "管理文件"}}active{{end}}">
+                    <i class="fa fa-file-image-o"></i>
+                    <span>{{.Tr.T "media"}}</span>
+                </a></li>
+                <li><a href="/admin/tags" class="{{if eq .Title "管理标签"}}active{{end}}">
+                    <i class="fa fa-tags"></i>
+                    <span>{{.Tr.T "tags"}}</span>
+                </a></li>
+                <li><a href="/admin/settings" class="{{if eq .Title "配置"}}active{{end}}">
+                    <i class="fa fa-cog"></i>
+                    <span>{{.Tr.T "site_settings"}}</span>
+                </a></li>
+            </ul>
+            
+            <div class="admin-user-menu">
+                <a href="/" target="_blank" class="text-gray-600 hover:text-gray-900 transition">
+                    <i class="fa fa-external-link"></i>
+                    <span class="hidden sm:inline ml-1">{{.Tr.T "view_site"}}</span>
+                </a>
+                <div class="admin-user-info">
+                    <div class="admin-user-avatar">{{substr .Conf.User.Nickname 0 1}}</div>
+                    <span class="hidden sm:inline text-sm text-gray-700">{{.Conf.User.Nickname}}</span>
+                </div>
+                <form method="POST" action="/logout" style="display: inline;">
+                    <button type="submit" class="text-gray-600 hover:text-red-600 transition">
+                        <i class="fa fa-sign-out"></i>
+                    </button>
+                </form>
             </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Loading overlay -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+        </div>
 {{end}}

@@ -1,10 +1,9 @@
 {{define "admin/footer"}}
-        </main>
-    </div>
+    </main>
 
 {{template "admin/js"}}
 <script>
-    // Global utility functions for better UX
+    // Global utility functions
     window.showLoading = function() {
         document.getElementById('loadingOverlay').classList.add('active');
     };
@@ -13,7 +12,7 @@
         document.getElementById('loadingOverlay').classList.remove('active');
     };
     
-    // Enhanced AJAX with loading states and error handling
+    // Enhanced AJAX with loading states
     window.ajaxRequest = function(options) {
         showLoading();
         const defaultOptions = {
@@ -37,34 +36,16 @@
         const requiredFields = form.querySelectorAll('[required]');
         
         requiredFields.forEach(function(field) {
-            const formGroup = field.closest('.form-group');
             if (!field.value.trim()) {
-                if (formGroup) {
-                    formGroup.classList.add('has-error');
-                    formGroup.classList.remove('has-success');
-                }
+                field.classList.add('border-red-500');
                 isValid = false;
             } else {
-                if (formGroup) {
-                    formGroup.classList.remove('has-error');
-                    formGroup.classList.add('has-success');
-                }
+                field.classList.remove('border-red-500');
             }
         });
         
         return isValid;
     };
-    
-    // Active navigation highlight
-    (function() {
-        const currentPath = window.location.pathname;
-        const navLinks = document.querySelectorAll('.admin-nav a');
-        navLinks.forEach(function(link) {
-            if (link.getAttribute('href') === currentPath) {
-                link.classList.add('active');
-            }
-        });
-    })();
 </script>
 </body>
 </html>

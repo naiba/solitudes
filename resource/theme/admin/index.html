@@ -1,57 +1,71 @@
 {{define "admin/index"}}
 {{template "admin/header" .}}
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <h2 class="stat-card-value">{{.Data.articleNum}}</h2>
-        <p class="stat-card-label">{{.Tr.T "articles"}}</p>
-        <i class="fa fa-newspaper-o stat-card-icon"></i>
+<div class="admin-container">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "dashboard"}}</h1>
+        <p class="page-subtitle">Overview of your blog</p>
     </div>
-    <div class="stat-card">
-        <h2 class="stat-card-value">{{.Data.lastArticlePublish}}</h2>
-        <p class="stat-card-label">{{.Tr.T "days_left_from_the_last_post"}}</p>
-        <i class="fa fa-clock-o stat-card-icon"></i>
-    </div>
-    <div class="stat-card">
-        <h2 class="stat-card-value">{{.Data.commentNum}}</h2>
-        <p class="stat-card-label">{{.Tr.T "comments"}}</p>
-        <i class="fa fa-comments-o stat-card-icon"></i>
-    </div>
-    <div class="stat-card">
-        <h2 class="stat-card-value">{{.Data.lastComment}}</h2>
-        <p class="stat-card-label">{{.Tr.T "days_left_from_the_last_comment"}}</p>
-        <i class="fa fa-clock-o stat-card-icon"></i>
-    </div>
-    <div class="stat-card">
-        <h2 class="stat-card-value">{{.Data.tagNum}}</h2>
-        <p class="stat-card-label">{{.Tr.T "labels"}}</p>
-        <i class="fa fa-tags stat-card-icon"></i>
-    </div>
-    <div class="stat-card">
-        <h2 class="stat-card-value">{{.Data.memoryUsage}}M</h2>
-        <p class="stat-card-label">{{.Tr.T "memory_usage"}}</p>
-        <i class="fa fa-file-o stat-card-icon"></i>
-    </div>
-    <div class="stat-card">
-        <h2 class="stat-card-value">{{.Data.gcNum}}</h2>
-        <p class="stat-card-label">{{.Tr.T "gc_num"}}</p>
-        <i class="fa fa-trash-o stat-card-icon"></i>
-    </div>
-    <div class="stat-card">
-        <h2 class="stat-card-value">{{.Data.routineNum}}</h2>
-        <p class="stat-card-label">{{.Tr.T "routine_num"}}</p>
-        <i class="fa fa-meh-o stat-card-icon"></i>
-    </div>
-</div>
 
-<div class="admin-card">
-    <div class="admin-card-header">
-        System Actions
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h2 class="stat-value">{{.Data.articleNum}}</h2>
+            <p class="stat-label">{{.Tr.T "articles"}}</p>
+        </div>
+        <div class="stat-card">
+            <h2 class="stat-value">{{.Data.lastArticlePublish}}</h2>
+            <p class="stat-label">{{.Tr.T "days_left_from_the_last_post"}}</p>
+        </div>
+        <div class="stat-card">
+            <h2 class="stat-value">{{.Data.commentNum}}</h2>
+            <p class="stat-label">{{.Tr.T "comments"}}</p>
+        </div>
+        <div class="stat-card">
+            <h2 class="stat-value">{{.Data.lastComment}}</h2>
+            <p class="stat-label">{{.Tr.T "days_left_from_the_last_comment"}}</p>
+        </div>
     </div>
-    <div class="admin-card-body">
-        <button onclick="rebuildFullTextSearch()" class="btn btn-danger">
-            <i class="fa fa-refresh"></i> {{.Tr.T "rebuild_fulltext_search_data"}}
-        </button>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="wf-card">
+            <div class="wf-card-header">
+                System Stats
+            </div>
+            <div class="wf-card-body">
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-600">{{.Tr.T "labels"}}</span>
+                        <span class="font-semibold text-gray-900">{{.Data.tagNum}}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-600">{{.Tr.T "memory_usage"}}</span>
+                        <span class="font-semibold text-gray-900">{{.Data.memoryUsage}}M</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span class="text-gray-600">{{.Tr.T "gc_num"}}</span>
+                        <span class="font-semibold text-gray-900">{{.Data.gcNum}}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2">
+                        <span class="text-gray-600">{{.Tr.T "routine_num"}}</span>
+                        <span class="font-semibold text-gray-900">{{.Data.routineNum}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="wf-card">
+            <div class="wf-card-header">
+                Quick Actions
+            </div>
+            <div class="wf-card-body space-y-3">
+                <a href="/admin/publish" class="block w-full px-4 py-3 text-center bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                    <i class="fa fa-plus mr-2"></i>{{.Tr.T "publish"}}
+                </a>
+                <button onclick="rebuildFullTextSearch()" class="block w-full px-4 py-3 text-center bg-red-600 text-white rounded hover:bg-red-700 transition">
+                    <i class="fa fa-refresh mr-2"></i>{{.Tr.T "rebuild_fulltext_search_data"}}
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 

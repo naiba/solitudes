@@ -1,13 +1,15 @@
 {{define "admin/articles"}}
 {{template "admin/header" .}}
 
-<div class="admin-card">
-    <div class="admin-card-header">
-        {{.Tr.T "manage_articles"}}
+<div class="admin-container">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "manage_articles"}}</h1>
+        <p class="page-subtitle">Manage your published articles</p>
     </div>
-    <div class="admin-card-body">
-        <div class="table-container">
-            <table class="table">
+
+    <div class="wf-card">
+        <div class="overflow-x-auto">
+            <table class="wf-table">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -23,19 +25,19 @@
                 <tbody>
                     {{range .Data.articles}}
                     <tr>
-                        <td>{{.ID}}</td>
-                        <td><a target="_blank" href="/{{.Slug}}/v{{.Version}}">{{.Title}}</a></td>
-                        <td>{{.ReadNum}}</td>
-                        <td>{{.Slug}}</td>
-                        <td>{{.IsBook}}</td>
-                        <td>{{.IsPrivate}}</td>
-                        <td>{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
+                        <td class="text-gray-600">{{.ID}}</td>
+                        <td><a target="_blank" href="/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a></td>
+                        <td class="text-gray-600">{{.ReadNum}}</td>
+                        <td class="text-gray-500 text-sm">{{.Slug}}</td>
+                        <td class="text-center">{{if .IsBook}}<i class="fa fa-check text-green-600"></i>{{end}}</td>
+                        <td class="text-center">{{if .IsPrivate}}<i class="fa fa-lock text-gray-600"></i>{{end}}</td>
+                        <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                         <td>
-                            <div class="btn-group">
-                                <a href="/admin/publish?id={{.ID}}" class="btn btn-warning btn-sm">
+                            <div class="flex gap-2">
+                                <a href="/admin/publish?id={{.ID}}" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
                                     <i class="fa fa-edit"></i> {{$.Tr.T "edit"}}
                                 </a>
-                                <button onclick="deleteArticle('{{.ID}}')" type="button" class="btn btn-danger btn-sm">
+                                <button onclick="deleteArticle('{{.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
                                     <i class="fa fa-trash"></i> {{$.Tr.T "delete"}}
                                 </button>
                             </div>
@@ -45,12 +47,12 @@
                 </tbody>
             </table>
         </div>
-        <div class="pagination">
-            <a href="?page={{.Data.page.PrevPage}}">
+        <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
+            <a href="?page={{.Data.page.PrevPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 <i class="fa fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
-            <span class="active">Page {{.Data.page.Page}}</span>
-            <a href="?page={{.Data.page.NextPage}}">
+            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">Page {{.Data.page.Page}}</span>
+            <a href="?page={{.Data.page.NextPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 {{.Tr.T "next"}} <i class="fa fa-chevron-right"></i>
             </a>
         </div>
