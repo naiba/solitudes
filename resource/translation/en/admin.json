@@ -17,7 +17,7 @@
     {
         "locale": "en",
         "key": "sign_in",
-        "trans": "Sign in"
+        "trans": "Sign In"
     },
     {
         "locale": "en",
@@ -27,12 +27,12 @@
     {
         "locale": "en",
         "key": "manage_articles",
-        "trans": "Manage articles"
+        "trans": "Manage Articles"
     },
     {
         "locale": "en",
         "key": "manage_tags",
-        "trans": "Manage tags"
+        "trans": "Manage Tags"
     },
     {
         "locale": "en",
@@ -57,7 +57,7 @@
     {
         "locale": "en",
         "key": "created_at",
-        "trans": "CreatedAt"
+        "trans": "Created At"
     },
     {
         "locale": "en",
@@ -87,7 +87,7 @@
     {
         "locale": "en",
         "key": "manage_comments",
-        "trans": "Manage comments"
+        "trans": "Manage Comments"
     },
     {
         "locale": "en",
@@ -117,7 +117,7 @@
     {
         "locale": "en",
         "key": "sign_out",
-        "trans": "Sign out"
+        "trans": "Sign Out"
     },
     {
         "locale": "en",
@@ -132,7 +132,7 @@
     {
         "locale": "en",
         "key": "manage_media",
-        "trans": "Manage media"
+        "trans": "Manage Media"
     },
     {
         "locale": "en",
@@ -142,12 +142,12 @@
     {
         "locale": "en",
         "key": "days_left_from_the_last_post",
-        "trans": "Days left from the last post"
+        "trans": "Days Since Last Post"
     },
     {
         "locale": "en",
         "key": "days_left_from_the_last_comment",
-        "trans": "Days left from the last comment"
+        "trans": "Days Since Last Comment"
     },
     {
         "locale": "en",
@@ -162,12 +162,12 @@
     {
         "locale": "en",
         "key": "gc_num",
-        "trans": "GC num"
+        "trans": "GC Count"
     },
     {
         "locale": "en",
         "key": "routine_num",
-        "trans": "Routine num"
+        "trans": "Goroutine Count"
     },
     {
         "locale": "en",
@@ -182,12 +182,12 @@
     {
         "locale": "en",
         "key": "uploaded_at",
-        "trans": "UploadedAt"
+        "trans": "Uploaded At"
     },
     {
         "locale": "en",
         "key": "publish_article",
-        "trans": "Publish article"
+        "trans": "Publish Article"
     },
     {
         "locale": "en",
@@ -212,7 +212,7 @@
     {
         "locale": "en",
         "key": "site_title",
-        "trans": "Title"
+        "trans": "Site Title"
     },
     {
         "locale": "en",
@@ -237,7 +237,7 @@
     {
         "locale": "en",
         "key": "site_mail_port",
-        "trans": "Server Port"
+        "trans": "Mail Port"
     },
     {
         "locale": "en",
@@ -257,17 +257,17 @@
     {
         "locale": "en",
         "key": "site_home_top_content",
-        "trans": "Content at top of home"
+        "trans": "Home Page Top Content"
     },
     {
         "locale": "en",
         "key": "site_home_bottom_content",
-        "trans": "Content at bottom of home"
+        "trans": "Home Page Bottom Content"
     },
     {
         "locale": "en",
         "key": "site_theme",
-        "trans": "Theme"
+        "trans": "Site Theme"
     },
     {
         "locale": "en",
@@ -317,12 +317,12 @@
     {
         "locale": "en",
         "key": "confirm_password",
-        "trans": "Comfirm Password"
+        "trans": "Confirm Password"
     },
     {
         "locale": "en",
         "key": "input_password_if_you_want_change_it",
-        "trans": "Input password if you want change it"
+        "trans": "Enter your old password to change it"
     },
     {
         "locale": "en",
@@ -332,11 +332,16 @@
     {
         "locale": "en",
         "key": "enter_captcha",
-        "trans": "Enter captcha code"
+        "trans": "Enter captcha"
     },
     {
         "locale": "en",
         "key": "refresh_captcha",
         "trans": "Refresh captcha"
+    },
+    {
+        "locale": "en",
+        "key": "view_site",
+        "trans": "View Site"
     }
 ]
