@@ -66,11 +66,14 @@
                     <div class="flex-1">
                         <strong class="text-sm">Topic (哔哔) Publishing Tip:</strong>
                         <p class="text-sm mt-1">
-                            For topics/moments, use the tag <span class="topic-badge">Topic</span> and URL slug format: 
-                            <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">topic/YYYY-MM-DD</code>
+                            For topics/moments, use the tag <span class="topic-badge">Topic</span> (case-sensitive).
                         </p>
                         <p class="text-sm mt-1">
-                            Example: <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">topic/2024-12-25</code> for today's topic
+                            <strong>Auto-generation:</strong> If slug is empty when publishing with Topic tag, 
+                            the system automatically generates a timestamp format.
+                        </p>
+                        <p class="text-sm mt-1">
+                            Example: Leave slug empty with Topic tag → auto-generates <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">20241225103045</code>
                         </p>
                     </div>
                 </div>
@@ -150,22 +153,6 @@
         },
         height: 500,
     })
-    
-    // Auto-generate slug for topics
-    document.getElementById('inputTags').addEventListener('blur', function() {
-        const tags = this.value.toLowerCase();
-        const slugInput = document.getElementById('inputSlug');
-        
-        if (tags.includes('topic') && !slugInput.value) {
-            const today = new Date();
-            const dateStr = today.toISOString().split('T')[0];
-            slugInput.value = 'topic/' + dateStr;
-            slugInput.classList.add('border-blue-500', 'bg-blue-50');
-            setTimeout(() => {
-                slugInput.classList.remove('border-blue-500', 'bg-blue-50');
-            }, 2000);
-        }
-    });
     
     function publish(btn) {
         if ($(btn).hasClass("disabled")) {
