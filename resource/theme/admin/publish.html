@@ -69,11 +69,14 @@
                             For topics/moments, use the tag <span class="topic-badge">Topic</span> (case-sensitive).
                         </p>
                         <p class="text-sm mt-1">
-                            <strong>Auto-generation:</strong> If slug is empty when publishing with Topic tag, 
-                            the system automatically generates a timestamp format.
+                            <strong>Auto-generation rules:</strong>
                         </p>
-                        <p class="text-sm mt-1">
-                            Example: Leave slug empty with Topic tag → auto-generates <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">20241225103045</code>
+                        <ul class="text-sm mt-1 ml-4" style="list-style: disc;">
+                            <li>If slug is empty → auto-generates timestamp <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">20241225103045</code></li>
+                            <li>If title is also empty → uses the auto-generated slug as title</li>
+                        </ul>
+                        <p class="text-sm mt-2">
+                            Example: Leave both empty with Topic tag → slug and title become <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">20241225103045</code>
                         </p>
                     </div>
                 </div>
