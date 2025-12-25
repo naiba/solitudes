@@ -17,12 +17,11 @@ function toggle(sel) {
 }
 
 function randomColor() {
-    const color = '#' + Math.floor(Math.random() * 16777215).toString(16)
-    const m = color.match(/^#([0-9a-f]{2})[0-9a-f]{6}$/i)
-    if (m && parseInt(m[1], 16) / 255 == 0) {
-        return randomColor()
-    }
-    return color
+    // HSL: hue 0-360, saturation 60-100%, lightness 20-60%
+    const h = Math.floor(Math.random() * 360);
+    const s = Math.floor(Math.random() * 40) + 60;
+    const l = Math.floor(Math.random() * 40) + 20;
+    return `hsl(${h},${s}%,${l}%)`;
 }
 
 function matches(el, selector) {
@@ -30,6 +29,17 @@ function matches(el, selector) {
 };
 
 ready(function () {
+    /**
+     * 首页哔哔区域高度限制（仅桌面端）
+     */
+    if (window.matchMedia('(min-width: 769px)').matches) {
+        const articles = document.querySelector('.home-articles-section');
+        const topics = document.querySelector('.home-topics-section');
+        if (articles && topics && articles.offsetHeight > 0) {
+            topics.style.maxHeight = articles.offsetHeight + 'px';
+        }
+    }
+
     /**
      * 标签云
      */

@@ -32,7 +32,7 @@
                         </td>
                         <td><a target="_blank" href="/{{.Article.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline text-sm">{{.Article.Title}}</a></td>
                         <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
-                        <td>
+                        <td class="actions-cell">
                             <div class="flex gap-2">
                                 <button onclick="deleteComment('{{.Article.ID}}','{{.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
                                     <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}

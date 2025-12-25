@@ -81,7 +81,7 @@ func index(c *fiber.Ctx) error {
 	var topics []model.Article
 	var mostRead []model.Article
 
-	solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(3).Find(&topics)
+	solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(5).Find(&topics)
 	for i := range topics {
 		pagination.Paging(&pagination.Param{
 			DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", topics[i].ID),
