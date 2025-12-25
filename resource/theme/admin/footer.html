@@ -1,13 +1,6 @@
 {{define "admin/footer"}}
-<footer class="main-footer">
-    <div class="pull-right hidden-xs">
-        When I feel solitude, there is writing to accompany me.
+        </main>
     </div>
-    <strong>Copyright &copy; <a href="https://github.com/naiba/solitudes" target="_blank">Solitudes</a>.</strong>
-    All
-    rights reserved.
-</footer>
-</div>
 
 {{template "admin/js"}}
 <script>
@@ -46,19 +39,33 @@
         requiredFields.forEach(function(field) {
             const formGroup = field.closest('.form-group');
             if (!field.value.trim()) {
-                formGroup.classList.add('has-error');
-                formGroup.classList.remove('has-success');
+                if (formGroup) {
+                    formGroup.classList.add('has-error');
+                    formGroup.classList.remove('has-success');
+                }
                 isValid = false;
             } else {
-                formGroup.classList.remove('has-error');
-                formGroup.classList.add('has-success');
+                if (formGroup) {
+                    formGroup.classList.remove('has-error');
+                    formGroup.classList.add('has-success');
+                }
             }
         });
         
         return isValid;
     };
+    
+    // Active navigation highlight
+    (function() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.admin-nav a');
+        navLinks.forEach(function(link) {
+            if (link.getAttribute('href') === currentPath) {
+                link.classList.add('active');
+            }
+        });
+    })();
 </script>
 </body>
-
 </html>
 {{end}}
