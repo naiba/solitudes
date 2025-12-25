@@ -24,15 +24,22 @@
   padding-top: 5px;
   border-radius: 5px;
   font-weight: bolder;
-  color: black;
-  background-color: #cb997e;
+  color: white;
+  background-color: var(--theme-accent-color, #cc2a41);
   border: none;
   font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.base-button:hover:not(:disabled) {
+  background-color: var(--theme-accent-hover, rgba(204, 42, 65, 0.8));
 }
 
 .base-button:disabled {
-  color: #ccc;
-  background-color: #d8c3a5;
+  color: #999;
+  background-color: var(--theme-accent-disabled, rgba(204, 42, 65, 0.4));
+  cursor: not-allowed;
 }
 
 #search .base-button {
@@ -102,11 +109,11 @@ input {
 }
 
 .pagination a {
-  border: 1px dashed #cc2a41;
+  border: 1px dashed var(--theme-accent-color, #cc2a41);
 }
 
 article footer {
-  border: 1px dashed #cc2a41;
+  border: 1px dashed var(--theme-accent-color, #cc2a41);
   padding: 10px;
   margin-top: 40px;
 }
@@ -117,7 +124,7 @@ article footer {
 }
 
 .comment-meta.admin a:first-child {
-  color: #cc2a41;
+  color: var(--theme-accent-color, #cc2a41);
 }
 
 /* 中文优化 - Chinese font optimization */
@@ -341,7 +348,7 @@ p {
 .sl-comments {
   margin-top: .4rem;
   font-size: smaller;
-  color: #cb997e;
+  color: var(--theme-accent-color, #cc2a41);
 }
 
 .sl-comments>div {
@@ -395,4 +402,11 @@ ul:has(li.vditor-task) {
 
 .language-plantuml > object {
   max-width: 100%;
+}
+
+/* Theme color variables - default/classic theme */
+:root {
+  --theme-accent-color: #cc2a41;
+  --theme-accent-hover: rgba(204, 42, 65, 0.8);
+  --theme-accent-disabled: rgba(204, 42, 65, 0.4);
 }
