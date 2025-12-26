@@ -230,7 +230,7 @@ func loginRequired(c *fiber.Ctx) error {
 
 func guestRequired(c *fiber.Ctx) error {
 	if c.Locals(solitudes.CtxAuthorized).(bool) {
-		c.Redirect("/admin/", http.StatusFound)
+		c.Redirect("/admin", http.StatusFound)
 		return nil
 	}
 	return c.Next()

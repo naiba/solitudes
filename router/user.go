@@ -59,7 +59,7 @@ func loginHandler(c *fiber.Ctx) error {
 		Expires: expires,
 	})
 	solitudes.System.Config.Save()
-	c.Redirect("/admin/", http.StatusFound)
+	c.Redirect("/admin", http.StatusFound)
 	return nil
 }
 
