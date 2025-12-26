@@ -152,6 +152,9 @@ func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache,
 }
 
 func migrate() {
+	if err := System.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
+		panic(err)
+	}
 	if err := System.DB.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.User{}); err != nil {
 		panic(err)
 	}

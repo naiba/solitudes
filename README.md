@@ -4,8 +4,7 @@
 
 :smoking: 在那些寂寞的日子里，有写作伴随着我。
 
-奶爸的一个小梦想，写一本书。<br>
-Solitud.es 域名已赠予朋友。
+奶爸的一个小梦想，写一本书。
 
 本博客引擎的特色：
 
@@ -54,27 +53,29 @@ services:
         # - ./blog-data/logo.png:/solitudes/resource/static/cactus/images/logo.png # 自定义logo
 ```
 
+目录结构
+
 ```shell
+$ ls
+docker-compose.yml
+blog-data/
 $ ls blog-data
-bleve  conf.yml  logo.png  upload
-# conf.yml 是配置文件，参考 data/conf.yml.example
-# logo.png 是自己 logo，替换主题自带的 logo
-
+bleve/
+conf.yml # 配置文件，参考 data/conf.yml.example
+logo.png # 自定义logo，替换主题自带的 logo
+upload/
 ```
 
-先启动 db 然后启用 UUID 扩展，再启动 solitudes
+启动
 
-
-```
-docker-compose up -d db
-docker-compose exec db psql -U solitudes solitudes -c 'CREATE EXTENSION IF NOT EXISTS "uuid-ossp";'
-docker-compose up -d solitudes
+```shell
+docker-compose up -d
 ```
 
-管理页面的地址是链接/admin
+管理后台地址 `/admin`，默认账户 `hi@example.com`，密码 `123456`
 
 ### 鸣谢
 
-- 主题来自 [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
 - 全文搜索引擎 [blevesearch/bleve](https://github.com/blevesearch/bleve)
 - Hacker Pie @88250 [lute](https://github.com/88250/lute) & @Vanessa219 [Vditor](https://github.com/Vanessa219/vditor)
+- 主题来自 [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
