@@ -27,8 +27,8 @@ site:
       link: /books/
       icon: ""
       black: false
-    - name: About
-      link: /about
+    - name: Tags
+      link: /tags
       icon: fa fa-lightbulb
       black: false
     - name: Solitudes

@@ -30,7 +30,7 @@
                             <div class="text-gray-500 text-xs">{{.Email}}</div>
                             {{if .Website}}<div class="text-blue-600 text-xs">{{.Website}}</div>{{end}}
                         </td>
-                        <td><a target="_blank" href="/{{.Article.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline text-sm">{{.Article.Title}}</a></td>
+                        <td><a target="_blank" href="https://{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline text-sm">{{.Article.Title}}</a></td>
                         <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                         <td class="actions-cell">
                             <div class="flex gap-2">

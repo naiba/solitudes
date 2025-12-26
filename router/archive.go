@@ -131,7 +131,9 @@ func feedHandler(c *fiber.Ctx) error {
 		c.Set("Content-Type", "application/xml")
 		c.Status(http.StatusOK).WriteString(atom)
 	case "rss":
-		rss, err := feed.ToRss()
+		rssFeed := (&feeds.Rss{Feed: feed}).RssFeed()
+		rssFeed.Generator = "Solitudes v" + solitudes.BuildVersion + " github.com/naiba/solitudes"
+		rss, err := feeds.ToXML(rssFeed)
 		if err != nil {
 			return err
 		}

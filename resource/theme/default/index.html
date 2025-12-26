@@ -33,8 +33,8 @@
     <!-- Row 2, Column 1: Writing/Articles -->
     <div class="home-articles-section">
       <div class="h1 sl-menu">
-        <a href="/archive/">{{.Tr.T "writing"}}</a>
-        <a href="/archive/">{{.Tr.T "view_more"}}➤</a>
+        <a href="https://{{.Conf.Site.Domain}}/archive/">{{.Tr.T "writing"}}</a>
+        <a href="https://{{.Conf.Site.Domain}}/archive/">{{.Tr.T "view_more"}}➤</a>
       </div>
       <ul class="post-list">
         {{if not .Data.articles}}
@@ -55,8 +55,8 @@
     {{if .Data.topics}}
     <div class="home-topics-section">
       <div class="h1 sl-menu">
-        <a href="/tags/Topic/">{{.Tr.T "topic"}}</a>
-        <a href="/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
+        <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "topic"}}</a>
+        <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
       </div>
       <ul class="post-list">
         {{range .Data.topics}}

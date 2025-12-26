@@ -15,7 +15,7 @@
             {{if .IsAdmin}} 👲 {{end}}
             {{end}}
             <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
-            <a href="/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
+            <a href="https://{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
             <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">{{$.tr.T "reply"}}</a>
         </p>
         <p class="comment-meta">{{.Content}}</p>

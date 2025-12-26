@@ -184,12 +184,14 @@ func setFuncMap(engine *html.Engine) {
 			return fiber.Map{
 				"article": article,
 				"tr":      tr,
+				"Conf":    solitudes.System.Config,
 			}
 		},
 		"commentsData": func(comments []*model.Comment, tr *translator.Translator) fiber.Map {
 			return fiber.Map{
 				"comments": comments,
 				"tr":       tr,
+				"Conf":     solitudes.System.Config,
 			}
 		},
 		"substr": func(s string, start, length int) string {

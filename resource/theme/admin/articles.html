@@ -26,7 +26,7 @@
                     {{range .Data.articles}}
                     <tr>
                         <td class="text-gray-600">{{.ID}}</td>
-                        <td><a target="_blank" href="/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a></td>
+                        <td><a target="_blank" href="https://{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a></td>
                         <td class="text-gray-600">{{.ReadNum}}</td>
                         <td class="text-gray-500 text-sm">{{.Slug}}</td>
                         <td class="text-center">{{if .IsBook}}<i class="fas fa-check text-green-600"></i>{{end}}</td>
