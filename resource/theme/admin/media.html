@@ -22,7 +22,7 @@
                     {{range .Data.medias}}
                     <tr>
                         <td class="font-mono text-sm text-gray-700">{{.Filename}}</td>
-                        <td><a target="_blank" href="https://{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Article.Version}}" class="text-blue-600 hover:underline">{{.Article.Title}}</a></td>
+                        <td><a target="_blank" href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Article.Version}}" class="text-blue-600 hover:underline">{{.Article.Title}}</a></td>
                         <td class="text-gray-600 text-sm">{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
                         <td>
                             <button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">

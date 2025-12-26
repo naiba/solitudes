@@ -3,7 +3,7 @@
 {{template "default/menu" .}}
 <section id="tags">
   {{range $i,$tag := .Data.tags}}
-  <a href="https://{{$.Conf.Site.Domain}}/tags/{{$tag}}/">
+  <a href="//{{$.Conf.Site.Domain}}/tags/{{$tag}}/">
     {{$tag}} <small>{{index $.Data.counts $i}}</small>
   </a>
   {{end}}

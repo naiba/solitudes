@@ -10,7 +10,7 @@
         <ul class="search-result-list">
           {{range .Data.results}}
           <li>
-            <a href="https://{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
+            <a href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
             <p class="search-result">
               {{.Content|unsafe}}
             </p>

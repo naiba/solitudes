@@ -18,13 +18,13 @@
         <span id="actions">
             <ul>
                 {{if .Data.article.SibilingArticle.Prev}}
-                <li><a class="icon" href="/{{.Data.article.SibilingArticle.Prev.Slug}}"
+                <li><a class="icon" href="//{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Prev.Slug}}"
                         title="{{.Data.article.SibilingArticle.Prev.Title}}"><i class="fas fa-chevron-left"
                             aria-hidden="true" onmouseover="toggle('#i-prev')" onmouseout="toggle('#i-prev')"></i></a>
                 </li>
                 {{end}}
                 {{if .Data.article.SibilingArticle.Next}}
-                <li><a class="icon" href="/{{.Data.article.SibilingArticle.Next.Slug}}"
+                <li><a class="icon" href="//{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Next.Slug}}"
                         title="{{.Data.article.SibilingArticle.Next.Title}}"><i class="fas fa-chevron-right"
                             aria-hidden="true" onmouseover="toggle('#i-next')" onmouseout="toggle('#i-next')"></i></a>
                 </li>
@@ -100,7 +100,7 @@
                 <div class="article-tag">
                     {{range $k,$v:=.Data.article.Tags}}
                     {{if $v}}{{if eq $k 0}}<i class="fas fa-tag"></i> {{end}}<a class="tag-link"
-                        href="/tags/{{$v}}/">{{$v}}</a>{{if not (last $k $.Data.article.Tags)}},{{end}}{{end}}
+                        href="//{{$.Conf.Site.Domain}}/tags/{{$v}}/">{{$v}}</a>{{if not (last $k $.Data.article.Tags)}},{{end}}{{end}}
                     {{end}}
                 </div>
                 {{end}}
@@ -118,7 +118,7 @@
             {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
             {{if .Data.article.IsBook}}
             <h4>{{.Tr.T "chapters"}}</h4>
-            {{template "default/article_chapters" .Data.article}}
+            {{template "default/article_chapters" (articleData .Data.article .Tr)}}
             {{end}}
         </div>
         {{if .Data.article.Book}}

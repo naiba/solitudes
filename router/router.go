@@ -180,7 +180,7 @@ func setFuncMap(engine *html.Engine) {
 			return x == reflect.ValueOf(a).Len()-1
 		},
 		"trim": strings.TrimSpace,
-		"artileData": func(article *model.Article, tr *translator.Translator) fiber.Map {
+		"articleData": func(article *model.Article, tr *translator.Translator) fiber.Map {
 			return fiber.Map{
 				"article": article,
 				"tr":      tr,

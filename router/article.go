@@ -73,7 +73,6 @@ func article(c *fiber.Ctx) error {
 	}()
 	go func() {
 		defer wg.Done()
-		// load prevPost,nextPost
 		relatedSiblingArticle(&a)
 	}()
 	go func() {
@@ -109,7 +108,7 @@ func article(c *fiber.Ctx) error {
 	c.Status(http.StatusOK).Render("default/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
 		"title":        title,
 		"keywords":     a.RawTags,
-		"article":      a,
+		"article":      &a,
 		"comment_page": pg,
 	}))
 	return nil

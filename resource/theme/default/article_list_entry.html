@@ -23,12 +23,12 @@
         </div>
         {{end}}
         <small>(👀{{.article.ReadNum}}{{if .article.CommentNum}},💬{{.article.CommentNum}}{{end}}) <a
-                href="https://{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a> <a href="https://{{.Conf.Site.Domain}}/{{.article.Slug}}">
+                href="//{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a> <a href="//{{.Conf.Site.Domain}}/{{.article.Slug}}">
                 <b>{{.tr.T "leave_a_comment"}}></b></a></small>
     </div>
     {{else}}
     <div>
-        {{if .article.IsBook}}📙{{end}}{{if .article.IsPrivate}}🛡️{{end}}<a href="https://{{.Conf.Site.Domain}}/{{.article.Slug}}">{{.article.Title}}</a>{{if .article.ReadNum}}
+        {{if .article.IsBook}}📙{{end}}{{if .article.IsPrivate}}🛡️{{end}}<a href="//{{.Conf.Site.Domain}}/{{.article.Slug}}">{{.article.Title}}</a>{{if .article.ReadNum}}
         <small>(👀{{.article.ReadNum}}{{if .article.CommentNum}},💬{{.article.CommentNum}}{{end}})</small>{{end}}
     </div>
     {{end}}
