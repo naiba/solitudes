@@ -21,6 +21,11 @@
     },
     {
         "locale": "en",
+        "key": "sign_in_subtitle",
+        "trans": "Sign in to continue"
+    },
+    {
+        "locale": "en",
         "key": "password",
         "trans": "Password"
     },
@@ -126,6 +131,11 @@
     },
     {
         "locale": "en",
+        "key": "compose",
+        "trans": "Compose"
+    },
+    {
+        "locale": "en",
         "key": "media",
         "trans": "Media"
     },
@@ -138,6 +148,11 @@
         "locale": "en",
         "key": "dashboard",
         "trans": "Dashboard"
+    },
+    {
+        "locale": "en",
+        "key": "dashboard_subtitle",
+        "trans": "Overview of your blog"
     },
     {
         "locale": "en",
@@ -191,6 +206,11 @@
     },
     {
         "locale": "en",
+        "key": "publish_subtitle",
+        "trans": "Focus on your writing"
+    },
+    {
+        "locale": "en",
         "key": "book_refer",
         "trans": "Book Refer"
     },
@@ -208,6 +228,11 @@
         "locale": "en",
         "key": "site_settings",
         "trans": "Settings"
+    },
+    {
+        "locale": "en",
+        "key": "settings_subtitle",
+        "trans": "Configure your blog"
     },
     {
         "locale": "en",
@@ -343,5 +368,220 @@
         "locale": "en",
         "key": "view_site",
         "trans": "View Site"
+    },
+    {
+        "locale": "en",
+        "key": "system_stats",
+        "trans": "System Stats"
+    },
+    {
+        "locale": "en",
+        "key": "quick_actions",
+        "trans": "Quick Actions"
+    },
+    {
+        "locale": "en",
+        "key": "confirm_rebuild_search",
+        "trans": "Rebuild full-text search data?"
+    },
+    {
+        "locale": "en",
+        "key": "rebuild_successful",
+        "trans": "Rebuild successful"
+    },
+    {
+        "locale": "en",
+        "key": "article_settings",
+        "trans": "Article Settings"
+    },
+    {
+        "locale": "en",
+        "key": "article_title_placeholder",
+        "trans": "Article Title"
+    },
+    {
+        "locale": "en",
+        "key": "private",
+        "trans": "Private"
+    },
+    {
+        "locale": "en",
+        "key": "template",
+        "trans": "Template"
+    },
+    {
+        "locale": "en",
+        "key": "topic_publishing_tip",
+        "trans": "Topic (哔哔) Publishing Tip:"
+    },
+    {
+        "locale": "en",
+        "key": "topic_tip_tag",
+        "trans": "For topics/moments, use the tag"
+    },
+    {
+        "locale": "en",
+        "key": "topic_tip_case",
+        "trans": "(case-sensitive)."
+    },
+    {
+        "locale": "en",
+        "key": "topic_tip_auto_rules",
+        "trans": "Auto-generation rules:"
+    },
+    {
+        "locale": "en",
+        "key": "topic_tip_empty_slug",
+        "trans": "If slug is empty → auto-generates timestamp"
+    },
+    {
+        "locale": "en",
+        "key": "topic_tip_empty_title",
+        "trans": "If title is also empty → uses the auto-generated slug as title"
+    },
+    {
+        "locale": "en",
+        "key": "topic_tip_example",
+        "trans": "Example: Leave both empty with Topic tag → slug and title become"
+    },
+    {
+        "locale": "en",
+        "key": "lowercase_hyphens_only",
+        "trans": "Lowercase, hyphens only"
+    },
+    {
+        "locale": "en",
+        "key": "comma_separated_tags",
+        "trans": "Comma-separated tags"
+    },
+    {
+        "locale": "en",
+        "key": "publish_failed",
+        "trans": "Publish failed:"
+    },
+    {
+        "locale": "en",
+        "key": "site_information",
+        "trans": "Site Information"
+    },
+    {
+        "locale": "en",
+        "key": "notifications",
+        "trans": "Notifications"
+    },
+    {
+        "locale": "en",
+        "key": "email_settings",
+        "trans": "Email Settings"
+    },
+    {
+        "locale": "en",
+        "key": "spam_protection",
+        "trans": "Spam Protection"
+    },
+    {
+        "locale": "en",
+        "key": "menus_custom_code",
+        "trans": "Menus & Custom Code"
+    },
+    {
+        "locale": "en",
+        "key": "home_page_content",
+        "trans": "Home Page Content"
+    },
+    {
+        "locale": "en",
+        "key": "user_account",
+        "trans": "User Account"
+    },
+    {
+        "locale": "en",
+        "key": "old_password_empty",
+        "trans": "Old password is empty"
+    },
+    {
+        "locale": "en",
+        "key": "password_mismatch",
+        "trans": "Passwords do not match"
+    },
+    {
+        "locale": "en",
+        "key": "save_failed",
+        "trans": "Save failed:"
+    },
+    {
+        "locale": "en",
+        "key": "articles_subtitle",
+        "trans": "Manage your published articles"
+    },
+    {
+        "locale": "en",
+        "key": "page_number",
+        "trans": "Page {0}"
+    },
+    {
+        "locale": "en",
+        "key": "confirm_delete",
+        "trans": "Confirm delete?"
+    },
+    {
+        "locale": "en",
+        "key": "comments_subtitle",
+        "trans": "Moderate your blog comments"
+    },
+    {
+        "locale": "en",
+        "key": "spam",
+        "trans": "SPAM"
+    },
+    {
+        "locale": "en",
+        "key": "confirm_spam",
+        "trans": "Report as SPAM?"
+    },
+    {
+        "locale": "en",
+        "key": "media_subtitle",
+        "trans": "Manage your uploaded files"
+    },
+    {
+        "locale": "en",
+        "key": "tags_subtitle",
+        "trans": "Manage your article tags"
+    },
+    {
+        "locale": "en",
+        "key": "ensure_content_saved",
+        "trans": "Please ensure content is saved"
+    },
+    {
+        "locale": "en",
+        "key": "quick_topic_publish",
+        "trans": "Quick Topic"
+    },
+    {
+        "locale": "en",
+        "key": "topic_content_placeholder",
+        "trans": "What's on your mind?"
+    },
+    {
+        "locale": "en",
+        "key": "publish_now",
+        "trans": "Publish Now"
+    },
+    {
+        "locale": "en",
+        "key": "publish_success",
+        "trans": "Published successfully"
+    },
+    {
+        "locale": "en",
+        "key": "error_occurred",
+        "trans": "An error occurred"
+    },
+    {
+        "locale": "en",
+        "key": "delete_file_usage_first",
+        "trans": "You have to delete file usage in article."
     }
 ]

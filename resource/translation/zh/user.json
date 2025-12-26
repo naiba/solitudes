@@ -77,12 +77,12 @@
     {
         "locale": "zh",
         "key": "submit",
-        "trans": "提交评论"
+        "trans": "提交"
     },
     {
         "locale": "zh",
         "key": "menu",
-        "trans": "菜单选项"
+        "trans": "菜单"
     },
     {
         "locale": "zh",
@@ -92,7 +92,7 @@
     {
         "locale": "zh",
         "key": "share",
-        "trans": "分享文章"
+        "trans": "分享"
     },
     {
         "locale": "zh",
@@ -117,7 +117,7 @@
     {
         "locale": "zh",
         "key": "book",
-        "trans": "专栏文章"
+        "trans": "所属专栏"
     },
     {
         "locale": "zh",
@@ -157,7 +157,7 @@
     {
         "locale": "zh",
         "key": "view_more",
-        "trans": "查看更多内容"
+        "trans": "查看更多"
     },
     {
         "locale": "zh",
@@ -168,5 +168,50 @@
         "locale": "zh",
         "key": "most_read",
         "trans": "阅读最多"
+    },
+    {
+        "locale": "zh",
+        "key": "no_search_results",
+        "trans": "没有找到相关结果。"
+    },
+    {
+        "locale": "zh",
+        "key": "go_to_page",
+        "trans": "跳转"
+    },
+    {
+        "locale": "zh",
+        "key": "edit_article",
+        "trans": "[编辑]"
+    },
+    {
+        "locale": "zh",
+        "key": "prev_chapter",
+        "trans": "上一章："
+    },
+    {
+        "locale": "zh",
+        "key": "next_chapter",
+        "trans": "下一章："
+    },
+    {
+        "locale": "zh",
+        "key": "submit_failed",
+        "trans": "提交失败："
+    },
+    {
+        "locale": "zh",
+        "key": "comment_required_fields",
+        "trans": "昵称和评论内容是必填项。"
+    },
+    {
+        "locale": "zh",
+        "key": "submitting",
+        "trans": "提交中..."
+    },
+    {
+        "locale": "zh",
+        "key": "reply",
+        "trans": "回复"
     }
 ]

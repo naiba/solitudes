@@ -17,7 +17,7 @@
                     {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}👲{{end}}:&nbsp;</p>
                 <p>{{.Content}}</p>
                 <time class="meta" datetime="{{.CreatedAt}}" itemprop="datePublished">
-                    {{tf .CreatedAt "02 Jan 2006"}}</time>
+                    {{tf .CreatedAt ($.tr.T "date_format")}}</time>
             </div>
             {{end}}
         </div>

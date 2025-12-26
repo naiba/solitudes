@@ -4,7 +4,7 @@
 <div class="admin-container">
     <div class="page-header">
         <h1 class="page-title">{{.Tr.T "manage_comments"}}</h1>
-        <p class="page-subtitle">Moderate your blog comments</p>
+        <p class="page-subtitle">{{.Tr.T "comments_subtitle"}}</p>
     </div>
 
     <div class="wf-card">
@@ -38,7 +38,7 @@
                                     <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
                                 </button>
                                 <button onclick="reportSpam('{{.Article.ID}}','{{.ID}}')" class="px-3 py-1 text-sm bg-orange-500 text-white rounded hover:bg-orange-600">
-                                    <i class="fas fa-exclamation-triangle"></i> SPAM
+                                    <i class="fas fa-exclamation-triangle"></i> {{$.Tr.T "spam"}}
                                 </button>
                             </div>
                         </td>
@@ -51,7 +51,7 @@
             <a href="?page={{.Data.page.PrevPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 <i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
-            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">Page {{.Data.page.Page}}</span>
+            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
             <a href="?page={{.Data.page.NextPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 {{.Tr.T "next"}} <i class="fas fa-chevron-right"></i>
             </a>
@@ -61,7 +61,7 @@
 
 <script>
     function deleteComment(aid, commendId) {
-        if (!confirm("Confirm delete?")) {
+        if (!confirm('{{.Tr.T "confirm_delete"}}')) {
             return
         }
         ajaxRequest({
@@ -74,7 +74,7 @@
     }
 
     function reportSpam(aid, commendId) {
-        if (!confirm("Confirm report SPAM?")) {
+        if (!confirm('{{.Tr.T "confirm_spam"}}')) {
             return
         }
         ajaxRequest({

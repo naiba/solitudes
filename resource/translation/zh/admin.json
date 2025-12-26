@@ -21,6 +21,11 @@
     },
     {
         "locale": "zh",
+        "key": "sign_in_subtitle",
+        "trans": "登录以继续"
+    },
+    {
+        "locale": "zh",
         "key": "password",
         "trans": "密码"
     },
@@ -117,12 +122,17 @@
     {
         "locale": "zh",
         "key": "sign_out",
-        "trans": "注销登录"
+        "trans": "退出登录"
     },
     {
         "locale": "zh",
         "key": "publish",
         "trans": "发布"
+    },
+    {
+        "locale": "zh",
+        "key": "compose",
+        "trans": "撰写"
     },
     {
         "locale": "zh",
@@ -138,6 +148,11 @@
         "locale": "zh",
         "key": "dashboard",
         "trans": "仪表盘"
+    },
+    {
+        "locale": "zh",
+        "key": "dashboard_subtitle",
+        "trans": "博客数据概览"
     },
     {
         "locale": "zh",
@@ -191,6 +206,11 @@
     },
     {
         "locale": "zh",
+        "key": "publish_subtitle",
+        "trans": "专注于你的写作"
+    },
+    {
+        "locale": "zh",
         "key": "book_refer",
         "trans": "专栏ID"
     },
@@ -208,6 +228,11 @@
         "locale": "zh",
         "key": "site_settings",
         "trans": "配置"
+    },
+    {
+        "locale": "zh",
+        "key": "settings_subtitle",
+        "trans": "配置你的博客"
     },
     {
         "locale": "zh",
@@ -343,5 +368,220 @@
         "locale": "zh",
         "key": "view_site",
         "trans": "查看网站"
+    },
+    {
+        "locale": "zh",
+        "key": "system_stats",
+        "trans": "系统状态"
+    },
+    {
+        "locale": "zh",
+        "key": "quick_actions",
+        "trans": "快捷操作"
+    },
+    {
+        "locale": "zh",
+        "key": "confirm_rebuild_search",
+        "trans": "确定要重建全文搜索数据吗？"
+    },
+    {
+        "locale": "zh",
+        "key": "rebuild_successful",
+        "trans": "重建成功"
+    },
+    {
+        "locale": "zh",
+        "key": "article_settings",
+        "trans": "文章设置"
+    },
+    {
+        "locale": "zh",
+        "key": "article_title_placeholder",
+        "trans": "文章标题"
+    },
+    {
+        "locale": "zh",
+        "key": "private",
+        "trans": "私密"
+    },
+    {
+        "locale": "zh",
+        "key": "template",
+        "trans": "模板"
+    },
+    {
+        "locale": "zh",
+        "key": "topic_publishing_tip",
+        "trans": "哔哔发布提示："
+    },
+    {
+        "locale": "zh",
+        "key": "topic_tip_tag",
+        "trans": "发布哔哔请使用标签"
+    },
+    {
+        "locale": "zh",
+        "key": "topic_tip_case",
+        "trans": "（区分大小写）。"
+    },
+    {
+        "locale": "zh",
+        "key": "topic_tip_auto_rules",
+        "trans": "自动生成规则："
+    },
+    {
+        "locale": "zh",
+        "key": "topic_tip_empty_slug",
+        "trans": "链接为空 → 自动生成时间戳"
+    },
+    {
+        "locale": "zh",
+        "key": "topic_tip_empty_title",
+        "trans": "标题也为空 → 使用自动生成的链接作为标题"
+    },
+    {
+        "locale": "zh",
+        "key": "topic_tip_example",
+        "trans": "示例：两者都留空且带 Topic 标签 → 链接和标题变为"
+    },
+    {
+        "locale": "zh",
+        "key": "lowercase_hyphens_only",
+        "trans": "仅限小写字母和连字符"
+    },
+    {
+        "locale": "zh",
+        "key": "comma_separated_tags",
+        "trans": "用逗号分隔多个标签"
+    },
+    {
+        "locale": "zh",
+        "key": "publish_failed",
+        "trans": "发布失败："
+    },
+    {
+        "locale": "zh",
+        "key": "site_information",
+        "trans": "站点信息"
+    },
+    {
+        "locale": "zh",
+        "key": "notifications",
+        "trans": "通知设置"
+    },
+    {
+        "locale": "zh",
+        "key": "email_settings",
+        "trans": "邮件设置"
+    },
+    {
+        "locale": "zh",
+        "key": "spam_protection",
+        "trans": "垃圾评论防护"
+    },
+    {
+        "locale": "zh",
+        "key": "menus_custom_code",
+        "trans": "菜单与自定义代码"
+    },
+    {
+        "locale": "zh",
+        "key": "home_page_content",
+        "trans": "首页内容"
+    },
+    {
+        "locale": "zh",
+        "key": "user_account",
+        "trans": "用户账户"
+    },
+    {
+        "locale": "zh",
+        "key": "old_password_empty",
+        "trans": "请输入旧密码"
+    },
+    {
+        "locale": "zh",
+        "key": "password_mismatch",
+        "trans": "两次输入的密码不一致"
+    },
+    {
+        "locale": "zh",
+        "key": "save_failed",
+        "trans": "保存失败："
+    },
+    {
+        "locale": "zh",
+        "key": "articles_subtitle",
+        "trans": "管理已发布的文章"
+    },
+    {
+        "locale": "zh",
+        "key": "page_number",
+        "trans": "第 {0} 页"
+    },
+    {
+        "locale": "zh",
+        "key": "confirm_delete",
+        "trans": "确定要删除吗？"
+    },
+    {
+        "locale": "zh",
+        "key": "comments_subtitle",
+        "trans": "管理博客评论"
+    },
+    {
+        "locale": "zh",
+        "key": "spam",
+        "trans": "垃圾"
+    },
+    {
+        "locale": "zh",
+        "key": "confirm_spam",
+        "trans": "确定要标记为垃圾评论吗？"
+    },
+    {
+        "locale": "zh",
+        "key": "media_subtitle",
+        "trans": "管理已上传的文件"
+    },
+    {
+        "locale": "zh",
+        "key": "tags_subtitle",
+        "trans": "管理文章标签"
+    },
+    {
+        "locale": "zh",
+        "key": "ensure_content_saved",
+        "trans": "请确保编辑内容已妥善保存"
+    },
+    {
+        "locale": "zh",
+        "key": "quick_topic_publish",
+        "trans": "快速哔哔"
+    },
+    {
+        "locale": "zh",
+        "key": "topic_content_placeholder",
+        "trans": "此刻的想法..."
+    },
+    {
+        "locale": "zh",
+        "key": "publish_now",
+        "trans": "立即发布"
+    },
+    {
+        "locale": "zh",
+        "key": "publish_success",
+        "trans": "发布成功"
+    },
+    {
+        "locale": "zh",
+        "key": "error_occurred",
+        "trans": "发生错误"
+    },
+    {
+        "locale": "zh",
+        "key": "delete_file_usage_first",
+        "trans": "请先在文章中移除该文件的引用。"
     }
 ]

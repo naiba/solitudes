@@ -176,6 +176,7 @@ func publishHandler(c *fiber.Ctx) error {
 		numAfter, _ := solitudes.System.Search.DocCount()
 		log.Printf("Doc %s indexed %d --> %d %+v\n", newArticle.GetIndexID(), numBefore, numAfter, errIndex)
 	}
+	c.Status(http.StatusOK).JSON(newArticle)
 	return nil
 }
 

@@ -20,31 +20,31 @@
             </a>
             
             <ul class="admin-nav-links">
-                <li><a href="/admin/" class="{{if eq .Title "仪表盘"}}active{{end}}">
+                <li><a href="/admin/" class="{{if eq .Path "/admin/"}}active{{end}}">
                     <i class="fas fa-tachometer-alt"></i>
                     <span>{{.Tr.T "dashboard"}}</span>
                 </a></li>
-                <li><a href="/admin/publish" class="{{if eq .Title "发布文章"}}active{{end}}">
+                <li><a href="/admin/publish" class="{{if hasPrefix .Path "/admin/publish"}}active{{end}}">
                     <i class="fas fa-plus"></i>
-                    <span>{{.Tr.T "publish"}}</span>
+                    <span>{{.Tr.T "compose"}}</span>
                 </a></li>
-                <li><a href="/admin/articles" class="{{if eq .Title "管理文章"}}active{{end}}">
+                <li><a href="/admin/articles" class="{{if hasPrefix .Path "/admin/articles"}}active{{end}}">
                     <i class="fas fa-list"></i>
                     <span>{{.Tr.T "articles"}}</span>
                 </a></li>
-                <li><a href="/admin/comments" class="{{if eq .Title "管理评论"}}active{{end}}">
+                <li><a href="/admin/comments" class="{{if hasPrefix .Path "/admin/comments"}}active{{end}}">
                     <i class="far fa-comments"></i>
                     <span>{{.Tr.T "comments"}}</span>
                 </a></li>
-                <li><a href="/admin/media" class="{{if eq .Title "管理文件"}}active{{end}}">
+                <li><a href="/admin/media" class="{{if hasPrefix .Path "/admin/media"}}active{{end}}">
                     <i class="far fa-file-image"></i>
                     <span>{{.Tr.T "media"}}</span>
                 </a></li>
-                <li><a href="/admin/tags" class="{{if eq .Title "管理标签"}}active{{end}}">
+                <li><a href="/admin/tags" class="{{if hasPrefix .Path "/admin/tags"}}active{{end}}">
                     <i class="fas fa-tags"></i>
                     <span>{{.Tr.T "tags"}}</span>
                 </a></li>
-                <li><a href="/admin/settings" class="{{if eq .Title "配置"}}active{{end}}">
+                <li><a href="/admin/settings" class="{{if hasPrefix .Path "/admin/settings"}}active{{end}}">
                     <i class="fas fa-cog"></i>
                     <span>{{.Tr.T "site_settings"}}</span>
                 </a></li>

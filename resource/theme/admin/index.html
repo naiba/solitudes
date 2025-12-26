@@ -4,7 +4,7 @@
 <div class="admin-container">
     <div class="page-header">
         <h1 class="page-title">{{.Tr.T "dashboard"}}</h1>
-        <p class="page-subtitle">Overview of your blog</p>
+        <p class="page-subtitle">{{.Tr.T "dashboard_subtitle"}}</p>
     </div>
 
     <div class="stats-grid">
@@ -27,9 +27,22 @@
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="wf-card md:col-span-2">
+            <div class="wf-card-header">
+                {{.Tr.T "quick_topic_publish"}}
+            </div>
+            <div class="wf-card-body">
+                <div class="flex flex-col gap-2">
+                    <div id="topicContent"></div>
+                    <button onclick="publishTopic(this)" class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition self-end">
+                        <i class="fas fa-paper-plane mr-2"></i>{{.Tr.T "publish_now"}}
+                    </button>
+                </div>
+            </div>
+        </div>
         <div class="wf-card">
             <div class="wf-card-header">
-                System Stats
+                {{.Tr.T "system_stats"}}
             </div>
             <div class="wf-card-body">
                 <div class="space-y-3">
@@ -55,11 +68,11 @@
 
         <div class="wf-card">
             <div class="wf-card-header">
-                Quick Actions
+                {{.Tr.T "quick_actions"}}
             </div>
             <div class="wf-card-body space-y-3">
                 <a href="/admin/publish" class="block w-full px-4 py-3 text-center bg-blue-600 text-white rounded hover:bg-blue-700 transition">
-                    <i class="fas fa-plus mr-2"></i>{{.Tr.T "publish"}}
+                    <i class="fas fa-plus mr-2"></i>{{.Tr.T "compose"}}
                 </a>
                 <button onclick="rebuildFullTextSearch()" class="block w-full px-4 py-3 text-center bg-red-600 text-white rounded hover:bg-red-700 transition">
                     <i class="fas fa-sync mr-2"></i>{{.Tr.T "rebuild_fulltext_search_data"}}
@@ -71,16 +84,63 @@
 
 <script>
     function rebuildFullTextSearch() {
-        if (confirm('Rebuild full-text search data?')) {
+        if (confirm('{{.Tr.T "confirm_rebuild_search"}}')) {
             ajaxRequest({
                 url: "/admin/rebuild-full-text-search",
                 type: 'GET',
                 success: () => {
-                    alert("Rebuild successful")
+                    alert('{{.Tr.T "rebuild_successful"}}')
                 }
             })
         }
     }
+
+    function publishTopic(btn) {
+        if ($(btn).hasClass("disabled")) return;
+        const content = vditor.getValue().trim();
+        if (!content) return;
+        
+        $(btn).addClass("disabled");
+        const article = {
+            content: content,
+            tags: "Topic",
+            title: "",
+            slug: "",
+            template: 1,
+            is_book: false,
+            is_private: false,
+            new_version: 0
+        };
+        
+        $.post("/admin/publish", article, (data) => {
+             alert('{{.Tr.T "publish_success"}}');
+             if (data && data.Slug) {
+                 window.location.href = "/" + data.Slug;
+             } else {
+                 window.location.reload();
+             }
+        }).fail((err) => {
+            alert('{{.Tr.T "publish_failed"}} ' + err.responseText);
+        }).always(() => {
+            $(btn).removeClass("disabled");
+        });
+    }
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.css" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.js" crossorigin="anonymous"></script>
+<script>
+    const vditor = new Vditor('topicContent', {
+        height: 200,
+        placeholder: '{{.Tr.T "topic_content_placeholder"}}',
+        toolbarConfig: {
+            pin: true,
+        },
+        cache: {
+            enable: false,
+        },
+        toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|', 'list', 'ordered-list', 'check', '|', 'quote', 'line', 'code', 'inline-code'],
+    })
 </script>
 
 {{template "admin/footer" .}}

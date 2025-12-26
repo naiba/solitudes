@@ -4,7 +4,7 @@
 <div class="admin-container">
     <div class="page-header">
         <h1 class="page-title">{{.Tr.T "manage_tags"}}</h1>
-        <p class="page-subtitle">Manage your article tags</p>
+        <p class="page-subtitle">{{.Tr.T "tags_subtitle"}}</p>
     </div>
 
     <div class="wf-card">
@@ -45,7 +45,7 @@
     }
     
     function deleteTag(tag) {
-        if (!confirm("Confirm delete?")) {
+        if (!confirm('{{.Tr.T "confirm_delete"}}')) {
             return
         }
         ajaxRequest({

@@ -168,5 +168,50 @@
         "locale": "en",
         "key": "most_read",
         "trans": "Most Read"
+    },
+    {
+        "locale": "en",
+        "key": "no_search_results",
+        "trans": "No results found."
+    },
+    {
+        "locale": "en",
+        "key": "go_to_page",
+        "trans": "Go"
+    },
+    {
+        "locale": "en",
+        "key": "edit_article",
+        "trans": "[Edit]"
+    },
+    {
+        "locale": "en",
+        "key": "prev_chapter",
+        "trans": "Prev:"
+    },
+    {
+        "locale": "en",
+        "key": "next_chapter",
+        "trans": "Next:"
+    },
+    {
+        "locale": "en",
+        "key": "submit_failed",
+        "trans": "Submit failed:"
+    },
+    {
+        "locale": "en",
+        "key": "comment_required_fields",
+        "trans": "Nickname and content are required."
+    },
+    {
+        "locale": "en",
+        "key": "submitting",
+        "trans": "Submitting..."
+    },
+    {
+        "locale": "en",
+        "key": "reply",
+        "trans": "Reply"
     }
 ]

@@ -105,7 +105,7 @@
                 </div>
                 {{end}}
                 {{if .Login}}
-                <a href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
+                <a href="/admin/publish?id={{.Data.article.ID}}">{{.Tr.T "edit_article"}}</a>
                 {{end}}
             </div>
         </header>
@@ -126,12 +126,12 @@
             {{.Tr.T "book"}}::<a href="/{{.Data.article.Book.Slug}}"><b>{{.Data.article.Book.Title}}</b></a> -
             {{.Tr.T "chapters"}}
             <ul>
-                {{if .Data.article.SibilingArticle.Prev.ID}}<li>Prev: <a
+                {{if .Data.article.SibilingArticle.Prev.ID}}<li>{{.Tr.T "prev_chapter"}} <a
                         href="/{{.Data.article.SibilingArticle.Prev.Slug}}">{{.Data.article.SibilingArticle.Prev.Title}}</a>
                 </li>
                 {{end}}
                 <li>{{.Data.article.Title}}</li>
-                {{if .Data.article.SibilingArticle.Next.ID}}<li>Next: <a
+                {{if .Data.article.SibilingArticle.Next.ID}}<li>{{.Tr.T "next_chapter"}} <a
                         href="/{{.Data.article.SibilingArticle.Next.Slug}}">{{.Data.article.SibilingArticle.Next.Title}}</a>
                 </li>
                 {{end}}
@@ -142,7 +142,7 @@
 
     <div id="reply-list">
         <h1>{{.Tr.T "comments"}}</h1>
-        {{template "default/comments_entry" .Data.article.Comments}}
+        {{template "default/comments_entry" (commentsData .Data.article.Comments .Tr)}}
     </div>
     {{if .Data.article.Comments}}
     <div class="pagination">
@@ -254,10 +254,10 @@
                 return
             }
             btn.disabled = true
-            btn.value = "Submiting ..."
+            btn.value = '{{.Tr.T "submitting"}}'
             if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
                 btn.disabled = false
-                alert('nickname & content is required.')
+                alert('{{.Tr.T "comment_required_fields"}}')
                 return
             }
             const cm_nickname = document.querySelector('#id_nickname') ? document.querySelector('#id_nickname').value : "";
@@ -290,13 +290,13 @@
                     return
                 }
                 resp.text().then(str => {
-                    alert("Submit faile: " + str)
+                    alert('{{.Tr.T "submit_failed"}} ' + str)
                 })
             }).catch(e => {
-                alert("Submit faile: " + e)
+                alert('{{.Tr.T "submit_failed"}} ' + e)
             }).finally(() => {
                 btn.disabled = false
-                btn.value = "Submit"
+                btn.value = '{{.Tr.T "submit"}}'
             })
         }
     </script>

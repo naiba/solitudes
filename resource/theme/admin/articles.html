@@ -4,7 +4,7 @@
 <div class="admin-container">
     <div class="page-header">
         <h1 class="page-title">{{.Tr.T "manage_articles"}}</h1>
-        <p class="page-subtitle">Manage your published articles</p>
+        <p class="page-subtitle">{{.Tr.T "articles_subtitle"}}</p>
     </div>
 
     <div class="wf-card">
@@ -17,7 +17,7 @@
                         <th>{{.Tr.T "read"}}</th>
                         <th>{{.Tr.T "slug"}}</th>
                         <th>{{.Tr.T "book"}}</th>
-                        <th>Private</th>
+                        <th>{{.Tr.T "private"}}</th>
                         <th>{{.Tr.T "created_at"}}</th>
                         <th>{{.Tr.T "manage"}}</th>
                     </tr>
@@ -51,7 +51,7 @@
             <a href="?page={{.Data.page.PrevPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 <i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
-            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">Page {{.Data.page.Page}}</span>
+            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
             <a href="?page={{.Data.page.NextPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 {{.Tr.T "next"}} <i class="fas fa-chevron-right"></i>
             </a>
@@ -61,7 +61,7 @@
 
 <script>
     function deleteArticle(id) {
-        if (!confirm("Confirm delete?")) {
+        if (!confirm('{{.Tr.T "confirm_delete"}}')) {
             return
         }
         ajaxRequest({

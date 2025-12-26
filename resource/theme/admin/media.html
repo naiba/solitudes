@@ -4,7 +4,7 @@
 <div class="admin-container">
     <div class="page-header">
         <h1 class="page-title">{{.Tr.T "manage_media"}}</h1>
-        <p class="page-subtitle">Manage uploaded files and media</p>
+        <p class="page-subtitle">{{.Tr.T "media_subtitle"}}</p>
     </div>
 
     <div class="wf-card">
@@ -38,7 +38,7 @@
             <a href="?page={{add .Data.page -1}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 <i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
-            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">Page {{.Data.page}}</span>
+            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">{{.Tr.T "page_number" (int2str .Data.page)}}</span>
             <a href="?page={{add .Data.page 1}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
                 {{.Tr.T "next"}} <i class="fas fa-chevron-right"></i>
             </a>
@@ -49,10 +49,10 @@
 <script>
     function deleteFile(file, articleId) {
         if (articleId !== '') {
-            alert("You have to delete file usage in article.")
+            alert('{{.Tr.T "delete_file_usage_first"}}')
             return
         }
-        if (!confirm("Confirm delete?")) {
+        if (!confirm('{{.Tr.T "confirm_delete"}}')) {
             return
         }
         ajaxRequest({

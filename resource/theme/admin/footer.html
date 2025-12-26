@@ -18,7 +18,7 @@
         const defaultOptions = {
             error: function(xhr) {
                 hideLoading();
-                alert(xhr.responseText || 'An error occurred');
+                alert(xhr.responseText || '{{.Tr.T "error_occurred"}}');
             },
             complete: function() {
                 hideLoading();

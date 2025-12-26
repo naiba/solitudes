@@ -73,11 +73,15 @@ func (t *Article) GetIndexID() string {
 // BeforeSave hook
 func (t *Article) BeforeSave(tx *gorm.DB) (err error) {
 	t.RawTags = strings.TrimSpace(t.RawTags)
+	t.parseRawTags()
+	return nil
+}
+
+func (t *Article) parseRawTags() {
 	if t.RawTags == "" {
-		return nil
+		return
 	}
 	t.Tags = strings.Split(t.RawTags, ",")
-	return nil
 }
 
 // AfterFind hook
@@ -90,6 +94,7 @@ var titleRegex = regexp.MustCompile(`^\s{0,2}(#{1,6})\s(.*)$`)
 
 // IsTopic 是否是哔哔
 func (t *Article) IsTopic() bool {
+	t.parseRawTags()
 	return lo.Contains(t.Tags, "Topic")
 }
 

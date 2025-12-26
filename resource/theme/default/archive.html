@@ -25,7 +25,7 @@
     {{if gt .Data.page.TotalPage 1}}
     <div style="margin-top: 0.5rem;">
       <input value="{{.Data.page.Page}}" class="search-input" style="display: unset;vertical-align: unset;width: 5rem !important;" type="number">
-      <button class="base-button">Go</button>
+      <button class="base-button">{{.Tr.T "go_to_page"}}</button>
     </div>
     {{end}}
   </div>

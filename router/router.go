@@ -186,6 +186,12 @@ func setFuncMap(engine *html.Engine) {
 				"tr":      tr,
 			}
 		},
+		"commentsData": func(comments []*model.Comment, tr *translator.Translator) fiber.Map {
+			return fiber.Map{
+				"comments": comments,
+				"tr":       tr,
+			}
+		},
 		"substr": func(s string, start, length int) string {
 			runes := []rune(s)
 			if start < 0 || start >= len(runes) {
@@ -197,6 +203,7 @@ func setFuncMap(engine *html.Engine) {
 			}
 			return string(runes[start:end])
 		},
+		"hasPrefix": strings.HasPrefix,
 	}
 	for name, fn := range funcMap {
 		engine.AddFunc(name, fn)
@@ -260,6 +267,7 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	soli["Login"] = c.Locals(solitudes.CtxAuthorized)
 	soli["Data"] = data
 	soli["Tr"] = c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+	soli["Path"] = c.Path()
 
 	return soli
 }
