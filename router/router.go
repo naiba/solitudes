@@ -86,6 +86,7 @@ func Serve() {
 
 	app.Use(trans, auth)
 	app.Get("/", index)
+	app.Get("/favicon.ico", faviconHandler)
 	app.Get("/feed/:format?", feedHandler)
 	app.Get("/archive/:page?", archive)
 	app.Get("/books/:page?", book)
@@ -125,6 +126,10 @@ func Serve() {
 	app.Use(page404)
 
 	app.Listen(":8080")
+}
+
+func faviconHandler(c *fiber.Ctx) error {
+	return c.SendFile("resource/static/cactus/images/favicon.ico")
 }
 
 func page404(c *fiber.Ctx) error {

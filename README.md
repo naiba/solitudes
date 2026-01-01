@@ -51,6 +51,7 @@ services:
     volumes:
         - ./blog-data:/solitudes/data
         # - ./blog-data/logo.png:/solitudes/resource/static/cactus/images/logo.png # 自定义logo
+        # - ./blog-data/favicon.ico:/solitudes/resource/static/cactus/images/favicon.ico # 自定义favicon
 ```
 
 目录结构
