@@ -81,10 +81,31 @@ func commentHandler(c *fiber.Ctx) error {
 		return err
 	}
 
-	//Email notify
+	// Email notify and update email read status
 	go func() {
-		err := notify.Email(&cm, replyTo, article)
-		notify.TGNotify(&cm, article, err)
+		// Only send email if replying to someone else's comment
+		if replyTo != nil && !replyTo.IsAdmin && replyTo.Email != "" && replyTo.Email != cm.Email {
+			emailErr := notify.Email(&cm, replyTo, article)
+			
+			// Update EmailReadStatus based on email sending result
+			var emailStatus *string
+			if emailErr == nil {
+				// Email sent successfully, set to "unread"
+				status := "unread"
+				emailStatus = &status
+			}
+			// If emailErr != nil, leave it as nil (not sent)
+			
+			// Update the comment's EmailReadStatus
+			if emailStatus != nil {
+				solitudes.System.DB.Model(&model.Comment{}).
+					Where("id = ?", cm.ID).
+					Update("email_read_status", emailStatus)
+			}
+			
+			// Send Telegram notification regardless of email result
+			notify.TGNotify(&cm, article, emailErr)
+		}
 	}()
 	return nil
 }

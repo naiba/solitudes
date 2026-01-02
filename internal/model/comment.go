@@ -16,6 +16,8 @@ type Comment struct {
 	IP        string  `gorm:"inet"`
 	UserAgent string
 	IsAdmin   bool
+	// EmailReadStatus tracks email notification read status: nil (not sent/not applicable), "unread", "read"
+	EmailReadStatus *string `gorm:"type:varchar(20);default:NULL"`
 
 	ArticleID     *string `gorm:"type:uuid;index;default:NULL" form:"article_id" validate:"required,uuid"`
 	Article       *Article

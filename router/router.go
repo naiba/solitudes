@@ -99,6 +99,9 @@ func Serve() {
 	app.Get("/captcha", generateCaptcha)
 	app.Post("/count", count)
 	app.Post("/comment", commentHandler)
+	// Email tracking endpoints: pixel (backup) + redirect (primary)
+	app.Get("/r/:id", trackEmailReadRedirect)
+	app.Get("/static/i/:id", trackEmailRead)
 	app.Static("/static", "resource/static")
 	app.Static("/upload", "data/upload")
 
@@ -185,6 +188,12 @@ func setFuncMap(engine *html.Engine) {
 			return x == reflect.ValueOf(a).Len()-1
 		},
 		"trim": strings.TrimSpace,
+		"ptrStrEq": func(ptr *string, val string) bool {
+			if ptr == nil {
+				return false
+			}
+			return *ptr == val
+		},
 		"articleData": func(article *model.Article, tr *translator.Translator) fiber.Map {
 			return fiber.Map{
 				"article": article,

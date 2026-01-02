@@ -16,6 +16,11 @@
             {{end}}
             <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
             <a href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
+            {{if ptrStrEq .EmailReadStatus "read"}}
+            <i class="fas fa-eye" style="color: #999; font-size: 0.9em;" title="{{$.tr.T "email_read"}}"></i>
+            {{else if ptrStrEq .EmailReadStatus "unread"}}
+            <i class="fas fa-eye-slash" style="color: #999; font-size: 0.9em;" title="{{$.tr.T "email_unread"}}"></i>
+            {{end}}
             <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">{{$.tr.T "reply"}}</a>
         </p>
         <p class="comment-meta">{{.Content}}</p>

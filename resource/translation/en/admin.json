@@ -66,6 +66,11 @@
     },
     {
         "locale": "en",
+        "key": "email_status",
+        "trans": "Email Status"
+    },
+    {
+        "locale": "en",
         "key": "manage",
         "trans": "Manage"
     },

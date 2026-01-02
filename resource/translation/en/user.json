@@ -213,5 +213,15 @@
         "locale": "en",
         "key": "reply",
         "trans": "Reply"
+    },
+    {
+        "locale": "en",
+        "key": "email_read",
+        "trans": "Email notification has been read"
+    },
+    {
+        "locale": "en",
+        "key": "email_unread",
+        "trans": "Email notification not yet read"
     }
 ]

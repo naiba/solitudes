@@ -213,5 +213,15 @@
         "locale": "zh",
         "key": "reply",
         "trans": "回复"
+    },
+    {
+        "locale": "zh",
+        "key": "email_read",
+        "trans": "邮件通知已读"
+    },
+    {
+        "locale": "zh",
+        "key": "email_unread",
+        "trans": "邮件通知未读"
     }
 ]

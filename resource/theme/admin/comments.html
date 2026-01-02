@@ -17,6 +17,7 @@
                         <th>{{.Tr.T "author"}}</th>
                         <th>{{.Tr.T "article"}}</th>
                         <th>{{.Tr.T "created_at"}}</th>
+                        <th>{{.Tr.T "email_status"}}</th>
                         <th>{{.Tr.T "manage"}}</th>
                     </tr>
                 </thead>
@@ -32,6 +33,13 @@
                         </td>
                         <td><a target="_blank" href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline text-sm">{{.Article.Title}}</a></td>
                         <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
+                        <td class="text-center">
+                            {{if ptrStrEq .EmailReadStatus "read"}}
+                            <i class="fas fa-eye" style="color: #10b981;" title="{{$.Tr.T "email_read"}}"></i>
+                            {{else if ptrStrEq .EmailReadStatus "unread"}}
+                            <i class="fas fa-eye-slash" style="color: #f59e0b;" title="{{$.Tr.T "email_unread"}}"></i>
+                            {{end}}
+                        </td>
                         <td class="actions-cell">
                             <div class="flex gap-2">
                                 <button onclick="deleteComment('{{.Article.ID}}','{{.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">

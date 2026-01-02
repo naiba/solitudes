@@ -65,8 +65,11 @@
         "trans": "发布时间"
     },
     {
-        "locale": "zh",
-        "key": "manage",
+        "locale": "zh",        "key": "email_status",
+        "trans": "邮件状态"
+    },
+    {
+        "locale": "zh",        "key": "manage",
         "trans": "管理"
     },
     {

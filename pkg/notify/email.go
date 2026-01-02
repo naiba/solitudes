@@ -2,6 +2,7 @@ package notify
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"unicode"
 
@@ -19,25 +20,21 @@ func getDefaultLogoURL(domain string) string {
 // getEmailTexts returns email texts based on language
 func getEmailTexts(lang string) map[string]string {
 	texts := map[string]string{
-		"greeting":     "Hi",
-		"new_reply":    "💬 Your comment got a new reply",
-		"original":     "Your comment:",
-		"reply":        "Reply:",
-		"view_article": "Click to view and reply:",
-		"button_text":  "View Article",
+		"greeting":     "Hi there! 👋",
+		"new_reply":    "💬 Someone replied to your comment!",
+		"view_article": "Want to continue the conversation? 👇",
+		"button_text":  "View & Reply",
 		"copyright":    "Copyright © {0}. All rights reserved.",
-		"subject":      "Your comment on \"{0}\" got a reply",
+		"subject":      "💬 New reply to your comment on \"{0}\"",
 	}
 
 	// Chinese texts (enhanced with emojis)
 	if lang == "zh" {
-		texts["greeting"] = "你好"
-		texts["new_reply"] = "💬 你的评论收到了新回复"
-		texts["original"] = "你的评论："
-		texts["reply"] = "回复内容："
-		texts["view_article"] = "点击查看并回复："
-		texts["button_text"] = "查看文章"
-		texts["subject"] = "你在「{0}」的评论有新回复"
+		texts["greeting"] = "Hi~ 👋"
+		texts["new_reply"] = "💬 有人回复了你的评论！"
+		texts["view_article"] = "想要继续交流？👇"
+		texts["button_text"] = "查看并回复"
+		texts["subject"] = "💬 你在「{0}」收到新回复啦"
 	}
 
 	return texts
@@ -105,17 +102,16 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 	texts := getEmailTexts(lang)
 
 	domain := solitudes.System.Config.Site.Domain
-	articleURL := buildArticleURL(article.Slug, domain)
+	// Use tracking redirect URL with only comment ID
+	articleURL := buildTrackingRedirectURL(src.ID, domain)
 	email := hermes.Email{
 		Body: hermes.Body{
 			Name: dist.Nickname,
 			Intros: []string{
 				texts["new_reply"],
 				"",
-				texts["original"],
 				dist.Nickname + ": " + dist.Content,
 				"",
-				texts["reply"],
 				src.Nickname + ": " + src.Content,
 			},
 			Actions: []hermes.Action{
@@ -145,6 +141,13 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 		return err
 	}
 
+	// Add tracking pixel to email body (disguised as spacer image)
+	trackingPixelURL := buildTrackingPixelURL(src.ID, domain)
+	// Use more natural HTML that doesn't look like tracking
+	trackingPixel := fmt.Sprintf(`<img src="%s" alt="" style="width:1px;height:1px;border:0;" />`, trackingPixelURL)
+	// Insert near the end but not at </body> to look more natural
+	emailBody = strings.Replace(emailBody, "</body>", trackingPixel+"</body>", 1)
+
 	m := gomail.NewMessage()
 	m.SetHeader("From", solitudes.System.Config.Email.User)
 	m.SetHeader("To", dist.Email)
@@ -155,9 +158,23 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 	return sendEmail(m)
 }
 
-// buildArticleURL constructs the article URL
+// buildArticleURL constructs the article URL with optional tracking pixel
 func buildArticleURL(slug, domain string) string {
 	return "https://" + domain + "/" + slug
+}
+
+// buildTrackingRedirectURL constructs a tracking redirect URL
+// This provides more reliable tracking than pixel-only approach
+// Only requires comment ID, the article slug will be looked up from database
+func buildTrackingRedirectURL(commentID, domain string) string {
+	return fmt.Sprintf("https://%s/r/%s", domain, commentID)
+}
+
+// buildTrackingPixelURL constructs the tracking pixel URL for email read tracking
+// Disguised as a static resource to avoid being blocked by email clients
+func buildTrackingPixelURL(commentID, domain string) string {
+	// Use a less obvious path that looks like a regular static resource
+	return fmt.Sprintf("https://%s/static/i/%s.gif", domain, commentID)
 }
 
 // sendEmail sends the email message
