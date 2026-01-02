@@ -18,6 +18,8 @@ type Comment struct {
 	IsAdmin   bool
 	// EmailReadStatus tracks email notification read status: nil (not sent/not applicable), "unread", "read"
 	EmailReadStatus *string `gorm:"type:varchar(20);default:NULL"`
+	// EmailTrackingToken is used to verify email tracking requests (prevents spoofing)
+	EmailTrackingToken *string `gorm:"type:varchar(255);default:NULL;uniqueIndex:idx_email_tracking_token"`
 
 	ArticleID     *string `gorm:"type:uuid;index;default:NULL" form:"article_id" validate:"required,uuid"`
 	Article       *Article

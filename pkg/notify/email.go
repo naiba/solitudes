@@ -86,7 +86,7 @@ func hasChineseIndicators(ua string) bool {
 }
 
 // Email notify with language support
-func Email(src, dist *model.Comment, article *model.Article) error {
+func Email(src, dist *model.Comment, article *model.Article, trackingToken string) error {
 	if dist == nil || dist.Email == "" {
 		return errors.New("recipient comment or email not found")
 	}
@@ -102,8 +102,8 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 	texts := getEmailTexts(lang)
 
 	domain := solitudes.System.Config.Site.Domain
-	// Use tracking redirect URL with only comment ID
-	articleURL := buildTrackingRedirectURL(src.ID, domain)
+	// Use tracking redirect URL with secure tracking token (no comment ID needed)
+	articleURL := buildTrackingRedirectURL(trackingToken, domain)
 	email := hermes.Email{
 		Body: hermes.Body{
 			Name: dist.Nickname,
@@ -142,7 +142,7 @@ func Email(src, dist *model.Comment, article *model.Article) error {
 	}
 
 	// Add tracking pixel to email body (disguised as spacer image)
-	trackingPixelURL := buildTrackingPixelURL(src.ID, domain)
+	trackingPixelURL := buildTrackingPixelURL(trackingToken, domain)
 	// Use more natural HTML that doesn't look like tracking
 	trackingPixel := fmt.Sprintf(`<img src="%s" alt="" style="width:1px;height:1px;border:0;" />`, trackingPixelURL)
 	// Insert near the end but not at </body> to look more natural
@@ -164,17 +164,16 @@ func buildArticleURL(slug, domain string) string {
 }
 
 // buildTrackingRedirectURL constructs a tracking redirect URL
-// This provides more reliable tracking than pixel-only approach
-// Only requires comment ID, the article slug will be looked up from database
-func buildTrackingRedirectURL(commentID, domain string) string {
-	return fmt.Sprintf("https://%s/r/%s", domain, commentID)
+// Uses only the secure token to look up comment in database
+func buildTrackingRedirectURL(trackingToken, domain string) string {
+	return fmt.Sprintf("https://%s/r/%s", domain, trackingToken)
 }
 
 // buildTrackingPixelURL constructs the tracking pixel URL for email read tracking
 // Disguised as a static resource to avoid being blocked by email clients
-func buildTrackingPixelURL(commentID, domain string) string {
+func buildTrackingPixelURL(trackingToken, domain string) string {
 	// Use a less obvious path that looks like a regular static resource
-	return fmt.Sprintf("https://%s/static/i/%s.gif", domain, commentID)
+	return fmt.Sprintf("https://%s/static/i/%s.gif", domain, trackingToken)
 }
 
 // sendEmail sends the email message

@@ -18,26 +18,36 @@ var trackingPixel = []byte{
 	0x01, 0x00, 0x3B,
 }
 
-// trackEmailRead handles email read tracking requests
+// trackEmailRead handles email read tracking via pixel tracking
+// Updates status only if token is valid
 func trackEmailRead(c *fiber.Ctx) error {
-	// Extract comment ID from URL parameter (remove .gif extension)
-	commentID := c.Params("id")
-	commentID = strings.TrimSuffix(commentID, ".gif")
+	// Extract token from URL parameter (format: /static/i/{token}.gif)
+	fullToken := c.Params("token")
+	// Remove .gif extension if present
+	trackingToken := strings.TrimSuffix(fullToken, ".gif")
 
-	if commentID == "" {
-		return c.Status(fiber.StatusBadRequest).SendString("Invalid comment ID")
+	if trackingToken == "" {
+		// Still return pixel for privacy
+		c.Set("Content-Type", "image/gif")
+		c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Set("Pragma", "no-cache")
+		c.Set("Expires", "0")
+		return c.Send(trackingPixel)
 	}
 
-	// Update comment email read status to "read"
-	readStatus := "read"
-	_ = solitudes.System.DB.Model(&model.Comment{}).
-		Where("id = ? AND email_read_status = ?", commentID, "unread").
-		Update("email_read_status", readStatus).Error
+	// Query comment by token (token is unique in database)
+	var comment model.Comment
+	err := solitudes.System.DB.Take(&comment, "email_tracking_token = ?", trackingToken).Error
+	if err == nil {
+		// Token found and valid, update status
+		readStatus := "read"
+		_ = solitudes.System.DB.Model(&model.Comment{}).
+			Where("email_tracking_token = ? AND (email_read_status = ? OR email_read_status IS NULL)", trackingToken, "unread").
+			Update("email_read_status", readStatus).Error
+	}
 
-	// Always return 1x1 transparent GIF, even if update fails
+	// Always return the tracking pixel, even if token is invalid
 	// We don't want to fail the email display
-
-	// Return 1x1 transparent GIF
 	c.Set("Content-Type", "image/gif")
 	c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	c.Set("Pragma", "no-cache")
@@ -48,25 +58,25 @@ func trackEmailRead(c *fiber.Ctx) error {
 // trackEmailReadRedirect handles email read tracking via link redirect
 // This is more reliable than pixel tracking as it doesn't depend on image loading
 func trackEmailReadRedirect(c *fiber.Ctx) error {
-	// Extract comment ID from URL parameter
-	commentID := c.Params("id")
+	// Extract tracking token from URL
+	trackingToken := c.Params("token")
 
-	if commentID == "" {
+	if trackingToken == "" {
 		return c.Redirect("/", fiber.StatusFound)
 	}
 
-	// Query comment and its associated article
+	// Query comment by token and load related article
 	var comment model.Comment
-	err := solitudes.System.DB.Preload("Article").Take(&comment, "id = ?", commentID).Error
+	err := solitudes.System.DB.Preload("Article").Take(&comment, "email_tracking_token = ?", trackingToken).Error
 	if err != nil || comment.Article == nil {
-		// Invalid comment ID or article not found, redirect to home
+		// Invalid token or article not found, redirect to home
 		return c.Redirect("/", fiber.StatusFound)
 	}
 
-	// Update comment email read status to "read"
+	// Token is valid, update comment email read status to "read"
 	readStatus := "read"
 	_ = solitudes.System.DB.Model(&model.Comment{}).
-		Where("id = ? AND (email_read_status = ? OR email_read_status IS NULL)", commentID, "unread").
+		Where("email_tracking_token = ? AND (email_read_status = ? OR email_read_status IS NULL)", trackingToken, "unread").
 		Update("email_read_status", readStatus).Error
 
 	// Redirect to the comment's article

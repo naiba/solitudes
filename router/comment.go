@@ -1,6 +1,8 @@
 package router
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 
 	"github.com/adtac/go-akismet/akismet"
@@ -85,7 +87,7 @@ func commentHandler(c *fiber.Ctx) error {
 	go func() {
 		// Only send email if replying to someone else's comment
 		if replyTo != nil && !replyTo.IsAdmin && replyTo.Email != "" && replyTo.Email != cm.Email {
-			emailErr := notify.Email(&cm, replyTo, article)
+			emailErr := notify.Email(&cm, replyTo, article, *cm.EmailTrackingToken)
 			
 			// Update EmailReadStatus based on email sending result
 			var emailStatus *string
@@ -93,21 +95,24 @@ func commentHandler(c *fiber.Ctx) error {
 				// Email sent successfully, set to "unread"
 				status := "unread"
 				emailStatus = &status
-			}
-			// If emailErr != nil, leave it as nil (not sent)
-			
-			// Update the comment's EmailReadStatus
-			if emailStatus != nil {
 				solitudes.System.DB.Model(&model.Comment{}).
 					Where("id = ?", cm.ID).
 					Update("email_read_status", emailStatus)
 			}
+			// If emailErr != nil, leave it as nil (not sent)
 			
 			// Send Telegram notification regardless of email result
 			notify.TGNotify(&cm, article, emailErr)
 		}
 	}()
 	return nil
+}
+
+// generateTrackingToken generates a secure random token for email tracking
+func generateTrackingToken() string {
+	b := make([]byte, 32)
+	rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 func verifyArticle(cf *commentForm) (*model.Article, error) {
@@ -140,6 +145,9 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 	cm.ReplyTo = cf.ReplyTo
 	cm.Content = cf.Content
 	cm.ArticleID = &article.ID
+	// Generate tracking token for all comments on insert
+	token := generateTrackingToken()
+	cm.EmailTrackingToken = &token
 	if isAdmin {
 		cm.Nickname = solitudes.System.Config.User.Nickname
 		cm.Email = solitudes.System.Config.User.Email
