@@ -213,7 +213,7 @@ func BuildArticleIndex() {
 	log.Printf("Doc indexed %d %+v\n", num, err)
 }
 
-func init() {
+func Init() {
 	BuildVersion = BuildVersion[:8]
 	Injector = dig.New()
 	provide()
