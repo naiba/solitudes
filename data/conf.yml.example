@@ -29,11 +29,11 @@ site:
       black: false
     - name: Tags
       link: /tags
-      icon: fa fa-lightbulb
+      icon: fa-solid fa-lightbulb
       black: false
     - name: Solitudes
       link: https://github.com/naiba/solitudes
-      icon: fab fa-github
+      icon: fa-brands fa-github
       black: true
   footermenus:
     - name: Home
@@ -42,5 +42,5 @@ site:
       black: false
     - name: About
       link: /about
-      icon: far fa-lightbulb
+      icon: fa-regular fa-lightbulb
       black: false

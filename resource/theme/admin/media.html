@@ -26,7 +26,7 @@
                         <td class="text-gray-600 text-sm">{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
                         <td>
                             <button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
-                                <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
+                                <i class="fa-solid fa-trash"></i> {{$.Tr.T "delete"}}
                             </button>
                         </td>
                     </tr>
@@ -36,11 +36,11 @@
         </div>
         <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
             <a href="?page={{add .Data.page -1}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                <i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}
+                <i class="fa-solid fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
             <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">{{.Tr.T "page_number" (int2str .Data.page)}}</span>
             <a href="?page={{add .Data.page 1}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                {{.Tr.T "next"}} <i class="fas fa-chevron-right"></i>
+                {{.Tr.T "next"}} <i class="fa-solid fa-chevron-right"></i>
             </a>
         </div>
     </div>

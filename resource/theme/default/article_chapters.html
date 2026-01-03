@@ -1,9 +1,9 @@
 {{define "default/article_chapters"}}
 <ul>
     {{range .article.Chapters}}
-    <li>{{if .IsBook}}📙{{end}}{{if .IsPrivate}}🛡️{{end}}<a href="/{{.Slug}}">{{.Title}}</a>
-        <small></small>({{tf .CreatedAt "02 Jan 2006"}}{{if .ReadNum}},👀{{.ReadNum}}{{if
-        .CommentNum}},💬{{.CommentNum}}{{end}}</small>{{end}})
+    <li>{{if .IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if .IsPrivate}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a href="/{{.Slug}}">{{.Title}}</a>
+        <small></small>({{tf .CreatedAt "02 Jan 2006"}}{{if .ReadNum}},<i class="fa-regular fa-eye"></i>{{.ReadNum}}{{if
+        .CommentNum}},<i class="fa-regular fa-comment-dots"></i>{{.CommentNum}}{{end}}</small>{{end}})
     </li>
     {{if .IsBook}}
     {{template "default/article_chapters" (articleData . .Tr)}}

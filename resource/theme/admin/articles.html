@@ -29,16 +29,16 @@
                         <td><a target="_blank" href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a></td>
                         <td class="text-gray-600">{{.ReadNum}}</td>
                         <td class="text-gray-500 text-sm">{{.Slug}}</td>
-                        <td class="text-center">{{if .IsBook}}<i class="fas fa-check text-green-600"></i>{{end}}</td>
-                        <td class="text-center">{{if .IsPrivate}}<i class="fas fa-lock text-gray-600"></i>{{end}}</td>
+                        <td class="text-center">{{if .IsBook}}<i class="fa-solid fa-check text-green-600"></i>{{end}}</td>
+                        <td class="text-center">{{if .IsPrivate}}<i class="fa-solid fa-lock text-gray-600"></i>{{end}}</td>
                         <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                         <td class="actions-cell">
                             <div class="flex gap-2">
                                 <a href="/admin/publish?id={{.ID}}" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
-                                    <i class="fas fa-edit"></i> {{$.Tr.T "edit"}}
+                                    <i class="fa-solid fa-pen-to-square"></i> {{$.Tr.T "edit"}}
                                 </a>
                                 <button onclick="deleteArticle('{{.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
-                                    <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
+                                    <i class="fa-solid fa-trash"></i> {{$.Tr.T "delete"}}
                                 </button>
                             </div>
                         </td>
@@ -49,11 +49,11 @@
         </div>
         <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
             <a href="?page={{.Data.page.PrevPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                <i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}
+                <i class="fa-solid fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
             <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
             <a href="?page={{.Data.page.NextPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
-                {{.Tr.T "next"}} <i class="fas fa-chevron-right"></i>
+                {{.Tr.T "next"}} <i class="fa-solid fa-chevron-right"></i>
             </a>
         </div>
     </div>

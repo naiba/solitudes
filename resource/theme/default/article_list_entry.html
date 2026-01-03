@@ -5,7 +5,7 @@
     </div>
     {{if .article.IsTopic}}
     <div class="sl-topic">
-        {{if .article.IsBook}}📙{{end}}{{if .article.IsPrivate}}🛡️{{end}}{{(md .article.ID .article.Content)|unsafe}}
+        {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog"></i> {{end}}{{(md .article.ID .article.Content)|unsafe}}
         {{if .article.Comments}}
         <div class="sl-comments">
             {{range .article.Comments}}
@@ -14,7 +14,7 @@
                     <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg" alt="{{.Nickname}}">
                     {{else}}
                     <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}">
-                    {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}👲{{end}}:&nbsp;</p>
+                    {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}&nbsp;<i class="fa-solid fa-id-card-clip"></i>{{end}}:&nbsp;</p>
                 <p>{{.Content}}</p>
                 <time class="meta" datetime="{{iso8601 .CreatedAt}}" itemprop="datePublished">
                     {{tf .CreatedAt ($.tr.T "date_format")}}</time>
@@ -22,14 +22,14 @@
             {{end}}
         </div>
         {{end}}
-        <small>(👀{{.article.ReadNum}}{{if .article.CommentNum}},💬{{.article.CommentNum}}{{end}}) <a
+        <small>(<i class="fa-regular fa-eye"></i>{{.article.ReadNum}}{{if .article.CommentNum}},<i class="fa-regular fa-comment-dots"></i>{{.article.CommentNum}}{{end}}) <a
                 href="//{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a> <a href="//{{.Conf.Site.Domain}}/{{.article.Slug}}">
                 <b>{{.tr.T "leave_a_comment"}}></b></a></small>
     </div>
     {{else}}
     <div>
-        {{if .article.IsBook}}📙{{end}}{{if .article.IsPrivate}}🛡️{{end}}<a href="//{{.Conf.Site.Domain}}/{{.article.Slug}}">{{.article.Title}}</a>{{if .article.ReadNum}}
-        <small>(👀{{.article.ReadNum}}{{if .article.CommentNum}},💬{{.article.CommentNum}}{{end}})</small>{{end}}
+        {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a href="//{{.Conf.Site.Domain}}/{{.article.Slug}}">{{.article.Title}}</a>{{if .article.ReadNum}}
+        <small>(<i class="fa-regular fa-eye"></i>{{.article.ReadNum}}{{if .article.CommentNum}},<i class="fa-regular fa-comment-dots"></i>{{.article.CommentNum}}{{end}})</small>{{end}}
     </div>
     {{end}}
 </li>

@@ -15,44 +15,44 @@
     <nav class="admin-topnav">
         <div class="admin-topnav-inner">
             <a href="/admin" class="admin-logo">
-                <i class="fas fa-pen-square"></i>
+                <i class="fa-solid fa-pen-to-square"></i>
                 <span>Solitudes</span>
             </a>
             
             <ul class="admin-nav-links">
                 <li><a href="/admin" class="{{if eq .Path "/admin"}}active{{end}}">
-                    <i class="fas fa-tachometer-alt"></i>
+                    <i class="fa-solid fa-gauge"></i>
                     <span>{{.Tr.T "dashboard"}}</span>
                 </a></li>
                 <li><a href="/admin/publish" class="{{if hasPrefix .Path "/admin/publish"}}active{{end}}">
-                    <i class="fas fa-plus"></i>
+                    <i class="fa-solid fa-plus"></i>
                     <span>{{.Tr.T "compose"}}</span>
                 </a></li>
                 <li><a href="/admin/articles" class="{{if hasPrefix .Path "/admin/articles"}}active{{end}}">
-                    <i class="fas fa-list"></i>
+                    <i class="fa-solid fa-list"></i>
                     <span>{{.Tr.T "articles"}}</span>
                 </a></li>
                 <li><a href="/admin/comments" class="{{if hasPrefix .Path "/admin/comments"}}active{{end}}">
-                    <i class="far fa-comments"></i>
+                    <i class="fa-regular fa-comments"></i>
                     <span>{{.Tr.T "comments"}}</span>
                 </a></li>
                 <li><a href="/admin/media" class="{{if hasPrefix .Path "/admin/media"}}active{{end}}">
-                    <i class="far fa-file-image"></i>
+                    <i class="fa-regular fa-file-image"></i>
                     <span>{{.Tr.T "media"}}</span>
                 </a></li>
                 <li><a href="/admin/tags" class="{{if hasPrefix .Path "/admin/tags"}}active{{end}}">
-                    <i class="fas fa-tags"></i>
+                    <i class="fa-solid fa-tags"></i>
                     <span>{{.Tr.T "tags"}}</span>
                 </a></li>
                 <li><a href="/admin/settings" class="{{if hasPrefix .Path "/admin/settings"}}active{{end}}">
-                    <i class="fas fa-cog"></i>
+                    <i class="fa-solid fa-gear"></i>
                     <span>{{.Tr.T "site_settings"}}</span>
                 </a></li>
             </ul>
             
             <div class="admin-user-menu">
                 <a href="/" target="_blank" class="text-gray-600 hover:text-gray-900 transition">
-                    <i class="fas fa-external-link-alt"></i>
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span class="hidden sm:inline ml-1">{{.Tr.T "view_site"}}</span>
                 </a>
                 <div class="admin-user-info">
@@ -61,7 +61,7 @@
                 </div>
                 <form method="POST" action="/logout" style="display: inline;">
                     <button type="submit" class="text-gray-600 hover:text-red-600 transition">
-                        <i class="fas fa-sign-out-alt"></i>
+                        <i class="fa-solid fa-right-from-bracket"></i>
                     </button>
                 </form>
             </div>
