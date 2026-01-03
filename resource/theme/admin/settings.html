@@ -176,11 +176,13 @@
     </form>
 </div>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.css" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.min.css" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.min.js" crossorigin="anonymous"></script>
 <script>
     window.onbeforeunload = function (e) { var e = e || window.event; if (e) { e.returnValue = '{{.Tr.T "ensure_content_saved"}}'; } return '{{.Tr.T "ensure_content_saved"}}'; };
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const inputHomeTop = new Vditor('inputHomeTop', {
+        theme: isDarkMode ? 'dark' : 'classic',
         after() {
             inputHomeTop.setValue('{{.Conf.Site.HomeTopContent}}')
         },
@@ -192,6 +194,7 @@
         height: 300,
     })
     const inputHomeBottom = new Vditor('inputHomeBottom', {
+        theme: isDarkMode ? 'dark' : 'classic',
         after() {
             inputHomeBottom.setValue('{{.Conf.Site.HomeBottomContent}}')
         },
@@ -202,6 +205,12 @@
         },
         height: 300,
     })
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        const theme = e.matches ? 'dark' : 'classic';
+        inputHomeTop.setTheme(theme);
+        inputHomeBottom.setTheme(theme);
+    });
     function saveSetting(btn) {
         if ($(btn).hasClass("disabled")) {
             return

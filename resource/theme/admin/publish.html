@@ -132,11 +132,13 @@
     </div>
 </div>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.css" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.min.css" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.min.js" crossorigin="anonymous"></script>
 <script>
     window.onbeforeunload = function (e) { var e = e || window.event; if (e) { e.returnValue = '{{.Tr.T "ensure_content_saved"}}'; } return '{{.Tr.T "ensure_content_saved"}}'; };
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const vditor = new Vditor('editSection', {
+        theme: isDarkMode ? 'dark' : 'classic',
         after() {
             vditor.setValue('{{.Data.article.Content}}')
         },
@@ -147,6 +149,10 @@
         },
         height: 500,
     })
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        vditor.setTheme(e.matches ? 'dark' : 'classic');
+    });
     
     function publish(btn) {
         if ($(btn).hasClass("disabled")) {

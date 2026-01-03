@@ -264,7 +264,7 @@ article .content h6 {
     left: 0;
     right: 0;
     height: 80px;
-    background: linear-gradient(to bottom, rgba(250, 250, 250, 0), #fafafa);
+    background: linear-gradient(to bottom, transparent, var(--theme-bg-color, #fff));
     pointer-events: none;
     z-index: 1;
   }
@@ -273,7 +273,7 @@ article .content h6 {
 /* Dark mode: topics fade effect */
 @media (prefers-color-scheme: dark) {
   .home-topics-section::after {
-    background: linear-gradient(to bottom, rgba(29, 31, 33, 0), #1d1f21);
+    background: linear-gradient(to bottom, transparent, var(--theme-bg-color, #1d1f21));
   }
 
   .home-search-section,
@@ -444,11 +444,4 @@ ul:has(li.vditor-task) {
 
 .language-plantuml > object {
   max-width: 100%;
-}
-
-/* Theme color variables - default/classic theme */
-:root {
-  --theme-accent-color: #cc2a41;
-  --theme-accent-hover: rgba(204, 42, 65, 0.8);
-  --theme-accent-disabled: rgba(204, 42, 65, 0.4);
 }

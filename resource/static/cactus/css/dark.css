@@ -751,7 +751,7 @@
 
   #header #nav ul a {
     margin-right: 15px;
-    color: color-accent-1;
+    color: var(--theme-accent-color);
   }
 
   #header #nav ul a:hover {
@@ -911,6 +911,7 @@
   }
 
   #header-post #nav {
+    display: inline;
     color: #2bbc8a;
     letter-spacing: 0.01em;
     font-weight: 200;
@@ -924,7 +925,7 @@
 
   #header-post #nav ul a {
     margin-right: 15px;
-    color: color-accent-1;
+    color: var(--theme-accent-color);
   }
 
   #header-post #nav ul a:hover {
@@ -1369,7 +1370,7 @@
   }
 
   article .content blockquote footer {
-    margin: line-height 0;
+    margin: 0;
     color: #666;
     font-size: 11px;
   }
@@ -1409,7 +1410,7 @@
     position: relative;
     display: block;
     margin-top: 0.5em;
-    color: color-grey;
+    color: #666;
     text-align: center;
     font-size: 0.9em;
   }
@@ -1697,5 +1698,6 @@
     --theme-accent-color: #2bbc8a;
     --theme-accent-hover: rgba(43, 188, 138, 0.8);
     --theme-accent-disabled: rgba(43, 188, 138, 0.4);
+    --theme-bg-color: #1d1f21;
   }
 }

@@ -3,9 +3,9 @@
 <div class="row" id="comment-{{.ID}}">
     <div class="gravatar">
         {{if .Email}}
-        <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g">
+        <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g" alt="{{.Nickname}}">
         {{else}}
-        <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}">
+        <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}">
         {{end}}
     </div>
     <div>
@@ -14,7 +14,7 @@
             <b>{{.Nickname}}</b>
             {{if .IsAdmin}} 👲 {{end}}
             {{end}}
-            <time datetime="{{.CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
+            <time datetime="{{iso8601 .CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
             <a href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
             {{if ptrStrEq .EmailReadStatus "read"}}
             <i class="fas fa-eye" style="color: #999; font-size: 0.9em;" title="{{$.tr.T "email_read"}}"></i>

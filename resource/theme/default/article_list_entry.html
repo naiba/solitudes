@@ -1,7 +1,7 @@
 {{define "default/article_list_entry"}}
 <li class="post-item">
     <div class="meta">
-        <time datetime="{{.article.CreatedAt}}" itemprop="datePublished">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
+        <time datetime="{{iso8601 .article.CreatedAt}}" itemprop="datePublished">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
     </div>
     {{if .article.IsTopic}}
     <div class="sl-topic">
@@ -11,12 +11,12 @@
             {{range .article.Comments}}
             <div>
                 <p>{{if .Email}}
-                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg">
+                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg" alt="{{.Nickname}}">
                     {{else}}
-                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}">
+                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}">
                     {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}👲{{end}}:&nbsp;</p>
                 <p>{{.Content}}</p>
-                <time class="meta" datetime="{{.CreatedAt}}" itemprop="datePublished">
+                <time class="meta" datetime="{{iso8601 .CreatedAt}}" itemprop="datePublished">
                     {{tf .CreatedAt ($.tr.T "date_format")}}</time>
             </div>
             {{end}}

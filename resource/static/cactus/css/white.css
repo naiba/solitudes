@@ -750,7 +750,7 @@ body {
 
 #header #nav ul a {
   margin-right: 15px;
-  color: color-accent-1;
+  color: var(--theme-accent-color);
 }
 
 #header #nav ul a:hover {
@@ -910,6 +910,7 @@ body {
 }
 
 #header-post #nav {
+  display: inline;
   color: #2bbc8a;
   letter-spacing: 0.01em;
   font-weight: 200;
@@ -923,7 +924,7 @@ body {
 
 #header-post #nav ul a {
   margin-right: 15px;
-  color: color-accent-1;
+  color: var(--theme-accent-color);
 }
 
 #header-post #nav ul a:hover {
@@ -1287,6 +1288,7 @@ article header .posttitle {
   text-transform: none;
   font-size: 1.5em;
   line-height: 1.25;
+  color: #2bbc8a;
 }
 
 article header .meta {
@@ -1368,7 +1370,7 @@ article .content blockquote:before {
 }
 
 article .content blockquote footer {
-  margin: line-height 0;
+  margin: 0;
   color: #666;
   font-size: 11px;
 }
@@ -1408,7 +1410,7 @@ article .content .caption {
   position: relative;
   display: block;
   margin-top: 0.5em;
-  color: color-grey;
+  color: #666;
   text-align: center;
   font-size: 0.9em;
 }
@@ -1695,4 +1697,5 @@ code {
   --theme-accent-color: rgba(86, 124, 119, 0.8);
   --theme-accent-hover: rgba(86, 124, 119, 1);
   --theme-accent-disabled: rgba(86, 124, 119, 0.4);
+  --theme-bg-color: #fff;
 }

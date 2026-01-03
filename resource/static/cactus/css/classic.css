@@ -910,6 +910,7 @@ body {
 }
 
 #header-post #nav {
+  display: inline;
   color: #cc2a41;
   letter-spacing: 0.01em;
   font-weight: 200;
@@ -1287,6 +1288,7 @@ article header .posttitle {
   text-transform: none;
   font-size: 1.5em;
   line-height: 1.25;
+  color: #cc2a41;
 }
 
 article header .meta {
@@ -1696,4 +1698,5 @@ code {
   --theme-accent-color: #cc2a41;
   --theme-accent-hover: rgba(204, 42, 65, 0.8);
   --theme-accent-disabled: rgba(204, 42, 65, 0.4);
+  --theme-bg-color: #fafafa;
 }

@@ -6,14 +6,14 @@
     <span id="top-icon-tablet" onclick="scrollToTop(this)" style="display:none;"><i
             class="fas fa-chevron-up fa-lg"></i></span>
     <span id="menu">
-        <span id="nav">
+        <nav id="nav">
             <ul>
                 {{range .Conf.Site.HeaderMenus}}
                 <li><a href="{{.Link}}" {{if .Black}} target="_blank" {{end}}>{{if .Icon}}<i class="{{.Icon}}"></i>
                         {{end}}{{.Name}}</a></li>
                 {{end}}
             </ul>
-        </span>
+        </nav>
         <br>
         <span id="actions">
             <ul>
@@ -47,25 +47,25 @@
                         href="http://www.facebook.com/sharer.php?u=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"><i
                             class="fab fa-facebook " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://twitter.com/share?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;text={{.Data.article.Title}}"><i
+                        href="https://twitter.com/share?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;text={{.Data.article.Title|urlencode}}"><i
                             class="fab fa-twitter " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.linkedin.com/shareArticle?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                        href="http://www.linkedin.com/shareArticle?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title|urlencode}}"><i
                             class="fab fa-linkedin " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://pinterest.com/pin/create/bookmarklet/?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;is_video=false&amp;description={{.Data.article.Title}}"><i
+                        href="https://pinterest.com/pin/create/bookmarklet/?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;is_video=false&amp;description={{.Data.article.Title|urlencode}}"><i
                             class="fab fa-pinterest " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="mailto:?subject={{.Data.article.Title}}&amp;body=Check out this article: https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"><i
+                        href="mailto:?subject={{.Data.article.Title|urlencode}}&amp;body=Check out this article: https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"><i
                             class="fas fa-envelope " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="https://getpocket.com/save?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                        href="https://getpocket.com/save?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title|urlencode}}"><i
                             class="fab fa-get-pocket " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://reddit.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title}}"><i
+                        href="http://reddit.com/submit?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;title={{.Data.article.Title|urlencode}}"><i
                             class="fab fa-reddit " aria-hidden="true"></i></a></li>
                 <li><a class="icon"
-                        href="http://www.tumblr.com/share/link?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title}}&amp;description="><i
+                        href="http://www.tumblr.com/share/link?url=https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}&amp;name={{.Data.article.Title|urlencode}}&amp;description="><i
                             class="fab fa-tumblr " aria-hidden="true"></i></a></li>
             </ul>
         </div>
@@ -79,15 +79,15 @@
 <div class="content index py4"> <!-- 使用 content index py4 将页面主体包裹起来，与页脚拆分，在页脚前关闭-->
     <article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
         <header>
-            <h1 class="posttitle" itemprop="name headline">
+            <h2 class="posttitle" itemprop="name headline">
                 {{.Data.article.Title}}
-            </h1>
+            </h2>
             <div class="meta">
                 <span class="author" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
                     <span itemprop="name">{{.Conf.User.Nickname}}</span>
                 </span>
                 <div class="postdate">
-                    <time datetime="{{.Data.article.CreatedAt}}" itemprop="datePublished">{{tf .Data.article.CreatedAt
+                    <time datetime="{{iso8601 .Data.article.CreatedAt}}" itemprop="datePublished">{{tf .Data.article.CreatedAt
                         (.Tr.T "date_format")}}</time>
                     <small>·v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
@@ -220,11 +220,11 @@
             </div>
 
             <div id="actions-footer">
-                <span id="menu" class="icon" onclick="toggle('#nav-footer');return false;"><i class="fas fa-bars fa-lg"
+                <span id="menu-footer" class="icon" onclick="toggle('#nav-footer');return false;"><i class="fas fa-bars fa-lg"
                         aria-hidden="true"></i> {{.Tr.T "menu"}}</span>
-                <span id="toc" class="icon" onclick="toggle('#toc-footer');return false;"><i class="fas fa-list fa-lg"
+                <span id="toc-footer-btn" class="icon" onclick="toggle('#toc-footer');return false;"><i class="fas fa-list fa-lg"
                         aria-hidden="true"></i> {{.Tr.T "toc"}}</span>
-                <span id="share" class="icon" onclick="toggle('#share-footer');return false;"><i
+                <span id="share-footer-btn" class="icon" onclick="toggle('#share-footer');return false;"><i
                         class="fas fa-share-alt fa-lg" aria-hidden="true"></i> {{.Tr.T "share"}}</span>
                 <span id="top" style="display:none" class="icon" onclick="scrollToTop(this)"><i
                         class="fas fa-chevron-up fa-lg" aria-hidden="true"></i> {{.Tr.T "return_top"}}</span>

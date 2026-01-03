@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
 	"reflect"
 	"strings"
 	"time"
@@ -170,6 +171,9 @@ func setFuncMap(engine *html.Engine) {
 		"tf": func(t time.Time, f string) string {
 			return t.Format(f)
 		},
+		"iso8601": func(t time.Time) string {
+			return t.Format(time.RFC3339)
+		},
 		"md": mdRender,
 		"articleIdx": func(t model.Article) string {
 			return t.GetIndexID()
@@ -220,6 +224,9 @@ func setFuncMap(engine *html.Engine) {
 			return string(runes[start:end])
 		},
 		"hasPrefix": strings.HasPrefix,
+		"urlencode": func(s string) string {
+			return url.QueryEscape(s)
+		},
 	}
 	for name, fn := range funcMap {
 		engine.AddFunc(name, fn)

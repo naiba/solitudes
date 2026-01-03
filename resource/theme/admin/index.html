@@ -127,10 +127,12 @@
     }
 </script>
 
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.css" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.10.5/index.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.min.css" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.min.js" crossorigin="anonymous"></script>
 <script>
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const vditor = new Vditor('topicContent', {
+        theme: isDarkMode ? 'dark' : 'classic',
         height: 200,
         placeholder: '{{.Tr.T "topic_content_placeholder"}}',
         toolbarConfig: {
@@ -141,6 +143,10 @@
         },
         toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|', 'list', 'ordered-list', 'check', '|', 'quote', 'line', 'code', 'inline-code'],
     })
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        vditor.setTheme(e.matches ? 'dark' : 'classic');
+    });
 </script>
 
 {{template "admin/footer" .}}

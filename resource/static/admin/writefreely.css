@@ -710,16 +710,21 @@ body {
     border-color: var(--border-color) !important;
   }
   
-  /* Form Inputs */
-  input, select, textarea {
+  /* Form Inputs - exclude vditor */
+  .admin-card input,
+  .admin-card select,
+  .admin-card textarea:not(#editSection):not(#inputHomeTop):not(#inputHomeBottom) {
     background-color: var(--bg-tertiary) !important;
     color: var(--text-primary) !important;
     border-color: var(--border-color) !important;
   }
-  input::placeholder, textarea::placeholder {
+  .admin-card input::placeholder,
+  .admin-card textarea:not(#editSection):not(#inputHomeTop):not(#inputHomeBottom)::placeholder {
     color: var(--text-muted) !important;
   }
-  input:focus, select:focus, textarea:focus {
+  .admin-card input:focus,
+  .admin-card select:focus,
+  .admin-card textarea:not(#editSection):not(#inputHomeTop):not(#inputHomeBottom):focus {
     border-color: var(--border-focus) !important;
     box-shadow: 0 0 0 3px rgba(107, 138, 239, 0.2) !important;
   }
