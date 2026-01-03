@@ -1,0 +1,49 @@
+/* ==========================================================================
+   Auto Theme - Follows System Preference (Light/Dark)
+   ========================================================================== */
+
+/* Light mode (default) - based on white theme */
+:root {
+  /* Primary Colors */
+  --color-accent: #2bbc8a;
+  --color-link-hover: #d480aa;
+  
+  /* Text Colors */
+  --color-text: #383838;
+  --color-muted: #8c8c8c;
+  
+  /* Background Colors */
+  --color-bg: #fff;
+  --color-footer-bg: #fafafa;
+  --color-footer-nav-bg: #e6e6e6;
+  
+  /* Theme accent for buttons/UI elements */
+  --theme-accent-color: #2bbc8a;
+  --theme-accent-hover: rgba(43, 188, 138, 0.8);
+  --theme-accent-disabled: rgba(43, 188, 138, 0.4);
+  --theme-bg-color: #fff;
+}
+
+/* Dark mode - triggered by system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Primary Colors */
+    --color-accent: #2bbc8a;
+    --color-link-hover: #d480aa;
+    
+    /* Text Colors */
+    --color-text: #c9cacc;
+    --color-muted: #8c8c8c;
+    
+    /* Background Colors */
+    --color-bg: #1d1f21;
+    --color-footer-bg: #282a2e;
+    --color-footer-nav-bg: #373b41;
+    
+    /* Theme accent for buttons/UI elements */
+    --theme-accent-color: #2bbc8a;
+    --theme-accent-hover: rgba(43, 188, 138, 0.8);
+    --theme-accent-disabled: rgba(43, 188, 138, 0.4);
+    --theme-bg-color: #1d1f21;
+  }
+}

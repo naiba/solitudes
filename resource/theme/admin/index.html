@@ -141,7 +141,11 @@
         cache: {
             enable: false,
         },
-        toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike', 'link', '|', 'list', 'ordered-list', 'check', '|', 'quote', 'line', 'code', 'inline-code'],
+        upload: {
+            accept: 'image/*,.mp4,.rar,.zip,.wav,.mp3',
+            url: '/admin/upload',
+            linkToImgUrl: '/admin/fetch',
+        },
     })
     // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {

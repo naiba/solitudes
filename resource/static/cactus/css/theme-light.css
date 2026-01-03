@@ -1,0 +1,24 @@
+/* ==========================================================================
+   Light Theme - Variable Definitions
+   ========================================================================== */
+
+:root {
+  /* Primary Colors */
+  --color-accent: #d44375;
+  --color-link-hover: #2bbc8a;
+  
+  /* Text Colors */
+  --color-text: #363533;
+  --color-muted: #666;
+  
+  /* Background Colors */
+  --color-bg: #e2e0de;
+  --color-footer-bg: #dedcd9;
+  --color-footer-nav-bg: #cdcac6;
+  
+  /* Theme accent for buttons/UI elements */
+  --theme-accent-color: rgba(86, 124, 119, 0.8);
+  --theme-accent-hover: rgba(86, 124, 119, 1);
+  --theme-accent-disabled: rgba(86, 124, 119, 0.4);
+  --theme-bg-color: #e2e0de;
+}

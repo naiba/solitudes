@@ -1,0 +1,24 @@
+/* ==========================================================================
+   White Theme - Variable Definitions
+   ========================================================================== */
+
+:root {
+  /* Primary Colors */
+  --color-accent: #2bbc8a;
+  --color-link-hover: #d480aa;
+  
+  /* Text Colors */
+  --color-text: #383838;
+  --color-muted: #8c8c8c;
+  
+  /* Background Colors */
+  --color-bg: #fff;
+  --color-footer-bg: #fafafa;
+  --color-footer-nav-bg: #e6e6e6;
+  
+  /* Theme accent for buttons/UI elements */
+  --theme-accent-color: rgba(86, 124, 119, 0.8);
+  --theme-accent-hover: rgba(86, 124, 119, 1);
+  --theme-accent-disabled: rgba(86, 124, 119, 0.4);
+  --theme-bg-color: #fff;
+}

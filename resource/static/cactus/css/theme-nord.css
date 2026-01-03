@@ -1,0 +1,25 @@
+/* ==========================================================================
+   Nord Theme - Arctic, north-bluish color palette
+   https://www.nordtheme.com/
+   ========================================================================== */
+
+:root {
+  /* Primary Colors - Nord Frost */
+  --color-accent: #88c0d0;
+  --color-link-hover: #81a1c1;
+  
+  /* Text Colors - Nord Snow Storm */
+  --color-text: #eceff4;
+  --color-muted: #d8dee9;
+  
+  /* Background Colors - Nord Polar Night */
+  --color-bg: #2e3440;
+  --color-footer-bg: #3b4252;
+  --color-footer-nav-bg: #434c5e;
+  
+  /* Theme accent for buttons/UI elements */
+  --theme-accent-color: #88c0d0;
+  --theme-accent-hover: #8fbcbb;
+  --theme-accent-disabled: rgba(136, 192, 208, 0.4);
+  --theme-bg-color: #2e3440;
+}

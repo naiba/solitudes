@@ -1,0 +1,25 @@
+/* ==========================================================================
+   Dracula Theme - Dark theme for code editors
+   https://draculatheme.com/
+   ========================================================================== */
+
+:root {
+  /* Primary Colors - Dracula Pink/Purple */
+  --color-accent: #ff79c6;
+  --color-link-hover: #bd93f9;
+  
+  /* Text Colors */
+  --color-text: #f8f8f2;
+  --color-muted: #6272a4;
+  
+  /* Background Colors */
+  --color-bg: #282a36;
+  --color-footer-bg: #21222c;
+  --color-footer-nav-bg: #44475a;
+  
+  /* Theme accent for buttons/UI elements */
+  --theme-accent-color: #ff79c6;
+  --theme-accent-hover: #ff92d0;
+  --theme-accent-disabled: rgba(255, 121, 198, 0.4);
+  --theme-bg-color: #282a36;
+}

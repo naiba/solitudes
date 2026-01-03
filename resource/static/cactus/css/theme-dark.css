@@ -1,0 +1,24 @@
+/* ==========================================================================
+   Dark Theme - Variable Definitions (Standalone)
+   ========================================================================== */
+
+:root {
+  /* Primary Colors */
+  --color-accent: #2bbc8a;
+  --color-link-hover: #d480aa;
+  
+  /* Text Colors */
+  --color-text: #c9cacc;
+  --color-muted: #8c8c8c;
+  
+  /* Background Colors */
+  --color-bg: #1d1f21;
+  --color-footer-bg: #282a2e;
+  --color-footer-nav-bg: #373b41;
+  
+  /* Theme accent for buttons/UI elements */
+  --theme-accent-color: #2bbc8a;
+  --theme-accent-hover: rgba(43, 188, 138, 0.8);
+  --theme-accent-disabled: rgba(43, 188, 138, 0.4);
+  --theme-bg-color: #1d1f21;
+}
