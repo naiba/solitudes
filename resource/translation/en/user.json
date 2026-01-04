@@ -223,5 +223,40 @@
         "locale": "en",
         "key": "email_unread",
         "trans": "Email notification not yet read"
+    },
+    {
+        "locale": "en",
+        "key": "redirect_title",
+        "trans": "External Link Redirect"
+    },
+    {
+        "locale": "en",
+        "key": "redirect_msg",
+        "trans": "You are about to leave this site and visit an external link:"
+    },
+    {
+        "locale": "en",
+        "key": "redirect_continue",
+        "trans": "Click here to continue"
+    },
+    {
+        "locale": "en",
+        "key": "redirect_auto",
+        "trans": "Auto redirect in"
+    },
+    {
+        "locale": "en",
+        "key": "redirect_seconds",
+        "trans": "seconds..."
+    },
+    {
+        "locale": "en",
+        "key": "redirect_error_no_url",
+        "trans": "Error: No URL provided"
+    },
+    {
+        "locale": "en",
+        "key": "redirect_error_invalid_url",
+        "trans": "Error: Invalid URL"
     }
 ]

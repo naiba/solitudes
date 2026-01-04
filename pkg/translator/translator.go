@@ -72,7 +72,7 @@ func (t *Translator) Currency() currency.Type {
 // Trans translations
 var Trans *ut.UniversalTranslator
 
-func init() {
+func Init() {
 	en := en.New()
 	Trans = ut.New(en, en, zh.New())
 

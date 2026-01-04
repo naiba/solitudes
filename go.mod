@@ -5,12 +5,12 @@ go 1.24.3
 toolchain go1.24.11
 
 require (
-	github.com/88250/lute v1.7.6
+	github.com/88250/lute v0.0.0-20260104085649-d01ee1896e5f
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047
 	github.com/blevesearch/bleve/v2 v2.5.7
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.30.0
+	github.com/go-playground/validator/v10 v10.30.1
 	github.com/gofiber/fiber/v2 v2.52.10
 	github.com/gofiber/template/html/v2 v2.1.3
 	github.com/gorilla/feeds v1.2.0

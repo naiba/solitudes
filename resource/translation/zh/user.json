@@ -223,5 +223,40 @@
         "locale": "zh",
         "key": "email_unread",
         "trans": "邮件通知未读"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_title",
+        "trans": "外部链接跳转"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_msg",
+        "trans": "您即将离开本站，访问外部链接："
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_continue",
+        "trans": "点击此处继续访问"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_auto",
+        "trans": "将在"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_seconds",
+        "trans": "秒后自动跳转..."
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_error_no_url",
+        "trans": "错误：未提供链接地址"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_error_invalid_url",
+        "trans": "错误：无效的链接地址"
     }
 ]

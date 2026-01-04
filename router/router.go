@@ -2,6 +2,7 @@ package router
 
 import (
 	"crypto/md5"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -18,6 +19,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/88250/lute"
+	"github.com/88250/lute/ast"
+	luteHtml "github.com/88250/lute/html"
+	luteUtil "github.com/88250/lute/util"
 	"github.com/go-playground/locales"
 	gv "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -38,6 +42,79 @@ func init() {
 	luteEngine.SetSub(true)
 	luteEngine.SetSup(true)
 	luteEngine.SetAutoSpace(true)
+
+	// 自定义链接渲染器，将外部链接转换为 /go?url=base64 格式
+	luteEngine.Md2HTMLRendererFuncs[ast.NodeLink] = func(n *ast.Node, entering bool) (string, ast.WalkStatus) {
+		if entering {
+			dest := n.ChildByType(ast.NodeLinkDest)
+			if dest == nil {
+				return "", ast.WalkContinue
+			}
+			destStr := string(dest.Tokens)
+			// 判断是否为外部链接（包含协议前缀且不是站内链接）
+			if isExternalLink(destStr) {
+				encodedURL := base64.URLEncoding.EncodeToString([]byte(destStr))
+				attrs := [][]string{{"href", "/r/go?url=" + encodedURL}, {"target", "_blank"}, {"rel", "noopener noreferrer"}}
+				if title := n.ChildByType(ast.NodeLinkTitle); nil != title && nil != title.Tokens {
+					attrs = append(attrs, []string{"title", luteUtil.BytesToStr(luteHtml.EscapeHTML(title.Tokens))})
+				}
+				return renderTag("a", attrs, false), ast.WalkContinue
+			}
+			// 站内链接保持原样
+			attrs := [][]string{{"href", luteUtil.BytesToStr(luteHtml.EscapeHTML(dest.Tokens))}}
+			if title := n.ChildByType(ast.NodeLinkTitle); nil != title && nil != title.Tokens {
+				attrs = append(attrs, []string{"title", luteUtil.BytesToStr(luteHtml.EscapeHTML(title.Tokens))})
+			}
+			return renderTag("a", attrs, false), ast.WalkContinue
+		}
+		return "</a>", ast.WalkContinue
+	}
+}
+
+// isExternalLink 判断是否为外部链接
+func isExternalLink(urlStr string) bool {
+	// 检查是否为绝对 URL（包含协议）
+	if strings.HasPrefix(urlStr, "http://") || strings.HasPrefix(urlStr, "https://") {
+		// 解析 URL 获取 host
+		parsed, err := url.Parse(urlStr)
+		if err != nil {
+			return false
+		}
+		// 如果配置了站点域名，则比较 host
+		if solitudes.System != nil && solitudes.System.Config.Site.Domain != "" {
+			siteHost := solitudes.System.Config.Site.Domain
+			// 移除可能的端口号进行比较
+			linkHost := parsed.Host
+			if idx := strings.Index(linkHost, ":"); idx != -1 {
+				linkHost = linkHost[:idx]
+			}
+			if idx := strings.Index(siteHost, ":"); idx != -1 {
+				siteHost = siteHost[:idx]
+			}
+			return linkHost != siteHost
+		}
+		return true
+	}
+	return false
+}
+
+// renderTag 生成 HTML 标签
+func renderTag(name string, attrs [][]string, selfClosing bool) string {
+	var sb strings.Builder
+	sb.WriteString("<")
+	sb.WriteString(name)
+	for _, attr := range attrs {
+		sb.WriteString(" ")
+		sb.WriteString(attr[0])
+		sb.WriteString("=\"")
+		sb.WriteString(attr[1])
+		sb.WriteString("\"")
+	}
+	if selfClosing {
+		sb.WriteString(" /")
+	}
+	sb.WriteString(">")
+	return sb.String()
 }
 
 func mdRender(id string, raw string) string {
@@ -94,12 +171,14 @@ func Serve() {
 	app.Get("/search/", search)
 	app.Get("/tags/:tag/:page?", tags)
 	app.Get("/tags/", tagsCloud)
+	app.Get("/r/go", goRedirect) // 外部链接跳转
 	app.Get("/login", guestRequired, login)
 	app.Post("/login", guestRequired, loginHandler)
 	app.Post("/logout", loginRequired, logoutHandler)
 	app.Get("/captcha", generateCaptcha)
 	app.Post("/count", count)
 	app.Post("/comment", commentHandler)
+
 	// Email tracking endpoints: redirect (primary) + pixel (backup), both use token lookup
 	app.Get("/r/:token", trackEmailReadRedirect)
 	app.Get("/static/i/:token", trackEmailRead)
@@ -134,6 +213,26 @@ func Serve() {
 
 func faviconHandler(c *fiber.Ctx) error {
 	return c.SendFile("resource/static/cactus/images/favicon.ico")
+}
+
+// goRedirect 处理外部链接跳转
+func goRedirect(c *fiber.Ctx) error {
+	encodedURL := c.Query("url")
+	if encodedURL == "" {
+		return c.Status(http.StatusBadRequest).SendString("Missing url parameter")
+	}
+
+	// 显示跳转提示页面，实际解析由前端 JS 完成
+	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+	return c.Render("default/redirect", injectSiteData(c, fiber.Map{
+		"title":             tr.T("redirect_title"),
+		"msg":               tr.T("redirect_msg"),
+		"continue_text":     tr.T("redirect_continue"),
+		"auto_redirect":     tr.T("redirect_auto"),
+		"seconds":           tr.T("redirect_seconds"),
+		"error_no_url":      tr.T("redirect_error_no_url"),
+		"error_invalid_url": tr.T("redirect_error_invalid_url"),
+	}))
 }
 
 func page404(c *fiber.Ctx) error {
