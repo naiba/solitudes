@@ -10,7 +10,7 @@
     </div>
     <div>
         <p class="comment-meta title{{if .IsAdmin}} admin{{end}}">
-            {{if .Website}}<a href="{{.Website}}" target="_blank" rel="nofollow noopener">{{.Nickname}}</a>{{else}}
+            {{if .Website}}<a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener">{{.Nickname}}</a>{{else}}
             <b>{{.Nickname}}</b>
             {{if .IsAdmin}} <i class="fa-solid fa-id-card-clip"></i> {{end}}
             {{end}}

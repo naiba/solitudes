@@ -326,6 +326,14 @@ func setFuncMap(engine *html.Engine) {
 		"urlencode": func(s string) string {
 			return url.QueryEscape(s)
 		},
+		"externalLink": func(urlStr string) string {
+			// 将外部链接转换为 /r/go?url=base64 格式
+			if urlStr == "" {
+				return ""
+			}
+			encoded := base64.URLEncoding.EncodeToString([]byte(urlStr))
+			return "/r/go?url=" + encoded
+		},
 	}
 	for name, fn := range funcMap {
 		engine.AddFunc(name, fn)
