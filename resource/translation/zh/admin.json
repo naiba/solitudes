@@ -215,7 +215,12 @@
     {
         "locale": "zh",
         "key": "book_refer",
-        "trans": "专栏ID"
+        "trans": "所属专栏"
+    },
+    {
+        "locale": "zh",
+        "key": "book_refer_placeholder",
+        "trans": "输入专栏名称搜索"
     },
     {
         "locale": "zh",
@@ -411,41 +416,6 @@
         "locale": "zh",
         "key": "template",
         "trans": "模板"
-    },
-    {
-        "locale": "zh",
-        "key": "topic_publishing_tip",
-        "trans": "哔哔发布提示："
-    },
-    {
-        "locale": "zh",
-        "key": "topic_tip_tag",
-        "trans": "发布哔哔请使用标签"
-    },
-    {
-        "locale": "zh",
-        "key": "topic_tip_case",
-        "trans": "（区分大小写）。"
-    },
-    {
-        "locale": "zh",
-        "key": "topic_tip_auto_rules",
-        "trans": "自动生成规则："
-    },
-    {
-        "locale": "zh",
-        "key": "topic_tip_empty_slug",
-        "trans": "链接为空 → 自动生成时间戳"
-    },
-    {
-        "locale": "zh",
-        "key": "topic_tip_empty_title",
-        "trans": "标题也为空 → 使用自动生成的链接作为标题"
-    },
-    {
-        "locale": "zh",
-        "key": "topic_tip_example",
-        "trans": "示例：两者都留空且带 Topic 标签 → 链接和标题变为"
     },
     {
         "locale": "zh",

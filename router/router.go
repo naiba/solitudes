@@ -204,6 +204,8 @@ func Serve() {
 	admin.Get("/tags", tagsManagePage)
 	admin.Delete("/tags", deleteTag)
 	admin.Patch("/tags", renameTag)
+	admin.Get("/api/search-tags", searchTags)
+	admin.Get("/api/search-books", searchBooks)
 
 	app.Get("/:slug/:version?", article)
 	app.Use(page404)

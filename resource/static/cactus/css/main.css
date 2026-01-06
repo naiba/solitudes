@@ -10,15 +10,7 @@
 .table { display: table; }
 .table-cell { display: table-cell; }
 .overflow-hidden { overflow: hidden; }
-.overflow-scroll { overflow: scroll; }
 .overflow-auto { overflow: auto; }
-
-.clearfix:before,
-.clearfix:after {
-  display: table;
-  content: " ";
-}
-.clearfix:after { clear: both; }
 
 .left { float: left; }
 .right { float: right; }
@@ -77,11 +69,6 @@
 .ml4 { margin-left: 4rem; }
 .mx4 { margin-right: 4rem; margin-left: 4rem; }
 .my4 { margin-top: 4rem; margin-bottom: 4rem; }
-
-.mxn1 { margin-right: -0.5rem; margin-left: -0.5rem; }
-.mxn2 { margin-right: -1rem; margin-left: -1rem; }
-.mxn3 { margin-right: -2rem; margin-left: -2rem; }
-.mxn4 { margin-right: -4rem; margin-left: -4rem; }
 
 .ml-auto { margin-left: auto; }
 .mr-auto { margin-right: auto; }
@@ -818,14 +805,6 @@ body {
   .post-list .post-item .meta { text-align: left; }
 }
 
-.project-list {
-  padding: 0;
-  list-style: none;
-}
-
-.project-list .project-item { margin-bottom: 5px; }
-.project-list .project-item p { display: inline; }
-
 /* Article */
 article header .posttitle {
   margin-top: 0;
@@ -931,22 +910,6 @@ article .content blockquote footer cite:before {
   content: "—";
 }
 
-article .content .pullquote {
-  margin: 0;
-  width: 45%;
-  text-align: left;
-}
-
-article .content .pullquote.left {
-  margin-right: 1em;
-  margin-left: 0.5em;
-}
-
-article .content .pullquote.right {
-  margin-right: 0.5em;
-  margin-left: 1em;
-}
-
 article .content .caption {
   position: relative;
   display: block;
@@ -971,18 +934,9 @@ article .content .caption {
 
 .article-tag .tag-link:before { content: "#"; }
 
-.article-category .category-link {
-  background-image: linear-gradient(transparent, transparent 10px, var(--color-link-hover) 10px, var(--color-link-hover));
-  background-position: bottom;
-  background-size: 100% 6px;
-  background-repeat: repeat-x;
-}
-
 @media (min-width: 480px) {
-  .article-tag,
-  .article-category { display: inline; }
-  .article-tag:before,
-  .article-category:before { content: "|"; }
+  .article-tag { display: inline; }
+  .article-tag:before { content: "|"; }
 }
 
 /* Archive */

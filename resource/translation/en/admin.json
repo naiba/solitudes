@@ -217,7 +217,12 @@
     {
         "locale": "en",
         "key": "book_refer",
-        "trans": "Book Refer"
+        "trans": "Belongs to Book"
+    },
+    {
+        "locale": "en",
+        "key": "book_refer_placeholder",
+        "trans": "Search by book name"
     },
     {
         "locale": "en",
@@ -413,41 +418,6 @@
         "locale": "en",
         "key": "template",
         "trans": "Template"
-    },
-    {
-        "locale": "en",
-        "key": "topic_publishing_tip",
-        "trans": "Topic (哔哔) Publishing Tip:"
-    },
-    {
-        "locale": "en",
-        "key": "topic_tip_tag",
-        "trans": "For topics/moments, use the tag"
-    },
-    {
-        "locale": "en",
-        "key": "topic_tip_case",
-        "trans": "(case-sensitive)."
-    },
-    {
-        "locale": "en",
-        "key": "topic_tip_auto_rules",
-        "trans": "Auto-generation rules:"
-    },
-    {
-        "locale": "en",
-        "key": "topic_tip_empty_slug",
-        "trans": "If slug is empty → auto-generates timestamp"
-    },
-    {
-        "locale": "en",
-        "key": "topic_tip_empty_title",
-        "trans": "If title is also empty → uses the auto-generated slug as title"
-    },
-    {
-        "locale": "en",
-        "key": "topic_tip_example",
-        "trans": "Example: Leave both empty with Topic tag → slug and title become"
     },
     {
         "locale": "en",

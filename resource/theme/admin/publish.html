@@ -45,36 +45,16 @@
                     <label for="inputTags" class="block text-sm font-medium text-gray-700 mb-1">
                         {{.Tr.T "labels"}}
                     </label>
-                    <input 
-                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
-                        id="inputTags" 
-                        placeholder="dev,golang,docker" 
-                        value="{{.Data.article.RawTags}}"
-                        autocomplete="off">
-                    <p class="text-xs text-gray-500 mt-1">{{.Tr.T "comma_separated_tags"}}</p>
-                </div>
-            </div>
-
-            <!-- Topic Instructions -->
-            <div class="help-block help-block-info">
-                <div class="flex items-start gap-2">
-                    <i class="fa-regular fa-lightbulb text-blue-600 mt-1"></i>
-                    <div class="flex-1">
-                        <strong class="text-sm">{{.Tr.T "topic_publishing_tip"}}</strong>
-                        <p class="text-sm mt-1">
-                            {{.Tr.T "topic_tip_tag"}} <span class="topic-badge">Topic</span> {{.Tr.T "topic_tip_case"}}
-                        </p>
-                        <p class="text-sm mt-1">
-                            <strong>{{.Tr.T "topic_tip_auto_rules"}}</strong>
-                        </p>
-                        <ul class="text-sm mt-1 ml-4" style="list-style: disc;">
-                            <li>{{.Tr.T "topic_tip_empty_slug"}} <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">20241225103045</code></li>
-                            <li>{{.Tr.T "topic_tip_empty_title"}}</li>
-                        </ul>
-                        <p class="text-sm mt-2">
-                            {{.Tr.T "topic_tip_example"}} <code class="bg-gray-100 px-2 py-0.5 rounded text-xs">20241225103045</code>
-                        </p>
+                    <div class="relative">
+                        <input 
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
+                            id="inputTags" 
+                            placeholder="Dev,Golang,Docker" 
+                            value="{{.Data.article.RawTags}}"
+                            autocomplete="off">
+                        <div id="tagsDropdown" class="absolute z-50 w-full bg-white border border-gray-300 rounded-b shadow-lg hidden max-h-48 overflow-y-auto"></div>
                     </div>
+                    <p class="text-xs text-gray-500 mt-1">{{.Tr.T "comma_separated_tags"}}</p>
                 </div>
             </div>
 
@@ -90,14 +70,17 @@
 
                 <div>
                     <label for="inputCID" class="block text-sm font-medium text-gray-700 mb-1">
-                        {{.Tr.T "book_refer"}} (UUID)
+                        {{.Tr.T "book_refer"}}
                     </label>
-                    <input 
-                        class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
-                        id="inputCID" 
-                        placeholder="Book/Series UUID"
-                        value="{{if .Data.article.BookRefer}}{{.Data.article.BookRefer}}{{end}}"
-                        autocomplete="off">
+                    <div class="relative">
+                        <input 
+                            class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" 
+                            id="inputCID" 
+                            placeholder="{{.Tr.T "book_refer_placeholder"}}"
+                            value="{{if .Data.article.BookRefer}}{{.Data.article.BookRefer}}{{end}}"
+                            autocomplete="off">
+                        <div id="booksDropdown" class="absolute z-50 w-full bg-white border border-gray-300 rounded-b shadow-lg hidden max-h-48 overflow-y-auto"></div>
+                    </div>
                 </div>
             </div>
 
@@ -179,6 +162,111 @@
             $(btn).toggleClass("disabled")
         })
     }
+
+    // Tags search functionality
+    (function() {
+        const tagsInput = document.getElementById('inputTags');
+        const tagsDropdown = document.getElementById('tagsDropdown');
+        let searchTimeout = null;
+
+        tagsInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const value = this.value;
+            const lastComma = value.lastIndexOf(',');
+            const searchTerm = lastComma >= 0 ? value.substring(lastComma + 1).trim() : value.trim();
+            
+            if (searchTerm.length < 1) {
+                tagsDropdown.classList.add('hidden');
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch('/admin/api/search-tags?q=' + encodeURIComponent(searchTerm))
+                    .then(r => r.json())
+                    .then(tags => {
+                        if (tags && tags.length > 0) {
+                            tagsDropdown.innerHTML = tags.map(tag => 
+                                `<div class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-tag="${tag}">${tag}</div>`
+                            ).join('');
+                            tagsDropdown.classList.remove('hidden');
+                        } else {
+                            tagsDropdown.classList.add('hidden');
+                        }
+                    });
+            }, 200);
+        });
+
+        tagsDropdown.addEventListener('click', function(e) {
+            const tagEl = e.target.closest('[data-tag]');
+            if (tagEl) {
+                const tag = tagEl.dataset.tag;
+                const value = tagsInput.value;
+                const lastComma = value.lastIndexOf(',');
+                if (lastComma >= 0) {
+                    tagsInput.value = value.substring(0, lastComma + 1) + tag + ',';
+                } else {
+                    tagsInput.value = tag + ',';
+                }
+                tagsDropdown.classList.add('hidden');
+                tagsInput.focus();
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!tagsInput.contains(e.target) && !tagsDropdown.contains(e.target)) {
+                tagsDropdown.classList.add('hidden');
+            }
+        });
+    })();
+
+    // Books search functionality
+    (function() {
+        const booksInput = document.getElementById('inputCID');
+        const booksDropdown = document.getElementById('booksDropdown');
+        let searchTimeout = null;
+
+        booksInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const searchTerm = this.value.trim();
+            
+            if (searchTerm.length < 1) {
+                booksDropdown.classList.add('hidden');
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                fetch('/admin/api/search-books?q=' + encodeURIComponent(searchTerm))
+                    .then(r => r.json())
+                    .then(books => {
+                        if (books && books.length > 0) {
+                            booksDropdown.innerHTML = books.map(book => 
+                                `<div class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-id="${book.id}">
+                                    <span class="font-medium">${book.title}</span>
+                                    <span class="text-gray-500 text-xs ml-2">${book.slug}</span>
+                                </div>`
+                            ).join('');
+                            booksDropdown.classList.remove('hidden');
+                        } else {
+                            booksDropdown.classList.add('hidden');
+                        }
+                    });
+            }, 200);
+        });
+
+        booksDropdown.addEventListener('click', function(e) {
+            const bookEl = e.target.closest('[data-id]');
+            if (bookEl) {
+                booksInput.value = bookEl.dataset.id;
+                booksDropdown.classList.add('hidden');
+            }
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!booksInput.contains(e.target) && !booksDropdown.contains(e.target)) {
+                booksDropdown.classList.add('hidden');
+            }
+        });
+    })();
 </script>
 
 {{template "admin/footer" .}}
