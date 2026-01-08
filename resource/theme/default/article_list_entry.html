@@ -14,7 +14,7 @@
                     <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg" alt="{{.Nickname}}">
                     {{else}}
                     <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}">
-                    {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}&nbsp;<i class="fa-solid fa-id-card-clip"></i>{{end}}:&nbsp;</p>
+                    {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}&nbsp;<i class="fa-solid fa-circle-check"></i>{{end}}:&nbsp;</p>
                 <p>{{.Content}}</p>
                 <time class="meta" datetime="{{iso8601 .CreatedAt}}" itemprop="datePublished">
                     {{tf .CreatedAt ($.tr.T "date_format")}}</time>

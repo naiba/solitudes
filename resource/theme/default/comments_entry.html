@@ -12,7 +12,7 @@
         <p class="comment-meta title{{if .IsAdmin}} admin{{end}}">
             {{if .Website}}<a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener">{{.Nickname}}</a>{{else}}
             <b>{{.Nickname}}</b>
-            {{if .IsAdmin}} <i class="fa-solid fa-id-card-clip"></i> {{end}}
+            {{if .IsAdmin}} <i class="fa-solid fa-circle-check"></i> {{end}}
             {{end}}
             <time datetime="{{iso8601 .CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
             <a href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
