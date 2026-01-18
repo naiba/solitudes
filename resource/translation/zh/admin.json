@@ -556,5 +556,10 @@
         "locale": "zh",
         "key": "delete_file_usage_first",
         "trans": "请先在文章中移除该文件的引用。"
+    },
+    {
+        "locale": "zh",
+        "key": "disable_comment",
+        "trans": "关闭评论"
     }
 ]

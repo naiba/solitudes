@@ -95,16 +95,17 @@ func deleteArticle(c *fiber.Ctx) error {
 }
 
 type publishArticle struct {
-	ID         string `form:"id"`
-	Title      string `form:"title"`
-	Slug       string `form:"slug"`
-	Content    string `form:"content"`
-	Template   byte   `form:"template"`
-	Tags       string `form:"tags"`
-	IsBook     bool   `form:"is_book"`
-	IsPrivate  bool   `form:"is_private"`
-	BookRefer  string `form:"book_refer"`
-	NewVersion uint   `form:"new_version"`
+	ID             string `form:"id"`
+	Title          string `form:"title"`
+	Slug           string `form:"slug"`
+	Content        string `form:"content"`
+	Template       byte   `form:"template"`
+	Tags           string `form:"tags"`
+	IsBook         bool   `form:"is_book"`
+	IsPrivate      bool   `form:"is_private"`
+	DisableComment bool   `form:"disable_comment"`
+	BookRefer      string `form:"book_refer"`
+	NewVersion     uint   `form:"new_version"`
 }
 
 func publishHandler(c *fiber.Ctx) error {
@@ -121,17 +122,18 @@ func publishHandler(c *fiber.Ctx) error {
 	}
 	// edit article
 	newArticle := &model.Article{
-		ID:         pa.ID,
-		Title:      strings.TrimSpace(pa.Title),
-		Slug:       strings.TrimSpace(pa.Slug),
-		Content:    clearNonUTF8Chars(pa.Content),
-		NewVersion: pa.NewVersion,
-		TemplateID: pa.Template,
-		IsBook:     pa.IsBook,
-		IsPrivate:  pa.IsPrivate,
-		RawTags:    pa.Tags,
-		BookRefer:  bookRefer,
-		Version:    1,
+		ID:             pa.ID,
+		Title:          strings.TrimSpace(pa.Title),
+		Slug:           strings.TrimSpace(pa.Slug),
+		Content:        clearNonUTF8Chars(pa.Content),
+		NewVersion:     pa.NewVersion,
+		TemplateID:     pa.Template,
+		IsBook:         pa.IsBook,
+		IsPrivate:      pa.IsPrivate,
+		DisableComment: pa.DisableComment,
+		RawTags:        pa.Tags,
+		BookRefer:      bookRefer,
+		Version:        1,
 	}
 
 	if newArticle.IsTopic() {
@@ -148,7 +150,6 @@ func publishHandler(c *fiber.Ctx) error {
 	} else {
 		err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 			if pa.NewVersion == 1 {
-				newArticle.CreatedAt = time.Now()
 				history := model.ArticleHistory{
 					Content:   originalArticle.Content,
 					Version:   originalArticle.Version,

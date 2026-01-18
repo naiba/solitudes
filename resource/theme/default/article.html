@@ -89,6 +89,9 @@
                 <div class="postdate">
                     <time datetime="{{iso8601 .Data.article.CreatedAt}}" itemprop="datePublished">{{tf .Data.article.CreatedAt
                         (.Tr.T "date_format")}}</time>
+                    {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
+                    · {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}" itemprop="dateModified">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
+                    {{end}}
                     <small>·v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
                     |
@@ -140,6 +143,7 @@
         {{end}}
     </article>
 
+    {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
     <div id="reply-list">
         <h1>{{.Tr.T "comments"}}</h1>
         {{template "default/comments_entry" (commentsData .Data.article.Comments .Tr)}}
@@ -156,6 +160,7 @@
                 class="fa-solid fa-angle-right"></i></a>{{end}}
     </div>
     {{end}}
+    {{if not .Data.article.DisableComment}}
     <div id="reply">
         <textarea cols="40" rows="6" id="id_content"
             placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
@@ -172,6 +177,8 @@
         <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
         <input type="hidden" id="id_reply_to" value="">
     </div>
+    {{end}}
+    {{end}}
 
     <div id="footer-post-container">
         <div id="footer-post">

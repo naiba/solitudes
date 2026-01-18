@@ -258,5 +258,10 @@
         "locale": "en",
         "key": "redirect_error_invalid_url",
         "trans": "Error: Invalid URL"
+    },
+    {
+        "locale": "en",
+        "key": "updated_at",
+        "trans": "Last Updated"
     }
 ]

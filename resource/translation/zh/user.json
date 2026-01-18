@@ -258,5 +258,10 @@
         "locale": "zh",
         "key": "redirect_error_invalid_url",
         "trans": "错误：无效的链接地址"
+    },
+    {
+        "locale": "zh",
+        "key": "updated_at",
+        "trans": "最后更新"
     }
 ]

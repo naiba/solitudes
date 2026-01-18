@@ -558,5 +558,10 @@
         "locale": "en",
         "key": "delete_file_usage_first",
         "trans": "You have to delete file usage in article."
+    },
+    {
+        "locale": "en",
+        "key": "disable_comment",
+        "trans": "Disable Comments"
     }
 ]

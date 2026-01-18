@@ -94,6 +94,10 @@
                     <span class="text-sm text-gray-700">{{.Tr.T "private"}}</span>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
+                    <input{{if .Data.article.DisableComment}} checked{{end}} id="cbDisableComment" type="checkbox" class="rounded border-gray-300">
+                    <span class="text-sm text-gray-700">{{.Tr.T "disable_comment"}}</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer">
                     <input id="cbNewVersion" type="checkbox" class="rounded border-gray-300">
                     <span class="text-sm text-gray-700">{{.Tr.T "new_version"}}</span>
                 </label>
@@ -151,6 +155,7 @@
             tags: $("#inputTags").val(),
             is_book: document.getElementById('cbBook').checked,
             is_private: document.getElementById('cbPrivate').checked,
+            disable_comment: document.getElementById('cbDisableComment').checked,
             new_version: document.getElementById('cbNewVersion').checked ? 1 : 0,
         }
         $("#inputCID").val() && (article.book_refer = $("#inputCID").val())
