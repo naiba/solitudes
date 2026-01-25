@@ -64,8 +64,8 @@ func loginHandler(c *fiber.Ctx) error {
 }
 
 func login(c *fiber.Ctx) error {
-	c.Status(http.StatusOK).Render("admin/login", injectSiteData(c, fiber.Map{}))
-	return nil
+
+	return c.Status(http.StatusOK).Render("admin/login", injectSiteData(c, fiber.Map{}))
 }
 
 func logoutHandler(c *fiber.Ctx) error {
@@ -109,7 +109,7 @@ func index(c *fiber.Ctx) error {
 		mostReadData = mostRead
 	}
 
-	c.Status(http.StatusOK).Render("default/index", injectSiteData(c, fiber.Map{
+	c.Status(http.StatusOK).Render("site/index", injectSiteData(c, fiber.Map{
 		"title":    tr.T("home"),
 		"articles": articles,
 		"topics":   topics,

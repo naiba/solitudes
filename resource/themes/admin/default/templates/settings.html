@@ -1,0 +1,319 @@
+{{define "admin/settings"}}
+{{template "admin/header" .}}
+
+<div class="admin-container">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "site_settings"}}</h1>
+        <p class="page-subtitle">{{.Tr.T "settings_subtitle"}}</p>
+    </div>
+
+    <form id="settingsForm" class="space-y-6">
+        <!-- Site Information -->
+        <div class="wf-card">
+            <div class="wf-card-header">{{.Tr.T "site_information"}}</div>
+            <div class="wf-card-body space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "logo_favicon"}}</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-4">
+                            <img src="/logo.png" class="h-12 w-12 object-contain border rounded bg-gray-50">
+                            <div class="flex-1">
+                                <label class="block text-xs text-gray-500 mb-1">{{.Tr.T "logo_png"}}</label>
+                                <input type="file" id="inputLogo" accept="image/png" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <img src="/favicon.ico" class="h-8 w-8 object-contain border rounded bg-gray-50">
+                            <div class="flex-1">
+                                <label class="block text-xs text-gray-500 mb-1">{{.Tr.T "favicon_ico"}}</label>
+                                <input type="file" id="inputFavicon" accept="image/x-icon,image/png" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_title"}}</label>
+                    <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
+                    <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputSiteTitle" placeholder="Solitudes" value="{{.Conf.Site.SpaceName}}">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_desc"}}</label>
+                    <textarea class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputSiteDesc" rows="3" placeholder="We love writing">{{.Conf.Site.SpaceDesc}}</textarea>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_domain"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputSiteDomain" placeholder="example.com" value="{{.Conf.Site.Domain}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_keywords"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputSiteKeywords" placeholder="blog,programming" value="{{.Conf.Site.SpaceKeywords}}">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_theme"}}</label>
+                    <input type="hidden" id="selTheme" value="{{.Conf.Site.Theme}}">
+                    <div class="flex overflow-x-auto gap-4 pb-2 snap-x">
+                        {{range $k, $v := .Data.themeListSite}}
+                        <div class="theme-card flex-shrink-0 w-72 cursor-pointer border rounded-lg overflow-hidden hover:shadow-lg transition-all snap-start {{if eq $.Conf.Site.Theme $v.ID }}border-blue-500 ring-2 ring-blue-200{{else}}border-gray-200{{end}}" onclick="selectTheme('site', '{{$v.ID}}', this)">
+                            <div class="aspect-w-16 aspect-h-9 bg-gray-100">
+                                <img src="/admin/theme/preview/site/{{$v.ID}}" alt="{{$v.Name}}" class="object-cover w-full h-40" onerror="this.src='https://placehold.co/600x400?text={{$.Tr.T "no_preview"}}'">
+                            </div>
+                            <div class="p-3">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-gray-900">{{$v.Name}}</h3>
+                                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{{$v.Version}}</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{{$.Tr.T "by"}} <a href="{{$v.Link}}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline" onclick="event.stopPropagation()">{{$v.Author}}</a></p>
+                                <p class="text-sm text-gray-600 mt-2 line-clamp-2" title="{{$v.Description}}">{{$v.Description}}</p>
+                            </div>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "admin_theme"}}</label>
+                    <input type="hidden" id="selAdminTheme" value="{{.Conf.Admin.Theme}}">
+                    <div class="flex overflow-x-auto gap-4 pb-2 snap-x">
+                        {{range $k, $v := .Data.themeListAdmin}}
+                        <div class="theme-card flex-shrink-0 w-72 cursor-pointer border rounded-lg overflow-hidden hover:shadow-lg transition-all snap-start {{if eq $.Conf.Admin.Theme $v.ID }}border-blue-500 ring-2 ring-blue-200{{else}}border-gray-200{{end}}" onclick="selectTheme('admin', '{{$v.ID}}', this)">
+                            <div class="aspect-w-16 aspect-h-9 bg-gray-100">
+                                <img src="/admin/theme/preview/admin/{{$v.ID}}" alt="{{$v.Name}}" class="object-cover w-full h-40" onerror="this.src='https://placehold.co/600x400?text={{$.Tr.T "no_preview"}}'">
+                            </div>
+                            <div class="p-3">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-gray-900">{{$v.Name}}</h3>
+                                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{{$v.Version}}</span>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{{$.Tr.T "by"}} <a href="{{$v.Link}}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline" onclick="event.stopPropagation()">{{$v.Author}}</a></p>
+                                <p class="text-sm text-gray-600 mt-2 line-clamp-2" title="{{$v.Description}}">{{$v.Description}}</p>
+                            </div>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="wf-card">
+            <div class="wf-card-header">{{.Tr.T "notifications"}}</div>
+            <div class="wf-card-body space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_tg_bot_token"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputTGBotToken" placeholder="Bot Token" value="{{.Conf.TGBotToken}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_tg_chat_id"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputTGChatID" placeholder="Chat ID" value="{{.Conf.TGChatID}}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Settings -->
+        <div class="wf-card">
+            <div class="wf-card-header">{{.Tr.T "email_settings"}}</div>
+            <div class="wf-card-body space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_mail_server"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputMailServer" placeholder="smtp.163.com" value="{{.Conf.Email.Host}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_mail_port"}}</label>
+                        <input type="number" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputMailPort" placeholder="25" value="{{.Conf.Email.Port}}">
+                    </div>
+                </div>
+                <div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input{{if .Conf.Email.SSL}} checked{{end}} id="cbMailSSL" type="checkbox" class="rounded border-gray-300">
+                        <span class="text-sm text-gray-700">{{.Tr.T "site_mail_ssl"}}</span>
+                    </label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_mail_user"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputMailUser" placeholder="username" value="{{.Conf.Email.User}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_mail_pass"}}</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputMailPass" placeholder="password" value="{{.Conf.Email.Pass}}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Spam Protection -->
+        <div class="wf-card">
+            <div class="wf-card-header">{{.Tr.T "spam_protection"}}</div>
+            <div class="wf-card-body">
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "site_akismet"}}</label>
+                <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputAkismet" placeholder="Akismet key" value="{{.Conf.Akismet}}">
+            </div>
+        </div>
+
+        <!-- Theme Configuration -->
+        <div class="wf-card">
+            <div class="wf-card-header">{{.Tr.T "theme_config"}}</div>
+            <div class="wf-card-body">
+                <div class="mb-4 bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fa-solid fa-circle-info text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm text-blue-700">
+                                {{.Tr.T "theme_config_help"}}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <textarea class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500 font-mono text-sm" id="inputThemeConfig" rows="20" placeholder='{ "theme.key": "value" }'>{{.Conf.Site.ThemeConfig | json}}</textarea>
+            </div>
+        </div>
+
+        <!-- User Account -->
+        <div class="wf-card">
+            <div class="wf-card-header">{{.Tr.T "user_account"}}</div>
+            <div class="wf-card-body space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "nickname"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputNickname" value="{{.Conf.User.Nickname}}">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "email"}}</label>
+                        <input class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputEmail" value="{{.Conf.User.Email}}">
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">{{.Tr.T "input_password_if_you_want_change_it"}}</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "old_password"}}</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputOldPassword">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "new_password"}}</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputNewPassword">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">{{.Tr.T "confirm_password"}}</label>
+                        <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500" id="inputConfirmPassword">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div class="flex justify-end">
+            <button type="button" onclick="saveSetting(this)" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                <i class="fa-solid fa-floppy-disk mr-2"></i>{{.Tr.T "save"}}
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    window.onbeforeunload = function (e) { var e = e || window.event; if (e) { e.returnValue = '{{.Tr.T "ensure_content_saved"}}'; } return '{{.Tr.T "ensure_content_saved"}}'; };
+
+    function selectTheme(type, id, el) {
+        // Update hidden input
+        if (type === 'site') {
+            document.getElementById('selTheme').value = id;
+            // Update visual state
+            const container = el.parentElement;
+            Array.from(container.children).forEach(card => {
+                card.classList.remove('border-blue-500', 'ring-2', 'ring-blue-200');
+                card.classList.add('border-gray-200');
+            });
+            el.classList.remove('border-gray-200');
+            el.classList.add('border-blue-500', 'ring-2', 'ring-blue-200');
+        } else if (type === 'admin') {
+            document.getElementById('selAdminTheme').value = id;
+            // Update visual state
+            const container = el.parentElement;
+            Array.from(container.children).forEach(card => {
+                card.classList.remove('border-blue-500', 'ring-2', 'ring-blue-200');
+                card.classList.add('border-gray-200');
+            });
+            el.classList.remove('border-gray-200');
+            el.classList.add('border-blue-500', 'ring-2', 'ring-blue-200');
+        }
+    }
+
+    function saveSetting(btn) {
+        if ($(btn).hasClass("disabled")) {
+            return
+        }
+        $(btn).toggleClass("disabled")
+        const oldPassword = $("#inputOldPassword").val().trim()
+        const newPassword = $("#inputNewPassword").val().trim()
+        if (newPassword.length > 0) {
+            if (oldPassword.length == 0) {
+                alert('{{.Tr.T "old_password_empty"}}')
+                $(btn).toggleClass("disabled")
+                return
+            }
+            if (newPassword != $("#inputConfirmPassword").val().trim()) {
+                alert('{{.Tr.T "password_mismatch"}}')
+                $(btn).toggleClass("disabled")
+                return
+            }
+        }
+        var settings = {
+            site_title: $("#inputSiteTitle").val(),
+            site_desc: $("#inputSiteDesc").val(),
+            tg_bot_token: $("#inputTGBotToken").val(),
+            tg_chat_id: $("#inputTGChatID").val(),
+            mail_server: $("#inputMailServer").val(),
+            mail_port: parseInt($("#inputMailPort").val()),
+            mail_ssl: document.getElementById('cbMailSSL').checked,
+            mail_user: $("#inputMailUser").val(),
+            mail_password: $("#inputMailPass").val(),
+            akismet: $("#inputAkismet").val(),
+            site_domain: $("#inputSiteDomain").val(),
+            site_keywords: $("#inputSiteKeywords").val(),
+            site_theme: $("#selTheme").val(),
+            admin_theme: $("#selAdminTheme").val(),
+            theme_config: $("#inputThemeConfig").val(),
+            nickname: $("#inputNickname").val(),
+            email: $("#inputEmail").val(),
+            old_password: oldPassword,
+            new_password: newPassword,
+        }
+
+        const formData = new FormData();
+        Object.keys(settings).forEach(key => formData.append(key, settings[key]));
+
+        const logoFile = document.getElementById('inputLogo').files[0];
+        if (logoFile) {
+            formData.append('logo', logoFile);
+        }
+
+        const faviconFile = document.getElementById('inputFavicon').files[0];
+        if (faviconFile) {
+            formData.append('favicon', faviconFile);
+        }
+
+        fetch('', {
+            method: 'POST',
+            body: formData,
+        }).then((resp) => {
+            if (resp.status == 200) {
+                window.location.reload()
+            } else {
+                resp.text().then(err => {
+                    alert('{{.Tr.T "save_failed"}} ' + err)
+                    $(btn).toggleClass("disabled")
+                })
+            }
+        }).catch((err) => {
+            alert('{{.Tr.T "save_failed"}} ' + err)
+            $(btn).toggleClass("disabled")
+        })
+    }
+</script>
+{{template "admin/footer" .}}
+{{end}}

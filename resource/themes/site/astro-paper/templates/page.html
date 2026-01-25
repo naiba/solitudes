@@ -1,0 +1,15 @@
+{{define "site/page"}}
+{{template "site/header" .}}
+<main id="main-content" class="app-layout flex-1 py-8">
+    <article class="w-full">
+        <header class="mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold mb-4">{{.Data.article.Title}}</h1>
+        </header>
+        
+        <div class="app-prose prose max-w-none" itemprop="articleBody">
+            {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
+        </div>
+    </article>
+</main>
+{{template "site/footer" .}}
+{{end}}

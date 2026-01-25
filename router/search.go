@@ -51,7 +51,7 @@ func search(c *fiber.Ctx) error {
 		}
 	}
 
-	c.Status(http.StatusOK).Render("default/search", injectSiteData(c, fiber.Map{
+	c.Status(http.StatusOK).Render("site/search", injectSiteData(c, fiber.Map{
 		"title":   c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("search_result_title", "#SOL.9527.WORD#"),
 		"results": result,
 	}))

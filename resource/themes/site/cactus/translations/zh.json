@@ -1,0 +1,117 @@
+[
+    {
+        "locale": "zh",
+        "key": "created_at_label",
+        "trans": "发布于"
+    },
+    {
+        "locale": "zh",
+        "key": "most_read",
+        "trans": "阅读最多"
+    },
+    {
+        "locale": "zh",
+        "key": "writing",
+        "trans": "写作"
+    },
+    {
+        "locale": "zh",
+        "key": "no_article",
+        "trans": "暂无发布的文章"
+    },
+    {
+        "locale": "zh",
+        "key": "topic",
+        "trans": "哔哔"
+    },
+    {
+        "locale": "zh",
+        "key": "previous_post",
+        "trans": "上一篇文章"
+    },
+    {
+        "locale": "zh",
+        "key": "next_post",
+        "trans": "下一篇文章"
+    },
+    {
+        "locale": "zh",
+        "key": "return_top",
+        "trans": "返回顶部"
+    },
+    {
+        "locale": "zh",
+        "key": "share",
+        "trans": "分享"
+    },
+    {
+        "locale": "zh",
+        "key": "view_more",
+        "trans": "查看更多"
+    },
+    {
+        "locale": "zh",
+        "key": "no_search_results",
+        "trans": "没有找到相关结果。"
+    },
+    {
+        "locale": "zh",
+        "key": "go_to_page",
+        "trans": "跳转"
+    },
+    {
+        "locale": "zh",
+        "key": "menu",
+        "trans": "菜单"
+    },
+    {
+        "locale": "zh",
+        "key": "toc",
+        "trans": "文章目录"
+    },
+    {
+        "locale": "zh",
+        "key": "chapters",
+        "trans": "章节列表"
+    },
+    {
+        "locale": "zh",
+        "key": "book",
+        "trans": "专栏"
+    },
+    {
+        "locale": "zh",
+        "key": "comments",
+        "trans": "评论区"
+    },
+    {
+        "locale": "zh",
+        "key": "nickname",
+        "trans": "昵称"
+    },
+    {
+        "locale": "zh",
+        "key": "email",
+        "trans": "邮箱"
+    },
+    {
+        "locale": "zh",
+        "key": "website",
+        "trans": "个人网站"
+    },
+    {
+        "locale": "zh",
+        "key": "not_required",
+        "trans": "选填"
+    },
+    {
+        "locale": "zh",
+        "key": "submit",
+        "trans": "提交"
+    },
+    {
+        "locale": "zh",
+        "key": "may_not_reply_if_email_not_exist",
+        "trans": "请留下正确的邮箱地址，以便博主回复您的评论。可优先输入邮箱自动加载其他信息。"
+    }
+]

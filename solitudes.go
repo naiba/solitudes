@@ -8,6 +8,7 @@ import (
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/patrickmn/go-cache"
+	"github.com/robfig/cron/v3"
 	"github.com/yanyiwu/gojieba"
 	"go.uber.org/dig"
 	"golang.org/x/sync/singleflight"
@@ -16,6 +17,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/internal/theme"
 	_ "github.com/naiba/solitudes/pkg/blevejieba"
 )
 
@@ -136,7 +138,38 @@ func newConfig() *model.Config {
 		panic(err)
 	}
 	c.ConfigFilePath = configFile
-	log.Println("Config", c)
+
+	themesRoot := "resource/themes"
+	themes, err := theme.LoadThemes(themesRoot)
+	if err != nil {
+		log.Printf("load themes failed: %v", err)
+		themes = &theme.ThemeList{}
+	}
+
+	availableSite := make(map[string]bool)
+	for _, meta := range themes.Site {
+		if meta.ID == "" {
+			continue
+		}
+		availableSite[meta.ID] = true
+	}
+	availableAdmin := make(map[string]bool)
+	for _, meta := range themes.Admin {
+		if meta.ID == "" {
+			continue
+		}
+		availableAdmin[meta.ID] = true
+	}
+
+	model.ApplyThemeFallback(&c, "cactus", "default", availableSite, availableAdmin)
+
+	// 校验主题配置
+	model.ValidateThemeConfigStartup(&c, themes)
+
+	// 同步主题配置
+	model.SyncThemeConfig(&c, themes)
+
+	log.Printf("Config: %+v", c)
 	return &c
 }
 
@@ -155,8 +188,17 @@ func migrate() {
 	if err := System.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
 		panic(err)
 	}
-	if err := System.DB.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.User{}); err != nil {
+	if err := System.DB.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.User{}, &model.FeedVisit{}); err != nil {
 		panic(err)
+	}
+}
+
+func cleanOldFeedVisits() {
+	result := System.DB.Where("created_at < ?", time.Now().AddDate(0, 0, -7)).Delete(&model.FeedVisit{})
+	if result.Error != nil {
+		log.Printf("Failed to clean old feed visits: %v", result.Error)
+	} else {
+		log.Printf("Cleaned %d old feed visit records", result.RowsAffected)
 	}
 }
 
@@ -219,5 +261,14 @@ func Init() {
 	provide()
 	if System.DB != nil {
 		migrate()
+	}
+
+	c := cron.New()
+	_, err := c.AddFunc("0 0 * * *", cleanOldFeedVisits)
+	if err != nil {
+		log.Printf("Failed to start cron job: %v", err)
+	} else {
+		c.Start()
+		log.Println("Cron job started: cleanOldFeedVisits at 00:00 daily")
 	}
 }

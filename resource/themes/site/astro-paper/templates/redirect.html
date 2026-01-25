@@ -1,0 +1,85 @@
+{{define "site/redirect"}}
+{{template "site/header" .}}
+<main id="main-content" class="app-layout flex-1 py-12">
+    <div class="max-w-2xl mx-auto py-12 text-center">
+        <h1 class="text-3xl font-bold mb-6 text-foreground">{{.Data.title}}</h1>
+        
+        <div id="redirect-container" class="bg-muted/30 rounded-xl p-8 border border-border">
+            <p class="text-foreground/80 mb-4">{{.Data.msg}}</p>
+            
+            <div id="target-url-wrapper" class="my-6 p-4 bg-background border border-border rounded-lg break-all">
+                <code id="target-url" class="text-accent font-medium">...</code>
+            </div>
+            
+            <div class="flex flex-col items-center gap-4">
+                <a id="continue-link" href="#" rel="noopener noreferrer" class="px-8 py-3 bg-accent text-white rounded-lg hover:bg-accent-hover transition no-underline font-medium">
+                    {{.Data.continue_text}}
+                </a>
+                
+                <p id="countdown" class="text-sm text-foreground/50 italic"></p>
+            </div>
+        </div>
+        
+        <div class="mt-8">
+            <a href="/" class="text-foreground/60 hover:text-accent transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-arrow-left text-xs"></i> Go back
+            </a>
+        </div>
+    </div>
+</main>
+
+<script>
+    (function () {
+        const params = new URLSearchParams(window.location.search);
+        const encodedUrl = params.get('url');
+
+        const container = document.getElementById('redirect-container');
+        const targetUrlEl = document.getElementById('target-url');
+        const continueLink = document.getElementById('continue-link');
+        const countdownEl = document.getElementById('countdown');
+
+        if (!encodedUrl) {
+            container.innerHTML = `<p class="text-red-500 font-medium">{{.Data.redirect_error_no_url}}</p>`;
+            return;
+        }
+
+        try {
+            // Base64 URL Safe decoding
+            const targetUrl = atob(encodedUrl.replace(/-/g, '+').replace(/_/g, '/'));
+
+            // Basic safety check
+            const url = new URL(targetUrl);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                throw new Error('Invalid protocol');
+            }
+
+            // Display sanitized URL
+            targetUrlEl.textContent = targetUrl;
+            continueLink.href = targetUrl;
+
+            // Countdown logic
+            let secondsLeft = 5;
+            const updateCountdown = () => {
+                countdownEl.textContent = `{{.Data.redirect_auto}} ${secondsLeft} {{.Data.redirect_seconds}}`;
+            };
+
+            updateCountdown();
+            
+            const timer = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft <= 0) {
+                    clearInterval(timer);
+                    window.location.href = targetUrl;
+                } else {
+                    updateCountdown();
+                }
+            }, 1000);
+
+        } catch (e) {
+            container.innerHTML = `<p class="text-red-500 font-medium">{{.Data.redirect_error_invalid_url}}</p>`;
+            console.error('Redirect failed:', e);
+        }
+    })();
+</script>
+{{template "site/footer" .}}
+{{end}}

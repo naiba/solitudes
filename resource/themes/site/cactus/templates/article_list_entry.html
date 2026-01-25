@@ -1,0 +1,36 @@
+{{define "site/article_list_entry"}}
+<li class="post-item">
+    <div class="meta">
+        <time datetime="{{iso8601 .article.CreatedAt}}" itemprop="datePublished">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
+    </div>
+    {{if .article.IsTopic}}
+    <div class="sl-topic">
+        {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog"></i> {{end}}{{(md .article.ID .article.Content)|unsafe}}
+        {{if .article.Comments}}
+        <div class="sl-comments">
+            {{range .article.Comments}}
+            <div>
+                <p>{{if .Email}}
+                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg" alt="{{.Nickname}}">
+                    {{else}}
+                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}">
+                    {{end}}<b>{{.Nickname}}</b>{{if .IsAdmin}}&nbsp;<i class="fa-solid fa-circle-check"></i>{{end}}:&nbsp;</p>
+                <p>{{.Content}}</p>
+                <time class="meta" datetime="{{iso8601 .CreatedAt}}" itemprop="datePublished">
+                    {{tf .CreatedAt ($.tr.T "date_format")}}</time>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+        <small>(<i class="fa-regular fa-eye"></i>{{.article.ReadNum}}{{if .article.CommentNum}},<i class="fa-regular fa-comment-dots"></i>{{.article.CommentNum}}{{end}}) <a
+                href="//{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a> <a href="//{{.Conf.Site.Domain}}/{{.article.Slug}}">
+                <b>{{.tr.T "leave_a_comment"}}></b></a></small>
+    </div>
+    {{else}}
+    <div>
+        {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a href="//{{.Conf.Site.Domain}}/{{.article.Slug}}">{{.article.Title}}</a>{{if .article.ReadNum}}
+        <small>(<i class="fa-regular fa-eye"></i>{{.article.ReadNum}}{{if .article.CommentNum}},<i class="fa-regular fa-comment-dots"></i>{{.article.CommentNum}}{{end}})</small>{{end}}
+    </div>
+    {{end}}
+</li>
+{{end}}

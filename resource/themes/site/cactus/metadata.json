@@ -1,0 +1,60 @@
+{
+  "id": "cactus",
+  "name": "Cactus",
+  "author": "奶爸博客",
+  "version": "1.0",
+  "description": "Default site theme",
+  "link": "https://lifelonglearn.ing",
+  "config": {
+    "cactus.hometopcontent": "# Top:\n\nA fast, simple & powerful blog framework 👍\n",
+    "cactus.homebottomcontent": "# Bottom:\n\nA fast, simple & powerful blog framework 👍\n",
+    "cactus.headermenus": [
+      {
+        "name": "Home",
+        "link": "/",
+        "icon": "",
+        "black": false
+      },
+      {
+        "name": "Posts",
+        "link": "/posts/",
+        "icon": "",
+        "black": false
+      },
+      {
+        "name": "Books",
+        "link": "/books/",
+        "icon": "",
+        "black": false
+      },
+      {
+        "name": "Tags",
+        "link": "/tags",
+        "icon": "fa-solid fa-lightbulb",
+        "black": false
+      },
+      {
+        "name": "Solitudes",
+        "link": "https://github.com/naiba/solitudes",
+        "icon": "fa-brands fa-github",
+        "black": true
+      }
+    ],
+    "cactus.footermenus": [
+      {
+        "name": "Home",
+        "link": "/",
+        "icon": "",
+        "black": false
+      },
+      {
+        "name": "About",
+        "link": "/about",
+        "icon": "fa-regular fa-lightbulb",
+        "black": false
+      }
+    ],
+    "cactus.customcode": "<script>\nconsole.log('Custom code loaded');\n</script>",
+    "cactus.colorscheme": "auto"
+  }
+}

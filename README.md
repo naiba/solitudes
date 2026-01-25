@@ -67,6 +67,36 @@ logo.png # 自定义logo，替换主题自带的 logo
 upload/
 ```
 
+## 主题系统
+
+Solitudes 拥有全新的主题系统，支持独立的前台和后台主题。
+
+### 目录结构
+
+主题文件位于 `resource/themes` 目录下：
+- `resource/themes/site/<theme_name>`: 前台主题
+- `resource/themes/admin/<theme_name>`: 后台主题
+
+### metadata.json
+
+每个主题目录下都需要一个 `metadata.json` 文件，格式如下：
+
+```json
+{
+  "id": "theme_id",
+  "name": "Theme Name",
+  "author": "Author",
+  "version": "1.0",
+  "description": "Theme Description",
+  "link": "https://link.to.theme",
+  "preview": "/static/images/preview.png"
+}
+```
+
+### 切换主题
+
+你可以在 **管理后台** 的 **系统设置** 页面切换前台和后台主题。
+
 启动
 
 ```shell

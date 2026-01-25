@@ -14,7 +14,7 @@ import (
 
 // getDefaultLogoURL returns the default logo URL with cache busting
 func getDefaultLogoURL(domain string) string {
-	return "https://" + domain + "/static/cactus/images/logo.png?20211213"
+	return "https://" + domain + "/logo.png"
 }
 
 // getEmailTexts returns email texts based on language

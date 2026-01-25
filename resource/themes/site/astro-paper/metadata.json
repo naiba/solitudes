@@ -1,0 +1,56 @@
+{
+    "id": "astro-paper",
+    "name": "AstroPaper",
+    "author": "奶爸博客",
+    "version": "1.0",
+    "description": "Minimal, responsive, accessible and SEO-friendly blog theme, fork from github.com/satnaing/astro-paper",
+    "link": "https://lifelonglearn.ing",
+    "config": {
+        "astro-paper.hometopcontent": "# Top:\n\nA fast, simple & powerful blog framework 👍\n",
+        "astro-paper.homebottomcontent": "# Bottom:\n\nA fast, simple & powerful blog framework 👍\n",
+        "astro-paper.headermenus": [
+            {
+                "name": "Home",
+                "link": "/",
+                "icon": "",
+                "black": false
+            },
+            {
+                "name": "Posts",
+                "link": "/posts/",
+                "icon": "",
+                "black": false
+            },
+            {
+                "name": "Books",
+                "link": "/books/",
+                "icon": "",
+                "black": false
+            },
+            {
+                "name": "Tags",
+                "link": "/tags",
+                "icon": "fa-solid fa-lightbulb",
+                "black": false
+            },
+            {
+                "name": "Solitudes",
+                "link": "https://github.com/naiba/solitudes",
+                "icon": "fa-brands fa-github",
+                "black": true
+            }
+        ],
+        "astro-paper.footermenus": [
+            {
+                "link": "/",
+                "icon": "fa-solid fa-rss text-xl",
+                "black": false
+            },
+            {
+                "link": "https://github.com/naiba/solitudes",
+                "icon": "fa-brands fa-github text-xl",
+                "black": false
+            }
+        ]
+    }
+}

@@ -8,14 +8,18 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/samber/lo"
+	"github.com/spf13/afero"
 	"gorm.io/gorm"
 
 	"github.com/88250/lute"
@@ -25,6 +29,7 @@ import (
 	"github.com/go-playground/locales"
 	gv "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	html "github.com/gofiber/template/html/v2"
 
@@ -71,7 +76,68 @@ func init() {
 	}
 }
 
+// ThemeTemplateRoot returns the path to the templates for a given theme.
+func ThemeTemplateRoot(kind, name string) string {
+	if name == "" {
+		name = "cactus"
+	}
+	return fmt.Sprintf("resource/themes/%s/%s/templates", kind, name)
+}
+
+// themeStaticRoot constructs the path to the static assets for a given theme.
+func ThemeStaticRoot(kind, name string) string {
+	if name == "" {
+		name = "cactus"
+	}
+	return fmt.Sprintf("resource/themes/%s/%s/static", kind, name)
+}
+
+// themeStaticHandler handles static file requests dynamically based on current theme
+func themeStaticHandler(c *fiber.Ctx) error {
+	path := c.Path()
+	var kind, themeName string
+	var prefix string
+
+	if strings.HasPrefix(path, "/admin/static/") {
+		kind = "admin"
+		prefix = "/admin/static/"
+		themeName = solitudes.System.Config.Admin.Theme
+	} else if strings.HasPrefix(path, "/static/") {
+		kind = "site"
+		prefix = "/static/"
+		themeName = solitudes.System.Config.Site.Theme
+	} else {
+		return page404(c)
+	}
+
+	if themeName == "" {
+		themeName = "cactus"
+	}
+
+	relativePath := strings.TrimPrefix(path, prefix)
+
+	// 拒绝目录列表请求（如 /static/ 或 /static/css/）
+	if relativePath == "" || strings.HasSuffix(relativePath, "/") {
+		return page404(c)
+	}
+
+	themeStaticPath := ThemeStaticRoot(kind, themeName)
+	fullPath := filepath.Join(themeStaticPath, relativePath)
+
+	cleanPath := filepath.Clean(fullPath)
+	if _, err := os.Stat(cleanPath); err != nil {
+		return page404(c)
+	}
+
+	return c.SendFile(cleanPath)
+}
+
 // isExternalLink 判断是否为外部链接
+// isAdminPath 判断请求是否为后台路径
+func isAdminPath(path string) bool {
+	return strings.HasPrefix(path, "/admin/")
+}
+
 func isExternalLink(urlStr string) bool {
 	// 检查是否为绝对 URL（包含协议）
 	if strings.HasPrefix(urlStr, "http://") || strings.HasPrefix(urlStr, "https://") {
@@ -121,10 +187,78 @@ func mdRender(id string, raw string) string {
 	return luteEngine.MarkdownStr(id, raw)
 }
 
+// TemplateEngine holds the HTML template engine
+var TemplateEngine *html.Engine
+
+// LoadTemplates initializes or reloads the template engine with current theme configurations
+func LoadTemplates() error {
+	siteTheme := solitudes.System.Config.Site.Theme
+	adminTheme := solitudes.System.Config.Admin.Theme
+	siteTemplateRoot := ThemeTemplateRoot("site", siteTheme)
+	adminTemplateRoot := ThemeTemplateRoot("admin", adminTheme)
+
+	// 重载翻译
+	translator.Reload(siteTheme, adminTheme)
+
+	// 使用 afero 创建带前缀的合并文件系统
+
+	// 使用 afero 创建带前缀的合并文件系统
+	// site/* -> siteTemplateRoot/*, admin/* -> adminTemplateRoot/*
+	baseFs := afero.NewMemMapFs()
+	osFs := afero.NewOsFs()
+
+	// 将 site 模板挂载到 site/ 前缀下
+	siteFs := afero.NewBasePathFs(osFs, siteTemplateRoot)
+	afero.Walk(siteFs, "", func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		content, _ := afero.ReadFile(siteFs, path)
+		afero.WriteFile(baseFs, "site/"+path, content, info.Mode())
+		return nil
+	})
+
+	// 将 admin 模板挂载到 admin/ 前缀下
+	adminFs := afero.NewBasePathFs(osFs, adminTemplateRoot)
+	afero.Walk(adminFs, "", func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+		content, _ := afero.ReadFile(adminFs, path)
+		afero.WriteFile(baseFs, "admin/"+path, content, info.Mode())
+		return nil
+	})
+
+	TemplateEngine = html.NewFileSystem(http.FS(afero.NewIOFS(baseFs)), ".html")
+	setFuncMap(TemplateEngine)
+
+	// 加载模板
+	if err := TemplateEngine.Load(); err != nil {
+		return fmt.Errorf("failed to load templates: %w", err)
+	}
+
+	log.Printf("Templates loaded from site=%s, admin=%s", siteTemplateRoot, adminTemplateRoot)
+
+	if solitudes.System.Config.Debug {
+		TemplateEngine.Reload(true)
+		TemplateEngine.Debug(true)
+	}
+
+	return nil
+}
+
+// ReloadTemplates reloads the template engine (for theme switching)
+func ReloadTemplates() error {
+	return LoadTemplates()
+}
+
 // Serve web service
 func Serve() {
-	engine := html.New("resource/theme", ".html")
-	setFuncMap(engine)
+	// 加载模板
+	if err := LoadTemplates(); err != nil {
+		log.Printf("Warning: Failed to load templates: %v", err)
+	}
+
 	dbErrors := []error{
 		gorm.ErrInvalidTransaction,
 	}
@@ -132,7 +266,7 @@ func Serve() {
 		EnableTrustedProxyCheck: solitudes.System.Config.EnableTrustedProxyCheck,
 		TrustedProxies:          solitudes.System.Config.TrustedProxies,
 		ProxyHeader:             solitudes.System.Config.ProxyHeader,
-		Views:                   engine,
+		Views:                   TemplateEngine,
 		ErrorHandler: func(c *fiber.Ctx, e error) error {
 			// 404 页面
 			if e == gorm.ErrRecordNotFound {
@@ -147,7 +281,11 @@ func Serve() {
 				errMsg = "Please contact the webmaster"
 			}
 			if strings.Contains(string(c.Request().Header.Peek("Accept")), "html") {
-				return c.Status(http.StatusInternalServerError).Render("default/error", injectSiteData(c, fiber.Map{
+				templateName := "site/error"
+				if isAdminPath(c.Path()) {
+					templateName = "admin/error"
+				}
+				return c.Status(http.StatusInternalServerError).Render(templateName, injectSiteData(c, fiber.Map{
 					"title": title,
 					"msg":   errMsg,
 				}))
@@ -156,36 +294,37 @@ func Serve() {
 			return e
 		},
 	})
-	if solitudes.System.Config.Debug {
-		app.Use(logger.New())
-		engine.Reload(true)
-		engine.Debug(true)
-	}
 
 	app.Use(trans, auth)
 	app.Get("/", index)
 	app.Get("/favicon.ico", faviconHandler)
+	app.Get("/logo.png", logoHandler)
 	app.Get("/feed/:format?", feedHandler)
-	app.Get("/archive/:page?", archive)
+	app.Get("/posts/:page?", posts)
 	app.Get("/books/:page?", book)
 	app.Get("/search/", search)
 	app.Get("/tags/:tag/:page?", tags)
 	app.Get("/tags/", tagsCloud)
-	app.Get("/r/go", goRedirect) // 外部链接跳转
-	app.Get("/login", guestRequired, login)
-	app.Post("/login", guestRequired, loginHandler)
+	app.Get("/r/go", goRedirect)
+	app.Get("/robots.txt", robotsHandler)
+	app.Get("/sitemap.xml", sitemapHandler)
 	app.Post("/logout", loginRequired, logoutHandler)
 	app.Get("/captcha", generateCaptcha)
-	app.Post("/count", count)
-	app.Post("/comment", commentHandler)
+	app.Post("/api/comment", commentHandler)
+	app.Post("/api/count", count)
+	app.Get("/api/commenter-info", commenterInfoHandler)
 
 	// Email tracking endpoints: redirect (primary) + pixel (backup), both use token lookup
 	app.Get("/r/:token", trackEmailReadRedirect)
 	app.Get("/static/i/:token", trackEmailRead)
-	app.Static("/static", "resource/static")
+	app.Get("/admin/static/*", themeStaticHandler)
+	app.Get("/static/*", themeStaticHandler)
 	app.Static("/upload", "data/upload")
 
-	admin := app.Group("/admin", loginRequired)
+	app.Get("/admin/login", guestRequired, login)
+	app.Post("/admin/login", guestRequired, loginHandler)
+
+	admin := app.Group("/admin/", loginRequired)
 	admin.Get("/", manager)
 	admin.Get("/publish", publish)
 	admin.Post("/publish", publishHandler)
@@ -206,15 +345,43 @@ func Serve() {
 	admin.Patch("/tags", renameTag)
 	admin.Get("/api/search-tags", searchTags)
 	admin.Get("/api/search-books", searchBooks)
+	admin.Get("/theme/preview/:kind/:name", themePreview)
 
 	app.Get("/:slug/:version?", article)
 	app.Use(page404)
 
+	if solitudes.System.Config.Debug {
+		app.Use(logger.New())
+	}
+
 	app.Listen(":8080")
 }
 
+func themePreview(c *fiber.Ctx) error {
+	kind := c.Params("kind")
+	name := c.Params("name")
+	if kind != "site" && kind != "admin" {
+		return c.SendStatus(http.StatusNotFound)
+	}
+	path := fmt.Sprintf("resource/themes/%s/%s/screenshot.png", kind, name)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return c.SendStatus(http.StatusNotFound)
+	}
+	return c.SendFile(filepath.Clean(path))
+}
+
 func faviconHandler(c *fiber.Ctx) error {
-	return c.SendFile("resource/static/cactus/images/favicon.ico")
+	if _, err := os.Stat("data/upload/favicon.ico"); err == nil {
+		return c.SendFile("data/upload/favicon.ico")
+	}
+	return c.SendFile(ThemeStaticRoot("site", solitudes.System.Config.Site.Theme) + "/images/favicon.ico")
+}
+
+func logoHandler(c *fiber.Ctx) error {
+	if _, err := os.Stat("data/upload/logo.png"); err == nil {
+		return c.SendFile("data/upload/logo.png")
+	}
+	return c.SendFile(ThemeStaticRoot("site", solitudes.System.Config.Site.Theme) + "/images/logo.png")
 }
 
 // goRedirect 处理外部链接跳转
@@ -226,7 +393,7 @@ func goRedirect(c *fiber.Ctx) error {
 
 	// 显示跳转提示页面，实际解析由前端 JS 完成
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Render("default/redirect", injectSiteData(c, fiber.Map{
+	return c.Render("site/redirect", injectSiteData(c, fiber.Map{
 		"title":             tr.T("redirect_title"),
 		"msg":               tr.T("redirect_msg"),
 		"continue_text":     tr.T("redirect_continue"),
@@ -239,10 +406,70 @@ func goRedirect(c *fiber.Ctx) error {
 
 func page404(c *fiber.Ctx) error {
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
+	templateName := "site/error"
+	if isAdminPath(c.Path()) {
+		templateName = "admin/error"
+	}
+	c.Status(http.StatusNotFound).Render(templateName, injectSiteData(c, fiber.Map{
 		"title": tr.T("404_title"),
 		"msg":   tr.T("404_msg"),
 	}))
+	return nil
+}
+
+func robotsHandler(c *fiber.Ctx) error {
+	domain := solitudes.System.Config.Site.Domain
+	robotsTxt := fmt.Sprintf(`User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /r/
+Disallow: /feed/
+Sitemap: https://%s/sitemap.xml
+`, domain)
+	c.Set("Content-Type", "text/plain")
+	c.Status(http.StatusOK).SendString(robotsTxt)
+	return nil
+}
+
+func sitemapHandler(c *fiber.Ctx) error {
+	domain := solitudes.System.Config.Site.Domain
+	var sb strings.Builder
+	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+`)
+	sb.WriteString(fmt.Sprintf(`  <url>
+    <loc>https://%s/</loc>
+  </url>
+`, domain))
+	var articles []model.Article
+	solitudes.System.DB.Order("created_at DESC").Find(&articles)
+	for _, article := range articles {
+		if article.IsPrivate {
+			continue
+		}
+		sb.WriteString(fmt.Sprintf(`  <url>
+    <loc>https://%s/%s/</loc>
+    <lastmod>%s</lastmod>
+  </url>
+`, domain, article.Slug, article.UpdatedAt.Format("2006-01-02")))
+	}
+	sb.WriteString(`  <url>
+    <loc>https://`)
+	sb.WriteString(domain)
+	sb.WriteString(`/posts/</loc>
+  </url>
+`)
+	var tags []string
+	solitudes.System.DB.Raw(`select distinct unnest(articles.tags) t from articles where unnest(articles.tags) is not null`).Scan(&tags)
+	for _, tag := range tags {
+		sb.WriteString(fmt.Sprintf(`  <url>
+    <loc>https://%s/tags/%s/</loc>
+  </url>
+`, domain, url.QueryEscape(tag)))
+	}
+	sb.WriteString(`</urlset>`)
+	c.Set("Content-Type", "application/xml")
+	c.Status(http.StatusOK).SendString(sb.String())
 	return nil
 }
 
@@ -313,14 +540,27 @@ func setFuncMap(engine *html.Engine) {
 				"Conf":     solitudes.System.Config,
 			}
 		},
-		"substr": func(s string, start, length int) string {
+		"substr": func(v interface{}, start, length int) string {
+			var s string
+			switch t := v.(type) {
+			case string:
+				s = t
+			case template.HTML:
+				s = string(t)
+			default:
+				s = fmt.Sprint(v)
+			}
 			runes := []rune(s)
-			if start < 0 || start >= len(runes) {
+			l := len(runes)
+			if l == 0 || start < 0 || start >= l {
 				return ""
 			}
 			end := start + length
-			if end > len(runes) {
-				end = len(runes)
+			if end > l {
+				end = l
+			}
+			if start >= end {
+				return ""
 			}
 			return string(runes[start:end])
 		},
@@ -354,7 +594,7 @@ func auth(c *fiber.Ctx) error {
 
 func loginRequired(c *fiber.Ctx) error {
 	if !c.Locals(solitudes.CtxAuthorized).(bool) {
-		c.Redirect("/login", http.StatusFound)
+		c.Redirect("/admin/login", http.StatusFound)
 		return nil
 	}
 	return c.Next()
@@ -392,6 +632,7 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 
 	var soli = make(map[string]interface{})
 	soli["Conf"] = solitudes.System.Config
+	soli["Theme"] = solitudes.System.Config.Site.ThemeConfig
 	soli["Title"] = title
 	soli["Keywords"] = keywords
 	soli["BuildVersion"] = solitudes.BuildVersion
@@ -400,6 +641,7 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	soli["Data"] = data
 	soli["Tr"] = c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	soli["Path"] = c.Path()
+	soli["Now"] = time.Now()
 
 	return soli
 }

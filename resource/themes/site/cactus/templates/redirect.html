@@ -1,0 +1,53 @@
+{{define "site/redirect"}}
+{{template "site/header" .}}
+{{template "site/menu" .}}
+<section>
+    <span class="h1">{{.Data.title}}</span>
+    <div id="redirect-container">
+        <p>{{.Data.msg}}</p>
+        <p id="target-url"></p>
+        <p><a id="continue-link" href="#" rel="noopener noreferrer">{{.Data.continue_text}}</a></p>
+        <p id="countdown"></p>
+    </div>
+</section>
+<script>
+    (function () {
+        var params = new URLSearchParams(window.location.search);
+        var encodedUrl = params.get('url');
+
+        if (!encodedUrl) {
+            document.getElementById('redirect-container').innerHTML = '<p>{{.Data.error_no_url}}</p>';
+            return;
+        }
+
+        try {
+            var targetUrl = atob(encodedUrl.replace(/-/g, '+').replace(/_/g, '/'));
+
+            var url = new URL(targetUrl);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                throw new Error('Invalid protocol');
+            }
+
+            document.getElementById('target-url').innerHTML = '<code>' + targetUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code>';
+
+            var continueLink = document.getElementById('continue-link');
+            continueLink.href = targetUrl;
+
+            var countdown = 5;
+            var countdownEl = document.getElementById('countdown');
+            var timer = setInterval(function () {
+                countdownEl.textContent = '{{.Data.auto_redirect}} ' + countdown + ' {{.Data.seconds}}';
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(timer);
+                    window.location.href = targetUrl;
+                }
+            }, 1000);
+
+        } catch (e) {
+            document.getElementById('redirect-container').innerHTML = '<p>{{.Data.error_invalid_url}}</p>';
+        }
+    })();
+</script>
+{{template "site/footer" .}}
+{{end}}

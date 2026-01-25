@@ -1,0 +1,71 @@
+{{define "site/footer"}}
+<footer class="mt-auto">
+    <div class="app-layout py-6 sm:py-4 border-t border-border">
+        <div class="flex flex-col items-center justify-between sm:flex-row-reverse gap-4">
+            <div class="flex flex-wrap items-center gap-6 text-foreground/80">
+                {{range index .Theme "astro-paper.footermenus"}}
+                <a href="{{.link}}" class="hover:text-accent transition p-1" {{if .black}}target="_blank"{{end}} aria-label="{{.name}}" title="{{.name}}">
+                    {{if .icon}}<i class="{{.icon}} text-xl"></i>{{else}}{{.name}}{{end}}
+                </a>
+                {{end}}
+            </div>
+            
+            <div class="flex flex-col items-center text-sm text-foreground/70 whitespace-nowrap sm:flex-row">
+                <span>Copyright &copy; {{tf .Now "2006"}} {{.Conf.User.Nickname}}</span>
+                <span class="flex items-center">
+                    <span class="hidden sm:inline mx-2 opacity-50">|</span>
+                    Powered by <a href="https://github.com/naiba/solitudes" target="_blank" rel="noopener noreferrer" class="text-accent hover:underline ml-1">Solitudes</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/method.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+<script src="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css">
+
+<script>
+    (function () {
+        const isDarkMode = document.documentElement.classList.contains('dark');
+        
+        try {
+            document.querySelectorAll(".language-echarts,.language-mindmap").forEach(e => {
+                e.style.height = e.offsetWidth * 0.5 + 'px';
+            })
+        } catch (error) { console.log(error); }
+
+        try {
+            const renders = {
+                "mermaidRender": Vditor.mermaidRender,
+                "mindmapRender": Vditor.mindmapRender,
+                "chartRender": Vditor.chartRender,
+                "mediaRender": Vditor.mediaRender,
+                "mathRender": Vditor.mathRender,
+                "graphvizRender": Vditor.graphvizRender,
+                "plantumlRender": Vditor.plantumlRender,
+            };
+            for (let key in renders) {
+                const render = renders[key];
+                try {
+                    if (key === "mermaidRender") {
+                        render(document, undefined, isDarkMode ? "dark" : "default");
+                    } else {
+                        render(document);
+                    }
+                } catch (error) { console.log(key, error); }
+            }
+        } catch (error) { console.log(error); }
+
+        if (typeof CopyButtonPlugin !== 'undefined') {
+            hljs.addPlugin(new CopyButtonPlugin());
+        }
+        hljs.highlightAll();
+    })()
+</script>
+
+</body>
+</html>
+{{end}}

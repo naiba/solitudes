@@ -1,0 +1,68 @@
+{{define "site/index"}}
+{{template "site/header" .}}
+<main id="main-content" class="app-layout flex-1 py-8">
+    <!-- Hero Section -->
+    {{ $top := index .Theme "astro-paper.hometopcontent" }}
+    {{if $top}}
+    <section class="pt-8 pb-6 prose dark:prose-invert max-w-none">
+        {{(md "home-top" (printf "%s" $top))|unsafe}}
+    </section>
+    {{end}}
+    
+    <!-- Featured Posts -->
+    {{if .Data.mostRead}}
+    <section class="pt-12 pb-6">
+        <h2 class="text-2xl font-semibold tracking-wide mb-6">{{.Tr.T "featured"}}</h2>
+        <ul class="space-y-6">
+            {{range .Data.mostRead}}
+            {{template "site/article_list_entry" (articleData . $.Tr)}}
+            {{end}}
+        </ul>
+    </section>
+    {{end}}
+    
+    <!-- Recent Posts -->
+    {{if .Data.articles}}
+    <section class="pt-12 pb-6">
+        <h2 class="text-2xl font-semibold tracking-wide mb-6">{{.Tr.T "recent_posts"}}</h2>
+        <ul class="space-y-6">
+            {{range .Data.articles}}
+            {{template "site/article_list_entry" (articleData . $.Tr)}}
+            {{end}}
+        </ul>
+    </section>
+    
+    <div class="my-8 text-center">
+        <a href="/posts/" class="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent-hover transition no-underline">
+            <span>{{.Tr.T "all_posts"}}</span>
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </div>
+    {{end}}
+    
+    <!-- Topics -->
+    {{if .Data.topics}}
+    <section class="pt-12 pb-6">
+        <h2 class="text-2xl font-semibold tracking-wide mb-6">{{.Tr.T "topics"}}</h2>
+        <ul class="space-y-6">
+            {{range .Data.topics}}
+            {{template "site/article_list_entry" (articleData . $.Tr)}}
+            {{end}}
+        </ul>
+        <div class="mt-6 text-center">
+            <a href="/tags/Topic/" class="text-accent hover:underline">
+                {{.Tr.T "view_all_topics"}} <i class="fa-solid fa-arrow-right ml-1"></i>
+            </a>
+        </div>
+    </section>
+    {{end}}
+
+    {{ $bottom := index .Theme "astro-paper.homebottomcontent" }}
+    {{if $bottom}}
+    <section class="pt-12 pb-6 prose dark:prose-invert max-w-none">
+        {{(md "home-bottom" (printf "%s" $bottom))|unsafe}}
+    </section>
+    {{end}}
+</main>
+{{template "site/footer" .}}
+{{end}}

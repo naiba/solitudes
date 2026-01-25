@@ -1,0 +1,28 @@
+{{define "site/search"}}
+{{template "site/header" .}}
+{{template "site/menu" .}}
+<article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
+  <div class="content" itemprop="articleBody">
+    {{template "site/search_form" .}}
+    <section id="search">
+      {{if .Data.results}}
+      <div id="search-result">
+        <ul class="search-result-list">
+          {{range .Data.results}}
+          <li>
+            <a href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
+            <p class="search-result">
+              {{.Content|unsafe}}
+            </p>
+          </li>
+          {{end}}
+        </ul>
+      </div>
+      {{else}}
+      <p class="search-no-result" style="display: block;">{{.Tr.T "no_search_results"}}</p>
+      {{end}}
+    </section>
+  </div>
+</article>
+{{template "site/footer" .}}
+{{end}}

@@ -19,7 +19,7 @@ func article(c *fiber.Ctx) error {
 	var a model.Article
 	if err := solitudes.System.DB.Take(&a, "slug = ?", c.Params("slug")).Error; err == gorm.ErrRecordNotFound {
 		tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-		c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
+		c.Status(http.StatusNotFound).Render("site/error", injectSiteData(c, fiber.Map{
 			"title": tr.T("404_title"),
 			"msg":   tr.T("404_msg"),
 		}))
@@ -45,7 +45,7 @@ func article(c *fiber.Ctx) error {
 		var history model.ArticleHistory
 		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, version).Error; err == gorm.ErrRecordNotFound {
 			tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-			c.Status(http.StatusNotFound).Render("default/error", injectSiteData(c, fiber.Map{
+			c.Status(http.StatusNotFound).Render("site/error", injectSiteData(c, fiber.Map{
 				"title": tr.T("404_title"),
 				"msg":   tr.T("404_msg"),
 			}))
@@ -105,7 +105,7 @@ func article(c *fiber.Ctx) error {
 		a.Content = "Private Article"
 	}
 
-	c.Status(http.StatusOK).Render("default/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
+	c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
 		"title":        title,
 		"keywords":     a.RawTags,
 		"article":      &a,

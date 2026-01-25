@@ -1,0 +1,630 @@
+[
+    {
+        "locale": "zh",
+        "key": "home",
+        "trans": "首页"
+    },
+    {
+        "locale": "zh",
+        "key": "login",
+        "trans": "登录"
+    },
+    {
+        "locale": "zh",
+        "key": "remember_me",
+        "trans": "记住我"
+    },
+    {
+        "locale": "zh",
+        "key": "sign_in",
+        "trans": "登录"
+    },
+    {
+        "locale": "zh",
+        "key": "sign_in_subtitle",
+        "trans": "登录以继续"
+    },
+    {
+        "locale": "zh",
+        "key": "password",
+        "trans": "密码"
+    },
+    {
+        "locale": "zh",
+        "key": "manage_articles",
+        "trans": "管理文章"
+    },
+    {
+        "locale": "zh",
+        "key": "manage_tags",
+        "trans": "管理标签"
+    },
+    {
+        "locale": "zh",
+        "key": "tags",
+        "trans": "标签"
+    },
+    {
+        "locale": "zh",
+        "key": "title",
+        "trans": "标题"
+    },
+    {
+        "locale": "zh",
+        "key": "read",
+        "trans": "阅读"
+    },
+    {
+        "locale": "zh",
+        "key": "slug",
+        "trans": "链接"
+    },
+    {
+        "locale": "zh",
+        "key": "created_at",
+        "trans": "发布时间"
+    },
+    {
+        "locale": "zh",        "key": "email_status",
+        "trans": "邮件状态"
+    },
+    {
+        "locale": "zh",        "key": "manage",
+        "trans": "管理"
+    },
+    {
+        "locale": "zh",
+        "key": "edit",
+        "trans": "编辑"
+    },
+    {
+        "locale": "zh",
+        "key": "delete",
+        "trans": "删除"
+    },
+    {
+        "locale": "zh",
+        "key": "previous",
+        "trans": "上一页"
+    },
+    {
+        "locale": "zh",
+        "key": "next",
+        "trans": "下一页"
+    },
+    {
+        "locale": "zh",
+        "key": "manage_comments",
+        "trans": "管理评论"
+    },
+    {
+        "locale": "zh",
+        "key": "content",
+        "trans": "内容"
+    },
+    {
+        "locale": "zh",
+        "key": "author",
+        "trans": "作者"
+    },
+    {
+        "locale": "zh",
+        "key": "article",
+        "trans": "文章"
+    },
+    {
+        "locale": "zh",
+        "key": "articles",
+        "trans": "文章"
+    },
+    {
+        "locale": "zh",
+        "key": "version",
+        "trans": "版本"
+    },
+    {
+        "locale": "zh",
+        "key": "sign_out",
+        "trans": "退出登录"
+    },
+    {
+        "locale": "zh",
+        "key": "publish",
+        "trans": "发布"
+    },
+    {
+        "locale": "zh",
+        "key": "compose",
+        "trans": "撰写"
+    },
+    {
+        "locale": "zh",
+        "key": "media",
+        "trans": "文件"
+    },
+    {
+        "locale": "zh",
+        "key": "manage_media",
+        "trans": "管理文件"
+    },
+    {
+        "locale": "zh",
+        "key": "dashboard",
+        "trans": "仪表盘"
+    },
+    {
+        "locale": "zh",
+        "key": "dashboard_subtitle",
+        "trans": "博客数据概览"
+    },
+    {
+        "locale": "zh",
+        "key": "days_left_from_the_last_post",
+        "trans": "距离上次发布文章的天数"
+    },
+    {
+        "locale": "zh",
+        "key": "days_left_from_the_last_comment",
+        "trans": "距离上次收到评论的天数"
+    },
+    {
+        "locale": "zh",
+        "key": "labels",
+        "trans": "标签"
+    },
+    {
+        "locale": "zh",
+        "key": "memory_usage",
+        "trans": "内存占用"
+    },
+    {
+        "locale": "zh",
+        "key": "gc_num",
+        "trans": "内存回收次数"
+    },
+    {
+        "locale": "zh",
+        "key": "routine_num",
+        "trans": "运行中协程数量"
+    },
+    {
+        "locale": "zh",
+        "key": "rebuild_fulltext_search_data",
+        "trans": "重建全文搜索数据"
+    },
+    {
+        "locale": "zh",
+        "key": "filename",
+        "trans": "文件名"
+    },
+    {
+        "locale": "zh",
+        "key": "uploaded_at",
+        "trans": "上传时间"
+    },
+    {
+        "locale": "zh",
+        "key": "publish_article",
+        "trans": "发布文章"
+    },
+    {
+        "locale": "zh",
+        "key": "publish_subtitle",
+        "trans": "专注于你的写作"
+    },
+    {
+        "locale": "zh",
+        "key": "book_refer",
+        "trans": "所属专栏"
+    },
+    {
+        "locale": "zh",
+        "key": "book_refer_placeholder",
+        "trans": "输入专栏名称搜索"
+    },
+    {
+        "locale": "zh",
+        "key": "its_a_book",
+        "trans": "这是专栏"
+    },
+    {
+        "locale": "zh",
+        "key": "new_version",
+        "trans": "大更新"
+    },
+    {
+        "locale": "zh",
+        "key": "site_settings",
+        "trans": "配置"
+    },
+    {
+        "locale": "zh",
+        "key": "settings_subtitle",
+        "trans": "配置你的博客"
+    },
+    {
+        "locale": "zh",
+        "key": "site_title",
+        "trans": "站点标题"
+    },
+    {
+        "locale": "zh",
+        "key": "site_desc",
+        "trans": "站点说明"
+    },
+    {
+        "locale": "zh",
+        "key": "site_tg_bot_token",
+        "trans": "TG Bot Token"
+    },
+    {
+        "locale": "zh",
+        "key": "site_tg_chat_id",
+        "trans": "TG Chat ID"
+    },
+    {
+        "locale": "zh",
+        "key": "site_mail_server",
+        "trans": "发信服务器"
+    },
+    {
+        "locale": "zh",
+        "key": "site_mail_port",
+        "trans": "服务器端口"
+    },
+    {
+        "locale": "zh",
+        "key": "site_mail_user",
+        "trans": "发信用户名"
+    },
+    {
+        "locale": "zh",
+        "key": "site_mail_pass",
+        "trans": "发信密码"
+    },
+    {
+        "locale": "zh",
+        "key": "site_mail_ssl",
+        "trans": "SMTP SSL"
+    },
+    {
+        "locale": "zh",
+        "key": "site_home_top_content",
+        "trans": "首页顶部内容"
+    },
+    {
+        "locale": "zh",
+        "key": "site_home_bottom_content",
+        "trans": "首页底部内容"
+    },
+    {
+        "locale": "zh",
+        "key": "site_theme",
+        "trans": "站点主题"
+    },
+    {
+        "locale": "zh",
+        "key": "admin_theme",
+        "trans": "管理主题"
+    },
+    {
+        "locale": "zh",
+        "key": "theme_config",
+        "trans": "主题配置"
+    },
+    {
+        "locale": "zh",
+        "key": "site_akismet",
+        "trans": "Akismet"
+    },
+    {
+        "locale": "zh",
+        "key": "site_domain",
+        "trans": "站点域名"
+    },
+    {
+        "locale": "zh",
+        "key": "site_header_menus",
+        "trans": "顶部菜单"
+    },
+    {
+        "locale": "zh",
+        "key": "site_footer_menus",
+        "trans": "页脚菜单"
+    },
+    {
+        "locale": "zh",
+        "key": "site_custom_code",
+        "trans": "自定义代码 (HTML, <script>, <style>)"
+    },
+    {
+        "locale": "zh",
+        "key": "site_keywords",
+        "trans": "站点关键字"
+    },
+    {
+        "locale": "zh",
+        "key": "save",
+        "trans": "保存"
+    },
+    {
+        "locale": "zh",
+        "key": "old_password",
+        "trans": "旧密码"
+    },
+    {
+        "locale": "zh",
+        "key": "new_password",
+        "trans": "新密码"
+    },
+    {
+        "locale": "zh",
+        "key": "confirm_password",
+        "trans": "确认密码"
+    },
+    {
+        "locale": "zh",
+        "key": "input_password_if_you_want_change_it",
+        "trans": "如果您想修改密码，输入您的旧密码"
+    },
+    {
+        "locale": "zh",
+        "key": "captcha",
+        "trans": "验证码"
+    },
+    {
+        "locale": "zh",
+        "key": "enter_captcha",
+        "trans": "输入验证码"
+    },
+    {
+        "locale": "zh",
+        "key": "refresh_captcha",
+        "trans": "刷新验证码"
+    },
+    {
+        "locale": "zh",
+        "key": "view_site",
+        "trans": "查看网站"
+    },
+    {
+        "locale": "zh",
+        "key": "system_stats",
+        "trans": "系统状态"
+    },
+    {
+        "locale": "zh",
+        "key": "quick_actions",
+        "trans": "快捷操作"
+    },
+    {
+        "locale": "zh",
+        "key": "confirm_rebuild_search",
+        "trans": "确定要重建全文搜索数据吗？"
+    },
+    {
+        "locale": "zh",
+        "key": "rebuild_successful",
+        "trans": "重建成功"
+    },
+    {
+        "locale": "zh",
+        "key": "article_settings",
+        "trans": "文章设置"
+    },
+    {
+        "locale": "zh",
+        "key": "article_title_placeholder",
+        "trans": "文章标题"
+    },
+    {
+        "locale": "zh",
+        "key": "private",
+        "trans": "私密"
+    },
+    {
+        "locale": "zh",
+        "key": "template",
+        "trans": "模板"
+    },
+    {
+        "locale": "zh",
+        "key": "lowercase_hyphens_only",
+        "trans": "仅限小写字母和连字符"
+    },
+    {
+        "locale": "zh",
+        "key": "comma_separated_tags",
+        "trans": "用逗号分隔多个标签"
+    },
+    {
+        "locale": "zh",
+        "key": "publish_failed",
+        "trans": "发布失败："
+    },
+    {
+        "locale": "zh",
+        "key": "site_information",
+        "trans": "站点信息"
+    },
+    {
+        "locale": "zh",
+        "key": "notifications",
+        "trans": "通知设置"
+    },
+    {
+        "locale": "zh",
+        "key": "email_settings",
+        "trans": "邮件设置"
+    },
+    {
+        "locale": "zh",
+        "key": "spam_protection",
+        "trans": "垃圾评论防护"
+    },
+    {
+        "locale": "zh",
+        "key": "menus_custom_code",
+        "trans": "菜单与自定义代码"
+    },
+    {
+        "locale": "zh",
+        "key": "home_page_content",
+        "trans": "首页内容"
+    },
+    {
+        "locale": "zh",
+        "key": "user_account",
+        "trans": "用户账户"
+    },
+    {
+        "locale": "zh",
+        "key": "old_password_empty",
+        "trans": "请输入旧密码"
+    },
+    {
+        "locale": "zh",
+        "key": "password_mismatch",
+        "trans": "两次输入的密码不一致"
+    },
+    {
+        "locale": "zh",
+        "key": "save_failed",
+        "trans": "保存失败："
+    },
+    {
+        "locale": "zh",
+        "key": "articles_subtitle",
+        "trans": "管理已发布的文章"
+    },
+    {
+        "locale": "zh",
+        "key": "page_number",
+        "trans": "第 {0} 页"
+    },
+    {
+        "locale": "zh",
+        "key": "confirm_delete",
+        "trans": "确定要删除吗？"
+    },
+    {
+        "locale": "zh",
+        "key": "comments_subtitle",
+        "trans": "管理博客评论"
+    },
+    {
+        "locale": "zh",
+        "key": "spam",
+        "trans": "垃圾"
+    },
+    {
+        "locale": "zh",
+        "key": "confirm_spam",
+        "trans": "确定要标记为垃圾评论吗？"
+    },
+    {
+        "locale": "zh",
+        "key": "media_subtitle",
+        "trans": "管理已上传的文件"
+    },
+    {
+        "locale": "zh",
+        "key": "tags_subtitle",
+        "trans": "管理文章标签"
+    },
+    {
+        "locale": "zh",
+        "key": "ensure_content_saved",
+        "trans": "请确保编辑内容已妥善保存"
+    },
+    {
+        "locale": "zh",
+        "key": "quick_topic_publish",
+        "trans": "快速哔哔"
+    },
+    {
+        "locale": "zh",
+        "key": "topic_content_placeholder",
+        "trans": "此刻的想法..."
+    },
+    {
+        "locale": "zh",
+        "key": "publish_now",
+        "trans": "立即发布"
+    },
+    {
+        "locale": "zh",
+        "key": "publish_success",
+        "trans": "发布成功"
+    },
+    {
+        "locale": "zh",
+        "key": "error_occurred",
+        "trans": "发生错误"
+    },
+    {
+        "locale": "zh",
+        "key": "delete_file_usage_first",
+        "trans": "请先在文章中移除该文件的引用。"
+    },
+    {
+        "locale": "zh",
+        "key": "disable_comment",
+        "trans": "关闭评论"
+    },
+    {
+        "locale": "zh",
+        "key": "created_at_label",
+        "trans": "创建于"
+    },
+    {
+        "locale": "zh",
+        "key": "comments",
+        "trans": "评论"
+    },
+    {
+        "locale": "zh",
+        "key": "comments",
+        "trans": "评论"
+    },
+    {
+        "locale": "zh",
+        "key": "logo_favicon",
+        "trans": "Logo & Favicon"
+    },
+    {
+        "locale": "zh",
+        "key": "logo_png",
+        "trans": "Logo (PNG)"
+    },
+    {
+        "locale": "zh",
+        "key": "favicon_ico",
+        "trans": "Favicon (ICO)"
+    },
+    {
+        "locale": "zh",
+        "key": "back_to_dashboard",
+        "trans": "返回仪表盘"
+    },
+    {
+        "locale": "zh",
+        "key": "by",
+        "trans": "作者"
+    },
+    {
+        "locale": "zh",
+        "key": "no_preview",
+        "trans": "暂无预览图"
+    },
+    {
+        "locale": "zh",
+        "key": "theme_config_help",
+        "trans": "此处的原始 JSON 配置将覆盖主题默认值。键名通常以 themeName. 开头。"
+    },
+    {
+        "locale": "zh",
+        "key": "rss_subscribers",
+        "trans": "RSS订阅者"
+    }
+]

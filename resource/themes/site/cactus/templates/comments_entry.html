@@ -1,0 +1,33 @@
+{{define "site/comments_entry"}}
+{{range .comments}}
+<div class="row" id="comment-{{.ID}}">
+    <div class="gravatar">
+        {{if .Email}}
+        <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g" alt="{{.Nickname}}">
+        {{else}}
+        <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}">
+        {{end}}
+    </div>
+    <div>
+        <p class="comment-meta title{{if .IsAdmin}} admin{{end}}">
+            {{if .Website}}<a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener">{{.Nickname}}</a>{{else}}
+            <b>{{.Nickname}}</b>
+            {{if .IsAdmin}} <i class="fa-solid fa-circle-check"></i> {{end}}
+            {{end}}
+            <time datetime="{{iso8601 .CreatedAt}}" itemprop="datePublished">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
+            <a href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" rel="nofollow"><small>·v{{.Version}}</small></a>
+            {{if ptrStrEq .EmailReadStatus "read"}}
+            <i class="fa-solid fa-eye" style="color: #999; font-size: 0.9em;" title="{{$.tr.T "email_read"}}"></i>
+            {{else if ptrStrEq .EmailReadStatus "unread"}}
+            <i class="fa-solid fa-eye-slash" style="color: #999; font-size: 0.9em;" title="{{$.tr.T "email_unread"}}"></i>
+            {{end}}
+            <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">{{$.tr.T "reply"}}</a>
+        </p>
+        <p class="comment-meta">{{.Content}}</p>
+    </div>
+</div>
+<div class="child-node">
+    {{template "site/comments_entry" (commentsData .ChildComments $.tr)}}
+</div>
+{{end}}
+{{end}}

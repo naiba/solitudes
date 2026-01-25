@@ -11,36 +11,3 @@ user:
 site:
   spacename: Solitudes
   spacedesc: We love writing
-  hometopcontent: "# Top:\n\nA fast, simple & powerful blog framework \U0001F44D\n"
-  homebottomcontent: "# Bottom:\n\nA fast, simple & powerful blog framework \U0001F44D\n"
-  theme: white
-  headermenus:
-    - name: Home
-      link: /
-      icon: ""
-      black: false
-    - name: Archive
-      link: /archive/
-      icon: ""
-      black: false
-    - name: Books
-      link: /books/
-      icon: ""
-      black: false
-    - name: Tags
-      link: /tags
-      icon: fa-solid fa-lightbulb
-      black: false
-    - name: Solitudes
-      link: https://github.com/naiba/solitudes
-      icon: fa-brands fa-github
-      black: true
-  footermenus:
-    - name: Home
-      link: /
-      icon: ""
-      black: false
-    - name: About
-      link: /about
-      icon: fa-regular fa-lightbulb
-      black: false

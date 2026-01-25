@@ -21,6 +21,9 @@ solitudes-app
 *.log
 app.log
 
+# Worktrees
+.worktrees/
+
 # Backup files
 *.backup
 *~

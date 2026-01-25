@@ -1,0 +1,228 @@
+[
+    {
+        "locale": "zh",
+        "key": "home",
+        "trans": "首页"
+    },
+    {
+        "locale": "zh",
+        "key": "posts",
+        "trans": "文章"
+    },
+    {
+        "locale": "zh",
+        "key": "tags",
+        "trans": "标签"
+    },
+    {
+        "locale": "zh",
+        "key": "search",
+        "trans": "搜索"
+    },
+    {
+        "locale": "zh",
+        "key": "featured",
+        "trans": "精选"
+    },
+    {
+        "locale": "zh",
+        "key": "recent_posts",
+        "trans": "最近文章"
+    },
+    {
+        "locale": "zh",
+        "key": "all_posts",
+        "trans": "全部文章"
+    },
+    {
+        "locale": "zh",
+        "key": "topics",
+        "trans": "哔哔"
+    },
+    {
+        "locale": "zh",
+        "key": "view_all_topics",
+        "trans": "查看全部哔哔"
+    },
+    {
+        "locale": "zh",
+        "key": "leave_a_comment",
+        "trans": "发表评论"
+    },
+    {
+        "locale": "zh",
+        "key": "submit_comment",
+        "trans": "提交评论"
+    },
+    {
+        "locale": "zh",
+        "key": "previous",
+        "trans": "上一页"
+    },
+    {
+        "locale": "zh",
+        "key": "next",
+        "trans": "下一页"
+    },
+    {
+        "locale": "zh",
+        "key": "go_back_home",
+        "trans": "返回首页"
+    },
+    {
+        "locale": "zh",
+        "key": "tags_all_the_tags",
+        "trans": "本站使用的所有标签。"
+    },
+    {
+        "locale": "zh",
+        "key": "tags_cloud",
+        "trans": "标签云"
+    },
+    {
+        "locale": "zh",
+        "key": "skip_to_content",
+        "trans": "跳至正文"
+    },
+    {
+        "locale": "zh",
+        "key": "toggle_theme",
+        "trans": "切换主题"
+    },
+    {
+        "locale": "zh",
+        "key": "replying_to",
+        "trans": "回复"
+    },
+    {
+        "locale": "zh",
+        "key": "cancel",
+        "trans": "取消"
+    },
+    {
+        "locale": "zh",
+        "key": "submit_comment_success",
+        "trans": "评论提交成功！"
+    },
+    {
+        "locale": "zh",
+        "key": "toggle_menu",
+        "trans": "切换菜单"
+    },
+    {
+        "locale": "zh",
+        "key": "has_new_version",
+        "trans": "您正在查看的是本文章的 v{0} 版本，该文章已更新至 <a href=\"/{1}/v{2}\">v{3}</a> 版本。"
+    },
+    {
+        "locale": "zh",
+        "key": "has_old_version",
+        "trans": "您正在查看的是本文章的 v{0} 版本，您还可以查看历史版本：{1}。"
+    },
+    {
+        "locale": "zh",
+        "key": "comments",
+        "trans": "评论"
+    },
+    {
+        "locale": "zh",
+        "key": "chapters",
+        "trans": "章节"
+    },
+    {
+        "locale": "zh",
+        "key": "book",
+        "trans": "专栏"
+    },
+    {
+        "locale": "zh",
+        "key": "prev_chapter",
+        "trans": "上一章"
+    },
+    {
+        "locale": "zh",
+        "key": "next_chapter",
+        "trans": "下一章"
+    },
+    {
+        "locale": "zh",
+        "key": "go_to_page",
+        "trans": "跳转"
+    },
+    {
+        "locale": "zh",
+        "key": "search_desc",
+        "trans": "通过标题或内容搜索文章。"
+    },
+    {
+        "locale": "zh",
+        "key": "search_found_results",
+        "trans": "找到 {0} 条关于「{1}」的搜索结果"
+    },
+    {
+        "locale": "zh",
+        "key": "search_try_others",
+        "trans": "尝试不同的关键词。"
+    },
+    {
+        "locale": "zh",
+        "key": "tag_prefix",
+        "trans": "标签"
+    },
+    {
+        "locale": "zh",
+        "key": "articles_under_tag",
+        "trans": "「{0}」标签下的所有文章。"
+    },
+    {
+        "locale": "zh",
+        "key": "post",
+        "trans": "文章"
+    },
+    {
+        "locale": "zh",
+        "key": "may_not_reply_if_email_not_exist",
+        "trans": "如果不填写邮箱，我可能无法回复您的评论。"
+    },
+    {
+        "locale": "zh",
+        "key": "nickname",
+        "trans": "昵称"
+    },
+    {
+        "locale": "zh",
+        "key": "email",
+        "trans": "邮箱"
+    },
+    {
+        "locale": "zh",
+        "key": "website",
+        "trans": "网址"
+    },
+    {
+        "locale": "zh",
+        "key": "not_required",
+        "trans": "非必填"
+    },
+    {
+        "locale": "zh",
+        "key": "comment_required_fields",
+        "trans": "请填写必填项。"
+    },
+    {
+        "locale": "zh",
+        "key": "submit_failed",
+        "trans": "提交失败"
+    },
+    {
+        "locale": "zh",
+        "key": "email_read",
+        "trans": "邮件已阅"
+    },
+    {
+        "locale": "zh",
+        "key": "email_unread",
+        "trans": "邮件未阅"
+    }
+]
+

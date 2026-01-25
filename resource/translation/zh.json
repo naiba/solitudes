@@ -1,0 +1,107 @@
+[
+    {
+        "locale": "zh",
+        "key": "articles_in",
+        "trans": "「{0}」分类下的文章"
+    },
+    {
+        "locale": "zh",
+        "key": "date_format",
+        "trans": "2006-01-02"
+    },
+    {
+        "locale": "zh",
+        "key": "pagination",
+        "trans": "第 {0}/{1} 页，共 {2} 篇"
+    },
+    {
+        "locale": "zh",
+        "key": "submit_failed",
+        "trans": "提交失败："
+    },
+    {
+        "locale": "zh",
+        "key": "comment_required_fields",
+        "trans": "昵称和评论内容是必填项。"
+    },
+    {
+        "locale": "zh",
+        "key": "submitting",
+        "trans": "提交中..."
+    },
+    {
+        "locale": "zh",
+        "key": "email_read",
+        "trans": "邮件通知已读"
+    },
+    {
+        "locale": "zh",
+        "key": "email_unread",
+        "trans": "邮件通知未读"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_title",
+        "trans": "外部链接跳转"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_msg",
+        "trans": "您即将离开本站，访问外部链接："
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_continue",
+        "trans": "点击此处继续访问"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_auto",
+        "trans": "将在"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_seconds",
+        "trans": "秒后自动跳转..."
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_error_no_url",
+        "trans": "错误：未提供链接地址"
+    },
+    {
+        "locale": "zh",
+        "key": "redirect_error_invalid_url",
+        "trans": "错误：无效的链接地址"
+    },
+    {
+        "locale": "zh",
+        "key": "404_title",
+        "trans": "404 页面未找到"
+    },
+    {
+        "locale": "zh",
+        "key": "404_msg",
+        "trans": "哎呀…… 这个页面可能已经飞到了外太空。"
+    },
+    {
+        "locale": "zh",
+        "key": "updated_at",
+        "trans": "最后更新"
+    },
+    {
+        "locale": "zh",
+        "key": "search_result_title",
+        "trans": "搜索结果：「{0}」"
+    },
+    {
+        "locale": "zh",
+        "key": "has_new_version",
+        "trans": "您正在查看的是本文章的 v{0} 版本，该文章已更新至 <a href=\"/{1}/v{2}\">v{3}</a> 版本。"
+    },
+    {
+        "locale": "zh",
+        "key": "has_old_version",
+        "trans": "您正在查看的是本文章的 v{0} 版本，您还可以查看历史版本：{1}。"
+    }
+]

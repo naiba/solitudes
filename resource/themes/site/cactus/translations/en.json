@@ -1,0 +1,117 @@
+[
+    {
+        "locale": "en",
+        "key": "created_at_label",
+        "trans": "Created at"
+    },
+    {
+        "locale": "en",
+        "key": "most_read",
+        "trans": "Most Read"
+    },
+    {
+        "locale": "en",
+        "key": "writing",
+        "trans": "Writing"
+    },
+    {
+        "locale": "en",
+        "key": "no_article",
+        "trans": "No articles have been published yet"
+    },
+    {
+        "locale": "en",
+        "key": "topic",
+        "trans": "Topic"
+    },
+    {
+        "locale": "en",
+        "key": "previous_post",
+        "trans": "Previous Post"
+    },
+    {
+        "locale": "en",
+        "key": "next_post",
+        "trans": "Next Post"
+    },
+    {
+        "locale": "en",
+        "key": "return_top",
+        "trans": "Back to Top"
+    },
+    {
+        "locale": "en",
+        "key": "share",
+        "trans": "Share"
+    },
+    {
+        "locale": "en",
+        "key": "view_more",
+        "trans": "View More"
+    },
+    {
+        "locale": "en",
+        "key": "no_search_results",
+        "trans": "No results found."
+    },
+    {
+        "locale": "en",
+        "key": "go_to_page",
+        "trans": "Go"
+    },
+    {
+        "locale": "en",
+        "key": "menu",
+        "trans": "Menu"
+    },
+    {
+        "locale": "en",
+        "key": "toc",
+        "trans": "Table of Contents"
+    },
+    {
+        "locale": "en",
+        "key": "chapters",
+        "trans": "Chapters"
+    },
+    {
+        "locale": "en",
+        "key": "book",
+        "trans": "Book"
+    },
+    {
+        "locale": "en",
+        "key": "comments",
+        "trans": "Comments"
+    },
+    {
+        "locale": "en",
+        "key": "nickname",
+        "trans": "Nickname"
+    },
+    {
+        "locale": "en",
+        "key": "email",
+        "trans": "Email"
+    },
+    {
+        "locale": "en",
+        "key": "website",
+        "trans": "Website"
+    },
+    {
+        "locale": "en",
+        "key": "not_required",
+        "trans": "Not Required"
+    },
+    {
+        "locale": "en",
+        "key": "submit",
+        "trans": "Submit"
+    },
+    {
+        "locale": "en",
+        "key": "may_not_reply_if_email_not_exist",
+        "trans": "Please provide a valid email address to receive notifications when the blogger replies. You can enter your email first to auto-fill other information."
+    }
+]

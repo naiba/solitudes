@@ -28,7 +28,7 @@ func manager(c *fiber.Ctx) error {
 	var tn tagNum
 
 	var wg sync.WaitGroup
-	wg.Add(5)
+	wg.Add(6)
 	go func() {
 		defer wg.Done()
 		solitudes.System.DB.Model(model.Article{}).Count(&articleNum)
@@ -49,6 +49,20 @@ func manager(c *fiber.Ctx) error {
 		defer wg.Done()
 		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment)
 	}()
+	var rssSubscriberCount int64
+	go func() {
+		defer wg.Done()
+		oneDayAgo := time.Now().Add(-24 * time.Hour)
+		solitudes.System.DB.Raw(`
+			SELECT COUNT(*) FROM (
+				SELECT ip, COUNT(*) as cnt
+				FROM feed_visits
+				WHERE created_at > ?
+				GROUP BY ip
+				HAVING COUNT(*) >= ?
+			) t
+		`, oneDayAgo, 3).Scan(&rssSubscriberCount)
+	}()
 	wg.Wait()
 
 	var m runtime.MemStats
@@ -61,6 +75,7 @@ func manager(c *fiber.Ctx) error {
 		"lastArticlePublish": fmt.Sprintf("%.2f", time.Since(lastArticle.CreatedAt).Hours()/24),
 		"lastComment":        fmt.Sprintf("%.2f", time.Since(lastComment.CreatedAt).Hours()/24),
 		"tagNum":             tn.Count,
+		"rssSubscriberCount": rssSubscriberCount,
 
 		"memoryUsage": bToMb(m.Sys),
 		"gcNum":       m.NumGC,

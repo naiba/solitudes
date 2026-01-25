@@ -1,0 +1,10 @@
+{{define "site/error"}}
+{{template "site/header" .}}
+{{template "site/menu" .}}
+<section>
+  <span class="h1">{{.Data.title}}</span>
+  <p>{{.Data.msg}}</p>
+</section>
+{{template "site/search_form" .}}
+{{template "site/footer" .}}
+{{end}}

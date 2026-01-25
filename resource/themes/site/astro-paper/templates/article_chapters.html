@@ -1,0 +1,20 @@
+{{define "site/article_chapters"}}
+{{if .Chapters}}
+<ol class="space-y-2">
+    {{range .Chapters}}
+    <li>
+        <a href="/{{.Slug}}" class="text-accent hover:underline">
+            {{.Title}}
+        </a>
+        {{if .Chapters}}
+        <div class="ml-4 mt-2">
+            {{template "site/article_chapters" (articleData . $.Tr)}}
+        </div>
+        {{end}}
+    </li>
+    {{end}}
+</ol>
+{{else}}
+<p class="text-foreground/70 italic">No chapters yet.</p>
+{{end}}
+{{end}}

@@ -1,0 +1,39 @@
+{{define "site/header"}}
+<!DOCTYPE html>
+<html lang="{{.Tr.Locale}}">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="shortcut icon" href="/logo.png">
+    <link rel="apple-touch-icon" href="/logo.png">
+    {{ $colorScheme := index .Theme "cactus.colorscheme" }}
+    <link rel="stylesheet" href="/static/css/theme-{{ $colorScheme }}.css?v202506220100">
+    <link rel="stylesheet" href="/static/css/main.css?v202506220100">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <title>{{.Title}}</title>
+    <meta name="description" content="{{.Desc}}">
+    <meta name="keywords" content="{{.Keywords}}">
+    <link rel="alternate" type="application/rss+xml" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="//{{.Conf.Site.Domain}}/feed/rss">
+    <link rel="alternate" type="application/atom+xml" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="//{{.Conf.Site.Domain}}/feed/atom">
+    <link rel="alternate" type="application/json" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="//{{.Conf.Site.Domain}}/feed/json">
+    <link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.Path}}">
+    <meta property="og:title" content="{{.Title}}">
+    <meta property="og:description" content="{{.Desc}}">
+    <meta property="og:url" content="https://{{.Conf.Site.Domain}}{{.Path}}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{.Conf.Site.SpaceName}}">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="{{.Title}}">
+    <meta name="twitter:description" content="{{.Desc}}">
+</head>
+
+<body class="max-width mx-auto px3 ltr">
+    {{end}}

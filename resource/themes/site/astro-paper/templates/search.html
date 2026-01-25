@@ -1,0 +1,72 @@
+{{define "site/search"}}
+{{template "site/header" .}}
+<main id="main-content" class="app-layout flex-1 py-8 pb-12">
+    <h1 class="text-3xl font-bold sm:text-4xl mb-2">{{.Tr.T "search"}}</h1>
+    <p class="text-foreground/70 mb-8 italic">{{.Tr.T "search_desc"}}</p>
+    
+    <div class="mb-12">
+        <form action="/search/" method="get" class="relative group">
+            <input type="text" name="w" id="search-input" value="" 
+                class="search-input w-full px-4 py-4 bg-muted/20 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-all text-lg" 
+                placeholder="{{.Tr.T "search_placeholder"}}" required>
+            <button type="submit" class="absolute right-4 top-4 text-foreground/30 group-focus-within:text-accent transition-colors">
+                <i class="fa-solid fa-magnifying-glass text-xl"></i>
+            </button>
+        </form>
+    </div>
+
+    {{if .Data.results}}
+    <div class="space-y-4 mb-8">
+        <p class="text-sm opacity-60">
+            {{/* Avoid using uint2str on int from len */}}
+            Found {{len .Data.results}} results.
+        </p>
+        <ul class="space-y-12">
+            {{range $item := .Data.results}}
+            <li class="group">
+                <a href="/{{$item.Slug}}" class="inline-block text-xl font-bold text-accent decoration-dashed underline-offset-4 hover:underline transition">
+                    <h2 class="inline">{{$item.Title}}</h2>
+                </a>
+                <div class="mt-2 text-foreground/70 text-sm leading-relaxed search-highlight">
+                    {{$item.Content|unsafe}}
+                </div>
+            </li>
+            {{end}}
+        </ul>
+    </div>
+    {{else}}
+        {{/* Use a more robust check for empty results */}}
+        <div id="no-results-ui" class="hidden py-12 text-center">
+            <div class="text-6xl mb-4 opacity-10">
+                <i class="fa-solid fa-face-frown"></i>
+            </div>
+            <p class="text-xl font-medium text-foreground/50">{{.Tr.T "no_search_results"}}</p>
+            <p class="text-sm text-foreground/30 mt-2">{{.Tr.T "search_try_others"}}</p>
+        </div>
+    {{end}}
+</main>
+
+<script>
+    // Toggle no-results UI if search was performed but no results found
+    (function() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('w') && !document.querySelector('.search-highlight')) {
+            const noRes = document.getElementById('no-results-ui');
+            if (noRes) noRes.classList.remove('hidden');
+        }
+    })();
+</script>
+
+<style>
+    .search-highlight b {
+        color: var(--accent);
+        font-weight: 700;
+        background-color: var(--accent);
+        color: white;
+        padding: 0 2px;
+        border-radius: 2px;
+    }
+</style>
+
+{{template "site/footer" .}}
+{{end}}

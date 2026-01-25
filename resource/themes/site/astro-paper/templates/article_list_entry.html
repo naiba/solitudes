@@ -1,0 +1,79 @@
+{{define "site/article_list_entry"}}
+<li class="my-10 first:mt-0 last:mb-0 border-b border-border/30 pb-10 last:border-none">
+    {{if .article.IsTopic}}
+    <div class="topic-entry">
+        <!-- Topic Meta -->
+        <div class="flex items-center gap-2 mb-3 text-xs tracking-wider uppercase text-foreground/30 font-bold">
+            <i class="fa-solid fa-quote-left text-accent/40"></i>
+            <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt "January 02, 2006"}}</time>
+            {{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog ml-1"></i>{{end}}
+        </div>
+        
+        <!-- Topic Content - ENCLOSED IN BOX -->
+        <div class="app-prose prose max-w-none text-foreground text-lg leading-relaxed p-6 bg-muted/20 border border-border/50 rounded-2xl shadow-sm font-medium">
+            {{(md .article.ID .article.Content)|unsafe}}
+        </div>
+
+        <!-- Topic Comments Preview - UNBOXED & SUBTLE -->
+        {{if .article.Comments}}
+        <div class="mt-6 ml-4 space-y-4 border-l-2 border-border/20 pl-6">
+            {{range .article.Comments}}
+            <div class="flex gap-3 text-xs">
+                <div class="flex-shrink-0">
+                    {{if .Email}}
+                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=32&d=mm&r=g" alt="{{.Nickname}}" class="w-6 h-6 rounded-full opacity-60">
+                    {{else}}
+                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" class="w-6 h-6 rounded-full opacity-60">
+                    {{end}}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-foreground/50 leading-normal">
+                        <span class="font-bold text-foreground/70 mr-1">{{.Nickname}}</span>
+                        {{if .IsAdmin}}<i class="fa-solid fa-circle-check text-accent text-[9px] mr-1 opacity-50"></i>{{end}}
+                        <span class="opacity-70">{{.Content}}</span>
+                    </div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+        
+        <!-- Topic Footer Actions -->
+        <div class="mt-6 flex items-center gap-6 text-[10px] uppercase tracking-widest font-bold text-foreground/30">
+            <a href="/{{.article.Slug}}" class="flex items-center gap-1.5 text-accent/80 hover:text-accent transition-all">
+                <i class="fa-solid fa-comment-dots"></i>
+                {{.tr.T "leave_a_comment"}}
+            </a>
+            <span class="flex items-center gap-1.5">
+                <i class="fa-regular fa-eye"></i>
+                {{.article.ReadNum}}
+            </span>
+            {{if .article.CommentNum}}
+            <span class="flex items-center gap-1.5">
+                <i class="fa-regular fa-comment"></i>
+                {{.article.CommentNum}}
+            </span>
+            {{end}}
+        </div>
+    </div>
+    {{else}}
+    <div class="article-entry group">
+        <a href="/{{.article.Slug}}" class="inline-block text-xl font-bold text-accent decoration-dashed underline-offset-4 hover:underline focus-visible:no-underline focus-visible:underline-offset-0 transition-all duration-300">
+            <h3 class="inline">{{if .article.IsBook}}<i class="fa-solid fa-book mr-2 text-lg"></i>{{end}}{{.article.Title}}</h3>
+        </a>
+        <div class="flex items-center gap-2 mt-2 text-sm text-foreground/50">
+            <i class="fa-regular fa-calendar-alt text-xs"></i>
+            <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt "January 02, 2006"}}</time>
+            {{if .article.ReadNum}}
+            <span class="flex items-center gap-1 ml-3">
+                <i class="fa-regular fa-eye text-xs"></i>{{.article.ReadNum}}
+            </span>
+            {{end}}
+        </div>
+        <p class="mt-3 text-foreground/70 leading-relaxed line-clamp-2 italic">
+            {{substr .article.Content 0 160}}...
+        </p>
+    </div>
+    {{end}}
+</li>
+{{end}}

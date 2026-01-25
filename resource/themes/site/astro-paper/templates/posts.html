@@ -1,0 +1,82 @@
+{{define "site/posts"}}
+{{template "site/header" .}}
+{{ $tr := .Tr }}
+<main id="main-content" class="app-layout flex-1 py-8">
+    <h1 class="page-title">{{if .Data.tag}}Tag: {{.Data.tag}}{{else}}{{$tr.T "posts"}}{{end}}</h1>
+    <div class="mt-10">
+        {{if .Data.articles}}
+            {{range $yearGroup := .Data.articles}}
+                <div class="mb-12">
+                    {{range $idx, $item := $yearGroup}}{{if eq $idx 0}}
+                        <div class="flex items-baseline gap-2 mb-6">
+                            <span class="text-2xl font-bold text-foreground">{{tf $item.CreatedAt "2006"}}</span>
+                        </div>
+                        <ul class="posts-by-year-list">
+                    {{end}}{{end}}
+
+                    {{range $article := $yearGroup}}
+                        <li class="posts-by-year-item">
+                            {{if $article.IsTopic}}
+                                <div class="topic-entry-mini mb-6">
+                                    <div class="text-[10px] uppercase font-bold text-foreground/30 mb-2">
+                                        {{tf $article.CreatedAt "Jan 2, 2006"}}
+                                    </div>
+                                    <div class="app-prose prose max-w-none p-5 bg-muted/20 border border-border/40 rounded-xl">
+                                        {{(md $article.ID $article.Content)|unsafe}}
+                                    </div>
+                                    <div class="mt-3 flex gap-4 text-[10px] font-bold">
+                                        <a href="/{{$article.Slug}}" class="text-accent">{{$tr.T "leave_a_comment"}}</a>
+                                        <span class="opacity-30">Read: {{$article.ReadNum}}</span>
+                                        <span class="opacity-30">Comments: {{$article.CommentNum}}</span>
+                                    </div>
+                                </div>
+                            {{else}}
+                                <a href="/{{$article.Slug}}"><h2 class="text-lg font-bold text-accent">{{$article.Title}}</h2></a>
+                                <div class="text-xs opacity-40 mb-2">
+                                    {{tf $article.CreatedAt "Jan 2, 2006"}} | Read: {{$article.ReadNum}} | Comments: {{$article.CommentNum}}
+                                </div>
+                                <p class="text-sm line-clamp-3 text-foreground/70">{{substr $article.Content 0 100}}...</p>
+                                {{if $article.Tags}}
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        {{range $tag := $article.Tags}}
+                                            <a href="/tags/{{$tag}}" class="text-[10px] px-2 py-0.5 bg-muted/30 text-foreground/50 rounded hover:bg-accent hover:text-white transition-colors">#{{$tag}}</a>
+                                        {{end}}
+                                    </div>
+                                {{end}}
+                            {{end}}
+                        </li>
+                    {{end}}
+                    </ul>
+                </div>
+            {{end}}
+        {{end}}
+
+        <!-- Optimized Pagination -->
+        <nav class="flex flex-col items-center gap-6 mt-16 mb-8 border-t border-border pt-8" aria-label="Pagination">
+            <div class="flex items-center justify-center w-full max-w-md">
+                {{$isFirst := eq .Data.page.Page 1}}
+                {{$isLast := ge .Data.page.Page .Data.page.TotalPage}}
+
+                <a href="{{if not $isFirst}}/{{.Data.what}}/{{.Data.page.PrevPage}}/{{else}}javascript:void(0){{end}}" 
+                   class="group flex items-center gap-2 px-4 py-2 {{if $isFirst}}opacity-20 cursor-not-allowed{{else}}hover:text-accent transition-all{{end}}"
+                   aria-label="Previous Page">
+                    <i class="fa-solid fa-chevron-left text-xs group-hover:-translate-x-1 transition-transform"></i>
+                    <span class="font-bold tracking-widest uppercase text-sm italic">Prev</span>
+                </a>
+
+                <div class="flex-1 text-center font-mono text-sm opacity-60">
+                    {{.Data.page.Page}} / {{.Data.page.TotalPage}}
+                </div>
+
+                <a href="{{if not $isLast}}/{{.Data.what}}/{{.Data.page.NextPage}}/{{else}}javascript:void(0){{end}}" 
+                   class="group flex items-center gap-2 px-4 py-2 {{if $isLast}}opacity-20 cursor-not-allowed{{else}}hover:text-accent transition-all{{end}}"
+                   aria-label="Next Page">
+                    <span class="font-bold tracking-widest uppercase text-sm italic">Next</span>
+                    <i class="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+        </nav>
+    </div>
+</main>
+{{template "site/footer" .}}
+{{end}}

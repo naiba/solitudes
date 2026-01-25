@@ -1,0 +1,204 @@
+{{define "site/header"}}
+<!DOCTYPE html>
+<html lang="{{.Tr.Locale}}">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="HandheldFriendly" content="True">
+    {{ $meta := index .Theme "astro-paper.cactusmetadata" }}
+    <meta name="description" content="{{if .Desc}}{{.Desc}}{{else}}{{index $meta "description"}}{{end}}">
+    <meta name="keywords" content="{{if .Keywords}}{{.Keywords}}{{else}}{{index $meta "keywords"}}{{end}}">
+    <meta name="author" content="{{.Conf.User.Nickname}}">
+    
+    <title>{{.Title}}</title>
+    
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="shortcut icon" href="/logo.png">
+    <link rel="apple-touch-icon" href="/logo.png">
+    
+    <link rel="alternate" type="application/rss+xml" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="//{{.Conf.Site.Domain}}/feed/rss">
+    <link rel="alternate" type="application/atom+xml" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="//{{.Conf.Site.Domain}}/feed/atom">
+    <link rel="alternate" type="application/json" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="//{{.Conf.Site.Domain}}/feed/json">
+    
+    <link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.Path}}">
+    
+    <meta property="og:title" content="{{.Title}}">
+    <meta property="og:description" content="{{.Desc}}">
+    <meta property="og:url" content="https://{{.Conf.Site.Domain}}{{.Path}}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{.Conf.Site.SpaceName}}">
+    <meta property="og:image" content="https://{{.Conf.Site.Domain}}/logo.png">
+    
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{.Title}}">
+    <meta name="twitter:description" content="{{.Desc}}">
+    <meta name="twitter:image" content="https://{{.Conf.Site.Domain}}/logo.png">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="stylesheet" href="/static/css/custom.css?v={{.BuildVersion}}">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        (function() {
+            const html = document.documentElement;
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                html.setAttribute('data-theme', savedTheme);
+                if (savedTheme === 'dark') {
+                    html.classList.add('dark');
+                } else {
+                    html.classList.remove('dark');
+                }
+            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                html.classList.add('dark');
+            }
+
+            // Handle title placeholder replacement
+            const params = new URLSearchParams(window.location.search);
+            const w = params.get('w') || "";
+            if (w) {
+                document.title = document.title.replace("#SOL.9527.WORD#", w);
+            } else {
+                document.title = document.title.replace("#SOL.9527.WORD#", "");
+            }
+            
+            // Auto-fill search input if on search page
+            window.addEventListener('DOMContentLoaded', () => {
+                const searchInput = document.getElementById('search-input');
+                if (searchInput && w) {
+                    searchInput.value = w;
+                }
+            });
+
+            window.toggleTheme = function() {
+                const isDark = html.classList.contains('dark');
+                const newTheme = isDark ? 'light' : 'dark';
+                if (newTheme === 'dark') {
+                    html.classList.add('dark');
+                    html.setAttribute('data-theme', 'dark');
+                } else {
+                    html.classList.remove('dark');
+                    html.setAttribute('data-theme', 'light');
+                }
+                localStorage.setItem('theme', newTheme);
+            };
+        })();
+    </script>
+    <style>
+        .skip-to-content {
+            position: absolute;
+            left: -9999px;
+            z-index: 999;
+            padding: 1rem;
+            background: var(--accent);
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+        }
+        .skip-to-content:focus {
+            left: 1rem;
+            top: 1rem;
+            outline: 2px solid var(--accent);
+        }
+        /* Mode Toggle Icons */
+        .dark #theme-toggle-dark-icon { display: none; }
+        .dark #theme-toggle-light-icon { display: block; }
+        #theme-toggle-dark-icon { display: block; }
+        #theme-toggle-light-icon { display: none; }
+    </style>
+</head>
+
+<body class="min-h-screen bg-background text-foreground font-sans antialiased flex flex-col">
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
+
+<header class="bg-background sticky top-0 z-50">
+    <div class="app-layout py-4 sm:py-6 border-b border-border">
+        <div class="flex items-center justify-between">
+            <a href="/" class="text-xl font-semibold sm:text-2xl text-foreground no-underline hover:text-accent">
+                {{.Conf.Site.SpaceName}}
+            </a>
+            
+            <nav class="flex items-center gap-4">
+                <button id="mobile-menu-btn" class="sm:hidden p-2 text-foreground hover:text-accent" aria-label="{{.Tr.T "toggle_menu"}}">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                
+                <ul id="desktop-menu" class="hidden sm:flex items-center gap-2">
+                    {{range index .Theme "astro-paper.headermenus"}}
+                    <li>
+                        <a href="{{.link}}" class="px-3 py-2 text-sm font-bold hover:text-accent transition" {{if .black}}target="_blank"{{end}}>
+                            {{if .icon}}<i class="{{.icon}}"></i>{{end}}
+                            {{.name}}
+                        </a>
+                    </li>
+                    {{end}}
+                    <li>
+                        <button onclick="window.toggleTheme()" class="px-3 py-2 text-sm font-medium hover:text-accent transition" aria-label="{{.Tr.T "toggle_theme"}}">
+                            <i id="theme-toggle-dark-icon" class="fa-solid fa-moon"></i>
+                            <i id="theme-toggle-light-icon" class="fa-solid fa-sun"></i>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+        <ul id="mobile-menu" class="hidden bg-background border-t border-border mt-4 p-4 sm:hidden">
+            {{range index .Theme "astro-paper.headermenus"}}
+            <li>
+                <a href="{{.link}}" class="block px-3 py-2 font-bold hover:text-accent" {{if .black}}target="_blank"{{end}}>
+                    {{if .icon}}<i class="{{.icon}}"></i>{{end}}
+                    {{.name}}
+                </a>
+            </li>
+            {{end}}
+            <li>
+                <button onclick="window.toggleTheme()" class="block w-full text-left px-3 py-2 hover:text-accent">{{.Tr.T "toggle_theme"}}</button>
+            </li>
+        </ul>
+    </div>
+</header>
+
+
+{{if ne .Path "/"}}
+<nav class="app-layout mt-8 mb-1" aria-label="breadcrumb">
+    <ul class="font-light flex items-center gap-2">
+        <li>
+            <a href="/" class="opacity-80 hover:opacity-100 transition">{{.Tr.T "home"}}</a>
+        </li>
+        <li class="opacity-50 font-thin">&raquo;</li>
+        <li>
+            {{if .Data.tag}}
+            <a href="/tags/" class="opacity-80 hover:opacity-100 transition">{{.Tr.T "tags"}}</a>
+            </li>
+            <li class="opacity-50 font-thin">&raquo;</li>
+            <li><span class="opacity-75">{{.Data.tag}}</span>
+            {{else if eq .Path "/tags/"}}
+            <span class="opacity-75">{{.Tr.T "tags"}}</span>
+            {{else if eq .Path "/posts/"}}
+            <span class="opacity-75 text-foreground">{{.Tr.T "posts"}}</span>
+            {{else if eq .Path "/search/"}}
+            <span class="opacity-75">{{.Tr.T "search"}}</span>
+            {{else}}
+            <span class="opacity-75">{{.Tr.T "post"}}</span>
+            {{end}}
+        </li>
+    </ul>
+</nav>
+{{end}}
+
+<script>
+    document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenu.classList.toggle('hidden');
+    });
+</script>
+{{end}}

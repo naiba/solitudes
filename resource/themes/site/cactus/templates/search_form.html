@@ -1,0 +1,17 @@
+{{define "site/search_form"}}
+<section id="search">
+    <h2 class="h1">{{.Tr.T "search"}}</h2>
+    <form action="/search/" method="get">
+        <div class="row">
+            <input class="search-input" name="w">
+            <button class="base-button" type="submit">{{.Tr.T "search"}}</button>
+        </div>
+    </form>
+</section>
+<script>
+    const urlSearchParams = new URLSearchParams(window.location.search);
+    const params = Object.fromEntries(urlSearchParams.entries());
+    document.querySelector('input.search-input').value = params.w || ''
+    document.title = document.title.replace("#SOL.9527.WORD#", params.w)
+</script>
+{{end}}

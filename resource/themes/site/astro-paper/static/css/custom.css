@@ -1,0 +1,228 @@
+/* CSS Custom Properties for Theme Colors */
+:root {
+    --background: #fdfdfd;
+    --foreground: #282728;
+    --accent: #006cac;
+    --accent-hover: #005a94;
+    --muted: #f3f4f6;
+    --border: #c6dae9; /* Light mode theme border */
+}
+
+/* Automatic Dark Mode */
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --background: #1a1e2b;
+        --foreground: #eaedf3;
+        --accent: #ff6b01;
+        --accent-hover: #e55a00;
+        --muted: #2d3343;
+        --border: #6a3b1a; /* Dark mode theme border */
+    }
+}
+
+/* Manual Dark Mode Class Override */
+.dark {
+    --background: #1a1e2b;
+    --foreground: #eaedf3;
+    --accent: #ff6b01;
+    --accent-hover: #e55a00;
+    --muted: #2d3343;
+    --border: #6a3b1a;
+}
+
+/* Tailwind Compatibility Classes */
+.bg-background { background-color: var(--background); }
+.text-foreground { color: var(--foreground); }
+.text-accent { color: var(--accent); }
+.bg-muted { background-color: var(--muted); }
+.border-border { border-color: var(--border) !important; }
+.bg-accent { background-color: var(--accent); }
+.hover\:text-accent:hover { color: var(--accent); }
+.hover\:bg-accent-hover:hover { background-color: var(--accent-hover); }
+.decoration-accent { text-decoration-color: var(--accent); }
+
+/* Global Reset for Lists */
+ul, li {
+    list-style: none !important;
+    list-style-type: none !important;
+    padding: 0;
+    margin: 0;
+}
+
+/* Enable list markers only in prose content */
+.app-prose ul {
+    list-style: disc !important;
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.app-prose li {
+    list-style: inherit;
+}
+.app-prose ol {
+    list-style: decimal !important;
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Standard Width Constraints */
+.app-layout {
+    max-width: 48rem;
+    width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+/* Breadcrumb */
+.breadcrumb {
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    opacity: 0.7;
+}
+.breadcrumb a {
+    color: var(--accent);
+}
+.breadcrumb span {
+    margin: 0 0.5rem;
+}
+
+/* Tag Cloud - AstroPaper Style */
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    margin-top: 2rem;
+    list-style: none;
+    padding: 0;
+}
+.tag-item {
+    font-size: 1.25rem;
+    color: var(--foreground);
+    text-decoration: none;
+    display: inline-block;
+    padding: 0.25rem 0;
+}
+.tag-item span:first-child {
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 4px;
+}
+.tag-item:hover span:first-child {
+    text-decoration-style: solid;
+    color: var(--accent);
+}
+.tag-count {
+    margin-left: 0.25rem;
+    font-size: 1rem;
+    opacity: 0.5;
+}
+
+/* Posts by Year Timeline Style */
+.posts-by-year-list {
+    position: relative;
+    border-left: 1px solid var(--border);
+    padding-left: 1.5rem;
+    margin-left: 0.5rem;
+}
+
+.posts-by-year-item {
+    position: relative;
+    margin-bottom: 2.5rem;
+}
+
+.posts-by-year-item::before {
+    content: "";
+    position: absolute;
+    left: -1.5rem;
+    margin-left: -6.5px;
+    top: 0.65rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--background);
+    border: 2px solid var(--accent);
+    z-index: 10;
+}
+
+@media (min-width: 640px) {
+    .posts-by-year-list {
+        margin-left: 0;
+    }
+}
+.year-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-top: 3rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    color: var(--accent);
+}
+.year-title::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background-color: var(--border);
+    margin-left: 1rem;
+    opacity: 0.5;
+}
+
+/* Typography adjustments */
+.page-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.search-input {
+    color: var(--foreground) !important;
+    background-color: var(--muted);
+}
+.search-input::placeholder {
+    color: var(--foreground);
+    opacity: 0.4;
+}
+.dark .search-input {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+html {
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    font-size: 112.5%;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Noto Sans SC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Typography */
+.app-prose {
+    line-height: 1.8;
+}
+
+.app-prose h1, .app-prose h2, .app-prose h3, .app-prose h4 {
+    color: var(--foreground);
+    margin-top: 2em;
+    margin-bottom: 1em;
+    font-weight: 700;
+}
+
+.app-prose a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 4px;
+}
+
+.app-prose a:hover {
+    text-decoration-style: solid;
+}

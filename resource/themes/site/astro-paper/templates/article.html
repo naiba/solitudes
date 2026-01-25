@@ -1,0 +1,355 @@
+{{define "site/article"}}
+{{template "site/header" .}}
+<main id="main-content" class="app-layout flex-1 py-8">
+    <article class="w-full">
+        <header class="mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold mb-4">{{.Data.article.Title}}</h1>
+            
+            <div class="flex flex-wrap items-center gap-4 text-sm text-foreground/70">
+                <span class="flex items-center gap-2">
+                    <i class="fa-regular fa-user"></i>
+                    <span>{{.Conf.User.Nickname}}</span>
+                </span>
+                
+                <span class="flex items-center gap-2">
+                    <i class="fa-regular fa-calendar"></i>
+                    <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt "Jan 02, 2006"}}</time>
+                </span>
+                
+                {{if .Data.article.ReadNum}}
+                <span class="flex items-center gap-2">
+                    <i class="fa-regular fa-eye"></i>
+                    <span>{{.Data.article.ReadNum}}</span>
+                </span>
+                {{end}}
+                
+                {{if .Data.article.CommentNum}}
+                <span class="flex items-center gap-2">
+                    <i class="fa-regular fa-comment"></i>
+                    <span>{{.Data.article.CommentNum}}</span>
+                </span>
+                {{end}}
+            </div>
+            
+            {{if .Data.article.Tags}}
+            <div class="mt-4 flex flex-wrap gap-2">
+                {{range .Data.article.Tags}}
+                <a href="/tags/{{.}}/" class="text-sm px-3 py-1 bg-muted text-foreground/70 rounded hover:bg-accent hover:text-white transition">
+                    <i class="fa-solid fa-tag mr-1"></i>{{.}}
+                </a>
+                {{end}}
+            </div>
+            {{end}}
+        </header>
+        
+        <div class="app-prose prose max-w-none" itemprop="articleBody">
+            {{if gt .Data.article.NewVersion .Data.article.Version}}
+            <div class="mb-6 p-4 bg-accent/10 border-l-4 border-accent text-foreground/80 italic text-sm">
+                {{(.Tr.T "has_new_version" (.Data.article.Version|uint2str) .Data.article.Slug (.Data.article.NewVersion|uint2str) (.Data.article.NewVersion|uint2str))|unsafe}}
+            </div>
+            {{else if gt .Data.article.Version 1}}
+            <div class="mb-6 p-4 bg-muted/50 border-l-4 border-border text-foreground/80 italic text-sm">
+                {{(.Tr.T "has_old_version" (.Data.article.Version|uint2str) (oldVersions .Data.article.Version .Data.article.Slug))|unsafe}}
+            </div>
+            {{end}}
+
+            {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
+
+            {{if .Data.article.IsBook}}
+            <div class="mt-16 pt-8 border-t border-border/50">
+                <h4 class="text-xl font-bold mb-8 flex items-center gap-3 text-foreground">
+                    <span class="w-8 h-8 flex items-center justify-center bg-accent text-white rounded-lg rotate-3 shadow-md">
+                        <i class="fa-solid fa-book text-sm -rotate-3"></i>
+                    </span>
+                    {{.Tr.T "chapters"}}
+                </h4>
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{range $idx, $chapter := .Data.article.Chapters}}
+                    <li class="group">
+                        <a href="/{{$chapter.Slug}}" class="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/20 hover:bg-background hover:border-accent hover:shadow-lg transition-all duration-300">
+                            <span class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-background border border-border text-foreground/40 group-hover:border-accent group-hover:text-accent font-mono font-bold rounded-lg transition-colors">
+                                {{printf "%02d" (add $idx 1)}}
+                            </span>
+                            <div class="flex-1 min-w-0">
+                                <h5 class="text-foreground/80 font-medium group-hover:text-accent transition-colors truncate">
+                                    {{$chapter.Title}}
+                                </h5>
+                                <div class="text-[10px] uppercase tracking-widest text-foreground/40 mt-0.5 group-hover:text-accent/50 transition-colors">
+                                    {{tf $chapter.CreatedAt "Jan 2, 2006"}}
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-foreground/10 group-hover:text-accent group-hover:translate-x-1 transition-all"></i>
+                        </a>
+                    </li>
+                    {{end}}
+                </ul>
+            </div>
+            {{end}}
+        </div>
+    </article>
+
+    <!-- Book Navigation -->
+    {{if .Data.article.Book}}
+    <div class="mt-12 p-6 border border-border rounded-xl bg-background shadow-sm">
+        <div class="text-sm text-foreground/50 mb-2 uppercase tracking-wider font-semibold">{{.Tr.T "book"}}</div>
+        <a href="/{{.Data.article.Book.Slug}}" class="text-2xl font-bold text-accent hover:underline decoration-dashed decoration-2 underline-offset-8 block mb-8">
+            {{.Data.article.Book.Title}}
+        </a>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {{if .Data.article.SibilingArticle.Prev.ID}}
+            <a href="/{{.Data.article.SibilingArticle.Prev.Slug}}" class="flex flex-col gap-2 p-4 rounded-lg border border-border hover:border-accent hover:bg-accent/5 transition group">
+                <span class="text-xs text-foreground/50 flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-left"></i> {{.Tr.T "prev_chapter"}}
+                </span>
+                <span class="font-medium text-foreground group-hover:text-accent transition">{{.Data.article.SibilingArticle.Prev.Title}}</span>
+            </a>
+            {{else}}
+            <div class="hidden sm:block opacity-0"></div>
+            {{end}}
+            
+            {{if .Data.article.SibilingArticle.Next.ID}}
+            <a href="/{{.Data.article.SibilingArticle.Next.Slug}}" class="flex flex-col items-end gap-2 p-4 rounded-lg border border-border hover:border-accent hover:bg-accent/5 transition group text-right">
+                <span class="text-xs text-foreground/50 flex items-center gap-1">
+                    {{.Tr.T "next_chapter"}} <i class="fa-solid fa-arrow-right"></i>
+                </span>
+                <span class="font-medium text-foreground group-hover:text-accent transition">{{.Data.article.SibilingArticle.Next.Title}}</span>
+            </a>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+    
+    <!-- Sibling Articles (Normal Posts) -->
+    {{if and (not .Data.article.Book) (or .Data.article.SibilingArticle.Prev.ID .Data.article.SibilingArticle.Next.ID)}}
+    <div class="mt-12 pt-8 border-t border-border">
+        <div class="flex justify-between items-center gap-8">
+            {{if .Data.article.SibilingArticle.Prev.ID}}
+            <a href="/{{.Data.article.SibilingArticle.Prev.Slug}}" class="flex-1 text-left group">
+                <div class="text-sm text-foreground/50 mb-1 group-hover:text-accent transition">{{.Tr.T "previous"}}</div>
+                <div class="text-lg font-medium text-foreground group-hover:text-accent transition">{{.Data.article.SibilingArticle.Prev.Title}}</div>
+            </a>
+            {{end}}
+            
+            {{if .Data.article.SibilingArticle.Next.ID}}
+            <a href="/{{.Data.article.SibilingArticle.Next.Slug}}" class="flex-1 text-right group">
+                <div class="text-sm text-foreground/50 mb-1 group-hover:text-accent transition">{{.Tr.T "next"}}</div>
+                <div class="text-lg font-medium text-foreground group-hover:text-accent transition">{{.Data.article.SibilingArticle.Next.Title}}</div>
+            </a>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+    
+    <!-- Comments Section -->
+    {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
+    <div class="mt-12 pt-8 border-t border-border">
+        <h2 class="text-2xl font-semibold mb-6">
+            <i class="fa-regular fa-comments mr-2"></i>{{.Tr.T "comments"}} ({{.Data.article.CommentNum}})
+        </h2>
+        
+        {{if .Data.article.Comments}}
+        <div id="comments" class="space-y-6 mb-8">
+            {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
+        </div>
+
+        <!-- Comment Pagination -->
+        {{if gt .Data.comment_page.TotalPage 1}}
+        <nav class="flex items-center justify-between mt-8 mb-12 py-4 border-y border-border/30" aria-label="Comment Pagination">
+            {{$prevPage := .Data.comment_page.PrevPage}}
+            {{$nextPage := .Data.comment_page.NextPage}}
+            {{$currPage := .Data.comment_page.Page}}
+            {{$totalPage := .Data.comment_page.TotalPage}}
+
+            <a href="{{if gt $currPage 1}}?comment_page={{$prevPage}}#comments{{else}}javascript:void(0){{end}}" 
+               class="group flex items-center gap-2 {{if eq $currPage 1}}opacity-20 cursor-not-allowed{{else}}hover:text-accent transition-all{{end}}">
+                <i class="fa-solid fa-chevron-left text-xs group-hover:-translate-x-1 transition-transform"></i>
+                <span class="font-bold tracking-widest uppercase text-[10px] italic">Newer</span>
+            </a>
+
+            <div class="font-mono text-[10px] opacity-40 tracking-tighter">
+                Comments {{$currPage}} / {{$totalPage}}
+            </div>
+
+            <a href="{{if lt $currPage $totalPage}}?comment_page={{$nextPage}}#comments{{else}}javascript:void(0){{end}}" 
+               class="group flex items-center gap-2 {{if eq $currPage $totalPage}}opacity-20 cursor-not-allowed{{else}}hover:text-accent transition-all{{end}}">
+                <span class="font-bold tracking-widest uppercase text-[10px] italic">Older</span>
+                <i class="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </nav>
+        {{end}}
+        {{end}}
+        
+        {{if not .Data.article.DisableComment}}
+        <div class="bg-muted/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">{{.Tr.T "leave_a_comment"}}</h3>
+            
+            <form id="comment-form" class="space-y-4">
+                <textarea id="comment-content" rows="6" class="w-full px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none" placeholder="{{.Tr.T "may_not_reply_if_email_not_exist"}}" required></textarea>
+                
+                <input type="hidden" id="reply-to" value="">
+                <input type="hidden" id="article-slug" value="{{.Data.article.Slug}}">
+                <input type="hidden" id="article-version" value="{{.Data.article.Version}}">
+                
+                {{if not .Login}}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <input type="text" id="comment-nickname" class="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50" placeholder="{{.Tr.T "nickname"}} *" required maxlength="64">
+                    <input type="email" id="comment-email" class="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50" placeholder="{{.Tr.T "email"}} ({{.Tr.T "not_required"}})" maxlength="254">
+                    <input type="url" id="comment-website" class="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50" placeholder="{{.Tr.T "website"}} ({{.Tr.T "not_required"}})" maxlength="200">
+                </div>
+                {{end}}
+                
+                <div class="flex justify-between items-center">
+                    <div id="reply-info" class="hidden text-sm text-foreground/70">
+                        {{.Tr.T "replying_to"}}: <span id="reply-to-name" class="font-semibold"></span>
+                        <button type="button" onclick="cancelReply()" class="ml-2 text-accent hover:underline">{{.Tr.T "cancel"}}</button>
+                    </div>
+                    
+                    <button type="submit" class="px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition">
+                        <i class="fa-regular fa-paper-plane mr-2"></i>{{.Tr.T "submit_comment"}}
+                    </button>
+                </div>
+            </form>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
+</main>
+
+<script>
+    // Comment Form Logic
+    (function () {
+        const nicknameInput = document.getElementById('comment-nickname');
+        const emailInput = document.getElementById('comment-email');
+        const websiteInput = document.getElementById('comment-website');
+
+        if (nicknameInput) nicknameInput.value = localStorage.getItem("cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}';
+        if (emailInput) emailInput.value = localStorage.getItem("cm_email") || '';
+        if (websiteInput) websiteInput.value = localStorage.getItem("cm_website") || '';
+    })();
+
+    let loadCommenterInfoTimeout;
+    const queriedFields = new Set();
+
+    function loadCommenterInfo() {
+        clearTimeout(loadCommenterInfoTimeout);
+        loadCommenterInfoTimeout = setTimeout(() => {
+            const nicknameInput = document.getElementById('comment-nickname');
+            const emailInput = document.getElementById('comment-email');
+            const websiteInput = document.getElementById('comment-website');
+
+            const nickname = nicknameInput ? nicknameInput.value.trim() : '';
+            const email = emailInput ? emailInput.value.trim() : '';
+            const website = websiteInput ? websiteInput.value.trim() : '';
+
+            if (!nickname && !email && !website) return;
+            if (nickname && email && website) return;
+
+            const params = new URLSearchParams();
+            if (nickname) params.append('nickname', nickname);
+            if (email) params.append('email', email);
+            if (website) params.append('website', website);
+
+            fetch(`/api/commenter-info?${params.toString()}`, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            }).then(resp => resp.json()).then(data => {
+                if (data.success && data.data) {
+                    if (nicknameInput && data.data.nickname && !nicknameInput.value && !queriedFields.has('nickname')) {
+                        nicknameInput.value = data.data.nickname;
+                        queriedFields.add('nickname');
+                    }
+                    if (websiteInput && data.data.website && !websiteInput.value && !queriedFields.has('website')) {
+                        websiteInput.value = data.data.website;
+                        queriedFields.add('website');
+                    }
+                    if (emailInput && data.data.email && !emailInput.value && !queriedFields.has('email')) {
+                        emailInput.value = data.data.email;
+                        queriedFields.add('email');
+                    }
+                }
+            }).catch(e => console.error('Failed to load commenter info:', e));
+        }, 300);
+    }
+
+    // Event Bindings for Auto-completion
+    ['comment-nickname', 'comment-email', 'comment-website'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('blur', loadCommenterInfo);
+            el.addEventListener('input', () => queriedFields.delete(id.replace('comment-', '')));
+            el.addEventListener('focus', () => queriedFields.delete(id.replace('comment-', '')));
+        }
+    });
+
+    function reply_to(commentId, nickname) {
+        document.getElementById('reply-to').value = commentId;
+        document.getElementById('reply-to-name').textContent = nickname;
+        document.getElementById('reply-info').classList.remove('hidden');
+        document.getElementById('comment-content').focus();
+        document.getElementById('comment-form').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function cancelReply() {
+        document.getElementById('reply-to').value = '';
+        document.getElementById('reply-info').classList.add('hidden');
+    }
+    
+    document.getElementById('comment-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const content = document.getElementById('comment-content').value.trim();
+        let nickname = document.getElementById('comment-nickname') ? document.getElementById('comment-nickname').value.trim() : '';
+        const email = document.getElementById('comment-email') ? document.getElementById('comment-email').value.trim() : '';
+        const website = document.getElementById('comment-website') ? document.getElementById('comment-website').value.trim() : '';
+        const replyTo = document.getElementById('reply-to').value;
+        const slug = document.getElementById('article-slug').value;
+        
+        {{if .Login}}
+        if (!nickname) {
+            nickname = "{{.Conf.User.Nickname}}";
+        }
+        {{end}}
+
+        // Save to localStorage
+        localStorage.setItem("cm_nickname", nickname);
+        localStorage.setItem("cm_email", email);
+        localStorage.setItem("cm_website", website);
+        
+        if (!content) {
+            alert('{{.Tr.T "comment_required_fields"}}');
+            return;
+        }
+        
+        const commentData = {
+            content: content,
+            nickname: nickname,
+            email: email,
+            website: website,
+            reply_to: replyTo || null,
+            slug: slug,
+            version: parseInt(document.getElementById('article-version').value)
+        };
+        
+        fetch('/api/comment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(commentData)
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('{{.Tr.T "submit_comment_success"}}');
+                window.location.reload();
+            } else {
+                response.text().then(msg => alert('{{.Tr.T "submit_failed"}} ' + msg));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('{{.Tr.T "submit_failed"}} ' + error);
+        });
+    });
+</script>
+
+{{template "site/footer" .}}
+{{end}}

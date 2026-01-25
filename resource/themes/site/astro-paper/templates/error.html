@@ -1,0 +1,19 @@
+{{define "site/error"}}
+{{template "site/header" .}}
+<main id="main-content" class="app-layout flex-1 py-12">
+    <div class="max-w-3xl mx-auto text-center py-12">
+        <h1 class="text-9xl font-bold text-accent opacity-20">Error</h1>
+        <div class="mt-4">
+            <h2 class="text-3xl font-semibold mb-2 text-foreground">{{.Data.title}}</h2>
+            <p class="text-foreground/60 italic mb-8">{{.Data.msg}}</p>
+        </div>
+        
+        <div class="flex justify-center gap-4">
+            <a href="/" class="text-accent hover:underline decoration-dashed underline-offset-4 flex items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Go back home
+            </a>
+        </div>
+    </div>
+</main>
+{{template "site/footer" .}}
+{{end}}

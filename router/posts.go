@@ -1,0 +1,221 @@
+package router
+
+import (
+	"log"
+	"net/http"
+	"net/url"
+	"strconv"
+	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gorilla/feeds"
+	"github.com/naiba/solitudes/pkg/pagination"
+
+	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/translator"
+)
+
+func tagsCloud(c *fiber.Ctx) error {
+	var tags []string
+	var counts []int
+	rows, err := solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles group by t order by count desc`).Rows()
+	if err == nil {
+		defer rows.Close()
+		for rows.Next() {
+			var line string
+			var count int
+			rows.Scan(&count, &line)
+			tags = append(tags, line)
+			counts = append(counts, count)
+		}
+	}
+	c.Status(http.StatusOK).Render("site/tags", injectSiteData(c, fiber.Map{
+		"title":  c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("tags_cloud"),
+		"tags":   tags,
+		"counts": counts,
+	}))
+	return nil
+}
+
+func posts(c *fiber.Ctx) error {
+	var page int64
+	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
+	var articles []model.Article
+	pg := pagination.Paging(&pagination.Param{
+		DB:      solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic"),
+		Page:    int(page),
+		Limit:   20,
+		OrderBy: []string{"created_at DESC"},
+	}, &articles)
+	for i := range articles {
+		articles[i].RelatedCount(solitudes.System.DB)
+		// 如果存在 Topic tag，加载前 3 条评论
+		if articles[i].IsTopic() {
+			pagination.Paging(&pagination.Param{
+				DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", articles[i].ID),
+				Limit:   5,
+				OrderBy: []string{"created_at DESC"},
+			}, &articles[i].Comments)
+		}
+	}
+	c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
+		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("posts"),
+		"what":     "posts",
+		"articles": listArticleByYear(articles),
+		"page":     pg,
+	}))
+	return nil
+}
+
+func book(c *fiber.Ctx) error {
+	var page int64
+	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
+	var articles []model.Article
+	pg := pagination.Paging(&pagination.Param{
+		DB:      solitudes.System.DB.Where("is_book is true"),
+		Page:    int(page),
+		Limit:   20,
+		OrderBy: []string{"created_at DESC"},
+	}, &articles)
+	for i := range articles {
+		articles[i].RelatedCount(solitudes.System.DB)
+	}
+	c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
+		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("books"),
+		"what":     "books",
+		"articles": listArticleByYear(articles),
+		"page":     pg,
+	}))
+	return nil
+}
+
+func feedHandler(c *fiber.Ctx) error {
+	ip := c.IP()
+	if ip != "" {
+		visit := model.FeedVisit{
+			IP: ip,
+		}
+		if err := solitudes.System.DB.Create(&visit).Error; err != nil {
+			log.Printf("Failed to record feed visit: %v", err)
+		}
+	}
+
+	if c.Params("format") == "" {
+		c.Status(http.StatusBadRequest).JSON(map[string]interface{}{
+			"message":         "please spec a feed format",
+			"supportedFormat": []string{"json", "rss", "atom"},
+			"feedLink":        "https://" + solitudes.System.Config.Site.Domain + "/feed/:format",
+		})
+		return nil
+	}
+	feed := &feeds.Feed{
+		Title:       solitudes.System.Config.Site.SpaceName,
+		Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain},
+		Description: solitudes.System.Config.Site.SpaceDesc,
+		Author:      &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
+		Updated:     time.Now(),
+	}
+	var articles []model.Article
+	solitudes.System.DB.Order("created_at DESC").Limit(20).Find(&articles)
+	for i := range articles {
+		// 检查私有博文
+		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
+			articles[i].Content = "Private Article"
+		}
+
+		feed.Items = append(feed.Items, &feeds.Item{
+			Title:   articles[i].Title,
+			Link:    &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug + "/v" + strconv.Itoa(int(articles[i].Version))},
+			Author:  &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
+			Content: luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),
+			Created: articles[i].CreatedAt,
+			Updated: articles[i].UpdatedAt,
+		})
+	}
+	switch c.Params("format") {
+	case "atom":
+		atom, err := feed.ToAtom()
+		if err != nil {
+			return err
+		}
+		c.Set("Content-Type", "application/xml")
+		c.Status(http.StatusOK).WriteString(atom)
+	case "rss":
+		rssFeed := (&feeds.Rss{Feed: feed}).RssFeed()
+		rssFeed.Generator = "Solitudes v" + solitudes.BuildVersion + " github.com/naiba/solitudes"
+		rss, err := feeds.ToXML(rssFeed)
+		if err != nil {
+			return err
+		}
+		c.Set("Content-Type", "application/xml")
+		c.Status(http.StatusOK).WriteString(rss)
+	case "json":
+		json, err := feed.ToJSON()
+		if err != nil {
+			return err
+		}
+		c.Set("Content-Type", "application/json")
+		c.Status(http.StatusOK).WriteString(json)
+	default:
+		c.Status(http.StatusOK).WriteString("Unknown type")
+	}
+	return nil
+}
+
+func tags(c *fiber.Ctx) error {
+	var page int64
+	page, _ = strconv.ParseInt(c.Params("page"), 10, 64)
+	var articles []model.Article
+	tag, _ := url.QueryUnescape(c.Params("tag"))
+	if tag == "" {
+		page404(c)
+		return nil
+	}
+	pg := pagination.Paging(&pagination.Param{
+		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", tag),
+		Page:    int(page),
+		Limit:   20,
+		OrderBy: []string{"created_at DESC"},
+	}, &articles)
+	for i := range articles {
+		articles[i].RelatedCount(solitudes.System.DB)
+		// 如果存在 Topic tag，加载前 3 条评论
+		if articles[i].IsTopic() {
+			pagination.Paging(&pagination.Param{
+				DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", articles[i].ID),
+				Limit:   5,
+				OrderBy: []string{"created_at DESC"},
+			}, &articles[i].Comments)
+		}
+	}
+	c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
+		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("articles_in", tag),
+		"what":     "tags",
+		"tag":      tag,
+		"articles": listArticleByYear(articles),
+		"page":     pg,
+	}))
+	return nil
+}
+
+func listArticleByYear(as []model.Article) [][]model.Article {
+	var listed [][]model.Article
+	var lastYear int
+	var listItem []model.Article
+	for _, article := range as {
+		currentYear := article.CreatedAt.Year()
+		if currentYear != lastYear {
+			if len(listItem) > 0 {
+				listed = append(listed, listItem)
+				listItem = make([]model.Article, 0)
+			}
+			lastYear = currentYear
+		}
+		listItem = append(listItem, article)
+	}
+	if len(listItem) > 0 {
+		listed = append(listed, listItem)
+	}
+	return listed
+}

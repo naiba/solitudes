@@ -1,0 +1,77 @@
+{{define "site/comments_entry"}}
+{{range .comments}}
+<div class="comment" id="comment-{{.ID}}">
+    <div class="flex gap-4">
+        <div class="flex-shrink-0">
+            {{if .Email}}
+            <img 
+                src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&d=mm&r=g" 
+                alt="{{.Nickname}}"
+                class="w-12 h-12 rounded-full border border-border"
+            >
+            {{else}}
+            <img 
+                src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" 
+                alt="{{.Nickname}}"
+                class="w-12 h-12 rounded-full border border-border"
+            >
+            {{end}}
+        </div>
+        
+        <div class="flex-1">
+            <div class="flex flex-wrap items-center gap-2 mb-2">
+                {{if .Website}}
+                <a 
+                    href="{{.Website | externalLink}}" 
+                    target="_blank" 
+                    rel="nofollow noopener"
+                    class="font-semibold text-foreground hover:text-accent transition"
+                >
+                    {{.Nickname}}
+                </a>
+                {{else}}
+                <span class="font-semibold text-foreground">{{.Nickname}}</span>
+                {{end}}
+                
+                {{if .IsAdmin}}
+                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-accent/10 text-accent rounded-full">
+                    <i class="fa-solid fa-circle-check mr-1"></i>Admin
+                </span>
+                {{end}}
+                
+                <time datetime="{{iso8601 .CreatedAt}}" class="text-sm text-foreground/60">
+                    {{tf .CreatedAt "Jan 02, 2006 15:04"}}
+                </time>
+                
+                <a href="/{{.Article.Slug}}/v{{.Version}}" rel="nofollow" class="text-xs text-foreground/50 hover:text-accent">
+                    v{{.Version}}
+                </a>
+                
+                {{if ptrStrEq .EmailReadStatus "read"}}
+                <i class="fa-solid fa-eye text-xs text-foreground/40" title="{{$.tr.T "email_read"}}"></i>
+                {{else if ptrStrEq .EmailReadStatus "unread"}}
+                <i class="fa-solid fa-eye-slash text-xs text-foreground/40" title="{{$.tr.T "email_unread"}}"></i>
+                {{end}}
+                
+                <button 
+                    onclick="reply_to('{{.ID}}', '{{.Nickname}}')" 
+                    class="text-sm text-accent hover:underline"
+                >
+                    <i class="fa-solid fa-reply mr-1"></i>Reply
+                </button>
+            </div>
+            
+            <div class="text-foreground/90 prose max-w-none">
+                {{.Content}}
+            </div>
+        </div>
+    </div>
+</div>
+
+{{if .ChildComments}}
+<div class="ml-8 mt-4 space-y-4 border-l-2 border-border pl-4">
+    {{template "site/comments_entry" (commentsData .ChildComments $.tr)}}
+</div>
+{{end}}
+{{end}}
+{{end}}

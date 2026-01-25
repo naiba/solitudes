@@ -1,0 +1,126 @@
+{{define "site/page"}}
+{{template "site/header" .}}
+{{template "site/menu" .}}
+{{if .Login}}
+<a style="text-align: right;" href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
+{{end}}
+<article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
+  <div class="content" itemprop="articleBody">
+    {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
+  </div>
+  <div class="meta" style="margin-top: 1em; color: #666; font-size: 0.9em;">
+    {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}" itemprop="datePublished">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
+    {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
+     · {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}" itemprop="dateModified">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
+    {{end}}
+  </div>
+</article>
+
+{{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
+<div id="reply-list">
+    <h1>{{.Tr.T "comments"}}</h1>
+    {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
+</div>
+{{if .Data.article.Comments}}
+<div class="pagination">
+    {{if gt .Data.comment_page.Page 1}}<a
+        href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}"><i
+            class="fa-solid fa-angle-left"></i></a>{{end}}
+    <span class="page-number">{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str
+        .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
+    {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a
+        href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}"><i
+            class="fa-solid fa-angle-right"></i></a>{{end}}
+</div>
+{{end}}
+{{if not .Data.article.DisableComment}}
+<div id="reply">
+    <textarea cols="40" rows="6" id="id_content"
+        placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
+    {{if .Login}}
+    <input type="hidden" maxlength="64" id="id_nickname">
+    {{else}}
+    <div class="row">
+        <input placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname">
+        <input placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email">
+        <input placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website">
+    </div>
+    {{end}}
+    <button onclick="comment(this)" class="base-button">{{.Tr.T "submit"}}</button>
+    <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
+    <input type="hidden" id="id_reply_to" value="">
+</div>
+{{end}}
+{{end}}
+
+<script>
+  window.onload = function () {
+    fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })
+    {{if .Login}}
+    document.querySelector("#id_nickname").value = '{{.Conf.User.Nickname}}'
+    {{else}}
+    document.querySelector("#id_nickname") && (document.querySelector("#id_nickname").value = localStorage.getItem("cm_nickname") || '')
+    document.querySelector("#id_email") && (document.querySelector("#id_email").value = localStorage.getItem("cm_email") || '')
+    document.querySelector("#id_website") && (document.querySelector("#id_website").value = localStorage.getItem("cm_website") || '')
+    {{end}}
+  }
+
+  function reply_to(cid, nickname) {
+      const idContent = document.querySelector("#id_content");
+      idContent.value = '@' + nickname + ' ' + idContent.value;
+      document.querySelector("#id_reply_to").value = cid
+  }
+
+  function comment(btn) {
+      if (btn.disabled) {
+          return
+      }
+      btn.disabled = true
+      btn.value = '{{.Tr.T "submitting"}}'
+      if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
+          btn.disabled = false
+          alert('{{.Tr.T "comment_required_fields"}}')
+          return
+      }
+      const cm_nickname = document.querySelector('#id_nickname') ? document.querySelector('#id_nickname').value : "";
+      const cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
+      const cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
+      localStorage.setItem("cm_nickname", cm_nickname)
+      localStorage.setItem("cm_email", cm_email)
+      localStorage.setItem("cm_website", cm_website)
+      var data = {
+          nickname: cm_nickname,
+          email: cm_email,
+          website: cm_website,
+          content: document.querySelector('#id_content').value,
+          version: parseInt('{{.Data.article.Version}}'),
+          slug: document.querySelector('#id_slug').value,
+      }
+      if (document.querySelector('#id_reply_to').value) {
+          data.reply_to = document.querySelector('#id_reply_to').value
+      }
+      fetch("/api/comment", {
+          method: 'POST',
+          headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+      }).then(resp => {
+          if (resp.status == 200) {
+              window.location.reload()
+              return
+          }
+          resp.text().then(str => {
+              alert('{{.Tr.T "submit_failed"}} ' + str)
+          })
+      }).catch(e => {
+          alert('{{.Tr.T "submit_failed"}} ' + e)
+      }).finally(() => {
+          btn.disabled = false
+          btn.value = '{{.Tr.T "submit"}}'
+      })
+  }
+</script>
+{{template "site/footer" .}}
+{{end}}

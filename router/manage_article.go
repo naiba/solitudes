@@ -189,14 +189,19 @@ func fetchOriginArticle(af *model.Article) (model.Article, error) {
 	if err := solitudes.System.DB.Take(&originArticle, "id = ?", af.ID).Error; err != nil {
 		return model.Article{}, err
 	}
+
 	af.CreatedAt = originArticle.CreatedAt
-	af.UpdatedAt = time.Now()
-	af.Version = originArticle.Version
 	af.CommentNum = originArticle.CommentNum
 	af.ReadNum = originArticle.ReadNum
+
 	if af.NewVersion == 1 {
+		af.UpdatedAt = time.Now()
 		af.Version = originArticle.Version + 1
+	} else {
+		af.UpdatedAt = originArticle.UpdatedAt
+		af.Version = originArticle.Version
 	}
+
 	return originArticle, nil
 }
 
