@@ -118,54 +118,56 @@
     <a href="#main-content" class="skip-to-content">{{.Tr.T "skip_to_content"}}</a>
 
 <header class="bg-background sticky top-0 z-50">
-    <div class="app-layout py-4 sm:py-6 border-b border-border">
-        <div class="flex items-center justify-between">
-            <a href="/" class="text-xl font-semibold sm:text-2xl text-foreground no-underline hover:text-accent">
-                {{.Conf.Site.SpaceName}}
-            </a>
-            
-            <nav class="flex items-center gap-4">
-                <button id="mobile-menu-btn" class="sm:hidden p-2 text-foreground hover:text-accent" aria-label="{{.Tr.T "toggle_menu"}}">
-                    <i class="fa-solid fa-bars text-xl"></i>
-                </button>
-                
-                <ul id="desktop-menu" class="hidden sm:flex items-center gap-2">
-                    {{range index .Theme "astro-paper.headermenus"}}
-                    <li>
-                        <a href="{{.link}}" class="px-3 py-2 text-sm font-bold hover:text-accent transition" {{if .black}}target="_blank"{{end}}>
-                            {{if .icon}}<i class="{{.icon}}"></i>{{end}}
-                            {{.name}}
-                        </a>
-                    </li>
-                    {{end}}
-                    <li>
-                        <button onclick="window.toggleTheme()" class="px-3 py-2 text-sm font-medium hover:text-accent transition" aria-label="{{.Tr.T "toggle_theme"}}">
-                            <i id="theme-toggle-dark-icon" class="fa-solid fa-moon"></i>
-                            <i id="theme-toggle-light-icon" class="fa-solid fa-sun"></i>
-                        </button>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-        <ul id="mobile-menu" class="hidden bg-background border-t border-border mt-4 p-4 sm:hidden">
-            {{range index .Theme "astro-paper.headermenus"}}
-            <li>
-                <a href="{{.link}}" class="block px-3 py-2 font-bold hover:text-accent" {{if .black}}target="_blank"{{end}}>
-                    {{if .icon}}<i class="{{.icon}}"></i>{{end}}
-                    {{.name}}
+    <div class="app-layout">
+        <div class="py-4 sm:py-6 border-b border-border">
+            <div class="flex items-center justify-between">
+                <a href="/" class="text-xl font-semibold sm:text-2xl text-foreground no-underline hover:text-accent">
+                    {{.Conf.Site.SpaceName}}
                 </a>
-            </li>
-            {{end}}
-            <li>
-                <button onclick="window.toggleTheme()" class="flex items-center gap-3 w-full text-left px-3 py-2 hover:text-accent" aria-label="{{.Tr.T "toggle_theme"}}">
-                    <div class="w-5 text-center">
-                        <i id="theme-toggle-dark-icon-mobile" class="fa-solid fa-moon"></i>
-                        <i id="theme-toggle-light-icon-mobile" class="fa-solid fa-sun"></i>
-                    </div>
-                    <span>{{.Tr.T "toggle_theme"}}</span>
-                </button>
-            </li>
-        </ul>
+                
+                <nav class="flex items-center gap-4">
+                    <button id="mobile-menu-btn" class="sm:hidden p-2 text-foreground hover:text-accent" aria-label="{{.Tr.T "toggle_menu"}}">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                    
+                    <ul id="desktop-menu" class="hidden sm:flex items-center gap-2">
+                        {{range index .Theme "astro-paper.headermenus"}}
+                        <li>
+                            <a href="{{.link}}" class="px-3 py-2 text-sm font-bold hover:text-accent transition" {{if .black}}target="_blank"{{end}}>
+                                {{if .icon}}<i class="{{.icon}}"></i>{{end}}
+                                {{.name}}
+                            </a>
+                        </li>
+                        {{end}}
+                        <li>
+                            <button onclick="window.toggleTheme()" class="px-3 py-2 text-sm font-medium hover:text-accent transition" aria-label="{{.Tr.T "toggle_theme"}}">
+                                <i id="theme-toggle-dark-icon" class="fa-solid fa-moon"></i>
+                                <i id="theme-toggle-light-icon" class="fa-solid fa-sun"></i>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            <ul id="mobile-menu" class="hidden bg-background border-t border-border mt-4 p-4 sm:hidden">
+                {{range index .Theme "astro-paper.headermenus"}}
+                <li>
+                    <a href="{{.link}}" class="block px-3 py-2 font-bold hover:text-accent" {{if .black}}target="_blank"{{end}}>
+                        {{if .icon}}<i class="{{.icon}}"></i>{{end}}
+                        {{.name}}
+                    </a>
+                </li>
+                {{end}}
+                <li>
+                    <button onclick="window.toggleTheme()" class="flex items-center gap-3 w-full text-left px-3 py-2 hover:text-accent" aria-label="{{.Tr.T "toggle_theme"}}">
+                        <div class="w-5 text-center">
+                            <i id="theme-toggle-dark-icon-mobile" class="fa-solid fa-moon"></i>
+                            <i id="theme-toggle-light-icon-mobile" class="fa-solid fa-sun"></i>
+                        </div>
+                        <span>{{.Tr.T "toggle_theme"}}</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
     </div>
 </header>
 

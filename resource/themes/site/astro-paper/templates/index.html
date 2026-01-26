@@ -4,14 +4,14 @@
     <!-- Hero Section -->
     {{ $top := index .Theme "astro-paper.hometopcontent" }}
     {{if $top}}
-    <section class="pt-8 pb-6 prose dark:prose-invert max-w-none">
+    <section class="pt-8 pb-6 prose dark:prose-invert max-w-none border-b border-border">
         {{(md "home-top" (printf "%s" $top))|unsafe}}
     </section>
     {{end}}
     
     <!-- Featured Posts -->
     {{if .Data.mostRead}}
-    <section class="pt-12 pb-6">
+    <section class="pt-12 pb-6 border-b border-border">
         <h2 class="text-2xl font-semibold tracking-wide mb-6">{{.Tr.T "featured"}}</h2>
         <ul class="space-y-6">
             {{range .Data.mostRead}}
@@ -42,7 +42,7 @@
     
     <!-- Topics -->
     {{if .Data.topics}}
-    <section class="pt-12 pb-6">
+    <section class="pt-12 pb-6 border-b border-t border-border">
         <h2 class="text-2xl font-semibold tracking-wide mb-6">{{.Tr.T "topics"}}</h2>
         <ul class="space-y-6">
             {{range .Data.topics}}
