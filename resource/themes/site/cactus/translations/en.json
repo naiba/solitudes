@@ -1,117 +1,39 @@
 [
-    {
-        "locale": "en",
-        "key": "created_at_label",
-        "trans": "Created at"
-    },
-    {
-        "locale": "en",
-        "key": "most_read",
-        "trans": "Most Read"
-    },
-    {
-        "locale": "en",
-        "key": "writing",
-        "trans": "Writing"
-    },
-    {
-        "locale": "en",
-        "key": "no_article",
-        "trans": "No articles have been published yet"
-    },
-    {
-        "locale": "en",
-        "key": "topic",
-        "trans": "Topic"
-    },
-    {
-        "locale": "en",
-        "key": "previous_post",
-        "trans": "Previous Post"
-    },
-    {
-        "locale": "en",
-        "key": "next_post",
-        "trans": "Next Post"
-    },
-    {
-        "locale": "en",
-        "key": "return_top",
-        "trans": "Back to Top"
-    },
-    {
-        "locale": "en",
-        "key": "share",
-        "trans": "Share"
-    },
-    {
-        "locale": "en",
-        "key": "view_more",
-        "trans": "View More"
-    },
-    {
-        "locale": "en",
-        "key": "no_search_results",
-        "trans": "No results found."
-    },
-    {
-        "locale": "en",
-        "key": "go_to_page",
-        "trans": "Go"
-    },
-    {
-        "locale": "en",
-        "key": "menu",
-        "trans": "Menu"
-    },
-    {
-        "locale": "en",
-        "key": "toc",
-        "trans": "Table of Contents"
-    },
-    {
-        "locale": "en",
-        "key": "chapters",
-        "trans": "Chapters"
-    },
-    {
-        "locale": "en",
-        "key": "book",
-        "trans": "Book"
-    },
-    {
-        "locale": "en",
-        "key": "comments",
-        "trans": "Comments"
-    },
-    {
-        "locale": "en",
-        "key": "nickname",
-        "trans": "Nickname"
-    },
-    {
-        "locale": "en",
-        "key": "email",
-        "trans": "Email"
-    },
-    {
-        "locale": "en",
-        "key": "website",
-        "trans": "Website"
-    },
-    {
-        "locale": "en",
-        "key": "not_required",
-        "trans": "Not Required"
-    },
-    {
-        "locale": "en",
-        "key": "submit",
-        "trans": "Submit"
-    },
-    {
-        "locale": "en",
-        "key": "may_not_reply_if_email_not_exist",
-        "trans": "Please provide a valid email address to receive notifications when the blogger replies. You can enter your email first to auto-fill other information."
-    }
+    {"locale": "en", "key": "book", "trans": "Book"},
+    {"locale": "en", "key": "chapters", "trans": "Chapters"},
+    {"locale": "en", "key": "comment_required_fields", "trans": "Please fill in required fields."},
+    {"locale": "en", "key": "comments", "trans": "Comments"},
+    {"locale": "en", "key": "created_at_label", "trans": "Created at"},
+    {"locale": "en", "key": "date_format", "trans": "Jan 02, 2006"},
+    {"locale": "en", "key": "edit_article", "trans": "Edit"},
+    {"locale": "en", "key": "email", "trans": "Email"},
+    {"locale": "en", "key": "go_to_page", "trans": "Go"},
+    {"locale": "en", "key": "has_new_version", "trans": "You are viewing version v{0} of this article, which has been updated to version <a href=\"/{1}/v{2}\">v{3}</a>."},
+    {"locale": "en", "key": "has_old_version", "trans": "You are viewing version v{0} of this article. You can also view historical versions: {1}."},
+    {"locale": "en", "key": "may_not_reply_if_email_not_exist", "trans": "If you don't fill in your email, I may not be able to reply to your comment."},
+    {"locale": "en", "key": "menu", "trans": "Menu"},
+    {"locale": "en", "key": "most_read", "trans": "Most Read"},
+    {"locale": "en", "key": "next_chapter", "trans": "Next Chapter"},
+    {"locale": "en", "key": "next_page", "trans": "Next Page"},
+    {"locale": "en", "key": "next_post", "trans": "Next Post"},
+    {"locale": "en", "key": "nickname", "trans": "Nickname"},
+    {"locale": "en", "key": "no_article", "trans": "No articles have been published yet"},
+    {"locale": "en", "key": "no_search_results", "trans": "No results found."},
+    {"locale": "en", "key": "not_required", "trans": "Not required"},
+    {"locale": "en", "key": "pagination", "trans": "{0} / {1} ({2} {3})"},
+    {"locale": "en", "key": "prev_chapter", "trans": "Previous Chapter"},
+    {"locale": "en", "key": "previous_page", "trans": "Previous Page"},
+    {"locale": "en", "key": "previous_post", "trans": "Previous Post"},
+    {"locale": "en", "key": "return_top", "trans": "Back to Top"},
+    {"locale": "en", "key": "search", "trans": "Search"},
+    {"locale": "en", "key": "share", "trans": "Share"},
+    {"locale": "en", "key": "submit", "trans": "Submit"},
+    {"locale": "en", "key": "submit_failed", "trans": "Submit failed"},
+    {"locale": "en", "key": "submitting", "trans": "Submitting..."},
+    {"locale": "en", "key": "toc", "trans": "Table of Contents"},
+    {"locale": "en", "key": "topic", "trans": "Topic"},
+    {"locale": "en", "key": "updated_at", "trans": "Updated at"},
+    {"locale": "en", "key": "view_more", "trans": "View More"},
+    {"locale": "en", "key": "website", "trans": "Website"},
+    {"locale": "en", "key": "writing", "trans": "Writing"}
 ]

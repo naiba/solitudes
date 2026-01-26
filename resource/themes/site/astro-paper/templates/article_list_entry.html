@@ -64,11 +64,14 @@
         <div class="flex items-center gap-2 mt-2 text-sm text-foreground/50">
             <i class="fa-regular fa-calendar-alt text-xs"></i>
             <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt "January 02, 2006"}}</time>
-            {{if .article.ReadNum}}
+            
             <span class="flex items-center gap-1 ml-3">
                 <i class="fa-regular fa-eye text-xs"></i>{{.article.ReadNum}}
             </span>
-            {{end}}
+            
+            <span class="flex items-center gap-1 ml-3">
+                <i class="fa-regular fa-comment text-xs"></i>{{.article.CommentNum}}
+            </span>
         </div>
         <p class="mt-3 text-foreground/70 leading-relaxed line-clamp-2 italic">
             {{substr .article.Content 0 160}}...

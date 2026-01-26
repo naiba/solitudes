@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -92,31 +93,17 @@ func ThemeStaticRoot(kind, name string) string {
 	return fmt.Sprintf("resource/themes/%s/%s/static", kind, name)
 }
 
-// themeStaticHandler handles static file requests dynamically based on current theme
+// themeStaticHandler handles static file requests dynamically based on kind and theme
 func themeStaticHandler(c *fiber.Ctx) error {
-	path := c.Path()
-	var kind, themeName string
-	var prefix string
+	kind := c.Params("kind")
+	themeName := c.Params("theme")
+	relativePath := c.Params("*")
 
-	if strings.HasPrefix(path, "/admin/static/") {
-		kind = "admin"
-		prefix = "/admin/static/"
-		themeName = solitudes.System.Config.Admin.Theme
-	} else if strings.HasPrefix(path, "/static/") {
-		kind = "site"
-		prefix = "/static/"
-		themeName = solitudes.System.Config.Site.Theme
-	} else {
+	if kind != "site" && kind != "admin" {
 		return page404(c)
 	}
 
-	if themeName == "" {
-		themeName = "cactus"
-	}
-
-	relativePath := strings.TrimPrefix(path, prefix)
-
-	// 拒绝目录列表请求（如 /static/ 或 /static/css/）
+	// 拒绝目录列表请求（如 /static/site/cactus/ 或 /static/site/cactus/css/）
 	if relativePath == "" || strings.HasSuffix(relativePath, "/") {
 		return page404(c)
 	}
@@ -187,8 +174,26 @@ func mdRender(id string, raw string) string {
 	return luteEngine.MarkdownStr(id, raw)
 }
 
-// TemplateEngine holds the HTML template engine
-var TemplateEngine *html.Engine
+// DynamicEngine wraps the actual html engine to allow hot-reloading
+type DynamicEngine struct {
+	engine *html.Engine
+}
+
+func (d *DynamicEngine) Load() error {
+	if d.engine == nil {
+		return nil
+	}
+	return d.engine.Load()
+}
+
+func (d *DynamicEngine) Render(out io.Writer, template string, binding interface{}, layout ...string) error {
+	if d.engine == nil {
+		return fmt.Errorf("template engine not initialized")
+	}
+	return d.engine.Render(out, template, binding, layout...)
+}
+
+var globalDynamicEngine = &DynamicEngine{}
 
 // LoadTemplates initializes or reloads the template engine with current theme configurations
 func LoadTemplates() error {
@@ -199,8 +204,6 @@ func LoadTemplates() error {
 
 	// 重载翻译
 	translator.Reload(siteTheme, adminTheme)
-
-	// 使用 afero 创建带前缀的合并文件系统
 
 	// 使用 afero 创建带前缀的合并文件系统
 	// site/* -> siteTemplateRoot/*, admin/* -> adminTemplateRoot/*
@@ -229,21 +232,21 @@ func LoadTemplates() error {
 		return nil
 	})
 
-	TemplateEngine = html.NewFileSystem(http.FS(afero.NewIOFS(baseFs)), ".html")
-	setFuncMap(TemplateEngine)
+	newEngine := html.NewFileSystem(http.FS(afero.NewIOFS(baseFs)), ".html")
+	setFuncMap(newEngine)
 
 	// 加载模板
-	if err := TemplateEngine.Load(); err != nil {
+	if err := newEngine.Load(); err != nil {
 		return fmt.Errorf("failed to load templates: %w", err)
 	}
 
-	log.Printf("Templates loaded from site=%s, admin=%s", siteTemplateRoot, adminTemplateRoot)
-
 	if solitudes.System.Config.Debug {
-		TemplateEngine.Reload(true)
-		TemplateEngine.Debug(true)
+		newEngine.Reload(true)
+		newEngine.Debug(true)
 	}
 
+	globalDynamicEngine.engine = newEngine
+	log.Printf("Templates loaded from site=%s, admin=%s", siteTemplateRoot, adminTemplateRoot)
 	return nil
 }
 
@@ -266,7 +269,7 @@ func Serve() {
 		EnableTrustedProxyCheck: solitudes.System.Config.EnableTrustedProxyCheck,
 		TrustedProxies:          solitudes.System.Config.TrustedProxies,
 		ProxyHeader:             solitudes.System.Config.ProxyHeader,
-		Views:                   TemplateEngine,
+		Views:                   globalDynamicEngine,
 		ErrorHandler: func(c *fiber.Ctx, e error) error {
 			// 404 页面
 			if e == gorm.ErrRecordNotFound {
@@ -317,8 +320,7 @@ func Serve() {
 	// Email tracking endpoints: redirect (primary) + pixel (backup), both use token lookup
 	app.Get("/r/:token", trackEmailReadRedirect)
 	app.Get("/static/i/:token", trackEmailRead)
-	app.Get("/admin/static/*", themeStaticHandler)
-	app.Get("/static/*", themeStaticHandler)
+	app.Get("/static/:kind/:theme/*", themeStaticHandler)
 	app.Static("/upload", "data/upload")
 
 	app.Get("/admin/login", guestRequired, login)

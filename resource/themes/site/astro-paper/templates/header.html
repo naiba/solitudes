@@ -42,26 +42,28 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-    <link rel="stylesheet" href="/static/css/custom.css?v={{.BuildVersion}}">
+    <link rel="stylesheet" href="/static/site/astro-paper/css/custom.css?v20260126">
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.cn">
+    <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+    <link href="https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
         (function() {
             const html = document.documentElement;
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                html.setAttribute('data-theme', savedTheme);
-                if (savedTheme === 'dark') {
+            const savedTheme = localStorage.getItem('solitudes_theme') || 'auto';
+            
+            function applyTheme(theme) {
+                if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     html.classList.add('dark');
+                    html.setAttribute('data-theme', 'dark');
                 } else {
                     html.classList.remove('dark');
+                    html.setAttribute('data-theme', 'light');
                 }
-            } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                html.classList.add('dark');
             }
+
+            applyTheme(savedTheme);
 
             // Handle title placeholder replacement
             const params = new URLSearchParams(window.location.search);
@@ -83,14 +85,8 @@
             window.toggleTheme = function() {
                 const isDark = html.classList.contains('dark');
                 const newTheme = isDark ? 'light' : 'dark';
-                if (newTheme === 'dark') {
-                    html.classList.add('dark');
-                    html.setAttribute('data-theme', 'dark');
-                } else {
-                    html.classList.remove('dark');
-                    html.setAttribute('data-theme', 'light');
-                }
-                localStorage.setItem('theme', newTheme);
+                localStorage.setItem('solitudes_theme', newTheme);
+                applyTheme(newTheme);
             };
         })();
     </script>
@@ -119,7 +115,7 @@
 </head>
 
 <body class="min-h-screen bg-background text-foreground font-sans antialiased flex flex-col">
-    <a href="#main-content" class="skip-to-content">Skip to content</a>
+    <a href="#main-content" class="skip-to-content">{{.Tr.T "skip_to_content"}}</a>
 
 <header class="bg-background sticky top-0 z-50">
     <div class="app-layout py-4 sm:py-6 border-b border-border">

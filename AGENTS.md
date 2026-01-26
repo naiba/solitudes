@@ -47,21 +47,24 @@
 ### 资源与路径
 - **配置**: `data/conf.yml`。
 - **模板**: `resource/themes/{kind}/{theme}/templates/`。
-- **静态文件**: `resource/themes/{kind}/{theme}/static/`。
+- **静态文件**: 
+  - 物理路径: `resource/themes/{kind}/{theme}/static/`。
+  - URL 规范: `/static/{kind}/{theme}/{path}`（例如 `/static/site/cactus/css/main.css`）。
+- **翻译文件**:
+  - 基础/后端翻译: `resource/translation/{lang}.json`。
+  - 主题专属翻译: `resource/themes/{kind}/{theme}/translations/{lang}.json`。
 - **上传文件**: `data/upload/`。
 
 ## 3. 架构组件
-
-- **`solitudes.go`**: 核心初始化逻辑、全局 `System` 变量（包含 DB、Config、Cache）。
-- **`internal/model/`**: 数据库模型定义与业务逻辑逻辑（如配置校验）。
-- **`internal/theme/`**: 主题加载与管理逻辑。
-- **`router/`**: 路由定义、控制器函数、中间件（auth, trans）。
-- **`pkg/`**: 独立于业务的通用工具包。
+...
+- **翻译系统**: 采用多层合并机制。基础翻译负责后端 Go 代码中的 `.T()` 调用；主题翻译负责模板中的 `.Tr.T` 调用。主题翻译应保持自给自足，不应依赖基础翻译的 Key。
 
 ## 4. 协作守则
-
-1. **修改代码前先阅读**: 在修改任何逻辑前，使用 `Grep` 或 `Read` 了解现有的实现模式。
-2. **保持注释一致**: 为导出的函数和结构体添加清晰的中文注释，描述其用途。
-3. **测试先行**: 修改模型或核心逻辑后，应运行相关测试（如 `internal/model/config_test.go`）确保未破坏现有功能。
-4. **不要随意更改目录结构**: 遵循现有的主题和资源组织方式。
-5. **安全第一**: 严禁在代码中硬编码任何敏感信息（密钥、密码等），应使用配置文件。
+...
+6. **翻译管理**: 修改模板或后端逻辑后，必须进行双向检查：
+   - **正向**: 确保所有新增的 Key 已在对应的 JSON 文件中定义。
+   - **反向**: 及时删除不再使用的冗余 Key，保持翻译文件精简。
+7. **静态资源引用**: 在主题模板中引用静态资源时，必须使用统一的路径格式 `/static/{kind}/{theme}/{path}`，严禁使用旧的相对路径或不带主题标识的路径。
+8. **浏览器存储规范**: 统一使用以下 `localStorage` Key 以确保跨主题数据一致性：
+   - 暗黑模式: `solitudes_theme` (可选值: `auto`, `light`, `dark`)。
+   - 评论者信息: `solitudes_cm_nickname`, `solitudes_cm_email`, `solitudes_cm_website`。

@@ -263,12 +263,12 @@
     </div>
     <script>
         (function () {
-            document.querySelector("#id_nickname").value = localStorage.getItem("cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}'
+            document.querySelector("#id_nickname").value = localStorage.getItem("solitudes_cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}'
             if (document.querySelector("#id_email")) {
-                document.querySelector("#id_email").value = localStorage.getItem("cm_email") || ''
+                document.querySelector("#id_email").value = localStorage.getItem("solitudes_cm_email") || ''
             }
             if (document.querySelector("#id_website")) {
-                document.querySelector("#id_website").value = localStorage.getItem("cm_website") || ''
+                document.querySelector("#id_website").value = localStorage.getItem("solitudes_cm_website") || ''
             }
             fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })
         })()
@@ -374,9 +374,9 @@
             const cm_nickname = document.querySelector('#id_nickname') ? document.querySelector('#id_nickname').value : "";
             const cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
             const cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
-            localStorage.setItem("cm_nickname", cm_nickname)
-            localStorage.setItem("cm_email", cm_email)
-            localStorage.setItem("cm_website", cm_website)
+            localStorage.setItem("solitudes_cm_nickname", cm_nickname)
+            localStorage.setItem("solitudes_cm_email", cm_email)
+            localStorage.setItem("solitudes_cm_website", cm_website)
             var data = {
                 nickname: cm_nickname,
                 email: cm_email,

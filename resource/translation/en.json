@@ -1,107 +1,24 @@
 [
-    {
-        "locale": "en",
-        "key": "articles_in",
-        "trans": "Articles in \"{0}\""
-    },
-    {
-        "locale": "en",
-        "key": "date_format",
-        "trans": "02 Jan 2006"
-    },
-    {
-        "locale": "en",
-        "key": "pagination",
-        "trans": "Page {0}/{1}, {2} {3} in total."
-    },
-    {
-        "locale": "en",
-        "key": "submit_failed",
-        "trans": "Submit failed:"
-    },
-    {
-        "locale": "en",
-        "key": "comment_required_fields",
-        "trans": "Nickname and content are required."
-    },
-    {
-        "locale": "en",
-        "key": "submitting",
-        "trans": "Submitting..."
-    },
-    {
-        "locale": "en",
-        "key": "email_read",
-        "trans": "Email notification has been read"
-    },
-    {
-        "locale": "en",
-        "key": "email_unread",
-        "trans": "Email notification not yet read"
-    },
-    {
-        "locale": "en",
-        "key": "redirect_title",
-        "trans": "External Link Redirect"
-    },
-    {
-        "locale": "en",
-        "key": "redirect_msg",
-        "trans": "You are about to leave this site and visit an external link:"
-    },
-    {
-        "locale": "en",
-        "key": "redirect_continue",
-        "trans": "Click here to continue"
-    },
-    {
-        "locale": "en",
-        "key": "redirect_auto",
-        "trans": "Auto redirect in"
-    },
-    {
-        "locale": "en",
-        "key": "redirect_seconds",
-        "trans": "seconds..."
-    },
-    {
-        "locale": "en",
-        "key": "redirect_error_no_url",
-        "trans": "Error: No URL provided"
-    },
-    {
-        "locale": "en",
-        "key": "redirect_error_invalid_url",
-        "trans": "Error: Invalid URL"
-    },
-    {
-        "locale": "en",
-        "key": "404_title",
-        "trans": "404 Page Not Found"
-    },
-    {
-        "locale": "en",
-        "key": "404_msg",
-        "trans": "Oops... This page may have flown into outer space."
-    },
-    {
-        "locale": "en",
-        "key": "updated_at",
-        "trans": "Last Updated"
-    },
-    {
-        "locale": "en",
-        "key": "search_result_title",
-        "trans": "Search Results for \"{0}\""
-    },
-    {
-        "locale": "en",
-        "key": "has_new_version",
-        "trans": "You are viewing version v{0} of this article, which has been updated to version <a href=\"/{1}/v{2}\">v{3}</a>."
-    },
-    {
-        "locale": "en",
-        "key": "has_old_version",
-        "trans": "You are viewing version v{0} of this article. You can also view historical versions: {1}."
-    }
+    {"locale": "en", "key": "404_msg", "trans": "Oops... This page may have flown into outer space."},
+    {"locale": "en", "key": "404_title", "trans": "404 Page Not Found"},
+    {"locale": "en", "key": "articles_in", "trans": "Articles in \"{0}\""},
+    {"locale": "en", "key": "books", "trans": "Books"},
+    {"locale": "en", "key": "dashboard", "trans": "Dashboard"},
+    {"locale": "en", "key": "home", "trans": "Home"},
+    {"locale": "en", "key": "manage_articles", "trans": "Manage Articles"},
+    {"locale": "en", "key": "manage_comments", "trans": "Manage Comments"},
+    {"locale": "en", "key": "manage_media", "trans": "Manage Media"},
+    {"locale": "en", "key": "manage_tags", "trans": "Manage Tags"},
+    {"locale": "en", "key": "posts", "trans": "Posts"},
+    {"locale": "en", "key": "publish_article", "trans": "Publish Article"},
+    {"locale": "en", "key": "redirect_auto", "trans": "Auto redirect in"},
+    {"locale": "en", "key": "redirect_continue", "trans": "Click here to continue"},
+    {"locale": "en", "key": "redirect_error_invalid_url", "trans": "Error: Invalid URL"},
+    {"locale": "en", "key": "redirect_error_no_url", "trans": "Error: No URL provided"},
+    {"locale": "en", "key": "redirect_msg", "trans": "You are about to leave this site and visit an external link:"},
+    {"locale": "en", "key": "redirect_seconds", "trans": "seconds..."},
+    {"locale": "en", "key": "redirect_title", "trans": "External Link Redirect"},
+    {"locale": "en", "key": "search_result_title", "trans": "Search Results for \"{0}\""},
+    {"locale": "en", "key": "site_settings", "trans": "Settings"},
+    {"locale": "en", "key": "tags_cloud", "trans": "Tags Cloud"}
 ]

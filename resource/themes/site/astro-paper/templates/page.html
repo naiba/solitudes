@@ -11,5 +11,11 @@
         </div>
     </article>
 </main>
+
+<script>
+    (function () {
+        fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" });
+    })();
+</script>
 {{template "site/footer" .}}
 {{end}}

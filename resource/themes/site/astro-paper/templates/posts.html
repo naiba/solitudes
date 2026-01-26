@@ -32,8 +32,19 @@
                                 </div>
                             {{else}}
                                 <a href="/{{$article.Slug}}"><h2 class="text-lg font-bold text-accent">{{$article.Title}}</h2></a>
-                                <div class="text-xs opacity-40 mb-2">
-                                    {{tf $article.CreatedAt "Jan 2, 2006"}} | Read: {{$article.ReadNum}} | Comments: {{$article.CommentNum}}
+                                <div class="text-xs opacity-40 mb-2 flex items-center gap-4">
+                                    <span class="flex items-center gap-1">
+                                        <i class="fa-regular fa-calendar-alt"></i>
+                                        {{tf $article.CreatedAt "Jan 2, 2006"}}
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i class="fa-regular fa-eye"></i>
+                                        {{$article.ReadNum}}
+                                    </span>
+                                    <span class="flex items-center gap-1">
+                                        <i class="fa-regular fa-comment"></i>
+                                        {{$article.CommentNum}}
+                                    </span>
                                 </div>
                                 <p class="text-sm line-clamp-3 text-foreground/70">{{substr $article.Content 0 100}}...</p>
                                 {{if $article.Tags}}

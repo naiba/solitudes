@@ -217,15 +217,19 @@
 </main>
 
 <script>
+    (function () {
+        fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" });
+    })();
+
     // Comment Form Logic
     (function () {
         const nicknameInput = document.getElementById('comment-nickname');
         const emailInput = document.getElementById('comment-email');
         const websiteInput = document.getElementById('comment-website');
 
-        if (nicknameInput) nicknameInput.value = localStorage.getItem("cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}';
-        if (emailInput) emailInput.value = localStorage.getItem("cm_email") || '';
-        if (websiteInput) websiteInput.value = localStorage.getItem("cm_website") || '';
+        if (nicknameInput) nicknameInput.value = localStorage.getItem("solitudes_cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}';
+        if (emailInput) emailInput.value = localStorage.getItem("solitudes_cm_email") || '';
+        if (websiteInput) websiteInput.value = localStorage.getItem("solitudes_cm_website") || '';
     })();
 
     let loadCommenterInfoTimeout;
@@ -312,9 +316,9 @@
         {{end}}
 
         // Save to localStorage
-        localStorage.setItem("cm_nickname", nickname);
-        localStorage.setItem("cm_email", email);
-        localStorage.setItem("cm_website", website);
+        localStorage.setItem("solitudes_cm_nickname", nickname);
+        localStorage.setItem("solitudes_cm_email", email);
+        localStorage.setItem("solitudes_cm_website", website);
         
         if (!content) {
             alert('{{.Tr.T "comment_required_fields"}}');
