@@ -10,12 +10,219 @@
             {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
         </div>
     </article>
+
+    <!-- Comments Section -->
+    {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
+    <div class="mt-12 pt-8 border-t border-border">
+        <h2 class="text-2xl font-semibold mb-6">
+            <i class="fa-regular fa-comments mr-2"></i>{{.Tr.T "comments"}} ({{.Data.article.CommentNum}})
+        </h2>
+        
+        {{if .Data.article.Comments}}
+        <div id="comments" class="space-y-6 mb-8">
+            {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
+        </div>
+
+        <!-- Comment Pagination -->
+        {{if gt .Data.comment_page.TotalPage 1}}
+        <nav class="flex items-center justify-between mt-8 mb-12 py-4 border-y border-border/30" aria-label="Comment Pagination">
+            {{$prevPage := .Data.comment_page.PrevPage}}
+            {{$nextPage := .Data.comment_page.NextPage}}
+            {{$currPage := .Data.comment_page.Page}}
+            {{$totalPage := .Data.comment_page.TotalPage}}
+
+            <a href="{{if gt $currPage 1}}?comment_page={{$prevPage}}#comments{{else}}javascript:void(0){{end}}" 
+               class="group flex items-center gap-2 {{if eq $currPage 1}}opacity-20 cursor-not-allowed{{else}}hover:text-accent transition-all{{end}}">
+                <i class="fa-solid fa-chevron-left text-xs group-hover:-translate-x-1 transition-transform"></i>
+                <span class="font-bold tracking-widest uppercase text-[10px] italic">Newer</span>
+            </a>
+
+            <div class="font-mono text-[10px] opacity-40 tracking-tighter">
+                Comments {{$currPage}} / {{$totalPage}}
+            </div>
+
+            <a href="{{if lt $currPage $totalPage}}?comment_page={{$nextPage}}#comments{{else}}javascript:void(0){{end}}" 
+               class="group flex items-center gap-2 {{if eq $currPage $totalPage}}opacity-20 cursor-not-allowed{{else}}hover:text-accent transition-all{{end}}">
+                <span class="font-bold tracking-widest uppercase text-[10px] italic">Older</span>
+                <i class="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+            </a>
+        </nav>
+        {{end}}
+        {{end}}
+        
+        {{if not .Data.article.DisableComment}}
+        <div class="bg-muted/30 rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-4">{{.Tr.T "leave_a_comment"}}</h3>
+            
+            <form id="comment-form" class="space-y-4">
+                <textarea id="comment-content" rows="6" class="w-full px-4 py-3 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none" placeholder="{{.Tr.T "may_not_reply_if_email_not_exist"}}" required></textarea>
+                
+                <input type="hidden" id="reply-to" value="">
+                <input type="hidden" id="article-slug" value="{{.Data.article.Slug}}">
+                <input type="hidden" id="article-version" value="{{.Data.article.Version}}">
+                
+                {{if not .Login}}
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <input type="text" id="comment-nickname" class="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50" placeholder="{{.Tr.T "nickname"}} *" required maxlength="64">
+                    <input type="email" id="comment-email" class="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50" placeholder="{{.Tr.T "email"}} ({{.Tr.T "not_required"}})" maxlength="254">
+                    <input type="url" id="comment-website" class="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent/50" placeholder="{{.Tr.T "website"}} ({{.Tr.T "not_required"}})" maxlength="200">
+                </div>
+                {{end}}
+                
+                <div class="flex justify-between items-center">
+                    <div id="reply-info" class="hidden text-sm text-foreground/70">
+                        {{.Tr.T "replying_to"}}: <span id="reply-to-name" class="font-semibold"></span>
+                        <button type="button" onclick="cancelReply()" class="ml-2 text-accent hover:underline">{{.Tr.T "cancel"}}</button>
+                    </div>
+                    
+                    <button type="submit" class="px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition">
+                        <i class="fa-regular fa-paper-plane mr-2"></i>{{.Tr.T "submit_comment"}}
+                    </button>
+                </div>
+            </form>
+        </div>
+        {{end}}
+    </div>
+    {{end}}
 </main>
 
 <script>
     (function () {
         fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" });
     })();
+
+    // Comment Form Logic
+    (function () {
+        const nicknameInput = document.getElementById('comment-nickname');
+        const emailInput = document.getElementById('comment-email');
+        const websiteInput = document.getElementById('comment-website');
+
+        if (nicknameInput) nicknameInput.value = localStorage.getItem("solitudes_cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}';
+        if (emailInput) emailInput.value = localStorage.getItem("solitudes_cm_email") || '';
+        if (websiteInput) websiteInput.value = localStorage.getItem("solitudes_cm_website") || '';
+    })();
+
+    let loadCommenterInfoTimeout;
+    const queriedFields = new Set();
+
+    function loadCommenterInfo() {
+        clearTimeout(loadCommenterInfoTimeout);
+        loadCommenterInfoTimeout = setTimeout(() => {
+            const nicknameInput = document.getElementById('comment-nickname');
+            const emailInput = document.getElementById('comment-email');
+            const websiteInput = document.getElementById('comment-website');
+
+            const nickname = nicknameInput ? nicknameInput.value.trim() : '';
+            const email = emailInput ? emailInput.value.trim() : '';
+            const website = websiteInput ? websiteInput.value.trim() : '';
+
+            if (!nickname && !email && !website) return;
+            if (nickname && email && website) return;
+
+            const params = new URLSearchParams();
+            if (nickname) params.append('nickname', nickname);
+            if (email) params.append('email', email);
+            if (website) params.append('website', website);
+
+            fetch(`/api/commenter-info?${params.toString()}`, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            }).then(resp => resp.json()).then(data => {
+                if (data.success && data.data) {
+                    if (nicknameInput && data.data.nickname && !nicknameInput.value && !queriedFields.has('nickname')) {
+                        nicknameInput.value = data.data.nickname;
+                        queriedFields.add('nickname');
+                    }
+                    if (websiteInput && data.data.website && !websiteInput.value && !queriedFields.has('website')) {
+                        websiteInput.value = data.data.website;
+                        queriedFields.add('website');
+                    }
+                    if (emailInput && data.data.email && !emailInput.value && !queriedFields.has('email')) {
+                        emailInput.value = data.data.email;
+                        queriedFields.add('email');
+                    }
+                }
+            }).catch(e => console.error('Failed to load commenter info:', e));
+        }, 300);
+    }
+
+    // Event Bindings for Auto-completion
+    ['comment-nickname', 'comment-email', 'comment-website'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('blur', loadCommenterInfo);
+            el.addEventListener('input', () => queriedFields.delete(id.replace('comment-', '')));
+            el.addEventListener('focus', () => queriedFields.delete(id.replace('comment-', '')));
+        }
+    });
+
+    function reply_to(commentId, nickname) {
+        document.getElementById('reply-to').value = commentId;
+        document.getElementById('reply-to-name').textContent = nickname;
+        document.getElementById('reply-info').classList.remove('hidden');
+        document.getElementById('comment-content').focus();
+        document.getElementById('comment-form').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    function cancelReply() {
+        document.getElementById('reply-to').value = '';
+        document.getElementById('reply-info').classList.add('hidden');
+    }
+    
+    document.getElementById('comment-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const content = document.getElementById('comment-content').value.trim();
+        let nickname = document.getElementById('comment-nickname') ? document.getElementById('comment-nickname').value.trim() : '';
+        const email = document.getElementById('comment-email') ? document.getElementById('comment-email').value.trim() : '';
+        const website = document.getElementById('comment-website') ? document.getElementById('comment-website').value.trim() : '';
+        const replyTo = document.getElementById('reply-to').value;
+        const slug = document.getElementById('article-slug').value;
+        
+        {{if .Login}}
+        if (!nickname) {
+            nickname = "{{.Conf.User.Nickname}}";
+        }
+        {{end}}
+
+        // Save to localStorage
+        localStorage.setItem("solitudes_cm_nickname", nickname);
+        localStorage.setItem("solitudes_cm_email", email);
+        localStorage.setItem("solitudes_cm_website", website);
+        
+        if (!content) {
+            alert('{{.Tr.T "comment_required_fields"}}');
+            return;
+        }
+        
+        const commentData = {
+            content: content,
+            nickname: nickname,
+            email: email,
+            website: website,
+            reply_to: replyTo || null,
+            slug: slug,
+            version: parseInt(document.getElementById('article-version').value)
+        };
+        
+        fetch('/api/comment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(commentData)
+        })
+        .then(response => {
+            if (response.ok) {
+                alert('{{.Tr.T "submit_comment_success"}}');
+                window.location.reload();
+            } else {
+                response.text().then(msg => alert('{{.Tr.T "submit_failed"}} ' + msg));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('{{.Tr.T "submit_failed"}} ' + error);
+        });
+    });
 </script>
 {{template "site/footer" .}}
 {{end}}
