@@ -341,17 +341,17 @@ func TestGetDefaultLogoURL(t *testing.T) {
 		{
 			name:   "Simple domain",
 			domain: "example.com",
-			want:   "https://example.com/static/cactus/images/logo.png?20211213",
+			want:   "https://example.com/logo.png",
 		},
 		{
 			name:   "Subdomain",
 			domain: "blog.example.com",
-			want:   "https://blog.example.com/static/cactus/images/logo.png?20211213",
+			want:   "https://blog.example.com/logo.png",
 		},
 		{
 			name:   "Chinese domain",
 			domain: "博客.cn",
-			want:   "https://博客.cn/static/cactus/images/logo.png?20211213",
+			want:   "https://博客.cn/logo.png",
 		},
 	}
 

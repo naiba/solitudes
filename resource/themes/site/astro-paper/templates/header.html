@@ -42,7 +42,7 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-    <link rel="stylesheet" href="/static/site/astro-paper/css/custom.css?v20260126">
+    <link rel="stylesheet" href="/static/site/astro-paper/css/custom.css?v2026012602">
     
     <link rel="preconnect" href="https://fonts.googleapis.cn">
     <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
@@ -107,10 +107,10 @@
             outline: 2px solid var(--accent);
         }
         /* Mode Toggle Icons */
-        .dark #theme-toggle-dark-icon { display: none; }
-        .dark #theme-toggle-light-icon { display: block; }
-        #theme-toggle-dark-icon { display: block; }
-        #theme-toggle-light-icon { display: none; }
+        .dark #theme-toggle-dark-icon, .dark #theme-toggle-dark-icon-mobile { display: none; }
+        .dark #theme-toggle-light-icon, .dark #theme-toggle-light-icon-mobile { display: block; }
+        #theme-toggle-dark-icon, #theme-toggle-dark-icon-mobile { display: block; }
+        #theme-toggle-light-icon, #theme-toggle-light-icon-mobile { display: none; }
     </style>
 </head>
 
@@ -157,7 +157,13 @@
             </li>
             {{end}}
             <li>
-                <button onclick="window.toggleTheme()" class="block w-full text-left px-3 py-2 hover:text-accent">{{.Tr.T "toggle_theme"}}</button>
+                <button onclick="window.toggleTheme()" class="flex items-center gap-3 w-full text-left px-3 py-2 hover:text-accent" aria-label="{{.Tr.T "toggle_theme"}}">
+                    <div class="w-5 text-center">
+                        <i id="theme-toggle-dark-icon-mobile" class="fa-solid fa-moon"></i>
+                        <i id="theme-toggle-light-icon-mobile" class="fa-solid fa-sun"></i>
+                    </div>
+                    <span>{{.Tr.T "toggle_theme"}}</span>
+                </button>
             </li>
         </ul>
     </div>

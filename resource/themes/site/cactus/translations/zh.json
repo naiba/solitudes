@@ -10,7 +10,7 @@
     {"locale": "zh", "key": "go_to_page", "trans": "跳转"},
     {"locale": "zh", "key": "has_new_version", "trans": "您正在查看的是本文章的 v{0} 版本，该文章已更新至 <a href=\"/{1}/v{2}\">v{3}</a> 版本。"},
     {"locale": "zh", "key": "has_old_version", "trans": "您正在查看的是本文章的 v{0} 版本，您还可以查看历史版本：{1}。"},
-    {"locale": "zh", "key": "may_not_reply_if_email_not_exist", "trans": "如果不填写邮箱，我可能无法回复您的评论。"},
+    {"locale": "zh", "key": "may_not_reply_if_email_not_exist", "trans": "如果不填写邮箱，我可能无法回复您的评论。优先填入邮箱或昵称会自动加载其他信息。"},
     {"locale": "zh", "key": "menu", "trans": "菜单"},
     {"locale": "zh", "key": "most_read", "trans": "阅读最多"},
     {"locale": "zh", "key": "next_chapter", "trans": "下一章"},

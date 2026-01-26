@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"sync"
 	"time"
 	"unicode"
 
@@ -34,17 +33,17 @@ type Article struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 
-	Slug       string         `form:"slug" validate:"required" gorm:"unique_index"`
-	Title      string         `form:"title" validate:"required"`
-	Content    string         `form:"content" validate:"required" gorm:"text"`
-	TemplateID byte           `form:"template" validate:"required"`
-	IsBook     bool           `form:"is_book"`
-	RawTags    string         `form:"tags" gorm:"-"`
-	Tags       pq.StringArray `gorm:"index;type:varchar(255)[]" validate:"-" form:"-"`
-	ReadNum    uint           `gorm:"default:0;"`
-	CommentNum uint           `gorm:"default:0;"`
-	Version    uint           `gorm:"default:1;"`
-	BookRefer  *string        `form:"book_refer" validate:"omitempty,uuid4" gorm:"type:uuid;index;default:NULL"`
+	Slug           string         `form:"slug" validate:"required" gorm:"unique_index"`
+	Title          string         `form:"title" validate:"required"`
+	Content        string         `form:"content" validate:"required" gorm:"text"`
+	TemplateID     byte           `form:"template" validate:"required"`
+	IsBook         bool           `form:"is_book"`
+	RawTags        string         `form:"tags" gorm:"-"`
+	Tags           pq.StringArray `gorm:"index;type:varchar(255)[]" validate:"-" form:"-"`
+	ReadNum        uint           `gorm:"default:0;"`
+	CommentNum     uint           `gorm:"default:0;"`
+	Version        uint           `gorm:"default:1;"`
+	BookRefer      *string        `form:"book_refer" validate:"omitempty,uuid4" gorm:"type:uuid;index;default:NULL"`
 	IsPrivate      bool           `form:"is_private"`
 	DisableComment bool           `form:"disable_comment"`
 
@@ -80,9 +79,14 @@ func (t *Article) BeforeSave(tx *gorm.DB) (err error) {
 
 func (t *Article) parseRawTags() {
 	if t.RawTags == "" {
+		t.Tags = nil
 		return
 	}
-	t.Tags = strings.Split(t.RawTags, ",")
+	// 去重并过滤空标签
+	tags := strings.Split(t.RawTags, ",")
+	t.Tags = lo.Uniq(lo.Filter(tags, func(item string, index int) bool {
+		return strings.TrimSpace(item) != ""
+	}))
 }
 
 // AfterFind hook
@@ -182,13 +186,7 @@ func (t *Article) RelatedCount(db *gorm.DB) {
 	if !t.IsBook {
 		return
 	}
-	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		innerRelatedCount(db, t, true)
-	}()
-	wg.Wait()
+	innerRelatedCount(db, t, true)
 }
 
 func innerRelatedCount(db *gorm.DB, p *Article, root bool) {

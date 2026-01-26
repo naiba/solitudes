@@ -18,11 +18,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/naiba/solitudes/internal/model"
-	"github.com/samber/lo"
-	"github.com/spf13/afero"
-	"gorm.io/gorm"
-
 	"github.com/88250/lute"
 	"github.com/88250/lute/ast"
 	luteHtml "github.com/88250/lute/html"
@@ -30,11 +25,14 @@ import (
 	"github.com/go-playground/locales"
 	gv "github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	html "github.com/gofiber/template/html/v2"
+	"github.com/samber/lo"
+	"github.com/spf13/afero"
+	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
+	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
@@ -77,20 +75,26 @@ func init() {
 	}
 }
 
-// ThemeTemplateRoot returns the path to the templates for a given theme.
-func ThemeTemplateRoot(kind, name string) string {
-	if name == "" {
-		name = "cactus"
+// themeResourcePath 返回主题资源的物理路径。
+func themeResourcePath(kind, theme, subDir string) string {
+	if theme == "" {
+		if kind == "admin" {
+			theme = "default"
+		} else {
+			theme = "cactus"
+		}
 	}
-	return fmt.Sprintf("resource/themes/%s/%s/templates", kind, name)
+	return filepath.Join("resource", "themes", kind, theme, subDir)
 }
 
-// themeStaticRoot constructs the path to the static assets for a given theme.
+// ThemeTemplateRoot returns the path to the templates for a given theme.
+func ThemeTemplateRoot(kind, name string) string {
+	return themeResourcePath(kind, name, "templates")
+}
+
+// ThemeStaticRoot constructs the path to the static assets for a given theme.
 func ThemeStaticRoot(kind, name string) string {
-	if name == "" {
-		name = "cactus"
-	}
-	return fmt.Sprintf("resource/themes/%s/%s/static", kind, name)
+	return themeResourcePath(kind, name, "static")
 }
 
 // themeStaticHandler handles static file requests dynamically based on kind and theme
@@ -372,18 +376,20 @@ func themePreview(c *fiber.Ctx) error {
 	return c.SendFile(filepath.Clean(path))
 }
 
-func faviconHandler(c *fiber.Ctx) error {
-	if _, err := os.Stat("data/upload/favicon.ico"); err == nil {
-		return c.SendFile("data/upload/favicon.ico")
+func serveUploadOrThemeFile(c *fiber.Ctx, uploadPath, themePath string) error {
+	if _, err := os.Stat(uploadPath); err == nil {
+		return c.SendFile(uploadPath)
 	}
-	return c.SendFile(ThemeStaticRoot("site", solitudes.System.Config.Site.Theme) + "/images/favicon.ico")
+	fullThemePath := filepath.Join(ThemeStaticRoot("site", solitudes.System.Config.Site.Theme), themePath)
+	return c.SendFile(filepath.Clean(fullThemePath))
+}
+
+func faviconHandler(c *fiber.Ctx) error {
+	return serveUploadOrThemeFile(c, "data/upload/favicon.ico", "images/favicon.ico")
 }
 
 func logoHandler(c *fiber.Ctx) error {
-	if _, err := os.Stat("data/upload/logo.png"); err == nil {
-		return c.SendFile("data/upload/logo.png")
-	}
-	return c.SendFile(ThemeStaticRoot("site", solitudes.System.Config.Site.Theme) + "/images/logo.png")
+	return serveUploadOrThemeFile(c, "data/upload/logo.png", "images/logo.png")
 }
 
 // goRedirect 处理外部链接跳转
@@ -444,7 +450,9 @@ func sitemapHandler(c *fiber.Ctx) error {
   </url>
 `, domain))
 	var articles []model.Article
-	solitudes.System.DB.Order("created_at DESC").Find(&articles)
+	if err := solitudes.System.DB.Order("created_at DESC").Find(&articles).Error; err != nil {
+		return fmt.Errorf("failed to fetch articles for sitemap: %w", err)
+	}
 	for _, article := range articles {
 		if article.IsPrivate {
 			continue
@@ -462,7 +470,9 @@ func sitemapHandler(c *fiber.Ctx) error {
   </url>
 `)
 	var tags []string
-	solitudes.System.DB.Raw(`select distinct unnest(articles.tags) t from articles where unnest(articles.tags) is not null`).Scan(&tags)
+	if err := solitudes.System.DB.Raw(`select distinct unnest(articles.tags) t from articles where unnest(articles.tags) is not null`).Scan(&tags).Error; err != nil {
+		return fmt.Errorf("failed to fetch tags for sitemap: %w", err)
+	}
 	for _, tag := range tags {
 		sb.WriteString(fmt.Sprintf(`  <url>
     <loc>https://%s/tags/%s/</loc>
@@ -471,8 +481,7 @@ func sitemapHandler(c *fiber.Ctx) error {
 	}
 	sb.WriteString(`</urlset>`)
 	c.Set("Content-Type", "application/xml")
-	c.Status(http.StatusOK).SendString(sb.String())
-	return nil
+	return c.Status(http.StatusOK).SendString(sb.String())
 }
 
 func setFuncMap(engine *html.Engine) {

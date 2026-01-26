@@ -14,6 +14,11 @@
   go run cmd/web/main.go
   ```
 - **运行所有测试**: `go test ./...`
+- **运行 E2E 测试**: 
+  ```bash
+  # 需先启动开发服务器
+  go test -v -tags e2e ./router -run TestE2EPages
+  ```
 - **运行特定包的测试**: `go test ./internal/model/...`
 - **运行单个测试函数**: `go test -v -run TestValidateThemeConfig ./internal/model`
 - **查看依赖**: `go mod tidy`

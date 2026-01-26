@@ -7,11 +7,11 @@ import (
 	"os"
 	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -27,38 +27,31 @@ func manager(c *fiber.Ctx) error {
 	}
 	var tn tagNum
 
-	var wg sync.WaitGroup
-	wg.Add(6)
-	go func() {
-		defer wg.Done()
-		solitudes.System.DB.Model(model.Article{}).Count(&articleNum)
-	}()
-	go func() {
-		defer wg.Done()
-		solitudes.System.DB.Model(model.Comment{}).Count(&commentNum)
-	}()
-	go func() {
-		defer wg.Done()
-		solitudes.System.DB.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn)
-	}()
-	go func() {
-		defer wg.Done()
-		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastArticle)
-	}()
-	go func() {
-		defer wg.Done()
-		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment)
-	}()
+	var g errgroup.Group
+	g.Go(func() error {
+		return solitudes.System.DB.Model(model.Article{}).Count(&articleNum).Error
+	})
+	g.Go(func() error {
+		return solitudes.System.DB.Model(model.Comment{}).Count(&commentNum).Error
+	})
+	g.Go(func() error {
+		return solitudes.System.DB.Raw(`select count(*) from (select tags,count(tags) from (select unnest(tags) as tags from articles) t group by tags) ts;`).Scan(&tn).Error
+	})
+	g.Go(func() error {
+		return solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastArticle).Error
+	})
+	g.Go(func() error {
+		return solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment).Error
+	})
 	var rssSubscriberCount int64
 	type rssSubscriber struct {
 		IP    string
 		Count int64
 	}
 	var rssSubscribers []rssSubscriber
-	go func() {
-		defer wg.Done()
+	g.Go(func() error {
 		oneDayAgo := time.Now().Add(-24 * time.Hour)
-		solitudes.System.DB.Raw(`
+		if err := solitudes.System.DB.Raw(`
 			SELECT COUNT(*) FROM (
 				SELECT ip, COUNT(*) as cnt
 				FROM feed_visits
@@ -66,17 +59,19 @@ func manager(c *fiber.Ctx) error {
 				GROUP BY ip
 				HAVING COUNT(*) >= ?
 			) t
-		`, oneDayAgo, 3).Scan(&rssSubscriberCount)
-		solitudes.System.DB.Raw(`
+		`, oneDayAgo, 3).Scan(&rssSubscriberCount).Error; err != nil {
+			return err
+		}
+		return solitudes.System.DB.Raw(`
 			SELECT ip, COUNT(*) as count
 			FROM feed_visits
 			WHERE created_at > ?
 			GROUP BY ip
 			ORDER BY count DESC
 			LIMIT 4
-		`, oneDayAgo).Scan(&rssSubscribers)
-	}()
-	wg.Wait()
+		`, oneDayAgo).Scan(&rssSubscribers).Error
+	})
+	_ = g.Wait()
 
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)

@@ -1,36 +1,58 @@
 {{define "site/article_list_entry"}}
 <li class="my-10 first:mt-0 last:mb-0 border-b border-border/30 pb-10 last:border-none">
     {{if .article.IsTopic}}
-    <div class="topic-entry">
-        <!-- Topic Meta -->
-        <div class="flex items-center gap-2 mb-3 text-xs tracking-wider uppercase text-foreground/30 font-bold">
-            <i class="fa-solid fa-quote-left text-accent/40"></i>
-            <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt "January 02, 2006"}}</time>
-            {{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog ml-1"></i>{{end}}
-        </div>
-        
-        <!-- Topic Content - ENCLOSED IN BOX -->
-        <div class="app-prose prose max-w-none text-foreground text-lg leading-relaxed p-6 bg-muted/20 border border-border/50 rounded-2xl shadow-sm font-medium">
-            {{(md .article.ID .article.Content)|unsafe}}
+    <div class="topic-entry group">
+        <!-- Topic Content -->
+        <div class="relative bg-muted/30 dark:bg-muted/10 p-5 sm:p-7 rounded-2xl border border-border/40 hover:border-accent/30 transition-all duration-300">
+            <!-- Decorative Accent -->
+            <div class="absolute left-0 top-8 bottom-8 w-1 bg-accent/20 group-hover:bg-accent rounded-r-full transition-all"></div>
+            
+            <!-- Top Quote Icon -->
+            <div class="absolute -top-3 left-6 px-2 bg-background">
+                <i class="fa-solid fa-quote-left text-accent opacity-50 text-xl"></i>
+            </div>
+
+            <!-- Main Text -->
+            <div class="app-prose prose max-w-none text-foreground/90 text-[1.05rem] leading-relaxed mb-1 font-medium italic">
+                {{(md .article.ID .article.Content)|unsafe}}
+            </div>
+            
+            <!-- Topic Meta Footer (inside box) -->
+            <div class="mt-4 flex flex-wrap items-center gap-4 text-[10px] uppercase tracking-wider font-bold text-foreground/40">
+                <time datetime="{{iso8601 .article.CreatedAt}}" class="flex items-center gap-1.5">
+                    <i class="fa-regular fa-clock"></i>
+                    {{tf .article.CreatedAt "Jan 02, 2006"}}
+                </time>
+                {{if .article.IsPrivate}}
+                <span class="flex items-center gap-1.5 text-orange-500/60">
+                    <i class="fa-solid fa-lock"></i>
+                    Private
+                </span>
+                {{end}}
+                <span class="flex items-center gap-1.5 ml-auto">
+                    <i class="fa-regular fa-eye"></i>
+                    {{.article.ReadNum}}
+                </span>
+            </div>
         </div>
 
-        <!-- Topic Comments Preview - UNBOXED & SUBTLE -->
+        <!-- Topic Comments Preview -->
         {{if .article.Comments}}
-        <div class="mt-6 ml-4 space-y-4 border-l-2 border-border/20 pl-6">
+        <div class="mt-4 px-4 space-y-3">
             {{range .article.Comments}}
-            <div class="flex gap-3 text-xs">
-                <div class="flex-shrink-0">
+            <div class="flex gap-3 group/cm">
+                <div class="flex-shrink-0 mt-1">
                     {{if .Email}}
-                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=32&d=mm&r=g" alt="{{.Nickname}}" class="w-6 h-6 rounded-full opacity-60">
+                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=32&d=mm&r=g" alt="{{.Nickname}}" class="w-5 h-5 rounded-full border border-border/50 group-hover/cm:border-accent/50 transition-colors grayscale group-hover/cm:grayscale-0">
                     {{else}}
-                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" class="w-6 h-6 rounded-full opacity-60">
+                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" class="w-5 h-5 rounded-full border border-border/50 group-hover/cm:border-accent/50 transition-colors grayscale group-hover/cm:grayscale-0">
                     {{end}}
                 </div>
-                <div class="flex-1 min-w-0">
-                    <div class="text-foreground/50 leading-normal">
-                        <span class="font-bold text-foreground/70 mr-1">{{.Nickname}}</span>
-                        {{if .IsAdmin}}<i class="fa-solid fa-circle-check text-accent text-[9px] mr-1 opacity-50"></i>{{end}}
-                        <span class="opacity-70">{{.Content}}</span>
+                <div class="flex-1 bg-muted/20 hover:bg-muted/40 px-3 py-1.5 rounded-lg rounded-tl-none border border-border/20 transition-colors">
+                    <div class="text-[11px] text-foreground/60 leading-normal">
+                        <span class="font-bold text-foreground/80 mr-1">{{.Nickname}}</span>
+                        {{if .IsAdmin}}<i class="fa-solid fa-circle-check text-accent text-[8px] mr-1 opacity-60"></i>{{end}}
+                        <span class="opacity-80">{{.Content}}</span>
                     </div>
                 </div>
             </div>
@@ -38,22 +60,16 @@
         </div>
         {{end}}
         
-        <!-- Topic Footer Actions -->
-        <div class="mt-6 flex items-center gap-6 text-[10px] uppercase tracking-widest font-bold text-foreground/30">
-            <a href="/{{.article.Slug}}" class="flex items-center gap-1.5 text-accent/80 hover:text-accent transition-all">
-                <i class="fa-solid fa-comment-dots"></i>
-                {{.tr.T "leave_a_comment"}}
+        <!-- Topic Actions -->
+        <div class="mt-4 flex items-center justify-end px-2">
+            <a href="/{{.article.Slug}}" class="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-accent hover:text-accent-hover transition-all py-1 px-3 rounded-full bg-accent/5 hover:bg-accent/10 border border-accent/20">
+                <i class="fa-solid fa-reply-all text-[11px]"></i>
+                {{if .article.CommentNum}}
+                    {{.tr.T "comments"}} ({{.article.CommentNum}})
+                {{else}}
+                    {{.tr.T "leave_a_comment"}}
+                {{end}}
             </a>
-            <span class="flex items-center gap-1.5">
-                <i class="fa-regular fa-eye"></i>
-                {{.article.ReadNum}}
-            </span>
-            {{if .article.CommentNum}}
-            <span class="flex items-center gap-1.5">
-                <i class="fa-regular fa-comment"></i>
-                {{.article.CommentNum}}
-            </span>
-            {{end}}
         </div>
     </div>
     {{else}}

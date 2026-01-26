@@ -10,7 +10,7 @@
     {"locale": "en", "key": "go_to_page", "trans": "Go"},
     {"locale": "en", "key": "has_new_version", "trans": "You are viewing version v{0} of this article, which has been updated to version <a href=\"/{1}/v{2}\">v{3}</a>."},
     {"locale": "en", "key": "has_old_version", "trans": "You are viewing version v{0} of this article. You can also view historical versions: {1}."},
-    {"locale": "en", "key": "may_not_reply_if_email_not_exist", "trans": "If you don't fill in your email, I may not be able to reply to your comment."},
+    {"locale": "en", "key": "may_not_reply_if_email_not_exist", "trans": "If you don't fill in your email, I may not be able to reply to your comment. Enter email or nickname first to auto-load other information."},
     {"locale": "en", "key": "menu", "trans": "Menu"},
     {"locale": "en", "key": "most_read", "trans": "Most Read"},
     {"locale": "en", "key": "next_chapter", "trans": "Next Chapter"},

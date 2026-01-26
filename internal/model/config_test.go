@@ -38,7 +38,7 @@ func TestThemeFallback(t *testing.T) {
 	cfg.Admin.Theme = "nonexistent"
 
 	availableSite := map[string]bool{"cactus": true}
-	availableAdmin := map[string]bool{"cactus": true}
+	availableAdmin := map[string]bool{"default": true}
 
 	ApplyThemeFallback(cfg, "cactus", "default", availableSite, availableAdmin)
 
@@ -47,12 +47,12 @@ func TestThemeFallback(t *testing.T) {
 	}
 
 	// ensure existing valid theme stays untouched
-	cfg.Site.Theme = "cactus"
-	cfg.Admin.Theme = "cactus"
+	availableAdmin["custom-admin"] = true
+	cfg.Admin.Theme = "custom-admin"
 	ApplyThemeFallback(cfg, "cactus", "default", availableSite, availableAdmin)
 
-	if cfg.Site.Theme != "cactus" || cfg.Admin.Theme != "default" {
-		t.Fatalf("valid theme should not change, got site=%q admin=%q", cfg.Site.Theme, cfg.Admin.Theme)
+	if cfg.Admin.Theme != "custom-admin" {
+		t.Fatalf("valid admin theme should not change, got %q", cfg.Admin.Theme)
 	}
 }
 

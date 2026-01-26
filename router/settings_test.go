@@ -17,7 +17,7 @@ import (
 
 func TestCactusSettings(t *testing.T) {
 	// Initialize config
-	solitudes.System = &solitudes.SysVeriable{
+	solitudes.System = &solitudes.SysVariable{
 		Config: &model.Config{
 			Site: struct {
 				SpaceName     string

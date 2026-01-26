@@ -1,9 +1,9 @@
 package solitudes
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -11,6 +11,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/yanyiwu/gojieba"
 	"go.uber.org/dig"
+	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/singleflight"
 	"gopkg.in/yaml.v3"
 	"gorm.io/driver/postgres"
@@ -37,8 +38,8 @@ const (
 	CacheKeyPrefixRelatedSiblingArticle = "ckprsa"
 )
 
-// SysVeriable 全局变量
-type SysVeriable struct {
+// SysVariable 全局变量
+type SysVariable struct {
 	Config    *model.Config
 	DB        *gorm.DB
 	Cache     *cache.Cache
@@ -52,7 +53,7 @@ const fullTextSearchIndexPath = "data/bleve"
 var Injector *dig.Container
 
 // System 全局变量
-var System *SysVeriable
+var System *SysVariable
 
 // BuildVersion 构建版本
 var BuildVersion = "_BuildVersion_"
@@ -76,7 +77,7 @@ var TemplateIndex = map[byte]string{
 	PageTemplateID:    "page",
 }
 
-func newBleveSearch() bleve.Index {
+func newBleveSearch() (bleve.Index, error) {
 	_, err := os.Stat(fullTextSearchIndexPath)
 	var index bleve.Index
 	if err != nil {
@@ -87,55 +88,54 @@ func newBleveSearch() bleve.Index {
 			"useHmm":       true,
 			"tokenizeMode": float64(gojieba.SearchMode),
 		}); err != nil {
-			panic(err)
+			return nil, fmt.Errorf("failed to add custom tokenizer: %w", err)
 		}
 		if err := mapping.AddCustomAnalyzer("jieba", map[string]interface{}{
 			"type":      "jieba",
 			"tokenizer": "jieba",
 		}); err != nil {
-			panic(err)
+			return nil, fmt.Errorf("failed to add custom analyzer: %w", err)
 		}
 		index, err = bleve.New(fullTextSearchIndexPath, mapping)
 		if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("failed to create new bleve index: %w", err)
 		}
 	} else {
 		index, err = bleve.Open(fullTextSearchIndexPath)
 		if err != nil {
-			panic(err)
+			return nil, fmt.Errorf("failed to open bleve index: %w", err)
 		}
 	}
 	count, err := index.DocCount()
 	log.Println("Bleve: DocCount", count, err)
-	return index
+	return index, nil
 }
 
 func newCache() *cache.Cache {
 	return cache.New(5*time.Minute, 10*time.Minute)
 }
 
-func newDatabase(conf *model.Config) *gorm.DB {
+func newDatabase(conf *model.Config) (*gorm.DB, error) {
 	db, err := gorm.Open(postgres.Open(conf.Database), &gorm.Config{})
 	if err != nil {
-		log.Println(conf)
-		panic(err)
+		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 	if conf.Debug {
 		db = db.Debug()
 	}
-	return db
+	return db, nil
 }
 
-func newConfig() *model.Config {
+func newConfig() (*model.Config, error) {
 	configFile := "data/conf.yml"
 	content, err := os.ReadFile(configFile)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 	var c model.Config
 	err = yaml.Unmarshal(content, &c)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 	c.ConfigFilePath = configFile
 
@@ -169,13 +169,13 @@ func newConfig() *model.Config {
 	// 同步主题配置
 	model.SyncThemeConfig(&c, themes)
 
-	log.Printf("Config: %+v", c)
-	return &c
+	log.Printf("Config loaded successfully")
+	return &c, nil
 }
 
 func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache,
-	s bleve.Index) *SysVeriable {
-	return &SysVeriable{
+	s bleve.Index) *SysVariable {
+	return &SysVariable{
 		Config:    c,
 		DB:        d,
 		Cache:     h,
@@ -184,13 +184,14 @@ func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache,
 	}
 }
 
-func migrate() {
+func migrate() error {
 	if err := System.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
-		panic(err)
+		return fmt.Errorf("failed to create uuid-ossp extension: %w", err)
 	}
 	if err := System.DB.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.User{}, &model.FeedVisit{}); err != nil {
-		panic(err)
+		return fmt.Errorf("failed to auto migrate models: %w", err)
 	}
+	return nil
 }
 
 func cleanOldFeedVisits() {
@@ -202,7 +203,7 @@ func cleanOldFeedVisits() {
 	}
 }
 
-func provide() {
+func provide() error {
 	var providers = []interface{}{
 		newCache,
 		newConfig,
@@ -210,19 +211,17 @@ func provide() {
 		newSystem,
 		newBleveSearch,
 	}
-	var err error
 	for _, provider := range providers {
-		err = Injector.Provide(provider)
-		if err != nil {
-			panic(err)
+		if err := Injector.Provide(provider); err != nil {
+			return fmt.Errorf("failed to provide %T: %w", provider, err)
 		}
 	}
-	err = Injector.Invoke(func(s *SysVeriable) {
+	if err := Injector.Invoke(func(s *SysVariable) {
 		System = s
-	})
-	if err != nil {
-		panic(err)
+	}); err != nil {
+		return fmt.Errorf("failed to invoke system initialization: %w", err)
 	}
+	return nil
 }
 
 // BuildArticleIndex 重建索引
@@ -231,20 +230,24 @@ func BuildArticleIndex() {
 	if err := os.RemoveAll(fullTextSearchIndexPath); err != nil {
 		panic(err)
 	}
-	System.Search = newBleveSearch()
+	var err error
+	System.Search, err = newBleveSearch()
+	if err != nil {
+		panic(err)
+	}
 	var as []model.Article
 	var hs []model.ArticleHistory
-	var wg sync.WaitGroup
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		System.DB.Find(&as)
-	}()
-	go func() {
-		defer wg.Done()
-		System.DB.Preload("Article").Find(&hs)
-	}()
-	wg.Wait()
+	var g errgroup.Group
+	g.Go(func() error {
+		return System.DB.Find(&as).Error
+	})
+	g.Go(func() error {
+		return System.DB.Preload("Article").Find(&hs).Error
+	})
+	if err := g.Wait(); err != nil {
+		log.Printf("Failed to fetch data for indexing: %v\n", err)
+		return
+	}
 	for i := range as {
 		System.Search.Index(as[i].GetIndexID(), as[i])
 	}
@@ -258,9 +261,13 @@ func BuildArticleIndex() {
 func Init() {
 	BuildVersion = BuildVersion[:8]
 	Injector = dig.New()
-	provide()
+	if err := provide(); err != nil {
+		log.Fatalf("Initialization failed (DI): %v", err)
+	}
 	if System.DB != nil {
-		migrate()
+		if err := migrate(); err != nil {
+			log.Fatalf("Database migration failed: %v", err)
+		}
 	}
 
 	c := cron.New()

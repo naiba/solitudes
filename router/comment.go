@@ -4,13 +4,15 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
+	"fmt"
 
 	"github.com/adtac/go-akismet/akismet"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/notify"
-	"gorm.io/gorm"
 )
 
 type commentForm struct {
@@ -27,20 +29,20 @@ func commentHandler(c *fiber.Ctx) error {
 	isAdmin := c.Locals(solitudes.CtxAuthorized).(bool)
 	var cf commentForm
 	if err := c.BodyParser(&cf); err != nil {
-		return err
+		return fmt.Errorf("failed to parse comment form: %w", err)
 	}
 	if err := validator.StructCtx(c.Context(), &cf); err != nil {
-		return err
+		return fmt.Errorf("comment form validation failed: %w", err)
 	}
 
 	article, err := verifyArticle(&cf)
 	if err != nil {
-		return err
+		return fmt.Errorf("article verification failed: %w", err)
 	}
 
 	commentType, replyTo, err := getCommentType(&cf)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to determine comment type: %w", err)
 	}
 
 	// akismet anti spam
@@ -57,8 +59,11 @@ func commentHandler(c *fiber.Ctx) error {
 			CommentAuthorURL:   cf.Website,
 			CommentContent:     cf.Content,
 		}, solitudes.System.Config.Akismet)
-		if err != nil || isSpam {
-			return errors.New("rejected by Akismet Anti-Spam System")
+		if err != nil {
+			return fmt.Errorf("akismet check failed: %w", err)
+		}
+		if isSpam {
+			return errors.New("comment rejected by Akismet Anti-Spam System")
 		}
 	}
 
@@ -67,13 +72,13 @@ func commentHandler(c *fiber.Ctx) error {
 
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(&cm).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to save comment: %w", err)
 		}
 
 		if err := tx.Model(&model.Article{}).
 			Where("id = ?", cm.ArticleID).
 			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to update article comment count: %w", err)
 		}
 
 		return nil
@@ -88,19 +93,18 @@ func commentHandler(c *fiber.Ctx) error {
 		// Only send email if replying to someone else's comment
 		if replyTo != nil && !replyTo.IsAdmin && replyTo.Email != "" && replyTo.Email != cm.Email {
 			emailErr := notify.Email(&cm, replyTo, article, *cm.EmailTrackingToken)
-			
+
 			// Update EmailReadStatus based on email sending result
-			var emailStatus *string
 			if emailErr == nil {
 				// Email sent successfully, set to "unread"
 				status := "unread"
-				emailStatus = &status
-				solitudes.System.DB.Model(&model.Comment{}).
+				if err := solitudes.System.DB.Model(&model.Comment{}).
 					Where("id = ?", cm.ID).
-					Update("email_read_status", emailStatus)
+					Update("email_read_status", &status).Error; err != nil {
+					fmt.Printf("Failed to update email status: %v\n", err)
+				}
 			}
-			// If emailErr != nil, leave it as nil (not sent)
-			
+
 			// Send Telegram notification regardless of email result
 			notify.TGNotify(&cm, article, emailErr)
 		}
@@ -118,27 +122,23 @@ func generateTrackingToken() string {
 func verifyArticle(cf *commentForm) (*model.Article, error) {
 	var article model.Article
 	if err := solitudes.System.DB.Select("id,version,title,slug").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch article: %w", err)
 	}
 	if cf.Version > article.Version || cf.Version == 0 {
-		return nil, errors.New("error invalid version")
+		return nil, errors.New("invalid article version")
 	}
 	return &article, nil
 }
 
-func getCommentType(cf *commentForm) (commentType string, replyTo *model.Comment, err error) {
+func getCommentType(cf *commentForm) (string, *model.Comment, error) {
 	if cf.ReplyTo != nil {
-		commentType = "reply"
 		var innerReplyTo model.Comment
-		if solitudes.System.DB.Take(&innerReplyTo, "id = ?", cf.ReplyTo).Error != nil {
-			err = errors.New("reply to invaild comment")
-			return
+		if err := solitudes.System.DB.Take(&innerReplyTo, "id = ?", cf.ReplyTo).Error; err != nil {
+			return "", nil, fmt.Errorf("failed to find parent comment: %w", err)
 		}
-		replyTo = &innerReplyTo
-		return
+		return "reply", &innerReplyTo, nil
 	}
-	commentType = "comment"
-	return
+	return "comment", nil, nil
 }
 
 func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *commentForm, article *model.Article) {

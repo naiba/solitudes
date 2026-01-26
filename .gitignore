@@ -8,6 +8,7 @@
 /data/*
 !/data/conf.yml.example
 /main
+.opencode/
 
 # Test binary, build with `go test -c`
 *.test

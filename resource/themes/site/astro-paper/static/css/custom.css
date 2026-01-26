@@ -43,8 +43,8 @@
 
 /* Global Reset for Lists */
 ul, li {
-    list-style: none !important;
-    list-style-type: none !important;
+    list-style: none;
+    list-style-type: none;
     padding: 0;
     margin: 0;
 }

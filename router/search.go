@@ -2,6 +2,7 @@ package router
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -26,34 +27,36 @@ func search(c *fiber.Ctx) error {
 	searchRequest.Fields = []string{"Title", "Version", "Slug"}
 	searchRequest.Explain = true
 	searchResult, err := solitudes.System.Search.Search(searchRequest)
-
-	var result []searchResp
-	if err == nil {
-		for _, hit := range searchResult.Hits {
-			if hit.Fields["Slug"] == nil || hit.Fields["Version"] == nil || hit.Fields["Title"] == nil {
-				log.Printf("invalid search result: %+v", hit)
-				continue
-			}
-			item := model.ArticleIndex{
-				Slug:    hit.Fields["Slug"].(string),
-				Version: hit.Fields["Version"].(float64),
-				Title:   hit.Fields["Title"].(string),
-			}
-			content := bytes.NewBufferString("")
-			for _, fragments := range hit.Fragments {
-				for _, fragment := range fragments {
-					content.WriteString(fragment + "\n")
-				}
-			}
-			result = append(result, searchResp{
-				item, content.String(),
-			})
-		}
+	if err != nil {
+		return fmt.Errorf("failed to perform search: %w", err)
 	}
 
-	c.Status(http.StatusOK).Render("site/search", injectSiteData(c, fiber.Map{
-		"title":   c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("search_result_title", "#SOL.9527.WORD#"),
+	var result []searchResp
+	for _, hit := range searchResult.Hits {
+		if hit.Fields["Slug"] == nil || hit.Fields["Version"] == nil || hit.Fields["Title"] == nil {
+			log.Printf("invalid search result: %+v", hit)
+			continue
+		}
+		item := model.ArticleIndex{
+			Slug:    hit.Fields["Slug"].(string),
+			Version: hit.Fields["Version"].(float64),
+			Title:   hit.Fields["Title"].(string),
+		}
+		content := bytes.NewBufferString("")
+		for _, fragments := range hit.Fragments {
+			for _, fragment := range fragments {
+				content.WriteString(fragment + "\n")
+			}
+		}
+		result = append(result, searchResp{
+			ArticleIndex: item,
+			Content:      content.String(),
+		})
+	}
+
+	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+	return c.Status(http.StatusOK).Render("site/search", injectSiteData(c, fiber.Map{
+		"title":   tr.T("search_result_title", "#SOL.9527.WORD#"),
 		"results": result,
 	}))
-	return nil
 }

@@ -11,7 +11,7 @@
     {"locale": "en", "key": "has_old_version", "trans": "You are viewing version v{0} of this article. You can also view historical versions: {1}."},
     {"locale": "en", "key": "home", "trans": "Home"},
     {"locale": "en", "key": "leave_a_comment", "trans": "Leave a Comment"},
-    {"locale": "en", "key": "may_not_reply_if_email_not_exist", "trans": "If you don't fill in your email, I may not be able to reply to your comment."},
+    {"locale": "en", "key": "may_not_reply_if_email_not_exist", "trans": "If you don't fill in your email, I may not be able to reply to your comment. Enter email or nickname first to auto-load other information."},
     {"locale": "en", "key": "next", "trans": "Next"},
     {"locale": "en", "key": "next_chapter", "trans": "Next Chapter"},
     {"locale": "en", "key": "nickname", "trans": "Nickname"},

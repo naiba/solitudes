@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes/pkg/pagination"
@@ -12,20 +11,15 @@ import (
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/translator"
 )
 
 func article(c *fiber.Ctx) error {
 	var a model.Article
-	if err := solitudes.System.DB.Take(&a, "slug = ?", c.Params("slug")).Error; err == gorm.ErrRecordNotFound {
-		tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-		c.Status(http.StatusNotFound).Render("site/error", injectSiteData(c, fiber.Map{
-			"title": tr.T("404_title"),
-			"msg":   tr.T("404_msg"),
-		}))
-		return err
-	} else if err != nil {
-		return err
+	if err := solitudes.System.DB.Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return page404(c)
+		}
+		return fmt.Errorf("failed to fetch article: %w", err)
 	}
 	if len(a.Tags) == 0 {
 		a.Tags = nil
@@ -36,22 +30,17 @@ func article(c *fiber.Ctx) error {
 	if c.Params("version") != "" {
 		version, err := strconv.ParseUint(c.Params("version")[1:], 10, 64)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid version format: %w", err)
 		}
 		if uint(version) == a.Version {
-			c.Redirect("/"+a.Slug, http.StatusFound)
-			return err
+			return c.Redirect("/"+a.Slug, http.StatusFound)
 		}
 		var history model.ArticleHistory
-		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, version).Error; err == gorm.ErrRecordNotFound {
-			tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-			c.Status(http.StatusNotFound).Render("site/error", injectSiteData(c, fiber.Map{
-				"title": tr.T("404_title"),
-				"msg":   tr.T("404_msg"),
-			}))
-			return err
-		} else if err != nil {
-			return err
+		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, version).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return page404(c)
+			}
+			return fmt.Errorf("failed to fetch article history: %w", err)
 		}
 		a.NewVersion = a.Version
 		a.Version = history.Version
@@ -61,43 +50,28 @@ func article(c *fiber.Ctx) error {
 	} else {
 		title = a.Title
 	}
-	var wg sync.WaitGroup
-	wg.Add(5)
-	go func() {
-		defer wg.Done()
-		relatedChapters(&a)
-	}()
-	go func() {
-		defer wg.Done()
-		relatedBook(&a)
-	}()
-	go func() {
-		defer wg.Done()
-		relatedSiblingArticle(&a)
-	}()
-	go func() {
-		defer wg.Done()
-		a.GenTOC()
-	}()
-	var pg *pagination.Paginator
-	go func() {
-		defer wg.Done()
-		// load root comments
-		pageSlice := c.Query("comment_page")
-		var page int64
-		if pageSlice != "" {
-			page, _ = strconv.ParseInt(pageSlice, 10, 32)
-		}
-		pg = pagination.Paging(&pagination.Param{
-			DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", a.ID),
-			Page:    int(page),
-			Limit:   20,
-			OrderBy: []string{"created_at DESC"},
-		}, &a.Comments)
-		// load childComments
-		relatedChildComments(&a, a.Comments, true)
-	}()
-	wg.Wait()
+
+	// 移除过度并发，改用顺序加载（对于单次请求，DB 查询的顺序执行通常比 5 个 goroutine 的调度开销更低且更可控）
+	relatedChapters(&a)
+	relatedBook(&a)
+	relatedSiblingArticle(&a)
+	a.GenTOC()
+
+	// 仅对评论加载保持 Paging 逻辑（这里由于 Paging 依赖 pg 变量，保持原逻辑但移除 goroutine）
+	pageSlice := c.Query("comment_page")
+	var page int64
+	if pageSlice != "" {
+		page, _ = strconv.ParseInt(pageSlice, 10, 32)
+	}
+	pg := pagination.Paging(&pagination.Param{
+		DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", a.ID),
+		Page:    int(page),
+		Limit:   20,
+		OrderBy: []string{"created_at DESC"},
+	}, &a.Comments)
+	// load childComments
+	relatedChildComments(&a, a.Comments, true)
+
 	a.RelatedCount(solitudes.System.DB)
 
 	// 检查私有博文
@@ -105,13 +79,12 @@ func article(c *fiber.Ctx) error {
 		a.Content = "Private Article"
 	}
 
-	c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
+	return c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
 		"title":        title,
 		"keywords":     a.RawTags,
 		"article":      &a,
 		"comment_page": pg,
 	}))
-	return nil
 }
 
 func relatedSiblingArticle(p *model.Article) (prev model.Article, next model.Article) {

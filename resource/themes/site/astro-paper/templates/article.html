@@ -90,7 +90,7 @@
 
     <!-- Book Navigation -->
     {{if .Data.article.Book}}
-    <div class="mt-12 p-6 border border-border rounded-xl bg-background shadow-sm">
+    <div class="mt-12 py-6 border-t border-border">
         <div class="text-sm text-foreground/50 mb-2 uppercase tracking-wider font-semibold">{{.Tr.T "book"}}</div>
         <a href="/{{.Data.article.Book.Slug}}" class="text-2xl font-bold text-accent hover:underline decoration-dashed decoration-2 underline-offset-8 block mb-8">
             {{.Data.article.Book.Title}}
@@ -181,7 +181,7 @@
         {{end}}
         
         {{if not .Data.article.DisableComment}}
-        <div class="bg-muted/30 rounded-lg p-6">
+        <div class="mt-8">
             <h3 class="text-lg font-semibold mb-4">{{.Tr.T "leave_a_comment"}}</h3>
             
             <form id="comment-form" class="space-y-4">

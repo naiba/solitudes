@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,18 +11,24 @@ import (
 	"unicode/utf8"
 
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
+
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/translator"
-
 	"github.com/naiba/solitudes/pkg/pagination"
-	"gorm.io/gorm"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
 func manageArticle(c *fiber.Ctx) error {
 	rawPage := c.Query("page")
 	var page int64
-	page, _ = strconv.ParseInt(rawPage, 10, 32)
+	if rawPage != "" {
+		var err error
+		page, err = strconv.ParseInt(rawPage, 10, 32)
+		if err != nil {
+			return fmt.Errorf("invalid page format: %w", err)
+		}
+	}
 	var as []model.Article
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB,
@@ -32,54 +39,56 @@ func manageArticle(c *fiber.Ctx) error {
 	for i := range as {
 		as[i].RelatedCount(solitudes.System.DB)
 	}
-	c.Status(http.StatusOK).Render("admin/articles", injectSiteData(c, fiber.Map{
-		"title":    c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_articles"),
+	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+	return c.Status(http.StatusOK).Render("admin/articles", injectSiteData(c, fiber.Map{
+		"title":    tr.T("manage_articles"),
 		"articles": as,
 		"page":     pg,
 	}))
-	return nil
 }
 
 func publish(c *fiber.Ctx) error {
 	id := c.Query("id")
 	var article model.Article
 	if id != "" {
-		solitudes.System.DB.Take(&article, "id = ?", id)
+		if err := solitudes.System.DB.Take(&article, "id = ?", id).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("failed to fetch article for editing: %w", err)
+		}
 	}
-	c.Status(http.StatusOK).Render("admin/publish", injectSiteData(c, fiber.Map{
-		"title":     c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("publish_article"),
+	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+	return c.Status(http.StatusOK).Render("admin/publish", injectSiteData(c, fiber.Map{
+		"title":     tr.T("publish_article"),
 		"templates": solitudes.Templates,
 		"article":   article,
 	}))
-	return nil
 }
 
 func deleteArticle(c *fiber.Ctx) error {
 	id := c.Query("id")
 	if len(id) < 10 {
-		return errors.New("error article id")
+		return errors.New("invalid article id")
 	}
 	var a model.Article
 	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
-		return err
+		return fmt.Errorf("failed to find article for deletion: %w", err)
 	}
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		// 删除文章
 		if err := tx.Delete(&model.Article{}, "id = ?", a.ID).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to delete article: %w", err)
 		}
 		// 删除文章历史
 		for _, history := range a.ArticleHistories {
 			indexIDs = append(indexIDs, history.GetIndexID())
 		}
 		if err := tx.Delete(&model.ArticleHistory{}, "article_id = ?", a.ID).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to delete article histories: %w", err)
 		}
 		// 删除评论
 		if err := tx.Delete(&model.Comment{}, "article_id = ?", a.ID).Error; err != nil {
-			return err
+			return fmt.Errorf("failed to delete article comments: %w", err)
 		}
 		return nil
 	})
@@ -111,10 +120,10 @@ type publishArticle struct {
 func publishHandler(c *fiber.Ctx) error {
 	var pa publishArticle
 	if err := c.BodyParser(&pa); err != nil {
-		return err
+		return fmt.Errorf("failed to parse publish form: %w", err)
 	}
 	if err := validator.StructCtx(c.Context(), &pa); err != nil {
-		return err
+		return fmt.Errorf("validation failed: %w", err)
 	}
 	var bookRefer *string
 	if pa.BookRefer != "" {
@@ -145,40 +154,41 @@ func publishHandler(c *fiber.Ctx) error {
 		}
 	}
 
-	if originalArticle, err := fetchOriginArticle(newArticle); err != nil {
-		return err
-	} else {
-		err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
-			if pa.NewVersion == 1 {
-				history := model.ArticleHistory{
-					Content:   originalArticle.Content,
-					Version:   originalArticle.Version,
-					ArticleID: originalArticle.ID,
-					CreatedAt: originalArticle.CreatedAt,
-				}
-				if err := tx.Create(&history).Error; err != nil {
-					return err
-				}
-			}
-
-			if err := tx.Save(&newArticle).Error; err != nil {
-				return err
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			return err
-		}
-		// indexing serch engine
-		numBefore, _ := solitudes.System.Search.DocCount()
-		errIndex := solitudes.System.Search.Index(newArticle.GetIndexID(), newArticle)
-		numAfter, _ := solitudes.System.Search.DocCount()
-		log.Printf("Doc %s indexed %d --> %d %+v\n", newArticle.GetIndexID(), numBefore, numAfter, errIndex)
+	originalArticle, err := fetchOriginArticle(newArticle)
+	if err != nil {
+		return fmt.Errorf("failed to fetch original article: %w", err)
 	}
-	c.Status(http.StatusOK).JSON(newArticle)
-	return nil
+
+	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		if pa.NewVersion == 1 && originalArticle.ID != "" {
+			history := model.ArticleHistory{
+				Content:   originalArticle.Content,
+				Version:   originalArticle.Version,
+				ArticleID: originalArticle.ID,
+				CreatedAt: originalArticle.CreatedAt,
+			}
+			if err := tx.Create(&history).Error; err != nil {
+				return fmt.Errorf("failed to create article history: %w", err)
+			}
+		}
+
+		if err := tx.Save(&newArticle).Error; err != nil {
+			return fmt.Errorf("failed to save article: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+	// indexing serch engine
+	numBefore, _ := solitudes.System.Search.DocCount()
+	errIndex := solitudes.System.Search.Index(newArticle.GetIndexID(), newArticle)
+	numAfter, _ := solitudes.System.Search.DocCount()
+	log.Printf("Doc %s indexed %d --> %d %+v\n", newArticle.GetIndexID(), numBefore, numAfter, errIndex)
+
+	return c.Status(http.StatusOK).JSON(newArticle)
 }
 
 func fetchOriginArticle(af *model.Article) (model.Article, error) {
