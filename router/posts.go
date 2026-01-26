@@ -69,6 +69,9 @@ func posts(c *fiber.Ctx) error {
 				OrderBy: []string{"created_at DESC"},
 			}, &articles[i].Comments)
 		}
+		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
+			articles[i].Content = "Private Article"
+		}
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
@@ -216,6 +219,9 @@ func tags(c *fiber.Ctx) error {
 				Limit:   5,
 				OrderBy: []string{"created_at DESC"},
 			}, &articles[i].Comments)
+		}
+		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
+			articles[i].Content = "Private Article"
 		}
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
