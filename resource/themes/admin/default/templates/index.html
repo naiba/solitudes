@@ -30,8 +30,8 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="wf-card md:col-span-2">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="wf-card md:col-span-2 lg:col-span-3">
             <div class="wf-card-header">
                 {{.Tr.T "quick_topic_publish"}}
             </div>
@@ -66,6 +66,26 @@
                         <span class="text-gray-600">{{.Tr.T "routine_num"}}</span>
                         <span class="font-semibold text-gray-900">{{.Data.routineNum}}</span>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="wf-card">
+            <div class="wf-card-header">
+                {{.Tr.T "rss_requests_top_4"}}
+            </div>
+            <div class="wf-card-body">
+                <div class="space-y-3">
+                    {{range .Data.rssSubscribers}}
+                    <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                        <span class="text-gray-600">{{.IP}}</span>
+                        <span class="font-semibold text-gray-900">{{.Count}}</span>
+                    </div>
+                    {{else}}
+                    <div class="py-4 text-center text-gray-400">
+                        {{.Tr.T "no_data"}}
+                    </div>
+                    {{end}}
                 </div>
             </div>
         </div>

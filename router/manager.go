@@ -50,6 +50,11 @@ func manager(c *fiber.Ctx) error {
 		solitudes.System.DB.Select("created_at").Order("created_at DESC").Take(&lastComment)
 	}()
 	var rssSubscriberCount int64
+	type rssSubscriber struct {
+		IP    string
+		Count int64
+	}
+	var rssSubscribers []rssSubscriber
 	go func() {
 		defer wg.Done()
 		oneDayAgo := time.Now().Add(-24 * time.Hour)
@@ -62,6 +67,14 @@ func manager(c *fiber.Ctx) error {
 				HAVING COUNT(*) >= ?
 			) t
 		`, oneDayAgo, 3).Scan(&rssSubscriberCount)
+		solitudes.System.DB.Raw(`
+			SELECT ip, COUNT(*) as count
+			FROM feed_visits
+			WHERE created_at > ?
+			GROUP BY ip
+			ORDER BY count DESC
+			LIMIT 4
+		`, oneDayAgo).Scan(&rssSubscribers)
 	}()
 	wg.Wait()
 
@@ -76,6 +89,7 @@ func manager(c *fiber.Ctx) error {
 		"lastComment":        fmt.Sprintf("%.2f", time.Since(lastComment.CreatedAt).Hours()/24),
 		"tagNum":             tn.Count,
 		"rssSubscriberCount": rssSubscriberCount,
+		"rssSubscribers":     rssSubscribers,
 
 		"memoryUsage": bToMb(m.Sys),
 		"gcNum":       m.NumGC,
