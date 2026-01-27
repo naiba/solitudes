@@ -5,7 +5,7 @@
             <div class="flex flex-col items-center justify-between sm:flex-row-reverse gap-4">
                 <div class="flex flex-wrap items-center gap-6 text-foreground/80">
                     {{range index .Theme "astro-paper.footermenus"}}
-                    <a href="{{.link}}" class="hover:text-accent transition p-1" {{if .black}}target="_blank"{{end}} aria-label="{{.name}}" title="{{.name}}">
+                    <a href="{{.link}}" class="hover:text-accent transition p-1" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}} aria-label="{{.name}}" title="{{.name}}">
                         {{if .icon}}<i class="{{.icon}} text-xl"></i>{{else}}{{.name}}{{end}}
                     </a>
                     {{end}}

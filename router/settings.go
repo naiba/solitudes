@@ -5,13 +5,14 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/internal/theme" // Add this import
+	"github.com/naiba/solitudes/internal/theme"
 	"github.com/naiba/solitudes/pkg/notify"
 	"github.com/naiba/solitudes/pkg/translator"
 )
@@ -98,15 +99,21 @@ func settingsHandler(c *fiber.Ctx) error {
 		themeChanged = true
 	}
 
-	// Handle Logo Upload
 	if file, err := c.FormFile("logo"); err == nil {
+		contentType := file.Header.Get("Content-Type")
+		if file.Size > 5*1024*1024 || (!strings.HasPrefix(contentType, "image/") && contentType != "application/octet-stream") {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid logo file")
+		}
 		if err := c.SaveFile(file, "data/upload/logo.png"); err != nil {
 			return err
 		}
 	}
 
-	// Handle Favicon Upload
 	if file, err := c.FormFile("favicon"); err == nil {
+		contentType := file.Header.Get("Content-Type")
+		if file.Size > 1*1024*1024 || (!strings.HasPrefix(contentType, "image/") && contentType != "application/octet-stream") {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid favicon file")
+		}
 		if err := c.SaveFile(file, "data/upload/favicon.ico"); err != nil {
 			return err
 		}

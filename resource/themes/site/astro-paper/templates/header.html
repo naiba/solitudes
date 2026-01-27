@@ -7,9 +7,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="HandheldFriendly" content="True">
-    {{ $meta := index .Theme "astro-paper.cactusmetadata" }}
-    <meta name="description" content="{{if .Desc}}{{.Desc}}{{else}}{{index $meta "description"}}{{end}}">
-    <meta name="keywords" content="{{if .Keywords}}{{.Keywords}}{{else}}{{index $meta "keywords"}}{{end}}">
+    <meta name="description" content="{{.Desc}}">
+    <meta name="keywords" content="{{.Keywords}}">
     <meta name="author" content="{{.Conf.User.Nickname}}">
     
     <title>{{.Title}}</title>
@@ -42,7 +41,7 @@
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-    <link rel="stylesheet" href="/static/site/astro-paper/css/custom.css?v2026012602">
+    <link rel="stylesheet" href="/static/site/astro-paper/css/custom.css?v2026012702">
     
     <link rel="preconnect" href="https://fonts.googleapis.cn">
     <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
@@ -74,20 +73,29 @@
                 document.title = document.title.replace("#SOL.9527.WORD#", "");
             }
             
-            // Auto-fill search input if on search page
+            window.updateThemeIcons = function(theme) {
+                const nextTheme = {light: 'dark', dark: 'auto', auto: 'light'};
+                document.querySelectorAll('.theme-icon').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.theme-icon-' + nextTheme[theme]).forEach(el => el.style.display = 'block');
+            };
+
+            window.toggleTheme = function() {
+                const currentTheme = localStorage.getItem('solitudes_theme') || 'auto';
+                const themeOrder = ['light', 'dark', 'auto'];
+                const currentIndex = themeOrder.indexOf(currentTheme);
+                const newTheme = themeOrder[(currentIndex + 1) % 3];
+                localStorage.setItem('solitudes_theme', newTheme);
+                applyTheme(newTheme);
+                updateThemeIcons(newTheme);
+            };
+
             window.addEventListener('DOMContentLoaded', () => {
+                updateThemeIcons(savedTheme);
                 const searchInput = document.getElementById('search-input');
                 if (searchInput && w) {
                     searchInput.value = w;
                 }
             });
-
-            window.toggleTheme = function() {
-                const isDark = html.classList.contains('dark');
-                const newTheme = isDark ? 'light' : 'dark';
-                localStorage.setItem('solitudes_theme', newTheme);
-                applyTheme(newTheme);
-            };
         })();
     </script>
     <style>
@@ -106,11 +114,8 @@
             top: 1rem;
             outline: 2px solid var(--accent);
         }
-        /* Mode Toggle Icons */
-        .dark #theme-toggle-dark-icon, .dark #theme-toggle-dark-icon-mobile { display: none; }
-        .dark #theme-toggle-light-icon, .dark #theme-toggle-light-icon-mobile { display: block; }
-        #theme-toggle-dark-icon, #theme-toggle-dark-icon-mobile { display: block; }
-        #theme-toggle-light-icon, #theme-toggle-light-icon-mobile { display: none; }
+        /* Mode Toggle Icons - controlled by JS */
+        .theme-icon { display: none; }
     </style>
 </head>
 
@@ -132,8 +137,9 @@
                     
                     <ul id="desktop-menu" class="hidden sm:flex items-center gap-2">
                         {{range index .Theme "astro-paper.headermenus"}}
+                        {{$isActive := or (and (eq .link "/") (eq $.Path "/")) (and (ne .link "/") (hasPrefix $.Path .link))}}
                         <li>
-                            <a href="{{.link}}" class="px-3 py-2 text-sm font-bold hover:text-accent transition" {{if .black}}target="_blank"{{end}}>
+                            <a href="{{.link}}" class="px-3 py-2 text-sm font-bold hover:text-accent transition{{if $isActive}} nav-link-active{{end}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}}>
                                 {{if .icon}}<i class="{{.icon}}"></i>{{end}}
                                 {{.name}}
                             </a>
@@ -141,8 +147,9 @@
                         {{end}}
                         <li>
                             <button onclick="window.toggleTheme()" class="px-3 py-2 text-sm font-medium hover:text-accent transition" aria-label="{{.Tr.T "toggle_theme"}}">
-                                <i id="theme-toggle-dark-icon" class="fa-solid fa-moon"></i>
-                                <i id="theme-toggle-light-icon" class="fa-solid fa-sun"></i>
+                                <i class="theme-icon theme-icon-light fa-solid fa-sun"></i>
+                                <i class="theme-icon theme-icon-dark fa-solid fa-moon"></i>
+                                <i class="theme-icon theme-icon-auto fa-solid fa-circle-half-stroke"></i>
                             </button>
                         </li>
                     </ul>
@@ -150,8 +157,9 @@
             </div>
             <ul id="mobile-menu" class="hidden bg-background border-t border-border mt-4 p-4 sm:hidden">
                 {{range index .Theme "astro-paper.headermenus"}}
+                {{$isActive := or (and (eq .link "/") (eq $.Path "/")) (and (ne .link "/") (hasPrefix $.Path .link))}}
                 <li>
-                    <a href="{{.link}}" class="block px-3 py-2 font-bold hover:text-accent" {{if .black}}target="_blank"{{end}}>
+                    <a href="{{.link}}" class="block px-3 py-2 font-bold hover:text-accent{{if $isActive}} nav-link-active{{end}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}}>
                         {{if .icon}}<i class="{{.icon}}"></i>{{end}}
                         {{.name}}
                     </a>
@@ -160,8 +168,9 @@
                 <li>
                     <button onclick="window.toggleTheme()" class="flex items-center gap-3 w-full text-left px-3 py-2 hover:text-accent" aria-label="{{.Tr.T "toggle_theme"}}">
                         <div class="w-5 text-center">
-                            <i id="theme-toggle-dark-icon-mobile" class="fa-solid fa-moon"></i>
-                            <i id="theme-toggle-light-icon-mobile" class="fa-solid fa-sun"></i>
+                            <i class="theme-icon theme-icon-light fa-solid fa-sun"></i>
+                            <i class="theme-icon theme-icon-dark fa-solid fa-moon"></i>
+                            <i class="theme-icon theme-icon-auto fa-solid fa-circle-half-stroke"></i>
                         </div>
                         <span>{{.Tr.T "toggle_theme"}}</span>
                     </button>

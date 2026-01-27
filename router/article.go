@@ -33,7 +33,7 @@ func article(c *fiber.Ctx) error {
 			return fmt.Errorf("invalid version format: %w", err)
 		}
 		if uint(version) == a.Version {
-			return c.Redirect("/"+a.Slug, http.StatusFound)
+			return c.Redirect("/"+a.Slug, http.StatusMovedPermanently)
 		}
 		var history model.ArticleHistory
 		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, version).Error; err != nil {

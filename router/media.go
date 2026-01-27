@@ -18,9 +18,23 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
+func validateMediaFilename(name string) (string, error) {
+	if name == "" {
+		return "", errors.New("missing filename")
+	}
+	cleanName := path.Clean(name)
+	if cleanName != path.Base(cleanName) || cleanName == "." || cleanName == ".." {
+		return "", errors.New("invalid filename")
+	}
+	return cleanName, nil
+}
+
 func mediaHandler(c *fiber.Ctx) error {
-	name := c.Query("name")
-	return os.Remove("data/upload/" + path.Clean(name))
+	cleanName, err := validateMediaFilename(c.Query("name"))
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+	return os.Remove(filepath.Join("data/upload", cleanName))
 }
 
 type mediaInfo struct {

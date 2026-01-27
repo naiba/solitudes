@@ -60,7 +60,7 @@ func (c *Config) Save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(c.ConfigFilePath, b, os.FileMode(0655))
+	return os.WriteFile(c.ConfigFilePath, b, os.FileMode(0644))
 }
 
 // ApplyThemeFallback ensures configured themes exist in the available list.

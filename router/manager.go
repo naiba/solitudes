@@ -97,16 +97,16 @@ func bToMb(b uint64) uint64 {
 	return b / 1024 / 1024
 }
 
-var validExtNames = map[string]interface{}{
-	"jpg":  nil,
-	"jpeg": nil,
-	"png":  nil,
-	"gif":  nil,
-	"mp4":  nil,
-	"zip":  nil,
-	"rar":  nil,
-	"wav":  nil,
-	"mp3":  nil,
+var validExtNames = map[string]string{
+	"jpg":  "image/jpeg",
+	"jpeg": "image/jpeg",
+	"png":  "image/png",
+	"gif":  "image/gif",
+	"mp4":  "video/mp4",
+	"zip":  "application/zip",
+	"rar":  "application/x-rar-compressed",
+	"wav":  "audio/wav",
+	"mp3":  "audio/mpeg",
 }
 
 var contentTypeList = map[string]string{
@@ -114,6 +114,8 @@ var contentTypeList = map[string]string{
 	"image/png":  "png",
 	"image/jpeg": "jpg",
 }
+
+const maxUploadSize = 50 * 1024 * 1024 // 50MB
 
 type uploadResp struct {
 	Msg  string `json:"msg,omitempty"`
@@ -139,13 +141,23 @@ func upload(c *fiber.Ctx) error {
 
 	files := form.File["file[]"]
 	for _, f := range files {
+		if f.Size > maxUploadSize {
+			errfiles = append(errfiles, f.Filename)
+			continue
+		}
 		fs := strings.Split(f.Filename, ".")
 		if len(fs) < 2 {
 			errfiles = append(errfiles, f.Filename)
 			continue
 		}
-		extName := fs[len(fs)-1]
-		if _, ok := validExtNames[extName]; !ok {
+		extName := strings.ToLower(fs[len(fs)-1])
+		expectedMIME, ok := validExtNames[extName]
+		if !ok {
+			errfiles = append(errfiles, f.Filename)
+			continue
+		}
+		contentType := f.Header.Get("Content-Type")
+		if contentType != "" && !strings.HasPrefix(contentType, expectedMIME) && !strings.HasPrefix(contentType, "application/octet-stream") {
 			errfiles = append(errfiles, f.Filename)
 			continue
 		}
@@ -153,11 +165,11 @@ func upload(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		extName = fmt.Sprintf("/upload/%s.%s", fid, extName)
-		if err := c.SaveFile(f, "data"+extName); err != nil {
+		savePath := fmt.Sprintf("/upload/%s.%s", fid, extName)
+		if err := c.SaveFile(f, "data"+savePath); err != nil {
 			errfiles = append(errfiles, f.Filename)
 		} else {
-			succMap[f.Filename] = extName
+			succMap[f.Filename] = savePath
 		}
 	}
 	c.Status(http.StatusOK).JSON(uploadResp{

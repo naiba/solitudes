@@ -68,7 +68,9 @@ func commentHandler(c *fiber.Ctx) error {
 	}
 
 	var cm model.Comment
-	fillCommentEntry(c, isAdmin, &cm, &cf, article)
+	if err := fillCommentEntry(c, isAdmin, &cm, &cf, article); err != nil {
+		return err
+	}
 
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(&cm).Error; err != nil {
@@ -112,11 +114,12 @@ func commentHandler(c *fiber.Ctx) error {
 	return nil
 }
 
-// generateTrackingToken generates a secure random token for email tracking
-func generateTrackingToken() string {
+func generateTrackingToken() (string, error) {
 	b := make([]byte, 32)
-	rand.Read(b)
-	return hex.EncodeToString(b)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
 }
 
 func verifyArticle(cf *commentForm) (*model.Article, error) {
@@ -141,12 +144,14 @@ func getCommentType(cf *commentForm) (string, *model.Comment, error) {
 	return "comment", nil, nil
 }
 
-func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *commentForm, article *model.Article) {
+func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *commentForm, article *model.Article) error {
 	cm.ReplyTo = cf.ReplyTo
 	cm.Content = cf.Content
 	cm.ArticleID = &article.ID
-	// Generate tracking token for all comments on insert
-	token := generateTrackingToken()
+	token, err := generateTrackingToken()
+	if err != nil {
+		return fmt.Errorf("failed to generate tracking token: %w", err)
+	}
 	cm.EmailTrackingToken = &token
 	if isAdmin {
 		cm.Nickname = solitudes.System.Config.User.Nickname
@@ -160,4 +165,5 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 	}
 	cm.IsAdmin = isAdmin
 	cm.Version = cf.Version
+	return nil
 }

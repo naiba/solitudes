@@ -41,6 +41,17 @@
 .hover\:bg-accent-hover:hover { background-color: var(--accent-hover); }
 .decoration-accent { text-decoration-color: var(--accent); }
 
+/* Navigation Active State */
+.nav-link-active {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 4px;
+}
+.nav-link-active:hover {
+    text-decoration-style: solid;
+}
+
 /* Global Reset for Lists */
 ul, li {
     list-style: none;

@@ -1,5 +1,28 @@
 {{define "site/article"}}
 {{template "site/header" .}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "{{.Data.article.Title}}",
+  "image": "https://{{.Conf.Site.Domain}}/logo.png",
+  "author": {
+    "@type": "Person",
+    "name": "{{.Conf.User.Nickname}}"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{.Conf.Site.SpaceName}}",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://{{.Conf.Site.Domain}}/logo.png"
+    }
+  },
+  "datePublished": "{{iso8601 .Data.article.CreatedAt}}",
+  "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
+  "description": "{{.Desc}}"
+}
+</script>
 <main id="main-content" class="app-layout flex-1 py-8">
     <article class="w-full">
         <header class="mb-8">
