@@ -74,9 +74,8 @@
             }
             
             window.updateThemeIcons = function(theme) {
-                const nextTheme = {light: 'dark', dark: 'auto', auto: 'light'};
                 document.querySelectorAll('.theme-icon').forEach(el => el.style.display = 'none');
-                document.querySelectorAll('.theme-icon-' + nextTheme[theme]).forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.theme-icon-' + theme).forEach(el => el.style.display = 'block');
             };
 
             window.toggleTheme = function() {
@@ -115,7 +114,9 @@
             outline: 2px solid var(--accent);
         }
         /* Mode Toggle Icons - controlled by JS */
+        /* Default: show auto icon, JS will update based on saved preference */
         .theme-icon { display: none; }
+        .theme-icon-auto { display: block; }
     </style>
 </head>
 
