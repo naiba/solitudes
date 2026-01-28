@@ -47,7 +47,6 @@ func init() {
 	luteEngine.SetSup(true)
 	luteEngine.SetAutoSpace(true)
 
-	// 自定义链接渲染器，将外部链接转换为 /go?url=base64 格式
 	luteEngine.Md2HTMLRendererFuncs[ast.NodeLink] = func(n *ast.Node, entering bool) (string, ast.WalkStatus) {
 		if entering {
 			dest := n.ChildByType(ast.NodeLinkDest)
@@ -55,8 +54,7 @@ func init() {
 				return "", ast.WalkContinue
 			}
 			destStr := string(dest.Tokens)
-			// 判断是否为外部链接（包含协议前缀且不是站内链接）
-			if isExternalLink(destStr) {
+			if isExternalLink(destStr) && !isVideoLink(destStr) {
 				encodedURL := base64.URLEncoding.EncodeToString([]byte(destStr))
 				attrs := [][]string{{"href", "/r/go?url=" + encodedURL}, {"target", "_blank"}, {"rel", "noopener noreferrer"}}
 				if title := n.ChildByType(ast.NodeLinkTitle); nil != title && nil != title.Tokens {
@@ -64,7 +62,6 @@ func init() {
 				}
 				return renderTag("a", attrs, false), ast.WalkContinue
 			}
-			// 站内链接保持原样
 			attrs := [][]string{{"href", luteUtil.BytesToStr(luteHtml.EscapeHTML(dest.Tokens))}}
 			if title := n.ChildByType(ast.NodeLinkTitle); nil != title && nil != title.Tokens {
 				attrs = append(attrs, []string{"title", luteUtil.BytesToStr(luteHtml.EscapeHTML(title.Tokens))})
@@ -129,18 +126,36 @@ func isAdminPath(path string) bool {
 	return strings.HasPrefix(path, "/admin/")
 }
 
+var videoHostPatterns = []string{
+	"youtube.com",
+	"youtu.be",
+	"bilibili.com",
+	"v.youku.com",
+	"v.qq.com",
+	"coub.com",
+	"facebook.com/*/videos/",
+	"dailymotion.com",
+	"ted.com/talks/",
+}
+
+func isVideoLink(urlStr string) bool {
+	lowerURL := strings.ToLower(urlStr)
+	for _, pattern := range videoHostPatterns {
+		if strings.Contains(lowerURL, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
 func isExternalLink(urlStr string) bool {
-	// 检查是否为绝对 URL（包含协议）
 	if strings.HasPrefix(urlStr, "http://") || strings.HasPrefix(urlStr, "https://") {
-		// 解析 URL 获取 host
 		parsed, err := url.Parse(urlStr)
 		if err != nil {
 			return false
 		}
-		// 如果配置了站点域名，则比较 host
 		if solitudes.System != nil && solitudes.System.Config.Site.Domain != "" {
 			siteHost := solitudes.System.Config.Site.Domain
-			// 移除可能的端口号进行比较
 			linkHost := parsed.Host
 			if idx := strings.Index(linkHost, ":"); idx != -1 {
 				linkHost = linkHost[:idx]

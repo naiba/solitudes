@@ -134,6 +134,57 @@ a {
     height: auto;
 }
 
+/* Media centering - images and videos */
+.app-prose img,
+.app-prose video {
+    display: block;
+    margin: 0 auto;
+    max-width: 80% !important;
+    height: auto;
+}
+
+/* YouTube and other embedded videos via Vditor mediaRender */
+.app-prose .iframe__video {
+    border: none;
+    display: block;
+    margin: 0 auto;
+    max-width: 80% !important;
+    aspect-ratio: 16 / 9;
+}
+
+/* Video container for embedded iframes */
+.app-prose .video-container {
+    position: relative;
+    overflow: hidden;
+    padding-top: 56.25%;
+    height: 0;
+    max-width: 80%;
+    margin: 0 auto;
+}
+
+.app-prose .video-container iframe,
+.app-prose .video-container object,
+.app-prose .video-container embed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Mobile responsive media */
+@media (max-width: 640px) {
+    .app-prose img,
+    .app-prose video,
+    .app-prose .iframe__video {
+        max-width: 95% !important;
+    }
+    
+    .app-prose .video-container {
+        max-width: 95%;
+    }
+}
+
 /* Breadcrumb */
 .breadcrumb {
     margin-top: 2rem;
