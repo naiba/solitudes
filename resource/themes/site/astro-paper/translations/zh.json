@@ -33,6 +33,7 @@
     {"locale": "zh", "key": "submit_failed", "trans": "提交失败"},
     {"locale": "zh", "key": "tags", "trans": "标签"},
     {"locale": "zh", "key": "tags_all_the_tags", "trans": "本站使用的所有标签。"},
+    {"locale": "zh", "key": "toc", "trans": "目录"},
     {"locale": "zh", "key": "toggle_menu", "trans": "切换菜单"},
     {"locale": "zh", "key": "toggle_theme", "trans": "切换主题"},
     {"locale": "zh", "key": "topics", "trans": "哔哔"},

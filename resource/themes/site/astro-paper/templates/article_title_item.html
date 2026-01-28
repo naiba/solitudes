@@ -1,0 +1,12 @@
+{{define "site/article_title_item"}}
+{{range $k,$v := .}}
+<li class="toc-item">
+    <a class="toc-link" href="#{{$v.Slug}}">{{$v.Title}}</a>
+    {{if $v.SubTitles}}
+    <ul class="toc-child">
+        {{template "site/article_title_item" $v.SubTitles}}
+    </ul>
+    {{end}}
+</li>
+{{end}}
+{{end}}

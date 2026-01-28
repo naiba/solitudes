@@ -33,6 +33,7 @@
     {"locale": "en", "key": "submit_failed", "trans": "Submit failed"},
     {"locale": "en", "key": "tags", "trans": "Tags"},
     {"locale": "en", "key": "tags_all_the_tags", "trans": "All the tags used in my posts."},
+    {"locale": "en", "key": "toc", "trans": "Table of Contents"},
     {"locale": "en", "key": "toggle_menu", "trans": "Toggle menu"},
     {"locale": "en", "key": "toggle_theme", "trans": "Toggle theme"},
     {"locale": "en", "key": "topics", "trans": "Topics"},

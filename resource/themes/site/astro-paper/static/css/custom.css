@@ -269,11 +269,84 @@ body {
     line-height: 1.8;
 }
 
-.app-prose h1, .app-prose h2, .app-prose h3, .app-prose h4 {
+/* Prose Headings with distinct sizes and anchor link support */
+.app-prose h1 {
+    font-size: 2em;
     color: var(--foreground);
-    margin-top: 2em;
-    margin-bottom: 1em;
+    margin-top: 1.5em;
+    margin-bottom: 0.75em;
     font-weight: 700;
+    line-height: 1.3;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.3em;
+}
+
+.app-prose h2 {
+    font-size: 1.5em;
+    color: var(--foreground);
+    margin-top: 1.75em;
+    margin-bottom: 0.75em;
+    font-weight: 700;
+    line-height: 1.35;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.25em;
+}
+
+.app-prose h3 {
+    font-size: 1.25em;
+    color: var(--foreground);
+    margin-top: 1.5em;
+    margin-bottom: 0.6em;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.app-prose h4 {
+    font-size: 1.125em;
+    color: var(--foreground);
+    margin-top: 1.25em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.app-prose h5 {
+    font-size: 1em;
+    color: var(--foreground);
+    margin-top: 1.25em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+.app-prose h6 {
+    font-size: 0.875em;
+    color: var(--foreground);
+    opacity: 0.85;
+    margin-top: 1.25em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+/* Heading anchor links */
+.app-prose h1 a,
+.app-prose h2 a,
+.app-prose h3 a,
+.app-prose h4 a,
+.app-prose h5 a,
+.app-prose h6 a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.app-prose h1 a:hover,
+.app-prose h2 a:hover,
+.app-prose h3 a:hover,
+.app-prose h4 a:hover,
+.app-prose h5 a:hover,
+.app-prose h6 a:hover {
+    color: var(--accent);
 }
 
 .app-prose a {
@@ -285,4 +358,82 @@ body {
 
 .app-prose a:hover {
     text-decoration-style: solid;
+}
+
+/* Table of Contents (ToC) Styles - AstroPaper Style */
+.toc-container {
+    margin: 1.5rem 0 2rem 0;
+    padding: 1rem 1.25rem;
+    background-color: var(--muted);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+}
+
+.toc-container summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--foreground);
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toc-container summary::-webkit-details-marker {
+    display: none;
+}
+
+.toc-container summary::before {
+    content: "\25B6";
+    font-size: 0.65em;
+    transition: transform 0.2s ease;
+}
+
+.toc-container[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.toc-container .toc-list {
+    margin-top: 0.75rem;
+    padding-left: 0;
+    list-style: none;
+}
+
+.toc-container .toc-list ul {
+    padding-left: 1rem;
+    margin-top: 0.25rem;
+    list-style: none;
+}
+
+.toc-container .toc-item {
+    margin: 0.35rem 0;
+    line-height: 1.5;
+}
+
+.toc-container .toc-link {
+    color: var(--foreground);
+    opacity: 0.8;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.15s ease, opacity 0.15s ease;
+}
+
+.toc-container .toc-link:hover {
+    color: var(--accent);
+    opacity: 1;
+    text-decoration: underline;
+    text-decoration-style: dashed;
+    text-underline-offset: 3px;
+}
+
+.toc-container .toc-child {
+    border-left: 1px solid var(--border);
+    margin-left: 0.5rem;
+    padding-left: 0.75rem;
+}
+
+.toc-container .toc-child .toc-link {
+    font-size: 0.85rem;
 }

@@ -65,6 +65,15 @@
             {{end}}
         </header>
         
+        {{if .Data.article.Toc}}
+        <details class="toc-container" open>
+            <summary>{{.Tr.T "toc"}}</summary>
+            <ul class="toc-list">
+                {{template "site/article_title_item" .Data.article.Toc}}
+            </ul>
+        </details>
+        {{end}}
+        
         <div class="app-prose prose max-w-none" itemprop="articleBody">
             {{if gt .Data.article.NewVersion .Data.article.Version}}
             <div class="mb-6 p-4 bg-accent/10 border-l-4 border-accent text-foreground/80 italic text-sm">
