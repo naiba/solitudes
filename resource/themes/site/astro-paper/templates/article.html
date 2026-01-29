@@ -87,37 +87,38 @@
 
             {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
 
-            {{if .Data.article.IsBook}}
-            <div class="mt-16 pt-8 border-t border-border/50">
-                <h4 class="text-xl font-bold mb-8 flex items-center gap-3 text-foreground">
-                    <span class="w-8 h-8 flex items-center justify-center bg-accent text-white rounded-lg rotate-3 shadow-md">
-                        <i class="fa-solid fa-book text-sm -rotate-3"></i>
-                    </span>
-                    {{.Tr.T "chapters"}}
-                </h4>
-                <ul class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {{range $idx, $chapter := .Data.article.Chapters}}
-                    <li class="group">
-                        <a href="/{{$chapter.Slug}}" class="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/20 hover:bg-background hover:border-accent hover:shadow-lg transition-all duration-300">
-                            <span class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-background border border-border text-foreground/40 group-hover:border-accent group-hover:text-accent font-mono font-bold rounded-lg transition-colors">
-                                {{printf "%02d" (add $idx 1)}}
-                            </span>
-                            <div class="flex-1 min-w-0">
-                                <h5 class="text-foreground/80 font-medium group-hover:text-accent transition-colors truncate">
-                                    {{$chapter.Title}}
-                                </h5>
-                                <div class="text-[10px] uppercase tracking-widest text-foreground/40 mt-0.5 group-hover:text-accent/50 transition-colors">
-                                    {{tf $chapter.CreatedAt "Jan 2, 2006"}}
-                                </div>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-foreground/10 group-hover:text-accent group-hover:translate-x-1 transition-all"></i>
-                        </a>
-                    </li>
-                    {{end}}
-                </ul>
-            </div>
-            {{end}}
         </div>
+
+        {{if .Data.article.IsBook}}
+        <div class="mt-16 pt-8 border-t border-border/50">
+            <h4 class="text-xl font-bold mb-8 flex items-center gap-3 text-foreground">
+                <span class="w-8 h-8 flex items-center justify-center bg-accent text-white rounded-lg rotate-3 shadow-md">
+                    <i class="fa-solid fa-book text-sm -rotate-3"></i>
+                </span>
+                {{.Tr.T "chapters"}}
+            </h4>
+            <ul class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {{range $idx, $chapter := .Data.article.Chapters}}
+                <li class="group">
+                    <a href="/{{$chapter.Slug}}" class="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/20 hover:bg-background hover:border-accent hover:shadow-lg transition-all duration-300">
+                        <span class="flex-shrink-0 w-10 h-10 flex items-center justify-center bg-background border border-border text-foreground/40 group-hover:border-accent group-hover:text-accent font-mono font-bold rounded-lg transition-colors">
+                            {{printf "%02d" (add $idx 1)}}
+                        </span>
+                        <div class="flex-1 min-w-0">
+                            <h5 class="text-foreground/80 font-medium group-hover:text-accent transition-colors truncate">
+                                {{$chapter.Title}}
+                            </h5>
+                            <div class="text-[10px] uppercase tracking-widest text-foreground/40 mt-0.5 group-hover:text-accent/50 transition-colors">
+                                {{tf $chapter.CreatedAt "Jan 2, 2006"}}
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-foreground/10 group-hover:text-accent group-hover:translate-x-1 transition-all"></i>
+                    </a>
+                </li>
+                {{end}}
+            </ul>
+        </div>
+        {{end}}
     </article>
 
     <!-- Book Navigation -->

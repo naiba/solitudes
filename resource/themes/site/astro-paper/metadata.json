@@ -6,6 +6,7 @@
     "description": "Minimal, responsive, accessible and SEO-friendly blog theme, fork from github.com/satnaing/astro-paper",
     "link": "https://lifelonglearn.ing",
     "config": {
+        "astro-paper.customcode": "",
         "astro-paper.hometopcontent": "# Top:\n\nA fast, simple & powerful blog framework 👍\n",
         "astro-paper.homebottomcontent": "# Bottom:\n\nA fast, simple & powerful blog framework 👍\n",
         "astro-paper.headermenus": [
