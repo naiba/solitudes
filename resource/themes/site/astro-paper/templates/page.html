@@ -16,10 +16,18 @@
   }
 }
 </script>
-<main id="main-content" class="app-layout flex-1 py-8">
+<main id="main-content" class="app-layout flex-1 pb-8">
     <article class="w-full">
         <header class="mb-8">
             <h1 class="text-2xl sm:text-3xl font-semibold mb-4">{{.Data.article.Title}}</h1>
+            {{if .Login}}
+            <div class="text-sm text-foreground/70">
+                <a href="/admin/publish?id={{.Data.article.ID}}" class="flex items-center gap-1 hover:text-accent transition w-fit">
+                    <i class="fa-regular fa-pen-to-square text-xs"></i>
+                    <span>{{.Tr.T "edit_post"}}</span>
+                </a>
+            </div>
+            {{end}}
         </header>
         
         <div class="app-prose prose max-w-none" itemprop="articleBody">

@@ -183,6 +183,14 @@
 
 
 {{if ne .Path "/"}}
+{{if .Data.article}}
+<div class="app-layout flex items-center justify-start">
+    <button onclick="history.back()" class="group inline-flex items-center gap-1 hover:text-accent -ms-2 mt-8 mb-2 bg-transparent border-none cursor-pointer text-foreground text-base">
+        <i class="fa-solid fa-chevron-left text-xs group-hover:-translate-x-1 transition-transform"></i>
+        <span>{{.Tr.T "go_back"}}</span>
+    </button>
+</div>
+{{else}}
 <nav class="app-layout mt-8 mb-1" aria-label="breadcrumb">
     <ul class="font-light flex items-center gap-2">
         <li>
@@ -207,6 +215,7 @@
         </li>
     </ul>
 </nav>
+{{end}}
 {{end}}
 
 <script>

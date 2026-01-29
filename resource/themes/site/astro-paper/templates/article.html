@@ -23,7 +23,7 @@
   "description": "{{.Desc}}"
 }
 </script>
-<main id="main-content" class="app-layout flex-1 py-8">
+<main id="main-content" class="app-layout flex-1 pb-8">
     <article class="w-full">
         <header class="mb-8">
             <h1 class="text-2xl sm:text-3xl font-semibold mb-4">{{.Data.article.Title}}</h1>
@@ -38,6 +38,14 @@
                     <i class="fa-regular fa-calendar"></i>
                     <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt "Jan 02, 2006"}}</time>
                 </span>
+                
+                {{if .Login}}
+                <span class="opacity-50">|</span>
+                <a href="/admin/publish?id={{.Data.article.ID}}" class="flex items-center gap-1 hover:text-accent transition">
+                    <i class="fa-regular fa-pen-to-square text-xs"></i>
+                    <span>{{.Tr.T "edit_post"}}</span>
+                </a>
+                {{end}}
                 
                 {{if .Data.article.ReadNum}}
                 <span class="flex items-center gap-2">
