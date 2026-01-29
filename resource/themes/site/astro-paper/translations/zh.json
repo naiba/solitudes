@@ -19,6 +19,8 @@
     {"locale": "zh", "key": "not_required", "trans": "非必填"},
     {"locale": "zh", "key": "post", "trans": "文章"},
     {"locale": "zh", "key": "posts", "trans": "文章"},
+    {"locale": "zh", "key": "posts_all_the_posts", "trans": "我发布的所有文章。"},
+    {"locale": "zh", "key": "posts_with_tag", "trans": "包含标签「{0}」的所有文章。"},
     {"locale": "zh", "key": "prev_chapter", "trans": "上一章"},
     {"locale": "zh", "key": "previous", "trans": "上一页"},
     {"locale": "zh", "key": "recent_posts", "trans": "最近文章"},

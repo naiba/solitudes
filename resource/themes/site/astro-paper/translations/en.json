@@ -19,6 +19,8 @@
     {"locale": "en", "key": "not_required", "trans": "Not required"},
     {"locale": "en", "key": "post", "trans": "Post"},
     {"locale": "en", "key": "posts", "trans": "Posts"},
+    {"locale": "en", "key": "posts_all_the_posts", "trans": "All the articles I've posted."},
+    {"locale": "en", "key": "posts_with_tag", "trans": "All articles with the tag \"{0}\"."},
     {"locale": "en", "key": "prev_chapter", "trans": "Previous Chapter"},
     {"locale": "en", "key": "previous", "trans": "Previous"},
     {"locale": "en", "key": "recent_posts", "trans": "Recent Posts"},

@@ -1,9 +1,10 @@
 {{define "site/posts"}}
 {{template "site/header" .}}
 {{ $tr := .Tr }}
-<main id="main-content" class="app-layout flex-1 py-8">
+<main id="main-content" class="app-layout flex-1 pb-4">
     <h1 class="page-title">{{if .Data.tag}}Tag: {{.Data.tag}}{{else}}{{$tr.T "posts"}}{{end}}</h1>
-    <div class="mt-10">
+    <p class="mt-2 mb-6 italic opacity-80">{{if .Data.tag}}{{$tr.T "posts_with_tag" .Data.tag}}{{else}}{{$tr.T "posts_all_the_posts"}}{{end}}</p>
+    <div>
         {{if .Data.articles}}
             {{range $yearGroup := .Data.articles}}
                 <div class="mb-12">

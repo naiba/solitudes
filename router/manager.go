@@ -50,18 +50,12 @@ func manager(c *fiber.Ctx) error {
 	}
 	var rssSubscribers []rssSubscriber
 	g.Go(func() error {
-		oneDayAgo := time.Now().Add(-24 * time.Hour)
-		if err := solitudes.System.DB.Raw(`
-			SELECT COUNT(*) FROM (
-				SELECT ip, COUNT(*) as cnt
-				FROM feed_visits
-				WHERE created_at > ?
-				GROUP BY ip
-				HAVING COUNT(*) >= ?
-			) t
-		`, oneDayAgo, 3).Scan(&rssSubscriberCount).Error; err != nil {
+		var err error
+		rssSubscriberCount, err = countFeedSubscribers()
+		if err != nil {
 			return err
 		}
+		oneDayAgo := time.Now().Add(-24 * time.Hour)
 		return solitudes.System.DB.Raw(`
 			SELECT ip, COUNT(*) as count
 			FROM feed_visits

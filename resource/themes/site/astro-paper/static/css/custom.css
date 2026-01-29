@@ -282,9 +282,14 @@ a {
 
 /* Typography adjustments */
 .page-title {
-    font-size: 2.25rem;
-    font-weight: 700;
-    color: var(--accent);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--foreground);
+}
+@media (min-width: 640px) {
+    .page-title {
+        font-size: 1.875rem;
+    }
 }
 
 .search-input {

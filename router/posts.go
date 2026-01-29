@@ -111,25 +111,82 @@ func book(c *fiber.Ctx) error {
 	}))
 }
 
+func countFeedSubscribers() (int64, error) {
+	var count int64
+	oneDayAgo := time.Now().Add(-24 * time.Hour)
+	err := solitudes.System.DB.Raw(`
+		SELECT COUNT(*) FROM (
+			SELECT ip FROM feed_visits
+			WHERE created_at > ?
+			GROUP BY ip
+			HAVING COUNT(*) >= 3
+		) t
+	`, oneDayAgo).Scan(&count).Error
+	return count, err
+}
+
+var validFeedFormats = map[string]bool{
+	"json": true,
+	"rss":  true,
+	"atom": true,
+}
+
 func feedHandler(c *fiber.Ctx) error {
-	ip := c.IP()
-	if ip != "" {
-		visit := model.FeedVisit{
-			IP: ip,
-		}
-		if err := solitudes.System.DB.Create(&visit).Error; err != nil {
-			log.Printf("Failed to record feed visit: %v", err)
+	format := c.Params("format")
+
+	// 仅合法 format 才计数
+	if validFeedFormats[format] {
+		ip := c.IP()
+		if ip != "" {
+			visit := model.FeedVisit{IP: ip}
+			if err := solitudes.System.DB.Create(&visit).Error; err != nil {
+				log.Printf("Failed to record feed visit: %v", err)
+			}
 		}
 	}
 
-	format := c.Params("format")
 	if format == "" {
-		return c.Status(http.StatusBadRequest).JSON(map[string]interface{}{
+		result, err, _ := solitudes.System.SafeCache.Do("feed:subscribers", func() (interface{}, error) {
+			return countFeedSubscribers()
+		})
+		var subscriberCount int64
+		if err == nil {
+			subscriberCount = result.(int64)
+		}
+
+		return c.Status(http.StatusOK).JSON(map[string]interface{}{
 			"message":         "please spec a feed format",
 			"supportedFormat": []string{"json", "rss", "atom"},
 			"feedLink":        "https://" + solitudes.System.Config.Site.Domain + "/feed/:format",
+			"subscribers":     subscriberCount,
 		})
 	}
+
+	if !validFeedFormats[format] {
+		_, err := c.Status(http.StatusBadRequest).WriteString("Unknown feed type")
+		return err
+	}
+
+	// 使用 singleflight 避免并发刷接口
+	result, err, _ := solitudes.System.SafeCache.Do("feed:"+format, func() (interface{}, error) {
+		return generateFeed(c, format)
+	})
+	if err != nil {
+		return err
+	}
+
+	feedResult := result.(*feedOutput)
+	c.Set("Content-Type", feedResult.contentType)
+	_, err = c.Status(http.StatusOK).WriteString(feedResult.body)
+	return err
+}
+
+type feedOutput struct {
+	contentType string
+	body        string
+}
+
+func generateFeed(c *fiber.Ctx, format string) (interface{}, error) {
 	feed := &feeds.Feed{
 		Title:       solitudes.System.Config.Site.SpaceName,
 		Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain},
@@ -139,14 +196,14 @@ func feedHandler(c *fiber.Ctx) error {
 	}
 	var articles []model.Article
 	if err := solitudes.System.DB.Order("created_at DESC").Limit(20).Find(&articles).Error; err != nil {
-		return fmt.Errorf("failed to fetch articles for feed: %w", err)
+		return nil, fmt.Errorf("failed to fetch articles for feed: %w", err)
 	}
+
+	isAuthorized := c.Locals(solitudes.CtxAuthorized).(bool)
 	for i := range articles {
-		// 检查私有博文
-		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
+		if articles[i].IsPrivate && !isAuthorized {
 			articles[i].Content = "Private Article"
 		}
-
 		feed.Items = append(feed.Items, &feeds.Item{
 			Title:   articles[i].Title,
 			Link:    &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug + "/v" + strconv.Itoa(int(articles[i].Version))},
@@ -156,36 +213,30 @@ func feedHandler(c *fiber.Ctx) error {
 			Updated: articles[i].UpdatedAt,
 		})
 	}
+
 	switch format {
 	case "atom":
-		atom, err := feed.ToAtom()
+		body, err := feed.ToAtom()
 		if err != nil {
-			return fmt.Errorf("failed to generate atom feed: %w", err)
+			return nil, fmt.Errorf("failed to generate atom feed: %w", err)
 		}
-		c.Set("Content-Type", "application/xml")
-		_, err = c.Status(http.StatusOK).WriteString(atom)
-		return err
+		return &feedOutput{contentType: "application/xml", body: body}, nil
 	case "rss":
 		rssFeed := (&feeds.Rss{Feed: feed}).RssFeed()
 		rssFeed.Generator = "Solitudes v" + solitudes.BuildVersion + " github.com/naiba/solitudes"
-		rss, err := feeds.ToXML(rssFeed)
+		body, err := feeds.ToXML(rssFeed)
 		if err != nil {
-			return fmt.Errorf("failed to generate rss feed: %w", err)
+			return nil, fmt.Errorf("failed to generate rss feed: %w", err)
 		}
-		c.Set("Content-Type", "application/xml")
-		_, err = c.Status(http.StatusOK).WriteString(rss)
-		return err
+		return &feedOutput{contentType: "application/xml", body: body}, nil
 	case "json":
-		json, err := feed.ToJSON()
+		body, err := feed.ToJSON()
 		if err != nil {
-			return fmt.Errorf("failed to generate json feed: %w", err)
+			return nil, fmt.Errorf("failed to generate json feed: %w", err)
 		}
-		c.Set("Content-Type", "application/json")
-		_, err = c.Status(http.StatusOK).WriteString(json)
-		return err
+		return &feedOutput{contentType: "application/json", body: body}, nil
 	default:
-		_, err := c.Status(http.StatusBadRequest).WriteString("Unknown feed type")
-		return err
+		return nil, fmt.Errorf("unknown feed type: %s", format)
 	}
 }
 

@@ -1,8 +1,8 @@
 {{define "site/search"}}
 {{template "site/header" .}}
-<main id="main-content" class="app-layout flex-1 py-8 pb-12">
-    <h1 class="text-3xl font-bold sm:text-4xl mb-2">{{.Tr.T "search"}}</h1>
-    <p class="text-foreground/70 mb-8 italic">{{.Tr.T "search_desc"}}</p>
+<main id="main-content" class="app-layout flex-1 pb-12">
+    <h1 class="page-title">{{.Tr.T "search"}}</h1>
+    <p class="mt-2 mb-6 italic opacity-80">{{.Tr.T "search_desc"}}</p>
     
     <div class="mb-12">
         <form action="/search/" method="get" class="relative group">

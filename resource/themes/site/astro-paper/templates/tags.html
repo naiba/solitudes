@@ -2,7 +2,7 @@
 {{template "site/header" .}}
 <main id="main-content" class="app-layout flex-1 pb-12">
     <h1 class="page-title">{{.Tr.T "tags"}}</h1>
-    <p class="mt-2 opacity-80">{{.Tr.T "tags_all_the_tags"}}</p>
+    <p class="mt-2 italic opacity-80">{{.Tr.T "tags_all_the_tags"}}</p>
     
     <ul class="tag-cloud">
         {{range $index, $tag := .Data.tags}}
