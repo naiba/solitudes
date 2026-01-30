@@ -115,7 +115,7 @@
     {"locale": "zh", "key": "tags_subtitle", "trans": "管理文章标签"},
     {"locale": "zh", "key": "template", "trans": "模板"},
     {"locale": "zh", "key": "theme_config", "trans": "主题配置"},
-    {"locale": "zh", "key": "theme_config_help", "trans": "此处的原始 JSON 配置将覆盖主题默认值。键名通常以 themeName. 开头。"},
+    {"locale": "zh", "key": "theme_config_help", "trans": "此处的原始 YAML 配置将覆盖主题默认值。键名通常以 themeName. 开头。"},
     {"locale": "zh", "key": "title", "trans": "标题"},
     {"locale": "zh", "key": "topic_content_placeholder", "trans": "此刻的想法..."},
     {"locale": "zh", "key": "uploaded_at", "trans": "上传时间"},

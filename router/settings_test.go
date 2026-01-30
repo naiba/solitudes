@@ -13,6 +13,7 @@ import (
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 )
 
 func TestCactusSettings(t *testing.T) {
@@ -57,7 +58,7 @@ func TestCactusSettings(t *testing.T) {
 			{"name": "About", "link": "/about"},
 		},
 	}
-	tcBytes, _ := json.Marshal(themeConfig)
+	tcBytes, _ := yaml.Marshal(themeConfig)
 
 	reqBody := settingsRequest{
 		SiteTheme:   "cactus",

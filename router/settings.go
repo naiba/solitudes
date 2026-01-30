@@ -1,7 +1,6 @@
 package router
 
 import (
-	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/yaml.v3"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -174,8 +174,8 @@ func settingsHandler(c *fiber.Ctx) error {
 
 	var newConfig map[string]interface{}
 	if sr.ThemeConfig != "" {
-		if err := json.Unmarshal([]byte(sr.ThemeConfig), &newConfig); err != nil {
-			return fiber.NewError(http.StatusBadRequest, "Invalid theme config JSON: "+err.Error())
+		if err := yaml.Unmarshal([]byte(sr.ThemeConfig), &newConfig); err != nil {
+			return fiber.NewError(http.StatusBadRequest, "Invalid theme config YAML: "+err.Error())
 		}
 
 		// 补充 theme.config 中存在但用户未提交的 key

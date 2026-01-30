@@ -29,6 +29,7 @@ import (
 	html "github.com/gofiber/template/html/v2"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
+	"gopkg.in/yaml.v3"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -518,6 +519,10 @@ func setFuncMap(engine *html.Engine) {
 		},
 		"json": func(x interface{}) string {
 			b, _ := json.Marshal(x)
+			return string(b)
+		},
+		"yaml": func(x interface{}) string {
+			b, _ := yaml.Marshal(x)
 			return string(b)
 		},
 		"unsafe": func(raw string) template.HTML {

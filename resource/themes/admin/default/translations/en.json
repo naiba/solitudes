@@ -115,7 +115,7 @@
     {"locale": "en", "key": "tags_subtitle", "trans": "Manage your article tags"},
     {"locale": "en", "key": "template", "trans": "Template"},
     {"locale": "en", "key": "theme_config", "trans": "Theme Configuration"},
-    {"locale": "en", "key": "theme_config_help", "trans": "This raw JSON configuration overrides theme defaults. Keys usually start with themeName."},
+    {"locale": "en", "key": "theme_config_help", "trans": "This raw YAML configuration overrides theme defaults. Keys usually start with themeName."},
     {"locale": "en", "key": "title", "trans": "Title"},
     {"locale": "en", "key": "topic_content_placeholder", "trans": "What's on your mind?"},
     {"locale": "en", "key": "uploaded_at", "trans": "Uploaded At"},
