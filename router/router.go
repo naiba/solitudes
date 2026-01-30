@@ -447,6 +447,7 @@ Allow: /
 Disallow: /admin/
 Disallow: /r/
 Disallow: /feed/
+
 Sitemap: https://%s/sitemap.xml
 `, domain)
 	c.Set("Content-Type", "text/plain")
@@ -485,7 +486,7 @@ func sitemapHandler(c *fiber.Ctx) error {
   </url>
 `)
 	var tags []string
-	if err := solitudes.System.DB.Raw(`select distinct unnest(articles.tags) t from articles where unnest(articles.tags) is not null`).Scan(&tags).Error; err != nil {
+	if err := solitudes.System.DB.Raw(`SELECT DISTINCT t FROM articles, unnest(articles.tags) AS t WHERE t IS NOT NULL`).Scan(&tags).Error; err != nil {
 		return fmt.Errorf("failed to fetch tags for sitemap: %w", err)
 	}
 	for _, tag := range tags {
