@@ -138,9 +138,16 @@ func feedHandler(c *fiber.Ctx) error {
 	if validFeedFormats[format] {
 		ip := c.IP()
 		if ip != "" {
-			visit := model.FeedVisit{IP: ip}
-			if err := solitudes.System.DB.Create(&visit).Error; err != nil {
-				log.Printf("Failed to record feed visit: %v", err)
+			threshold := time.Now().Add(-20 * time.Minute)
+			var recent model.FeedVisit
+			err := solitudes.System.DB.Where("ip = ? AND created_at > ?", ip, threshold).
+				Order("created_at DESC").First(&recent).Error
+			if err != nil {
+				// 没有近期记录（含 ErrRecordNotFound），插入新记录
+				visit := model.FeedVisit{IP: ip}
+				if err := solitudes.System.DB.Create(&visit).Error; err != nil {
+					log.Printf("Failed to record feed visit: %v", err)
+				}
 			}
 		}
 	}
