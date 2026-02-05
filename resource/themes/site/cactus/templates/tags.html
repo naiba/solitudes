@@ -1,12 +1,15 @@
 {{define "site/tags"}}
 {{template "site/header" .}}
 {{template "site/menu" .}}
+<main id="main-content">
+<h1 class="sr-only">{{.Title}}</h1>
 <section id="tags">
   {{range $i,$tag := .Data.tags}}
-  <a href="//{{$.Conf.Site.Domain}}/tags/{{$tag}}/">
+  <a href="https://{{$.Conf.Site.Domain}}/tags/{{$tag}}/">
     {{$tag}} <small>{{index $.Data.counts $i}}</small>
   </a>
   {{end}}
 </section>
+</main>
 {{template "site/footer" .}}
 {{end}}

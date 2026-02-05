@@ -3,6 +3,7 @@
     {"locale": "zh", "key": "404_title", "trans": "404 页面未找到"},
     {"locale": "zh", "key": "articles_in", "trans": "「{0}」分类下的文章"},
     {"locale": "zh", "key": "books", "trans": "专栏"},
+    {"locale": "zh", "key": "books_all_the_books", "trans": "探索本站发布的所有专栏和系列文章。按章节组织的长篇内容，深入探讨各类主题。"},
     {"locale": "zh", "key": "dashboard", "trans": "仪表盘"},
     {"locale": "zh", "key": "home", "trans": "首页"},
     {"locale": "zh", "key": "manage_articles", "trans": "管理文章"},
@@ -10,6 +11,8 @@
     {"locale": "zh", "key": "manage_media", "trans": "管理文件"},
     {"locale": "zh", "key": "manage_tags", "trans": "管理标签"},
     {"locale": "zh", "key": "posts", "trans": "文章"},
+    {"locale": "zh", "key": "posts_all_the_posts", "trans": "浏览本站发布的所有文章，按时间排序。在这里发现各类文章、教程、随笔和故事。"},
+    {"locale": "zh", "key": "posts_with_tag", "trans": "包含标签「{0}」的所有文章。"},
     {"locale": "zh", "key": "publish_article", "trans": "发布文章"},
     {"locale": "zh", "key": "redirect_auto", "trans": "将在"},
     {"locale": "zh", "key": "redirect_continue", "trans": "点击此处继续访问"},
@@ -20,5 +23,6 @@
     {"locale": "zh", "key": "redirect_title", "trans": "外部链接跳转"},
     {"locale": "zh", "key": "search_result_title", "trans": "搜索结果：「{0}」"},
     {"locale": "zh", "key": "site_settings", "trans": "配置"},
+    {"locale": "zh", "key": "tags_all_the_tags", "trans": "浏览本站所有标签和分类，按主题快速查找文章和专栏，轻松发现感兴趣的相关内容。"},
     {"locale": "zh", "key": "tags_cloud", "trans": "标签云"}
 ]

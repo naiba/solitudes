@@ -79,11 +79,17 @@ func article(c *fiber.Ctx) error {
 		a.Content = "Private Article"
 	}
 
+	desc := mdExcerpt(a.Content, 150)
+	isOldVersion := c.Params("version") != ""
+
 	return c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
 		"title":        title,
+		"desc":         desc,
+		"og_type":      "article",
 		"keywords":     a.RawTags,
 		"article":      &a,
 		"comment_page": pg,
+		"noindex":      isOldVersion,
 	}))
 }
 

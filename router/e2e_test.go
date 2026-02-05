@@ -42,7 +42,7 @@ func TestE2EPages(t *testing.T) {
 		pages = append(pages, struct {
 			name string
 			path string
-		}{"Article", "/" + articleSlug + "/"})
+		}{"Article", "/" + articleSlug})
 	} else {
 		t.Log("Warning: No article slug found in sitemap, skipping article E2E check")
 	}

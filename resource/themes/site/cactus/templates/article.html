@@ -1,18 +1,25 @@
 {{define "site/article"}}
 {{template "site/header" .}}
+{{if not .Noindex}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "{{.Data.article.Title}}",
-  "image": "https://{{.Conf.Site.Domain}}/logo.png",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
+  },
+  "headline": "{{jsonEscape .Data.article.Title}}",
+  "url": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}",
+  "image": "{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}",
   "author": {
     "@type": "Person",
-    "name": "{{.Conf.User.Nickname}}"
+    "name": "{{jsonEscape .Conf.User.Nickname}}",
+    "url": "https://{{.Conf.Site.Domain}}/"
   },
   "publisher": {
     "@type": "Organization",
-    "name": "{{.Conf.Site.SpaceName}}",
+    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
     "logo": {
       "@type": "ImageObject",
       "url": "https://{{.Conf.Site.Domain}}/logo.png"
@@ -20,9 +27,11 @@
   },
   "datePublished": "{{iso8601 .Data.article.CreatedAt}}",
   "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
-  "description": "{{.Desc}}"
+  "description": "{{jsonEscape .Desc}}"{{if .Data.article.Tags}},
+  "keywords": [{{range $i, $tag := .Data.article.Tags}}{{if $i}}, {{end}}"{{jsonEscape $tag}}"{{end}}]{{end}}
 }
 </script>
+{{end}}
 <div id="header-post">
     <span id="menu-icon"><i class="fa-solid fa-bars fa-lg"></i></span>
     <span id="menu-icon-tablet"><i class="fa-solid fa-bars fa-lg"></i></span>
@@ -41,13 +50,13 @@
         <span id="actions">
             <ul>
                 {{if .Data.article.SibilingArticle.Prev}}
-                <li><a class="icon" href="//{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Prev.Slug}}"
+                <li><a class="icon" href="https://{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Prev.Slug}}"
                         title="{{.Data.article.SibilingArticle.Prev.Title}}"><i class="fa-solid fa-chevron-left"
                             aria-hidden="true" onmouseover="toggle('#i-prev')" onmouseout="toggle('#i-prev')"></i></a>
                 </li>
                 {{end}}
                 {{if .Data.article.SibilingArticle.Next}}
-                <li><a class="icon" href="//{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Next.Slug}}"
+                <li><a class="icon" href="https://{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Next.Slug}}"
                         title="{{.Data.article.SibilingArticle.Next.Title}}"><i class="fa-solid fa-chevron-right"
                             aria-hidden="true" onmouseover="toggle('#i-next')" onmouseout="toggle('#i-next')"></i></a>
                 </li>
@@ -100,20 +109,21 @@
     </span>
 </div>
 <div class="content index py4"> <!-- 使用 content index py4 将页面主体包裹起来，与页脚拆分，在页脚前关闭-->
-    <article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
+    <main id="main-content">
+    <article class="post">
         <header>
-            <h2 class="posttitle" itemprop="name headline">
+            <h1 class="posttitle">
                 {{.Data.article.Title}}
-            </h2>
+            </h1>
             <div class="meta">
-                <span class="author" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
-                    <span itemprop="name">{{.Conf.User.Nickname}}</span>
+                <span class="author">
+                    <span>{{.Conf.User.Nickname}}</span>
                 </span>
                 <div class="postdate">
-                    {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}" itemprop="datePublished">{{tf .Data.article.CreatedAt
+                    {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt
                         (.Tr.T "date_format")}}</time>
                     {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
-                     · {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}" itemprop="dateModified">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
+                     · {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
                     {{end}}
                     <small>·v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
@@ -126,7 +136,7 @@
                 <div class="article-tag">
                     {{range $k,$v:=.Data.article.Tags}}
                     {{if $v}}{{if eq $k 0}}<i class="fa-solid fa-tag"></i> {{end}}<a class="tag-link"
-                        href="//{{$.Conf.Site.Domain}}/tags/{{$v}}/">{{$v}}</a>{{if not (last $k $.Data.article.Tags)}},{{end}}{{end}}
+                        href="https://{{$.Conf.Site.Domain}}/tags/{{$v}}/">{{$v}}</a>{{if not (last $k $.Data.article.Tags)}},{{end}}{{end}}
                     {{end}}
                 </div>
                 {{end}}
@@ -135,7 +145,7 @@
                 {{end}}
             </div>
         </header>
-        <div class="content" itemprop="articleBody">
+        <div class="content">
             {{if gt .Data.article.NewVersion .Data.article.Version}}
             <i>{{(.Tr.T "has_new_version" (.Data.article.Version|uint2str) .Data.article.Slug (.Data.article.NewVersion|uint2str) (.Data.article.NewVersion|uint2str))|unsafe}}</i>
             {{else if gt .Data.article.Version 1}}
@@ -168,7 +178,7 @@
 
     {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
     <div id="reply-list">
-        <h1>{{.Tr.T "comments"}}</h1>
+        <h2>{{.Tr.T "comments"}}</h2>
         {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
     </div>
     {{if .Data.article.Comments}}
@@ -185,14 +195,18 @@
     {{end}}
     {{if not .Data.article.DisableComment}}
     <div id="reply">
+        <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
         <textarea cols="40" rows="6" id="id_content"
             placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
         {{if .Login}}
         <input type="hidden" maxlength="64" id="id_nickname">
         {{else}}
         <div class="row">
+            <label for="id_nickname" class="sr-only">{{.Tr.T "nickname"}}</label>
             <input placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname">
+            <label for="id_email" class="sr-only">{{.Tr.T "email"}}</label>
             <input placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email">
+            <label for="id_website" class="sr-only">{{.Tr.T "website"}}</label>
             <input placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website">
         </div>
         {{end}}
@@ -202,6 +216,7 @@
     </div>
     {{end}}
     {{end}}
+    </main>
 
     <div id="footer-post-container">
         <div id="footer-post">

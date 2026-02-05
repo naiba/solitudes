@@ -58,5 +58,6 @@ func search(c *fiber.Ctx) error {
 	return c.Status(http.StatusOK).Render("site/search", injectSiteData(c, fiber.Map{
 		"title":   tr.T("search_result_title", "#SOL.9527.WORD#"),
 		"results": result,
+		"noindex": true,
 	}))
 }

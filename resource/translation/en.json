@@ -3,6 +3,7 @@
     {"locale": "en", "key": "404_title", "trans": "404 Page Not Found"},
     {"locale": "en", "key": "articles_in", "trans": "Articles in \"{0}\""},
     {"locale": "en", "key": "books", "trans": "Books"},
+    {"locale": "en", "key": "books_all_the_books", "trans": "Explore all books and in-depth series published on this blog. Long-form writings organized into chapters and collections."},
     {"locale": "en", "key": "dashboard", "trans": "Dashboard"},
     {"locale": "en", "key": "home", "trans": "Home"},
     {"locale": "en", "key": "manage_articles", "trans": "Manage Articles"},
@@ -10,6 +11,8 @@
     {"locale": "en", "key": "manage_media", "trans": "Manage Media"},
     {"locale": "en", "key": "manage_tags", "trans": "Manage Tags"},
     {"locale": "en", "key": "posts", "trans": "Posts"},
+    {"locale": "en", "key": "posts_all_the_posts", "trans": "Browse all published articles, sorted by date. Discover writings, tutorials, thoughts, and stories shared on this blog."},
+    {"locale": "en", "key": "posts_with_tag", "trans": "All articles with the tag \"{0}\"."},
     {"locale": "en", "key": "publish_article", "trans": "Publish Article"},
     {"locale": "en", "key": "redirect_auto", "trans": "Auto redirect in"},
     {"locale": "en", "key": "redirect_continue", "trans": "Click here to continue"},
@@ -20,5 +23,6 @@
     {"locale": "en", "key": "redirect_title", "trans": "External Link Redirect"},
     {"locale": "en", "key": "search_result_title", "trans": "Search Results for \"{0}\""},
     {"locale": "en", "key": "site_settings", "trans": "Settings"},
+    {"locale": "en", "key": "tags_all_the_tags", "trans": "Browse all tags and categories used across articles and books. Find content by topic and discover related writings easily."},
     {"locale": "en", "key": "tags_cloud", "trans": "Tags Cloud"}
 ]

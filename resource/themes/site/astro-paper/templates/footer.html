@@ -5,7 +5,7 @@
             <div class="flex flex-col items-center justify-between sm:flex-row-reverse gap-4">
                 <div class="flex flex-wrap items-center gap-6 text-foreground/80">
                     {{range index .Theme "astro-paper.footermenus"}}
-                    <a href="{{.link}}" class="hover:text-accent transition p-1" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}} aria-label="{{.name}}" title="{{.name}}">
+                    <a href="{{.link}}" class="hover:text-accent transition p-1" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}} {{if .name}}aria-label="{{.name}}" title="{{.name}}"{{else}}aria-label="{{.link}}" title="{{.link}}"{{end}}>
                         {{if .icon}}<i class="{{.icon}} text-xl"></i>{{else}}{{.name}}{{end}}
                     </a>
                     {{end}}
@@ -24,10 +24,12 @@
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/method.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
 <script src="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css">
+<link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css"></noscript>
 
 <script>
     (function () {

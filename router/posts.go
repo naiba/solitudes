@@ -37,6 +37,7 @@ func tagsCloud(c *fiber.Ctx) error {
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/tags", injectSiteData(c, fiber.Map{
 		"title":  tr.T("tags_cloud"),
+		"desc":   tr.T("tags_all_the_tags"),
 		"tags":   tags,
 		"counts": counts,
 	}))
@@ -50,6 +51,9 @@ func posts(c *fiber.Ctx) error {
 		page, err = strconv.ParseInt(pageStr, 10, 64)
 		if err != nil {
 			return fmt.Errorf("invalid page format: %w", err)
+		}
+		if page <= 1 {
+			return c.Redirect("/posts/", http.StatusMovedPermanently)
 		}
 	}
 	var articles []model.Article
@@ -76,9 +80,11 @@ func posts(c *fiber.Ctx) error {
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
 		"title":    tr.T("posts"),
+		"desc":     tr.T("posts_all_the_posts"),
 		"what":     "posts",
 		"articles": listArticleByYear(articles),
 		"page":     pg,
+		"noindex":  page > 1,
 	}))
 }
 
@@ -90,6 +96,9 @@ func book(c *fiber.Ctx) error {
 		page, err = strconv.ParseInt(pageStr, 10, 64)
 		if err != nil {
 			return fmt.Errorf("invalid page format: %w", err)
+		}
+		if page <= 1 {
+			return c.Redirect("/books/", http.StatusMovedPermanently)
 		}
 	}
 	var articles []model.Article
@@ -105,9 +114,11 @@ func book(c *fiber.Ctx) error {
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
 		"title":    tr.T("books"),
+		"desc":     tr.T("books_all_the_books"),
 		"what":     "books",
 		"articles": listArticleByYear(articles),
 		"page":     pg,
+		"noindex":  page > 1,
 	}))
 }
 
@@ -212,12 +223,13 @@ func generateFeed(c *fiber.Ctx, format string) (interface{}, error) {
 			articles[i].Content = "Private Article"
 		}
 		feed.Items = append(feed.Items, &feeds.Item{
-			Title:   articles[i].Title,
-			Link:    &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug + "/v" + strconv.Itoa(int(articles[i].Version))},
-			Author:  &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
-			Content: luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),
-			Created: articles[i].CreatedAt,
-			Updated: articles[i].UpdatedAt,
+			Title:       articles[i].Title,
+			Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug},
+			Author:      &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
+			Description: mdExcerpt(articles[i].Content, 200),
+			Content:     luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),
+			Created:     articles[i].CreatedAt,
+			Updated:     articles[i].UpdatedAt,
 		})
 	}
 
@@ -256,6 +268,10 @@ func tags(c *fiber.Ctx) error {
 		if err != nil {
 			return fmt.Errorf("invalid page format: %w", err)
 		}
+		if page <= 1 {
+			tag, _ := url.QueryUnescape(c.Params("tag"))
+			return c.Redirect("/tags/"+url.PathEscape(tag)+"/", http.StatusMovedPermanently)
+		}
 	}
 	var articles []model.Article
 	tag, _ := url.QueryUnescape(c.Params("tag"))
@@ -285,10 +301,12 @@ func tags(c *fiber.Ctx) error {
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
 		"title":    tr.T("articles_in", tag),
+		"desc":     tr.T("posts_with_tag", tag),
 		"what":     "tags",
 		"tag":      tag,
 		"articles": listArticleByYear(articles),
 		"page":     pg,
+		"noindex":  page > 1,
 	}))
 }
 

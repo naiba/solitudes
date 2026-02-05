@@ -2,14 +2,14 @@
 </div>
 <footer id="footer">
     <div class="footer-left">
-        Copyright &copy; <a href="//{{.Conf.Site.Domain}}">{{.Conf.Site.SpaceName}}</a>, Powered by <a
-            href="https://github.com/naiba/solitudes" target="_blank">Solitudes</a> build·{{.BuildVersion}}
+        Copyright &copy; <a href="https://{{.Conf.Site.Domain}}">{{.Conf.Site.SpaceName}}</a>, Powered by <a
+            href="https://github.com/naiba/solitudes" target="_blank" rel="noopener noreferrer">Solitudes</a> build·{{.BuildVersion}}
     </div>
     <div class="footer-right">
         <nav>
             <ul>
                 {{range index .Theme "cactus.footermenus"}}
-                <li><a href="{{.link}}" {{if .black}} target="_blank" {{end}}>{{if .icon}}<i class="{{.icon}}"></i>
+                <li><a href="{{.link}}" {{if .black}} target="_blank" rel="noopener noreferrer"{{end}} {{if and .icon (not .name)}}aria-label="{{.link}}" title="{{.link}}"{{end}}>{{if .icon}}<i class="{{.icon}}"></i>
                         {{end}}{{.name}}</a></li>
                 {{end}}
             </ul>
@@ -19,10 +19,12 @@
 
 <script src="/static/site/cactus/js/main.js?v202601031442"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/method.min.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
 <script src="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css">
+<link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css"></noscript>
 
 <script>
     (function () {

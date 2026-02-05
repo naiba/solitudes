@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="HandheldFriendly" content="True">
+    {{if .Noindex}}<meta name="robots" content="noindex">{{end}}
     <meta name="description" content="{{.Desc}}">
     <meta name="keywords" content="{{.Keywords}}">
     <meta name="author" content="{{.Conf.User.Nickname}}">
@@ -19,33 +20,47 @@
     <link rel="apple-touch-icon" href="/logo.png">
     
     <link rel="alternate" type="application/rss+xml" title="{{.Conf.Site.SpaceName}} » Feed"
-        href="//{{.Conf.Site.Domain}}/feed/rss">
+        href="https://{{.Conf.Site.Domain}}/feed/rss">
     <link rel="alternate" type="application/atom+xml" title="{{.Conf.Site.SpaceName}} » Feed"
-        href="//{{.Conf.Site.Domain}}/feed/atom">
+        href="https://{{.Conf.Site.Domain}}/feed/atom">
     <link rel="alternate" type="application/json" title="{{.Conf.Site.SpaceName}} » Feed"
-        href="//{{.Conf.Site.Domain}}/feed/json">
+        href="https://{{.Conf.Site.Domain}}/feed/json">
     
-    <link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.Path}}">
+    {{if not .Noindex}}<link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.Path}}">{{end}}
     
     <meta property="og:title" content="{{.Title}}">
     <meta property="og:description" content="{{.Desc}}">
     <meta property="og:url" content="https://{{.Conf.Site.Domain}}{{.Path}}">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="{{.OgType}}">
     <meta property="og:site_name" content="{{.Conf.Site.SpaceName}}">
-    <meta property="og:image" content="https://{{.Conf.Site.Domain}}/logo.png">
+    {{if eq .OgType "article"}}<meta property="og:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
+    {{else}}<meta property="og:image" content="https://{{.Conf.Site.Domain}}/logo.png">{{end}}
+    {{if eq .OgType "article"}}
+    <meta property="article:published_time" content="{{iso8601 .Data.article.CreatedAt}}">
+    <meta property="article:modified_time" content="{{iso8601 .Data.article.UpdatedAt}}">
+    <meta property="article:author" content="{{.Conf.User.Nickname}}">
+    {{range .Data.article.Tags}}<meta property="article:tag" content="{{.}}">
+    {{end}}{{end}}
     
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{.Title}}">
     <meta name="twitter:description" content="{{.Desc}}">
-    <meta name="twitter:image" content="https://{{.Conf.Site.Domain}}/logo.png">
+    {{if eq .OgType "article"}}<meta name="twitter:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
+    {{else}}<meta name="twitter:image" content="https://{{.Conf.Site.Domain}}/logo.png">{{end}}
     
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://gravatar.loli.net">
+    <link rel="dns-prefetch" href="https://api.dicebear.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
     <link rel="stylesheet" href="/static/site/astro-paper/css/custom.css?v2026012900">
     
     <link rel="preconnect" href="https://fonts.googleapis.cn">
     <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
-    <link href="https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.cn/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
     
     <script>
         (function() {
@@ -190,6 +205,34 @@
         <span>{{.Tr.T "go_back"}}</span>
     </button>
 </div>
+{{if not .Noindex}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "{{.Tr.T "home"}}",
+      "item": "https://{{.Conf.Site.Domain}}/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{.Tr.T "posts"}}",
+      "item": "https://{{.Conf.Site.Domain}}/posts/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{jsonEscape .Data.article.Title}}",
+      "item": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
+    }
+  ]
+}
+</script>
+{{end}}
 {{else}}
 <nav class="app-layout mt-8 mb-1" aria-label="breadcrumb">
     <ul class="font-light flex items-center gap-2">
@@ -215,6 +258,52 @@
         </li>
     </ul>
 </nav>
+{{if not .Noindex}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "{{.Tr.T "home"}}",
+      "item": "https://{{.Conf.Site.Domain}}/"
+    }{{if .Data.tag}},
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{.Tr.T "tags"}}",
+      "item": "https://{{.Conf.Site.Domain}}/tags/"
+    },
+    {
+      "@type": "ListItem",
+      "position": 3,
+      "name": "{{jsonEscape .Data.tag}}",
+      "item": "https://{{.Conf.Site.Domain}}/tags/{{.Data.tag}}/"
+    }{{else if eq .Path "/tags/"}},
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{.Tr.T "tags"}}",
+      "item": "https://{{.Conf.Site.Domain}}/tags/"
+    }{{else if eq .Path "/posts/"}},
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{.Tr.T "posts"}}",
+      "item": "https://{{.Conf.Site.Domain}}/posts/"
+    }{{else if eq .Path "/search/"}},
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "{{.Tr.T "search"}}",
+      "item": "https://{{.Conf.Site.Domain}}/search/"
+    }{{end}}
+  ]
+}
+</script>
+{{end}}
 {{end}}
 {{end}}
 

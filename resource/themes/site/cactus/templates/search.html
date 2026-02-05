@@ -1,8 +1,8 @@
 {{define "site/search"}}
 {{template "site/header" .}}
 {{template "site/menu" .}}
-<article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
-  <div class="content" itemprop="articleBody">
+<article class="post">
+  <div class="content">
     {{template "site/search_form" .}}
     <section id="search">
       {{if .Data.results}}
@@ -10,7 +10,7 @@
         <ul class="search-result-list">
           {{range .Data.results}}
           <li>
-            <a href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
+            <a href="https://{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
             <p class="search-result">
               {{.Content|unsafe}}
             </p>

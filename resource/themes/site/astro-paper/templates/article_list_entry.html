@@ -43,9 +43,9 @@
             <div class="flex gap-3 group/cm">
                 <div class="flex-shrink-0 mt-1">
                     {{if .Email}}
-                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=32&d=mm&r=g" alt="{{.Nickname}}" class="w-5 h-5 rounded-full border border-border/50 group-hover/cm:border-accent/50 transition-colors grayscale group-hover/cm:grayscale-0">
+                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=32&d=mm&r=g" alt="{{.Nickname}}" class="w-5 h-5 rounded-full border border-border/50 group-hover/cm:border-accent/50 transition-colors grayscale group-hover/cm:grayscale-0" loading="lazy">
                     {{else}}
-                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" class="w-5 h-5 rounded-full border border-border/50 group-hover/cm:border-accent/50 transition-colors grayscale group-hover/cm:grayscale-0">
+                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" class="w-5 h-5 rounded-full border border-border/50 group-hover/cm:border-accent/50 transition-colors grayscale group-hover/cm:grayscale-0" loading="lazy">
                     {{end}}
                 </div>
                 <div class="flex-1 bg-muted/20 hover:bg-muted/40 px-3 py-1.5 rounded-lg rounded-tl-none border border-border/20 transition-colors">

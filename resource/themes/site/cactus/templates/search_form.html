@@ -3,7 +3,8 @@
     <h2 class="h1">{{.Tr.T "search"}}</h2>
     <form action="/search/" method="get">
         <div class="row">
-            <input class="search-input" name="w">
+            <label for="search-input" class="sr-only">{{.Tr.T "search"}}</label>
+            <input id="search-input" class="search-input" name="w">
             <button class="base-button" type="submit">{{.Tr.T "search"}}</button>
         </div>
     </form>

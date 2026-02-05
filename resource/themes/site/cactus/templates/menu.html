@@ -3,7 +3,7 @@
     <header id="header">
         <div id="logo" style="background-image: url(/logo.png?20211213);"></div>
         <div id="title">
-            <h1>{{.Conf.Site.SpaceName}}</h1>
+            <div class="h1">{{.Conf.Site.SpaceName}}</div>
         </div>
         <div id="nav">
             <ul>
@@ -11,7 +11,7 @@
                     <span><i class="fa-solid fa-bars fa-2x"></i></span>
                 </li>
                 {{range index .Theme "cactus.headermenus"}}
-                <li><a href="{{.link}}" {{if .black}} target="_blank" {{end}}>{{if .icon}}<i class="{{.icon}}"></i>
+                <li><a href="{{.link}}" {{if .black}} target="_blank" rel="noopener noreferrer"{{end}}>{{if .icon}}<i class="{{.icon}}"></i>
                         {{end}}{{.name}}</a></li>
                 {{end}}
             </ul>

@@ -1,24 +1,56 @@
 {{define "site/page"}}
 {{template "site/header" .}}
+{{if not .Noindex}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "{{jsonEscape .Data.article.Title}}",
+  "url": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}",
+  "description": "{{jsonEscape .Desc}}",
+  "datePublished": "{{iso8601 .Data.article.CreatedAt}}",
+  "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
+  "author": {
+    "@type": "Person",
+    "name": "{{jsonEscape .Conf.User.Nickname}}",
+    "url": "https://{{.Conf.Site.Domain}}/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://{{.Conf.Site.Domain}}/logo.png"
+    }
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+    "url": "https://{{.Conf.Site.Domain}}/"
+  }
+}
+</script>
+{{end}}
 {{template "site/menu" .}}
 {{if .Login}}
 <a style="text-align: right;" href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
 {{end}}
-<article class="post" itemscope="" itemtype="http://schema.org/BlogPosting">
-  <div class="content" itemprop="articleBody">
+<article class="post">
+  <h1 class="posttitle">{{.Data.article.Title}}</h1>
+  <div class="content">
     {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
   </div>
   <div class="meta" style="margin-top: 1em; color: #666; font-size: 0.9em;">
-    {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}" itemprop="datePublished">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
+    {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
     {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
-     · {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}" itemprop="dateModified">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
+     · {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
     {{end}}
   </div>
 </article>
 
 {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
 <div id="reply-list">
-    <h1>{{.Tr.T "comments"}}</h1>
+    <h2>{{.Tr.T "comments"}}</h2>
     {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
 </div>
 {{if .Data.article.Comments}}
@@ -35,14 +67,18 @@
 {{end}}
 {{if not .Data.article.DisableComment}}
 <div id="reply">
+    <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
     <textarea cols="40" rows="6" id="id_content"
         placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
     {{if .Login}}
     <input type="hidden" maxlength="64" id="id_nickname">
     {{else}}
     <div class="row">
+        <label for="id_nickname" class="sr-only">{{.Tr.T "nickname"}}</label>
         <input placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname">
+        <label for="id_email" class="sr-only">{{.Tr.T "email"}}</label>
         <input placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email">
+        <label for="id_website" class="sr-only">{{.Tr.T "website"}}</label>
         <input placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website">
     </div>
     {{end}}

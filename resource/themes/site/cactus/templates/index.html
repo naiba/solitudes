@@ -1,5 +1,31 @@
 {{define "site/index"}}
 {{template "site/header" .}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+      "url": "https://{{.Conf.Site.Domain}}/",
+      "description": "{{jsonEscape .Desc}}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://{{.Conf.Site.Domain}}/search/?w={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "{{jsonEscape .Conf.User.Nickname}}",
+      "url": "https://{{.Conf.Site.Domain}}/"
+    }
+  ]
+}
+</script>
 {{template "site/menu" .}}
 {{ $top := index .Theme "cactus.hometopcontent" }}
 {{if $top}}
@@ -7,7 +33,8 @@
   {{(md "home-top" (printf "%s" $top))|unsafe}}
 </section>
 {{end}}
-<main>
+<main id="main-content">
+  <h1 class="sr-only">{{.Conf.Site.SpaceName}}</h1>
   <!-- Two-row, Two-column Grid Layout for Desktop -->
   <div class="home-grid-layout">
     <!-- Row 1, Column 1: Search -->
@@ -34,8 +61,8 @@
     <!-- Row 2, Column 1: Writing/Articles -->
     <div class="home-articles-section">
       <div class="h1 sl-menu">
-        <a href="//{{.Conf.Site.Domain}}/posts/">{{.Tr.T "writing"}}</a>
-        <a href="//{{.Conf.Site.Domain}}/posts/">{{.Tr.T "view_more"}}➤</a>
+        <a href="https://{{.Conf.Site.Domain}}/posts/">{{.Tr.T "writing"}}</a>
+        <a href="https://{{.Conf.Site.Domain}}/posts/">{{.Tr.T "view_more"}}➤</a>
       </div>
       <ul class="post-list">
         {{if not .Data.articles}}
@@ -56,8 +83,8 @@
     {{if .Data.topics}}
     <div class="home-topics-section">
       <div class="h1 sl-menu">
-        <a href="//{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "topic"}}</a>
-        <a href="//{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
+        <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "topic"}}</a>
+        <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
       </div>
       <ul class="post-list">
         {{range .Data.topics}}

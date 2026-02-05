@@ -30,3 +30,4 @@ app.log
 *~
 *.swp
 *.swo
+squirrel.toml

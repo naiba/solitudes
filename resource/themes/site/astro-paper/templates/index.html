@@ -1,6 +1,33 @@
 {{define "site/index"}}
 {{template "site/header" .}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+      "url": "https://{{.Conf.Site.Domain}}/",
+      "description": "{{jsonEscape .Desc}}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://{{.Conf.Site.Domain}}/search/?w={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "{{jsonEscape .Conf.User.Nickname}}",
+      "url": "https://{{.Conf.Site.Domain}}/"
+    }
+  ]
+}
+</script>
 <main id="main-content" class="app-layout flex-1 py-8">
+    <h1 class="sr-only">{{.Conf.Site.SpaceName}}</h1>
     <!-- Hero Section -->
     {{ $top := index .Theme "astro-paper.hometopcontent" }}
     {{if $top}}

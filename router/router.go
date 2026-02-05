@@ -15,12 +15,14 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/88250/lute"
 	"github.com/88250/lute/ast"
 	luteHtml "github.com/88250/lute/html"
+	luteRender "github.com/88250/lute/render"
 	luteUtil "github.com/88250/lute/util"
 	"github.com/go-playground/locales"
 	gv "github.com/go-playground/validator/v10"
@@ -47,6 +49,45 @@ func init() {
 	luteEngine.SetSub(true)
 	luteEngine.SetSup(true)
 	luteEngine.SetAutoSpace(true)
+
+	// 图片渲染：注入 loading="lazy" 属性
+	luteEngine.Md2HTMLRendererFuncs[ast.NodeImage] = func(n *ast.Node, entering bool) (string, ast.WalkStatus) {
+		if entering {
+			dest := n.ChildByType(ast.NodeLinkDest)
+			if dest == nil {
+				return "", ast.WalkSkipChildren
+			}
+			attrs := [][]string{
+				{"src", luteUtil.BytesToStr(luteHtml.EscapeHTML(dest.Tokens))},
+				{"alt", n.Text()},
+				{"loading", "lazy"},
+			}
+			if title := n.ChildByType(ast.NodeLinkTitle); nil != title && nil != title.Tokens {
+				attrs = append(attrs, []string{"title", luteUtil.BytesToStr(luteHtml.EscapeHTML(title.Tokens))})
+			}
+			return renderTag("img", attrs, true), ast.WalkSkipChildren
+		}
+		return "", ast.WalkSkipChildren
+	}
+
+	// 标题渲染：为 heading anchor 注入 aria-label 属性
+	luteEngine.Md2HTMLRendererFuncs[ast.NodeHeading] = func(n *ast.Node, entering bool) (string, ast.WalkStatus) {
+		headingLevel := " 123456"
+		level := headingLevel[n.HeadingLevel : n.HeadingLevel+1]
+		if entering {
+			id := luteRender.HeadingID(n)
+			return "<h" + level + " id=\"" + id + "\">", ast.WalkContinue
+		}
+		id := luteRender.HeadingID(n)
+		anchor := renderTag("a", [][]string{
+			{"id", "vditorAnchor-" + id},
+			{"class", "vditor-anchor"},
+			{"href", "#" + id},
+			{"aria-label", id},
+		}, false)
+		svg := `<svg viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path></svg>`
+		return anchor + svg + "</a></h" + level + ">\n", ast.WalkContinue
+	}
 
 	luteEngine.Md2HTMLRendererFuncs[ast.NodeLink] = func(n *ast.Node, entering bool) (string, ast.WalkStatus) {
 		if entering {
@@ -118,6 +159,7 @@ func themeStaticHandler(c *fiber.Ctx) error {
 		return page404(c)
 	}
 
+	c.Set("Cache-Control", "public, max-age=2592000")
 	return c.SendFile(cleanPath)
 }
 
@@ -192,6 +234,35 @@ func renderTag(name string, attrs [][]string, selfClosing bool) string {
 
 func mdRender(id string, raw string) string {
 	return luteEngine.MarkdownStr(id, raw)
+}
+
+var mdCleanRegex = regexp.MustCompile(`(?m)^#{1,6}\s+.*$`)
+var mdSymbolRegex = regexp.MustCompile(`[#*_~\[\]()` + "`" + `>!|{}\-]`)
+var mdImageRegex = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
+var htmlImageRegex = regexp.MustCompile(`<img\s[^>]*src=["']([^"']+)["']`)
+
+func mdExcerpt(content string, maxLen int) string {
+	text := mdCleanRegex.ReplaceAllString(content, "")
+	text = mdSymbolRegex.ReplaceAllString(text, "")
+	text = strings.Join(strings.Fields(text), " ")
+	runes := []rune(text)
+	if len(runes) > maxLen {
+		return string(runes[:maxLen]) + "…"
+	}
+	return text
+}
+
+func mdFirstImage(content string) string {
+	match := mdImageRegex.FindStringSubmatch(content)
+	if len(match) >= 3 {
+		return strings.TrimSpace(match[2])
+	}
+	// fallback: 提取 raw HTML <img src="...">
+	htmlMatch := htmlImageRegex.FindStringSubmatch(content)
+	if len(htmlMatch) >= 2 {
+		return strings.TrimSpace(htmlMatch[1])
+	}
+	return ""
 }
 
 // DynamicEngine wraps the actual html engine to allow hot-reloading
@@ -309,8 +380,9 @@ func Serve() {
 					templateName = "admin/error"
 				}
 				return c.Status(http.StatusInternalServerError).Render(templateName, injectSiteData(c, fiber.Map{
-					"title": title,
-					"msg":   errMsg,
+					"title":   title,
+					"msg":     errMsg,
+					"noindex": true,
 				}))
 			}
 			_, e = c.Status(http.StatusInternalServerError).WriteString(errMsg)
@@ -318,15 +390,44 @@ func Serve() {
 		},
 	})
 
+	app.Use(func(c *fiber.Ctx) error {
+		p := c.Path()
+		if len(p) > 1 {
+			hasSlash := p[len(p)-1] == '/'
+			trimmed := strings.TrimRight(p, "/")
+			isList := trimmed == "/posts" || trimmed == "/books" || trimmed == "/tags" || trimmed == "/search" ||
+				strings.HasPrefix(trimmed, "/tags/") || strings.HasPrefix(trimmed, "/posts/") || strings.HasPrefix(trimmed, "/books/")
+			needRedirect := (isList && !hasSlash) || (!isList && hasSlash)
+			if needRedirect {
+				q := string(c.Request().URI().QueryString())
+				target := trimmed
+				if isList {
+					target += "/"
+				}
+				if q != "" {
+					target += "?" + q
+				}
+				return c.Redirect(target, http.StatusMovedPermanently)
+			}
+		}
+		c.Set("X-Frame-Options", "SAMEORIGIN")
+		c.Set("X-Content-Type-Options", "nosniff")
+		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Set("Content-Security-Policy", "frame-ancestors 'self'")
+		if strings.Contains(c.Get("Accept"), "html") {
+			c.Set("Cache-Control", "public, max-age=60, stale-while-revalidate=300")
+		}
+		return c.Next()
+	})
 	app.Use(trans, auth)
 	app.Get("/", index)
 	app.Get("/favicon.ico", faviconHandler)
 	app.Get("/logo.png", logoHandler)
 	app.Get("/feed/:format?", feedHandler)
-	app.Get("/posts/:page?", posts)
-	app.Get("/books/:page?", book)
+	app.Get("/posts/:page?/", posts)
+	app.Get("/books/:page?/", book)
 	app.Get("/search/", search)
-	app.Get("/tags/:tag/:page?", tags)
+	app.Get("/tags/:tag/:page?/", tags)
 	app.Get("/tags/", tagsCloud)
 	app.Get("/r/go", goRedirect)
 	app.Get("/robots.txt", robotsHandler)
@@ -341,7 +442,9 @@ func Serve() {
 	app.Get("/r/:token", trackEmailReadRedirect)
 	app.Get("/static/i/:token", trackEmailRead)
 	app.Get("/static/:kind/:theme/*", themeStaticHandler)
-	app.Static("/upload", "data/upload")
+	app.Static("/upload", "data/upload", fiber.Static{
+		CacheDuration: 30 * 24 * time.Hour,
+	})
 
 	app.Get("/admin/login", guestRequired, login)
 	app.Post("/admin/login", guestRequired, loginHandler)
@@ -425,6 +528,7 @@ func goRedirect(c *fiber.Ctx) error {
 		"seconds":           tr.T("redirect_seconds"),
 		"error_no_url":      tr.T("redirect_error_no_url"),
 		"error_invalid_url": tr.T("redirect_error_invalid_url"),
+		"noindex":           true,
 	}))
 }
 
@@ -435,8 +539,9 @@ func page404(c *fiber.Ctx) error {
 		templateName = "admin/error"
 	}
 	c.Status(http.StatusNotFound).Render(templateName, injectSiteData(c, fiber.Map{
-		"title": tr.T("404_title"),
-		"msg":   tr.T("404_msg"),
+		"title":   tr.T("404_title"),
+		"msg":     tr.T("404_msg"),
+		"noindex": true,
 	}))
 	return nil
 }
@@ -448,6 +553,8 @@ Allow: /
 Disallow: /admin/
 Disallow: /r/
 Disallow: /feed/
+Disallow: /api/
+Disallow: /captcha
 
 Sitemap: https://%s/sitemap.xml
 `, domain)
@@ -464,6 +571,8 @@ func sitemapHandler(c *fiber.Ctx) error {
 `)
 	sb.WriteString(fmt.Sprintf(`  <url>
     <loc>https://%s/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
   </url>
 `, domain))
 	var articles []model.Article
@@ -475,17 +584,29 @@ func sitemapHandler(c *fiber.Ctx) error {
 			continue
 		}
 		sb.WriteString(fmt.Sprintf(`  <url>
-    <loc>https://%s/%s/</loc>
+    <loc>https://%s/%s</loc>
     <lastmod>%s</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 `, domain, article.Slug, article.UpdatedAt.Format("2006-01-02")))
 	}
-	sb.WriteString(`  <url>
-    <loc>https://`)
-	sb.WriteString(domain)
-	sb.WriteString(`/posts/</loc>
+	sb.WriteString(fmt.Sprintf(`  <url>
+    <loc>https://%s/posts/</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.6</priority>
   </url>
-`)
+  <url>
+    <loc>https://%s/books/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://%s/tags/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+`, domain, domain, domain))
 	var tags []string
 	if err := solitudes.System.DB.Raw(`SELECT DISTINCT t FROM articles, unnest(articles.tags) AS t WHERE t IS NOT NULL`).Scan(&tags).Error; err != nil {
 		return fmt.Errorf("failed to fetch tags for sitemap: %w", err)
@@ -493,6 +614,8 @@ func sitemapHandler(c *fiber.Ctx) error {
 	for _, tag := range tags {
 		sb.WriteString(fmt.Sprintf(`  <url>
     <loc>https://%s/tags/%s/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
   </url>
 `, domain, url.QueryEscape(tag)))
 	}
@@ -600,6 +723,17 @@ func setFuncMap(engine *html.Engine) {
 		"urlencode": func(s string) string {
 			return url.QueryEscape(s)
 		},
+		"firstImage": func(content string, fallback string) string {
+			if img := mdFirstImage(content); img != "" {
+				return img
+			}
+			return fallback
+		},
+		"jsonEscape": func(s string) string {
+			b, _ := json.Marshal(s)
+			// json.Marshal returns "quoted string", strip outer quotes
+			return string(b[1 : len(b)-1])
+		},
 		"externalLink": func(urlStr string) string {
 			// 将外部链接转换为 /r/go?url=base64 格式
 			if urlStr == "" {
@@ -642,24 +776,51 @@ func guestRequired(c *fiber.Ctx) error {
 
 func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	var title, keywords, desc string
+	siteName := solitudes.System.Config.Site.SpaceName
+	siteDesc := solitudes.System.Config.Site.SpaceDesc
 
-	// custom title
 	if k, ok := data["title"]; ok && k.(string) != "" {
-		title = data["title"].(string) + " | " + solitudes.System.Config.Site.SpaceName
+		title = data["title"].(string) + " - " + siteName
+		if len([]rune(title)) < 30 && siteDesc != siteName {
+			title = title + " | " + siteDesc
+		}
+		if len([]rune(title)) < 30 {
+			title = title + " | " + solitudes.System.Config.Site.SpaceKeywords
+		}
 	} else {
-		title = solitudes.System.Config.Site.SpaceName
+		if siteDesc != "" && siteDesc != siteName {
+			title = siteName + " - " + siteDesc
+		} else {
+			title = siteName
+		}
+		if len([]rune(title)) < 30 {
+			title = title + " | " + solitudes.System.Config.Site.SpaceKeywords
+		}
 	}
-	// custom keywords
+
 	if k, ok := data["keywords"]; ok && k.(string) != "" {
 		keywords = data["keywords"].(string)
 	} else {
 		keywords = solitudes.System.Config.Site.SpaceKeywords
 	}
-	// custom desc
+
 	if k, ok := data["desc"]; ok && k.(string) != "" {
 		desc = data["desc"].(string)
 	} else {
-		desc = solitudes.System.Config.Site.SpaceDesc
+		desc = siteDesc
+	}
+	if len([]rune(desc)) < 60 {
+		desc = desc + " - " + siteName + " | " + solitudes.System.Config.Site.SpaceKeywords
+	}
+
+	ogType := "website"
+	if k, ok := data["og_type"]; ok && k.(string) != "" {
+		ogType = k.(string)
+	}
+
+	noindex := false
+	if k, ok := data["noindex"]; ok {
+		noindex = k.(bool)
 	}
 
 	var soli = make(map[string]interface{})
@@ -669,6 +830,8 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	soli["Keywords"] = keywords
 	soli["BuildVersion"] = solitudes.BuildVersion
 	soli["Desc"] = desc
+	soli["OgType"] = ogType
+	soli["Noindex"] = noindex
 	soli["Login"] = c.Locals(solitudes.CtxAuthorized)
 	soli["Data"] = data
 	soli["Tr"] = c.Locals(solitudes.CtxTranslator).(*translator.Translator)
