@@ -1,0 +1,83 @@
+{{define "admin/media"}}
+{{template "admin/header" .}}
+
+<div class="page-header">
+    <h1>{{.Tr.T "media"}}</h1>
+    <p class="page-subtitle">{{.Tr.T "media_subtitle"}}</p>
+</div>
+
+<div class="wf-card-static media-list">
+    {{if .Data.medias}}
+    <table class="wf-table">
+        <thead>
+            <tr>
+                <th>{{.Tr.T "filename"}}</th>
+                <th>{{.Tr.T "article"}}</th>
+                <th>{{.Tr.T "uploaded_at"}}</th>
+                <th style="text-align:right">{{.Tr.T "manage"}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Data.medias}}
+            <tr>
+                <td>
+                    <a href="/upload/{{.Filename}}" target="_blank" class="media-filename">{{.Filename}}</a>
+                </td>
+                <td>
+                    {{if .Article.ID}}
+                    <a href="/{{.Article.Slug}}{{if .Article.Version}}/v{{.Article.Version}}{{end}}" target="_blank">
+                        {{substr .Article.Title 0 30}}
+                    </a>
+                    {{else}}
+                    <span class="text-muted">—</span>
+                    {{end}}
+                </td>
+                <td style="white-space:nowrap;">{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
+                <td style="text-align:right">
+                    {{if .Article.ID}}
+                    <button class="btn-glass small danger" onclick="deleteFile('{{.Filename}}', '{{.Article.ID}}')">
+                        <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
+                    </button>
+                    {{else}}
+                    <button class="btn-glass small danger" onclick="deleteFile('{{.Filename}}', '')">
+                        <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
+                    </button>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <!-- Simple Pagination -->
+    <div class="pagination">
+        {{if gt .Data.page 1}}
+        <a href="/admin/media?page={{add .Data.page -1}}"><i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}</a>
+        {{end}}
+        <span class="current">{{.Tr.T "page_number" (int2str .Data.page)}}</span>
+        {{if .Data.medias}}
+        <a href="/admin/media?page={{add .Data.page 1}}">{{.Tr.T "next"}} <i class="fas fa-chevron-right"></i></a>
+        {{end}}
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <i class="fas fa-photo-film"></i>
+        <p>{{.Tr.T "no_data"}}</p>
+    </div>
+    {{end}}
+</div>
+
+<script>
+function deleteFile(name, articleId) {
+    if (articleId) {
+        if (!confirm('{{.Tr.T "delete_file_usage_first"}}')) return;
+    }
+    if (!confirm('{{.Tr.T "confirm_delete"}}')) return;
+    ajaxRequest('DELETE', '/admin/media?name=' + encodeURIComponent(name) + '&article_id=' + articleId, null, function(resp, err) {
+        if (!err) location.reload();
+    });
+}
+</script>
+
+{{template "admin/footer" .}}
+{{end}}

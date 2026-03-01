@@ -1,0 +1,39 @@
+{{define "site/comments_entry"}}
+{{range .comments}}
+<div class="comment-item" id="comment-{{.ID}}">
+    <div class="comment-header">
+        <div class="comment-avatar">
+            {{if .Email}}
+            <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g" alt="{{.Nickname}}" loading="lazy">
+            {{else}}
+            <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" loading="lazy">
+            {{end}}
+        </div>
+        <div class="comment-meta-info">
+            <span class="comment-author{{if .IsAdmin}} admin{{end}}">
+                {{if .Website}}<a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener">{{.Nickname}}</a>{{else}}<strong>{{.Nickname}}</strong>{{end}}
+                {{if .IsAdmin}} <i class="fa-solid fa-circle-check" style="color: var(--accent);"></i>{{end}}
+            </span>
+            <span class="comment-time">
+                <time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
+                <a href="https://{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}"><small>·v{{.Version}}</small></a>
+                {{if ptrStrEq .EmailReadStatus "read"}}
+                <i class="fa-solid fa-eye" style="color: var(--muted); font-size: 0.8em;" title="{{$.tr.T "email_read"}}"></i>
+                {{else if ptrStrEq .EmailReadStatus "unread"}}
+                <i class="fa-solid fa-eye-slash" style="color: var(--muted); font-size: 0.8em;" title="{{$.tr.T "email_unread"}}"></i>
+                {{end}}
+            </span>
+        </div>
+    </div>
+    <div class="comment-body">
+        <p>{{.Content}}</p>
+    </div>
+    <div class="comment-actions">
+        <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">{{$.tr.T "reply"}}</a>
+    </div>
+</div>
+<div class="comment-children">
+    {{template "site/comments_entry" (commentsData .ChildComments $.tr)}}
+</div>
+{{end}}
+{{end}}

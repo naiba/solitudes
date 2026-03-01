@@ -1,0 +1,132 @@
+{{define "site/index"}}
+{{template "site/header" .}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+      "url": "https://{{.Conf.Site.Domain}}/",
+      "description": "{{jsonEscape .Desc}}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://{{.Conf.Site.Domain}}/search/?w={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Person",
+      "name": "{{jsonEscape .Conf.User.Nickname}}",
+      "url": "https://{{.Conf.Site.Domain}}/"
+    }
+  ]
+}
+</script>
+
+<main id="main-content">
+    <h1 class="sr-only">{{.Conf.Site.SpaceName}}</h1>
+
+    {{ $top := index .Theme "folio.hometopcontent" }}
+    {{if $top}}
+    <section class="home-top-content app-prose folio-container">
+        {{(md "home-top" (printf "%s" $top))|unsafe}}
+    </section>
+    {{end}}
+
+    <!-- 主体两栏：左侧最新文章（主要位置） + 右侧最热文章 & 哔哔 -->
+    <section class="home-grid folio-container">
+        <div class="home-main-col">
+            <!-- Hero: Featured article (first article) 占满左栏顶部 -->
+            {{if .Data.articles}}
+            {{ $featured := index .Data.articles 0 }}
+            <div class="hero-featured">
+                <span class="section-label">{{.Tr.T "featured"}}</span>
+                <h2 class="hero-title">
+                    <a href="https://{{.Conf.Site.Domain}}/{{$featured.Slug}}">{{$featured.Title}}</a>
+                </h2>
+                <div class="hero-meta">
+                    <time datetime="{{iso8601 $featured.CreatedAt}}">{{tf $featured.CreatedAt (.Tr.T "date_format")}}</time>
+                    {{if $featured.RawTags}}
+                    <span class="hero-tags">
+                        {{range $featured.Tags}}<a href="https://{{$.Conf.Site.Domain}}/tags/{{.}}/">{{.}}</a> {{end}}
+                    </span>
+                    {{end}}
+                </div>
+                {{if $featured.Content}}<p class="hero-excerpt">{{mdExcerpt $featured.Content 200}}</p>{{end}}
+            </div>
+            <hr style="margin: 2rem 0;">
+
+            <span class="section-label">
+                <a href="https://{{.Conf.Site.Domain}}/posts/">{{.Tr.T "recent_posts"}}</a>
+            </span>
+            <ul class="article-list">
+                {{range $i, $a := .Data.articles}}
+                {{if gt $i 0}} <!-- Skip first article since it's in Hero -->
+                <li class="article-list-item" style="--stagger-delay: {{add $i 0}}">
+                    {{template "site/article_list_entry" (articleData $a $.Tr)}}
+                </li>
+                {{end}}
+                {{end}}
+            </ul>
+            <a href="https://{{.Conf.Site.Domain}}/posts/" class="view-all-link">{{.Tr.T "all_posts"}} →</a>
+            {{else}}
+            <p class="folio-muted">{{.Tr.T "no_article"}}</p>
+            {{end}}
+        </div>
+
+        <aside class="home-side-col">
+            <!-- 最热文章 -->
+            {{if .Data.mostRead}}
+            <div class="sidebar-section">
+                <span class="section-label">{{.Tr.T "most_read"}}</span>
+                <ul class="article-list compact-list">
+                    {{range .Data.mostRead}}
+                    <li class="article-list-item">
+                        {{template "site/article_list_entry" (articleData . $.Tr)}}
+                    </li>
+                    {{end}}
+                </ul>
+            </div>
+            {{end}}
+
+            <!-- 哔哔 (Topics) -->
+            {{if .Data.topics}}
+            <div class="sidebar-section">
+                <span class="section-label">
+                    <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "topics"}}</a>
+                </span>
+                <ul class="article-list compact-list">
+                    {{range .Data.topics}}
+                    <li class="article-list-item">
+                        {{template "site/article_list_entry" (articleData . $.Tr)}}
+                    </li>
+                    {{end}}
+                </ul>
+                <a href="https://{{.Conf.Site.Domain}}/tags/Topic/" class="view-all-link">{{.Tr.T "view_all_topics"}} →</a>
+            </div>
+            {{end}}
+
+            <!-- 搜索 -->
+            <div class="sidebar-section">
+                <span class="section-label">{{.Tr.T "search"}}</span>
+                <form action="/search/" method="get" class="home-search-form">
+                    <label for="home-search-input" class="sr-only">{{.Tr.T "search"}}</label>
+                    <input id="home-search-input" class="search-input" name="w" placeholder="{{.Tr.T "search_placeholder"}}">
+                </form>
+            </div>
+        </aside>
+    </section>
+
+    {{ $bottom := index .Theme "folio.homebottomcontent" }}
+    {{if $bottom}}
+    <section class="home-bottom-content app-prose folio-container">
+        {{(md "home-bottom" (printf "%s" $bottom))|unsafe}}
+    </section>
+    {{end}}
+</main>
+{{template "site/footer" .}}
+{{end}}

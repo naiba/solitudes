@@ -1,0 +1,67 @@
+{{define "admin/header"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{.Title}}</title>
+    {{template "admin/css"}}
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="pulse-spinner">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="glacie-nav">
+        <a href="/admin/" class="nav-logo">
+            <i class="fas fa-snowflake"></i>
+            {{.Conf.Site.SpaceName}}
+        </a>
+
+        <button class="nav-mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('mobile-open')">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <ul class="nav-links">
+            <li><a href="/admin/" class="nav-link{{if eq .Path "/admin/"}} active{{end}}">
+                <i class="fas fa-chart-pie"></i> {{.Tr.T "dashboard"}}
+            </a></li>
+            <li><a href="/admin/publish" class="nav-link{{if eq .Path "/admin/publish"}} active{{end}}">
+                <i class="fas fa-pen-nib"></i> {{.Tr.T "publish"}}
+            </a></li>
+            <li><a href="/admin/articles" class="nav-link{{if eq .Path "/admin/articles"}} active{{end}}">
+                <i class="fas fa-newspaper"></i> {{.Tr.T "articles"}}
+            </a></li>
+            <li><a href="/admin/comments" class="nav-link{{if eq .Path "/admin/comments"}} active{{end}}">
+                <i class="fas fa-comments"></i> {{.Tr.T "comments"}}
+            </a></li>
+            <li><a href="/admin/tags" class="nav-link{{if eq .Path "/admin/tags"}} active{{end}}">
+                <i class="fas fa-tags"></i> {{.Tr.T "tags"}}
+            </a></li>
+            <li><a href="/admin/media" class="nav-link{{if eq .Path "/admin/media"}} active{{end}}">
+                <i class="fas fa-photo-film"></i> {{.Tr.T "media"}}
+            </a></li>
+            <li><a href="/admin/settings" class="nav-link{{if eq .Path "/admin/settings"}} active{{end}}">
+                <i class="fas fa-gear"></i> {{.Tr.T "site_settings"}}
+            </a></li>
+        </ul>
+
+        <div class="nav-user">
+            <a href="/" class="btn-glass small" target="_blank" title="{{.Tr.T "view_site"}}">
+                <i class="fas fa-external-link-alt"></i>
+            </a>
+            <span class="nav-user-name">{{.Conf.User.Nickname}}</span>
+            <form action="/logout" method="POST" style="margin:0">
+                <button type="submit" class="btn-glass small danger" title="Logout">
+                    <i class="fas fa-right-from-bracket"></i>
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <main>
+{{end}}

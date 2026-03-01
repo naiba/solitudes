@@ -1,0 +1,53 @@
+{{define "admin/tags"}}
+{{template "admin/header" .}}
+
+<div class="page-header">
+    <h1>{{.Tr.T "tags"}}</h1>
+    <p class="page-subtitle">{{.Tr.T "tags_subtitle"}}</p>
+</div>
+
+<div class="wf-card-static">
+    {{if .Data.tags}}
+    <div class="tag-list">
+        {{range $i, $tag := .Data.tags}}
+        <div class="tag-item" id="tag-{{$i}}">
+            <span class="tag-name">{{$tag}}</span>
+            <span class="tag-count">{{index $.Data.counts $i}}</span>
+            <div class="tag-actions">
+                <button onclick="renameTag('{{$tag}}')" title="Rename">
+                    <i class="fas fa-pen"></i>
+                </button>
+                <button class="delete-btn" onclick="deleteTag('{{$tag}}')" title="{{$.Tr.T "delete"}}">
+                    <i class="fas fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+        {{end}}
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <i class="fas fa-tags"></i>
+        <p>{{.Tr.T "no_data"}}</p>
+    </div>
+    {{end}}
+</div>
+
+<script>
+function renameTag(oldName) {
+    var newName = prompt('Rename "' + oldName + '" to:', oldName);
+    if (!newName || newName === oldName) return;
+    ajaxRequest('PATCH', '/admin/tags?oldTagName=' + encodeURIComponent(oldName) + '&newTagName=' + encodeURIComponent(newName), null, function(resp, err) {
+        if (!err) location.reload();
+    });
+}
+
+function deleteTag(name) {
+    if (!confirm('{{.Tr.T "confirm_delete"}}')) return;
+    ajaxRequest('DELETE', '/admin/tags?tagName=' + encodeURIComponent(name), null, function(resp, err) {
+        if (!err) location.reload();
+    });
+}
+</script>
+
+{{template "admin/footer" .}}
+{{end}}

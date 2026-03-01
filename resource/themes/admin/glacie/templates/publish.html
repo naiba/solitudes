@@ -1,0 +1,228 @@
+{{define "admin/publish"}}
+{{template "admin/header" .}}
+
+<div class="page-header">
+    <h1>{{.Tr.T "publish_article"}}</h1>
+    <p class="page-subtitle">{{.Tr.T "publish_subtitle"}}</p>
+</div>
+
+<div class="wf-card-static">
+    <!-- Hidden fields -->
+    <input type="hidden" id="inputID" value="{{.Data.article.ID}}">
+    <input type="hidden" id="inputCID" value="{{.Data.article.ID}}">
+
+    <!-- Title & Slug Row -->
+    <div class="form-row mb-3">
+        <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">{{.Tr.T "title"}}</label>
+            <input type="text" id="inputTitle" class="form-input" placeholder="{{.Tr.T "article_title_placeholder"}}" value="{{.Data.article.Title}}">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">{{.Tr.T "slug"}}</label>
+            <input type="text" id="inputSlug" class="form-input" placeholder="{{.Tr.T "lowercase_hyphens_only"}}" value="{{.Data.article.Slug}}">
+        </div>
+    </div>
+
+    <!-- Tags -->
+    <div class="form-group dropdown-container">
+        <label class="form-label">{{.Tr.T "tags"}}</label>
+        <input type="text" id="inputTags" class="form-input" placeholder="{{.Tr.T "comma_separated_tags"}}" value="{{.Data.article.RawTags}}" autocomplete="off">
+        <div class="dropdown-menu" id="tagsDropdown"></div>
+    </div>
+
+    <!-- Editor -->
+    <div class="form-group">
+        <label class="form-label">{{.Tr.T "content"}}</label>
+        <div id="editSection" style="min-height: 500px;"></div>
+    </div>
+
+    <!-- Article Settings -->
+    <div class="wf-card" style="margin-bottom: 1.25rem; padding: 1.25rem;">
+        <h3 style="margin-bottom: 1rem;"><i class="fas fa-sliders"></i> {{.Tr.T "article_settings"}}</h3>
+
+        <div class="form-row mb-3">
+            <div class="form-group" style="margin-bottom:0">
+                <label class="form-label">{{.Tr.T "template"}}</label>
+                <select id="selTemplate" class="form-select">
+                    {{range $k, $v := .Data.templates}}
+                    <option value="{{$k}}" {{if eq $k $.Data.article.TemplateID}}selected{{end}}>{{$v}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div class="form-group dropdown-container" style="margin-bottom:0">
+                <label class="form-label">{{.Tr.T "book_refer"}}</label>
+                <input type="text" id="inputBookRefer" class="form-input" placeholder="{{.Tr.T "book_refer_placeholder"}}" value="{{with .Data.article.BookRefer}}{{.}}{{end}}" autocomplete="off">
+                <div class="dropdown-menu" id="booksDropdown"></div>
+            </div>
+        </div>
+
+        <div class="flex gap-3" style="flex-wrap: wrap;">
+            <label class="form-check">
+                <input type="checkbox" id="cbBook" {{if .Data.article.IsBook}}checked{{end}}>
+                {{.Tr.T "its_a_book"}}
+            </label>
+            <label class="form-check">
+                <input type="checkbox" id="cbPrivate" {{if .Data.article.IsPrivate}}checked{{end}}>
+                {{.Tr.T "private"}}
+            </label>
+            <label class="form-check">
+                <input type="checkbox" id="cbDisableComment" {{if .Data.article.DisableComment}}checked{{end}}>
+                {{.Tr.T "disable_comment"}}
+            </label>
+            {{if .Data.article.ID}}
+            <label class="form-check">
+                <input type="checkbox" id="cbNewVersion">
+                {{.Tr.T "new_version"}}
+            </label>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- Publish Button -->
+    <div class="flex justify-between items-center">
+        <a href="/admin/articles" class="btn-glass">
+            <i class="fas fa-arrow-left"></i> {{.Tr.T "back_to_dashboard"}}
+        </a>
+        <button class="btn-glass primary" onclick="publish()">
+            <i class="fas fa-paper-plane"></i> {{.Tr.T "publish_now"}}
+        </button>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.min.js"></script>
+<script>
+var publishVditor;
+var unsavedChanges = false;
+
+$(function() {
+    var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    publishVditor = new Vditor('editSection', {
+        height: 500,
+        mode: 'ir',
+        theme: isDark ? 'dark' : 'classic',
+        upload: { url: '/admin/upload' },
+        cache: { id: 'glacie-publish-' + ($('#inputID').val() || 'new') },
+        value: {{if .Data.article.Content}}{{json .Data.article.Content}}{{else}}''{{end}},
+        input: function() { unsavedChanges = true; },
+        placeholder: '{{.Tr.T "topic_content_placeholder"}}',
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        publishVditor.setTheme(e.matches ? 'dark' : 'classic');
+    });
+
+    // Tag search dropdown
+    var tagTimer;
+    $('#inputTags').on('input', function() {
+        clearTimeout(tagTimer);
+        var val = $(this).val();
+        var parts = val.split(',');
+        var lastTag = parts[parts.length - 1].trim();
+        if (lastTag.length < 1) { $('#tagsDropdown').removeClass('show'); return; }
+        tagTimer = setTimeout(function() {
+            $.get('/admin/api/search-tags?q=' + encodeURIComponent(lastTag), function(tags) {
+                var dd = $('#tagsDropdown');
+                dd.empty();
+                if (!tags || tags.length === 0) { dd.removeClass('show'); return; }
+                tags.forEach(function(tag) {
+                    dd.append('<div class="dropdown-item" onclick="selectTag(this)">' + tag + '</div>');
+                });
+                dd.addClass('show');
+            });
+        }, 300);
+    });
+
+    // Book search dropdown
+    var bookTimer;
+    $('#inputBookRefer').on('input', function() {
+        clearTimeout(bookTimer);
+        var q = $(this).val().trim();
+        if (q.length < 1) { $('#booksDropdown').removeClass('show'); return; }
+        bookTimer = setTimeout(function() {
+            $.get('/admin/api/search-books?q=' + encodeURIComponent(q), function(books) {
+                var dd = $('#booksDropdown');
+                dd.empty();
+                if (!books || books.length === 0) { dd.removeClass('show'); return; }
+                books.forEach(function(b) {
+                    dd.append('<div class="dropdown-item" data-id="' + b.id + '" onclick="selectBook(this)">' + b.title + ' (' + b.slug + ')</div>');
+                });
+                dd.addClass('show');
+            });
+        }, 300);
+    });
+
+    // Close dropdowns on outside click
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.dropdown-container').length) {
+            $('.dropdown-menu').removeClass('show');
+        }
+    });
+});
+
+function selectTag(el) {
+    var tag = $(el).text();
+    var input = $('#inputTags');
+    var parts = input.val().split(',').map(function(s) { return s.trim(); });
+    parts[parts.length - 1] = tag;
+    input.val(parts.join(',') + ',');
+    $('#tagsDropdown').removeClass('show');
+    input.focus();
+}
+
+function selectBook(el) {
+    var bookId = $(el).data('id');
+    $('#inputBookRefer').val(bookId);
+    $('#booksDropdown').removeClass('show');
+}
+
+window.onbeforeunload = function() {
+    if (unsavedChanges) {
+        return '{{.Tr.T "ensure_content_saved"}}';
+    }
+};
+
+function publish() {
+    var content = publishVditor.getValue();
+    if (!content || !content.trim()) {
+        alert('{{.Tr.T "ensure_content_saved"}}');
+        return;
+    }
+    var data = {
+        id: $('#inputID').val(),
+        title: $('#inputTitle').val(),
+        slug: $('#inputSlug').val(),
+        tags: $('#inputTags').val(),
+        content: content,
+        template: parseInt($('#selTemplate').val()),
+        is_book: $('#cbBook').is(':checked') ? true : false,
+        is_private: $('#cbPrivate').is(':checked') ? true : false,
+        disable_comment: $('#cbDisableComment').is(':checked') ? true : false,
+        book_refer: $('#inputBookRefer').val(),
+    };
+    if ($('#cbNewVersion').length && $('#cbNewVersion').is(':checked')) {
+        data.new_version = 1;
+    }
+    showLoading();
+    $.ajax({
+        method: 'POST',
+        url: window.location.href,
+        data: data,
+        success: function(resp) {
+            hideLoading();
+            unsavedChanges = false;
+            alert('{{.Tr.T "publish_success"}}');
+            if (resp && resp.ID) {
+                window.location.href = '/admin/publish?id=' + resp.ID;
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            alert('{{.Tr.T "publish_failed"}} ' + xhr.responseText);
+        }
+    });
+}
+</script>
+
+{{template "admin/footer" .}}
+{{end}}

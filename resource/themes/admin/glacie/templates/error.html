@@ -1,0 +1,20 @@
+{{define "admin/error"}}
+{{template "admin/header" .}}
+
+<div class="error-wrapper">
+    <div class="error-content">
+        <div class="wf-card-static" style="padding: 3rem;">
+            <div class="error-icon">
+                <i class="fas fa-triangle-exclamation"></i>
+            </div>
+            <h1>{{.Data.title}}</h1>
+            <p>{{.Data.msg}}</p>
+            <a href="/admin/" class="btn-glass primary">
+                <i class="fas fa-arrow-left"></i> {{.Tr.T "back_to_dashboard"}}
+            </a>
+        </div>
+    </div>
+</div>
+
+{{template "admin/footer" .}}
+{{end}}

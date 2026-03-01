@@ -1,0 +1,94 @@
+{{define "admin/articles"}}
+{{template "admin/header" .}}
+
+<div class="page-header flex items-center justify-between">
+    <div>
+        <h1>{{.Tr.T "articles"}}</h1>
+        <p class="page-subtitle">{{.Tr.T "articles_subtitle"}}</p>
+    </div>
+    <a href="/admin/publish" class="btn-glass primary">
+        <i class="fas fa-pen-nib"></i> {{.Tr.T "compose"}}
+    </a>
+</div>
+
+<div class="wf-card-static">
+    {{if .Data.articles}}
+    <table class="wf-table">
+        <thead>
+            <tr>
+                <th>{{.Tr.T "title"}}</th>
+                <th>{{.Tr.T "slug"}}</th>
+                <th>{{.Tr.T "read"}}</th>
+                <th>{{.Tr.T "labels"}}</th>
+                <th>{{.Tr.T "created_at"}}</th>
+                <th style="text-align:right">{{.Tr.T "manage"}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Data.articles}}
+            <tr>
+                <td>
+                    <a href="/{{.Slug}}" target="_blank" style="font-weight: 500; color: var(--text-primary);">
+                        {{substr .Title 0 40}}
+                    </a>
+                    {{if .IsBook}}<span class="badge accent"><i class="fas fa-book"></i> </span>{{end}}
+                    {{if .IsPrivate}}<span class="badge warning"><i class="fas fa-lock"></i></span>{{end}}
+                </td>
+                <td><span class="truncate" style="max-width:150px; display:inline-block;">{{.Slug}}</span></td>
+                <td>{{.ReadNum}}</td>
+                <td>
+                    {{range .Tags}}
+                    <span class="badge muted">{{.}}</span>
+                    {{end}}
+                </td>
+                <td style="white-space:nowrap;">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
+                <td style="text-align:right">
+                    <div class="btn-group" style="justify-content: flex-end;">
+                        <a href="/admin/publish?id={{.ID}}" class="btn-glass small">
+                            <i class="fas fa-pen"></i> {{$.Tr.T "edit"}}
+                        </a>
+                        <button class="btn-glass small danger" onclick="deleteArticle('{{.ID}}')">
+                            <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {{if .Data.page}}
+    <div class="pagination">
+        {{if gt .Data.page.PrevPage 0}}
+            {{if ne .Data.page.PrevPage .Data.page.Page}}
+            <a href="/admin/articles?page={{.Data.page.PrevPage}}"><i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}</a>
+            {{end}}
+        {{end}}
+        <span class="current">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
+        {{if gt .Data.page.NextPage 0}}
+            {{if ne .Data.page.NextPage .Data.page.Page}}
+            <a href="/admin/articles?page={{.Data.page.NextPage}}">{{.Tr.T "next"}} <i class="fas fa-chevron-right"></i></a>
+            {{end}}
+        {{end}}
+    </div>
+    {{end}}
+    {{else}}
+    <div class="empty-state">
+        <i class="fas fa-newspaper"></i>
+        <p>{{.Tr.T "no_data"}}</p>
+    </div>
+    {{end}}
+</div>
+
+<script>
+function deleteArticle(id) {
+    if (!confirm('{{.Tr.T "confirm_delete"}}')) return;
+    ajaxRequest('DELETE', '/admin/articles?id=' + id, null, function(resp, err) {
+        if (!err) location.reload();
+    });
+}
+</script>
+
+{{template "admin/footer" .}}
+{{end}}

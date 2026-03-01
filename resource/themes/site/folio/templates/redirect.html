@@ -1,0 +1,54 @@
+{{define "site/redirect"}}
+{{template "site/header" .}}
+
+<main id="main-content">
+    <div class="error-container">
+        <h1 class="error-title">{{.Data.title}}</h1>
+        <div id="redirect-container">
+            <p>{{.Data.msg}}</p>
+            <p id="target-url"></p>
+            <p><a id="continue-link" href="#" rel="noopener noreferrer" class="folio-btn" style="display:inline-block;">{{.Data.continue_text}}</a></p>
+            <p id="countdown" class="folio-muted"></p>
+        </div>
+    </div>
+</main>
+
+<script>
+    (function () {
+        var params = new URLSearchParams(window.location.search);
+        var encodedUrl = params.get('url');
+
+        if (!encodedUrl) {
+            document.getElementById('redirect-container').innerHTML = '<p>{{.Data.redirect_error_no_url}}</p>';
+            return;
+        }
+
+        try {
+            var targetUrl = atob(encodedUrl.replace(/-/g, '+').replace(/_/g, '/'));
+            var url = new URL(targetUrl);
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                throw new Error('Invalid protocol');
+            }
+
+            document.getElementById('target-url').innerHTML = '<code>' + targetUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code>';
+
+            var continueLink = document.getElementById('continue-link');
+            continueLink.href = targetUrl;
+
+            var countdown = 5;
+            var countdownEl = document.getElementById('countdown');
+            var timer = setInterval(function () {
+                countdownEl.textContent = '{{.Data.redirect_auto}} ' + countdown + ' {{.Data.redirect_seconds}}';
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(timer);
+                    window.location.href = targetUrl;
+                }
+            }, 1000);
+        } catch (e) {
+            document.getElementById('redirect-container').innerHTML = '<p>{{.Data.redirect_error_invalid_url}}</p>';
+        }
+    })();
+</script>
+{{template "site/footer" .}}
+{{end}}

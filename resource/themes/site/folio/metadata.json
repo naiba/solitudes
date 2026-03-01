@@ -1,0 +1,41 @@
+{
+  "id": "folio",
+  "name": "Folio",
+  "author": "Solitudes",
+  "version": "1.0",
+  "description": "Luxury editorial magazine theme with refined typography",
+  "link": "https://github.com/naiba/solitudes",
+  "config": {
+    "folio.hometopcontent": "",
+    "folio.homebottomcontent": "",
+    "folio.headermenus": [
+      {
+        "name": "Home",
+        "link": "/",
+        "icon": "",
+        "black": false
+      },
+      {
+        "name": "Posts",
+        "link": "/posts/",
+        "icon": "",
+        "black": false
+      },
+      {
+        "name": "Tags",
+        "link": "/tags",
+        "icon": "",
+        "black": false
+      }
+    ],
+    "folio.footermenus": [
+      {
+        "name": "Home",
+        "link": "/",
+        "icon": "",
+        "black": false
+      }
+    ],
+    "folio.customcode": ""
+  }
+}

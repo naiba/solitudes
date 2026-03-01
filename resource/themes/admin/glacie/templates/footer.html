@@ -1,0 +1,40 @@
+{{define "admin/footer"}}
+    </main>
+
+    <footer class="glacie-footer">
+        Powered by <a href="https://github.com/naiba/solitudes" target="_blank">Solitudes</a>
+        · v{{.BuildVersion}}
+    </footer>
+
+    {{template "admin/js"}}
+    <script>
+    // ── Loading Overlay ──
+    function showLoading() {
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
+    // ── AJAX Helper wrapping jQuery ──
+    function ajaxRequest(method, url, data, callback) {
+        showLoading();
+        $.ajax({
+            method: method,
+            url: url,
+            data: data,
+            success: function(resp) {
+                hideLoading();
+                if (callback) callback(resp);
+            },
+            error: function(xhr) {
+                hideLoading();
+                alert(xhr.responseText || 'Request failed');
+                if (callback) callback(null, xhr);
+            }
+        });
+    }
+    </script>
+</body>
+</html>
+{{end}}

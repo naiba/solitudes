@@ -1,0 +1,300 @@
+{{define "site/article"}}
+{{template "site/header" .}}
+{{if not .Noindex}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
+  },
+  "headline": "{{jsonEscape .Data.article.Title}}",
+  "url": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}",
+  "image": "{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}",
+  "author": {
+    "@type": "Person",
+    "name": "{{jsonEscape .Conf.User.Nickname}}",
+    "url": "https://{{.Conf.Site.Domain}}/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://{{.Conf.Site.Domain}}/logo.png"
+    }
+  },
+  "datePublished": "{{iso8601 .Data.article.CreatedAt}}",
+  "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
+  "description": "{{jsonEscape .Desc}}"{{if .Data.article.Tags}},
+  "keywords": [{{range $i, $tag := .Data.article.Tags}}{{if $i}}, {{end}}"{{jsonEscape $tag}}"{{end}}]{{end}}
+}
+</script>
+{{end}}
+
+<main id="main-content">
+    <article class="folio-article">
+        <!-- Article header -->
+        <header class="article-header folio-narrow">
+            <h1 class="article-title">{{.Data.article.Title}}</h1>
+            <div class="article-meta">
+                <span class="article-author">{{.Conf.User.Nickname}}</span>
+                <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
+                {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
+                <span class="meta-separator">·</span>
+                <span>{{.Tr.T "updated_at"}} <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time></span>
+                {{end}}
+                <span class="meta-separator">·</span>
+                <span>v{{.Data.article.Version}}</span>
+                {{if .Data.article.ReadNum}}
+                <span class="meta-separator">·</span>
+                <span><i class="fa-regular fa-eye"></i> <span class="read-count">{{.Data.article.ReadNum}}</span>{{if .Data.article.CommentNum}} · <i class="fa-regular fa-comment-dots"></i> {{.Data.article.CommentNum}}{{end}}</span>
+                {{end}}
+            </div>
+            {{if .Data.article.RawTags}}
+            <div class="article-tags">
+                {{range $k, $v := .Data.article.Tags}}
+                {{if $v}}<a href="https://{{$.Conf.Site.Domain}}/tags/{{$v}}/" class="article-tag">{{$v}}</a>{{end}}
+                {{end}}
+            </div>
+            {{end}}
+            {{if .Login}}
+            <a href="/admin/publish?id={{.Data.article.ID}}" class="edit-link">{{.Tr.T "edit_post"}}</a>
+            {{end}}
+        </header>
+
+        <hr>
+
+        <!-- Table of Contents -->
+        {{if .Data.article.Toc}}
+        <div class="folio-toc folio-narrow">
+            <details open>
+                <summary class="section-label">{{.Tr.T "toc"}}</summary>
+                <ol class="toc">
+                    {{template "site/article_title_item" .Data.article.Toc}}
+                </ol>
+            </details>
+        </div>
+        {{end}}
+
+        <!-- Article content -->
+        <div class="app-prose folio-narrow">
+            {{if gt .Data.article.NewVersion .Data.article.Version}}
+            <div class="version-notice">
+                {{(.Tr.T "has_new_version" (.Data.article.Version|uint2str) .Data.article.Slug (.Data.article.NewVersion|uint2str) (.Data.article.NewVersion|uint2str))|unsafe}}
+            </div>
+            {{else if gt .Data.article.Version 1}}
+            <div class="version-notice">
+                {{(.Tr.T "has_old_version" (.Data.article.Version|uint2str) (oldVersions .Data.article.Version .Data.article.Slug))|unsafe}}
+            </div>
+            {{end}}
+
+            {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
+
+            {{if .Data.article.IsBook}}
+            <h4>{{.Tr.T "chapters"}}</h4>
+            {{template "site/article_chapters" (articleData .Data.article .Tr)}}
+            {{end}}
+        </div>
+
+        <!-- Book navigation (if article belongs to a book) -->
+        {{if .Data.article.Book}}
+        <div class="book-nav folio-narrow">
+            <span class="section-label">{{.Tr.T "book"}}</span>
+            <a href="/{{.Data.article.Book.Slug}}"><strong>{{.Data.article.Book.Title}}</strong></a>
+            <span class="meta-separator">—</span>
+            <span class="section-label">{{.Tr.T "chapters"}}</span>
+            <ul class="book-chapter-list">
+                {{if .Data.article.SibilingArticle.Prev.ID}}
+                <li>{{.Tr.T "prev_chapter"}}: <a href="/{{.Data.article.SibilingArticle.Prev.Slug}}">{{.Data.article.SibilingArticle.Prev.Title}}</a></li>
+                {{end}}
+                <li class="current-chapter">{{.Data.article.Title}}</li>
+                {{if .Data.article.SibilingArticle.Next.ID}}
+                <li>{{.Tr.T "next_chapter"}}: <a href="/{{.Data.article.SibilingArticle.Next.Slug}}">{{.Data.article.SibilingArticle.Next.Title}}</a></li>
+                {{end}}
+            </ul>
+        </div>
+        {{end}}
+
+        <!-- Sibling article navigation (prev/next) -->
+        {{if or .Data.article.SibilingArticle.Prev .Data.article.SibilingArticle.Next}}
+        <nav class="sibling-nav folio-narrow" aria-label="Article navigation">
+            {{if .Data.article.SibilingArticle.Prev}}
+            <a href="https://{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Prev.Slug}}" class="sibling-prev">
+                <span class="section-label">{{.Tr.T "previous"}}</span>
+                <span class="sibling-title">{{.Data.article.SibilingArticle.Prev.Title}}</span>
+            </a>
+            {{else}}<span></span>{{end}}
+            {{if .Data.article.SibilingArticle.Next}}
+            <a href="https://{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Next.Slug}}" class="sibling-next">
+                <span class="section-label">{{.Tr.T "next"}}</span>
+                <span class="sibling-title">{{.Data.article.SibilingArticle.Next.Title}}</span>
+            </a>
+            {{else}}<span></span>{{end}}
+        </nav>
+        {{end}}
+    </article>
+
+    <!-- Comments section -->
+    {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
+    <section class="comments-section folio-narrow" id="comments">
+        <hr>
+        <h2 class="comments-heading">{{.Tr.T "comments"}}</h2>
+
+        {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
+
+        {{if .Data.article.Comments}}
+        <div class="pagination">
+            {{if gt .Data.comment_page.Page 1}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i class="fa-solid fa-angle-left"></i></a>{{end}}
+            <span>{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
+            {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}" rel="next" aria-label="{{.Tr.T "next_page"}}"><i class="fa-solid fa-angle-right"></i></a>{{end}}
+        </div>
+        {{end}}
+
+        {{if not .Data.article.DisableComment}}
+        <div class="comment-form" id="reply">
+            <h3>{{.Tr.T "leave_a_comment"}}</h3>
+            <p class="comment-form-hint">{{.Tr.T "may_not_reply_if_email_not_exist"}}</p>
+            <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
+            <textarea id="id_content" rows="6" placeholder="{{.Tr.T "comment_content"}}"></textarea>
+            {{if .Login}}
+            <input type="hidden" maxlength="64" id="id_nickname">
+            {{else}}
+            <div class="comment-form-fields">
+                <div>
+                    <label for="id_nickname" class="sr-only">{{.Tr.T "nickname"}}</label>
+                    <input id="id_nickname" placeholder="{{.Tr.T "nickname"}}" maxlength="64">
+                </div>
+                <div>
+                    <label for="id_email" class="sr-only">{{.Tr.T "email"}}</label>
+                    <input id="id_email" placeholder="{{.Tr.T "email"}} ({{.Tr.T "not_required"}})" maxlength="254">
+                </div>
+                <div>
+                    <label for="id_website" class="sr-only">{{.Tr.T "website"}}</label>
+                    <input id="id_website" placeholder="{{.Tr.T "website"}} ({{.Tr.T "not_required"}})" maxlength="200">
+                </div>
+            </div>
+            {{end}}
+            <button onclick="comment(this)" class="folio-btn">{{.Tr.T "submit_comment"}}</button>
+            <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
+            <input type="hidden" id="id_reply_to" value="">
+        </div>
+        {{end}}
+    </section>
+    {{end}}
+</main>
+
+<script>
+    (function () {
+        document.querySelector("#id_nickname").value = localStorage.getItem("solitudes_cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}';
+        if (document.querySelector("#id_email")) {
+            document.querySelector("#id_email").value = localStorage.getItem("solitudes_cm_email") || '';
+        }
+        if (document.querySelector("#id_website")) {
+            document.querySelector("#id_website").value = localStorage.getItem("solitudes_cm_website") || '';
+        }
+        fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" });
+    })();
+
+    var loadCommenterInfoTimeout;
+    var queriedFields = new Set();
+
+    function loadCommenterInfo() {
+        clearTimeout(loadCommenterInfoTimeout);
+        loadCommenterInfoTimeout = setTimeout(function() {
+            var nickname = document.querySelector('#id_nickname').value.trim();
+            var email = document.querySelector('#id_email') ? document.querySelector('#id_email').value.trim() : '';
+            var website = document.querySelector('#id_website') ? document.querySelector('#id_website').value.trim() : '';
+            if (!nickname && !email && !website) return;
+            if (nickname && email && website) return;
+            var params = new URLSearchParams();
+            if (nickname) params.append('nickname', nickname);
+            if (email) params.append('email', email);
+            if (website) params.append('website', website);
+            fetch('/api/commenter-info?' + params.toString(), {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            }).then(function(resp) { return resp.json(); }).then(function(data) {
+                if (data.success && data.data) {
+                    var nicknameInput = document.querySelector('#id_nickname');
+                    var websiteInput = document.querySelector('#id_website');
+                    if (nicknameInput && data.data.nickname && !nicknameInput.value && !queriedFields.has('nickname')) {
+                        nicknameInput.value = data.data.nickname;
+                        queriedFields.add('nickname');
+                    }
+                    if (websiteInput && data.data.website && !websiteInput.value && !queriedFields.has('website')) {
+                        websiteInput.value = data.data.website;
+                        queriedFields.add('website');
+                    }
+                }
+            }).catch(function(e) { console.error('Failed to load commenter info:', e); });
+        }, 300);
+    }
+
+    var nicknameInput = document.querySelector('#id_nickname');
+    if (nicknameInput) {
+        nicknameInput.addEventListener('blur', loadCommenterInfo);
+        nicknameInput.addEventListener('input', function() { queriedFields.delete('nickname'); });
+        nicknameInput.addEventListener('focus', function() { queriedFields.delete('nickname'); });
+    }
+    var emailInput = document.querySelector('#id_email');
+    if (emailInput) { emailInput.addEventListener('blur', loadCommenterInfo); }
+    var websiteInput = document.querySelector('#id_website');
+    if (websiteInput) {
+        websiteInput.addEventListener('blur', loadCommenterInfo);
+        websiteInput.addEventListener('input', function() { queriedFields.delete('website'); });
+        websiteInput.addEventListener('focus', function() { queriedFields.delete('website'); });
+    }
+
+    function reply_to(cid, nickname) {
+        var idContent = document.querySelector("#id_content");
+        idContent.value = '@' + nickname + ' ' + idContent.value;
+        document.querySelector("#id_reply_to").value = cid;
+        idContent.focus();
+    }
+
+    function comment(btn) {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.textContent = '{{.Tr.T "submitting"}}';
+        if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
+            btn.disabled = false;
+            btn.textContent = '{{.Tr.T "submit_comment"}}';
+            alert('{{.Tr.T "comment_required_fields"}}');
+            return;
+        }
+        var cm_nickname = document.querySelector('#id_nickname') ? document.querySelector('#id_nickname').value : "";
+        var cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
+        var cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
+        localStorage.setItem("solitudes_cm_nickname", cm_nickname);
+        localStorage.setItem("solitudes_cm_email", cm_email);
+        localStorage.setItem("solitudes_cm_website", cm_website);
+        var data = {
+            nickname: cm_nickname,
+            email: cm_email,
+            website: cm_website,
+            content: document.querySelector('#id_content').value,
+            version: parseInt('{{.Data.article.Version}}'),
+            slug: document.querySelector('#id_slug').value
+        };
+        if (document.querySelector('#id_reply_to').value) {
+            data.reply_to = document.querySelector('#id_reply_to').value;
+        }
+        fetch("/api/comment", {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(function(resp) {
+            if (resp.status === 200) { window.location.reload(); return; }
+            resp.text().then(function(str) { alert('{{.Tr.T "submit_failed"}} ' + str); });
+        }).catch(function(e) {
+            alert('{{.Tr.T "submit_failed"}} ' + e);
+        }).finally(function() {
+            btn.disabled = false;
+            btn.textContent = '{{.Tr.T "submit_comment"}}';
+        });
+    }
+</script>
+{{template "site/footer" .}}
+{{end}}

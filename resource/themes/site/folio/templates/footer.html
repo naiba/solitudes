@@ -1,0 +1,73 @@
+{{define "site/footer"}}
+    </div><!-- /.folio-container .folio-body -->
+
+    <footer class="folio-footer">
+        <div class="folio-container">
+            <div class="folio-footer-inner">
+                <div class="folio-footer-left">
+                    &copy; <a href="https://{{.Conf.Site.Domain}}">{{.Conf.Site.SpaceName}}</a>
+                    · <a href="https://github.com/naiba/solitudes" target="_blank" rel="noopener noreferrer">Solitudes</a> build·{{.BuildVersion}}
+                </div>
+                <nav class="folio-footer-right">
+                    <ul>
+                        {{range index .Theme "folio.footermenus"}}
+                        <li><a href="{{.link}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}} {{if and .icon (not .name)}}aria-label="{{.link}}" title="{{.link}}"{{end}}>{{if .icon}}<i class="{{.icon}}"></i> {{end}}{{.name}}</a></li>
+                        {{end}}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/method.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css"></noscript>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+    <script src="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://unpkg.com/highlightjs-copy@1.0.5/dist/highlightjs-copy.min.css"></noscript>
+
+    <script>
+        (function () {
+            try {
+                document.querySelectorAll(".language-echarts,.language-mindmap").forEach(function(e) {
+                    e.style.height = e.offsetWidth * 0.5 + 'px';
+                });
+            } catch (error) {
+                console.log(error);
+            }
+            try {
+                var renders = {
+                    "mermaidRender": Vditor.mermaidRender,
+                    "mindmapRender": Vditor.mindmapRender,
+                    "chartRender": Vditor.chartRender,
+                    "mediaRender": Vditor.mediaRender,
+                    "mathRender": Vditor.mathRender,
+                    "graphvizRender": Vditor.graphvizRender,
+                    "plantumlRender": Vditor.plantumlRender
+                };
+                var keys = Object.keys(renders);
+                for (var i = 0; i < keys.length; i++) {
+                    try {
+                        if (keys[i] === "mermaidRender") {
+                            var isDark = document.documentElement.classList.contains('dark');
+                            renders[keys[i]](document, undefined, isDark ? "dark" : undefined);
+                        } else {
+                            renders[keys[i]](document);
+                        }
+                    } catch (error) {
+                        console.log(keys[i], error);
+                    }
+                }
+            } catch (error) {
+                console.log(error);
+            }
+            hljs.addPlugin(new CopyButtonPlugin());
+            hljs.highlightAll();
+        })();
+    </script>
+    {{ $code := index .Theme "folio.customcode" }}{{ if $code }}{{ printf "%s" $code | unsafe }}{{ end }}
+</body>
+
+</html>
+{{end}}

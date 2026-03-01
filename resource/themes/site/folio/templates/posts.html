@@ -1,0 +1,69 @@
+{{define "site/posts"}}
+{{template "site/header" .}}
+{{if gt .Data.page.Page 1}}
+<link rel="prev" href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.PrevPage}}/">
+{{end}}
+{{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}
+<link rel="next" href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.NextPage}}/">
+{{end}}
+
+<main id="main-content">
+    <header class="page-header folio-container">
+        {{if .Data.tag}}
+        <span class="section-label">{{.Tr.T "posts_with_tag"}}</span>
+        <h1 class="page-title">{{.Data.tag}}</h1>
+        {{else}}
+        <span class="section-label">{{.Tr.T "posts_all_the_posts"}}</span>
+        <h1 class="page-title">{{.Tr.T "posts"}}</h1>
+        {{end}}
+    </header>
+
+    <section class="posts-listing folio-container">
+        {{if not .Data.articles}}
+        <p class="folio-muted">{{.Tr.T "no_article"}}</p>
+        {{else}}
+        {{range $s := .Data.articles}}
+        {{range $j, $a := $s}}
+        {{if eq $j 0}}
+        <div class="year-group">
+            <h2 class="year-label">{{$a.CreatedAt.Year}}</h2>
+            <hr>
+            <ul class="article-list">
+        {{end}}
+                <li class="article-list-item" style="--stagger-delay: {{$j}}">
+                    {{template "site/article_list_entry" (articleData $a $.Tr)}}
+                </li>
+        {{end}}
+            </ul>
+        </div>
+        {{end}}
+        {{end}}
+
+        <div class="pagination">
+            {{if gt .Data.page.Page 1}}<a href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.PrevPage}}/" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i class="fa-solid fa-angle-left"></i> <span>{{.Tr.T "previous_page"}}</span></a>{{end}}
+            <span>{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord) "articles"}}</span>
+            {{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}<a href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.NextPage}}/" rel="next" aria-label="{{.Tr.T "next_page"}}"><span>{{.Tr.T "next_page"}}</span> <i class="fa-solid fa-angle-right"></i></a>{{end}}
+            {{if gt .Data.page.TotalPage 1}}
+            <div class="pagination-jump">
+                <label for="page-input" class="sr-only">{{.Tr.T "go_to_page"}}</label>
+                <input id="page-input" value="{{.Data.page.Page}}" class="search-input pagination-input" type="number" min="1" max="{{.Data.page.TotalPage}}">
+                <button class="folio-btn" onclick="jumpToPage()">{{.Tr.T "go_to_page"}}</button>
+            </div>
+            {{end}}
+        </div>
+    </section>
+</main>
+
+<script>
+    function jumpToPage() {
+        var page = document.getElementById('page-input').value;
+        if (page) {
+            window.location.href = 'https://{{.Conf.Site.Domain}}/{{.Data.what}}/' + page + '/';
+        }
+    }
+    document.getElementById('page-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') jumpToPage();
+    });
+</script>
+{{template "site/footer" .}}
+{{end}}

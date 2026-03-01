@@ -21,6 +21,10 @@ func article(c *fiber.Ctx) error {
 		}
 		return fmt.Errorf("failed to fetch article: %w", err)
 	}
+	// BugFix: TemplateID 为 0 时 TemplateIndex 查不到映射，导致模板名变成 "site/" 而报错
+	if _, ok := solitudes.TemplateIndex[a.TemplateID]; !ok {
+		a.TemplateID = solitudes.ArticleTemplateID
+	}
 	if len(a.Tags) == 0 {
 		a.Tags = nil
 	}

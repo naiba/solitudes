@@ -1,0 +1,162 @@
+{{define "admin/index"}}
+{{template "admin/header" .}}
+
+<div class="page-header">
+    <h1>{{.Tr.T "dashboard"}}</h1>
+    <p class="page-subtitle">{{.Tr.T "dashboard_subtitle"}}</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="wf-card stat-card accent animate-in">
+        <div class="stat-number text-accent" data-count="{{.Data.articleNum}}">{{.Data.articleNum}}</div>
+        <div class="stat-label">{{.Tr.T "articles"}}</div>
+    </div>
+    <div class="wf-card stat-card success animate-in">
+        <div class="stat-number text-success" data-count="{{.Data.commentNum}}">{{.Data.commentNum}}</div>
+        <div class="stat-label">{{.Tr.T "comments"}}</div>
+    </div>
+    <div class="wf-card stat-card warning animate-in">
+        <div class="stat-number text-warning" data-count="{{.Data.tagNum}}">{{.Data.tagNum}}</div>
+        <div class="stat-label">{{.Tr.T "tags"}}</div>
+    </div>
+    <div class="wf-card stat-card info animate-in">
+        <div class="stat-number text-accent" data-count="{{.Data.rssSubscriberCount}}">{{.Data.rssSubscriberCount}}</div>
+        <div class="stat-label">{{.Tr.T "rss_subscribers"}}</div>
+    </div>
+</div>
+
+<div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+    <div class="wf-card stat-card danger animate-in">
+        <div class="stat-number" style="font-size: 2rem;">{{.Data.lastArticlePublish}}</div>
+        <div class="stat-label">{{.Tr.T "days_left_from_the_last_post"}}</div>
+    </div>
+    <div class="wf-card stat-card warning animate-in">
+        <div class="stat-number" style="font-size: 2rem;">{{.Data.lastComment}}</div>
+        <div class="stat-label">{{.Tr.T "days_left_from_the_last_comment"}}</div>
+    </div>
+</div>
+
+<!-- Two Column: Quick Topic + System Stats -->
+<div class="two-col">
+    <!-- Quick Topic Publish -->
+    <div class="wf-card-static">
+        <div class="flex items-center justify-between mb-3">
+            <h2 style="margin: 0;">{{.Tr.T "quick_topic_publish"}}</h2>
+        </div>
+        <div id="topicContent" style="min-height: 200px;"></div>
+        <div class="mt-3 flex justify-between items-center">
+            <button class="btn-glass primary" onclick="publishTopic()">
+                <i class="fas fa-paper-plane"></i> {{.Tr.T "publish_now"}}
+            </button>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- System Stats -->
+        <div class="wf-card-static">
+            <h2 style="margin-bottom: 1rem;">{{.Tr.T "system_stats"}}</h2>
+            <table class="rss-table">
+                <tr>
+                    <td>{{.Tr.T "memory_usage"}}</td>
+                    <td>{{.Data.memoryUsage}} MB</td>
+                </tr>
+                <tr>
+                    <td>{{.Tr.T "gc_num"}}</td>
+                    <td>{{.Data.gcNum}}</td>
+                </tr>
+                <tr>
+                    <td>{{.Tr.T "routine_num"}}</td>
+                    <td>{{.Data.routineNum}}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- RSS Top 4 -->
+        {{if .Data.rssSubscribers}}
+        <div class="wf-card-static">
+            <h2 style="margin-bottom: 1rem;">{{.Tr.T "rss_requests_top_4"}}</h2>
+            <table class="rss-table">
+                {{range .Data.rssSubscribers}}
+                <tr>
+                    <td>{{.IP}}</td>
+                    <td>{{.Count}}</td>
+                </tr>
+                {{end}}
+            </table>
+        </div>
+        {{end}}
+
+        <!-- Quick Actions -->
+        <div class="wf-card-static">
+            <h2 style="margin-bottom: 1rem;">{{.Tr.T "quick_actions"}}</h2>
+            <div class="btn-group">
+                <a href="/admin/publish" class="btn-glass primary">
+                    <i class="fas fa-pen-nib"></i> {{.Tr.T "compose"}}
+                </a>
+                <button class="btn-glass" onclick="rebuildFullTextSearch()">
+                    <i class="fas fa-rotate"></i> {{.Tr.T "rebuild_fulltext_search_data"}}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vditor/3.11.2/index.min.js"></script>
+<script>
+var topicVditor;
+$(function() {
+    var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    topicVditor = new Vditor('topicContent', {
+        height: 200,
+        mode: 'ir',
+        theme: isDark ? 'dark' : 'classic',
+        upload: { url: '/admin/upload' },
+        cache: { id: 'glacie-topic' },
+        placeholder: '{{.Tr.T "topic_content_placeholder"}}',
+    });
+
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+        topicVditor.setTheme(e.matches ? 'dark' : 'classic');
+    });
+});
+
+function publishTopic() {
+    var content = topicVditor.getValue().trim();
+    if (!content) return;
+    showLoading();
+    $.ajax({
+        method: 'POST',
+        url: '/admin/publish',
+        data: {
+            content: content,
+            tags: 'Topic',
+            template: 1,
+        },
+        success: function(resp) {
+            hideLoading();
+            topicVditor.setValue('');
+            alert('{{.Tr.T "publish_success"}}');
+            location.reload();
+        },
+        error: function(xhr) {
+            hideLoading();
+            alert('{{.Tr.T "publish_failed"}} ' + xhr.responseText);
+        }
+    });
+}
+
+function rebuildFullTextSearch() {
+    if (!confirm('{{.Tr.T "confirm_rebuild_search"}}')) return;
+    ajaxRequest('GET', '/admin/rebuild-full-text-search', null, function(resp, err) {
+        if (!err) {
+            alert('{{.Tr.T "rebuild_successful"}}');
+        }
+    });
+}
+</script>
+
+{{template "admin/footer" .}}
+{{end}}

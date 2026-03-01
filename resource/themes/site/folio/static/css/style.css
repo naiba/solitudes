@@ -1,0 +1,1349 @@
+/* ==========================================================================
+   Folio — Luxury Editorial Magazine Theme for Solitudes
+   A refined, paper-inspired aesthetic inspired by Monocle, Kinfolk,
+   and The Gentlewoman.
+   ========================================================================== */
+
+/* --- Google Fonts --- */
+@import url('https://fonts.googleapis.cn/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=IBM+Plex+Mono:ital,wght@0,400;1,400&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap');
+
+/* ==========================================================================
+   1. CSS Custom Properties
+   ========================================================================== */
+
+:root {
+  /* Light mode (default) */
+  --bg: #f5f0e8;
+  --text: #1c1917;
+  --accent: #b45309;
+  --sage: #6b7f5e;
+  --muted: #78716c;
+  --border: #d6d0c4;
+  --surface: #ece7dd;
+
+  /* Typography */
+  --font-heading: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+}
+
+/* Dark mode via .dark class on <html> */
+html.dark {
+  --bg: #0f0f0e;
+  --text: #e8e0d0;
+  --accent: #d97706;
+  --sage: #8a9a6c;
+  --muted: #a8a29e;
+  --border: #2a2926;
+  --surface: #1a1918;
+}
+
+/* Dark mode fallback via media query */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --bg: #0f0f0e;
+    --text: #e8e0d0;
+    --accent: #d97706;
+    --sage: #8a9a6c;
+    --muted: #a8a29e;
+    --border: #2a2926;
+    --surface: #1a1918;
+  }
+}
+
+/* ==========================================================================
+   2. Base & Reset
+   ========================================================================== */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--text);
+  background-color: var(--bg);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Paper grain texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   3. Links (Global)
+   ========================================================================== */
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease;
+}
+
+a:hover {
+  background-size: 100% 1px;
+}
+
+/* ==========================================================================
+   4. Layout Containers
+   ========================================================================== */
+
+.folio-container {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.folio-narrow {
+  max-width: 38rem;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   5. Typography — Section Labels
+   ========================================================================== */
+
+.section-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-family: var(--font-body);
+  color: var(--muted);
+}
+
+/* ==========================================================================
+   6. Navigation
+   ========================================================================== */
+
+.folio-nav a {
+  background: none;
+  border: none;
+  position: relative;
+  color: var(--text);
+  text-decoration: none;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  /* Reset global link underline for nav */
+  background-image: none;
+}
+
+.folio-nav a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.folio-nav a:hover::after {
+  width: 100%;
+}
+
+.folio-nav a:hover {
+  background-size: 0% 1px;
+}
+
+.folio-nav ul {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   7. Decorative Horizontal Rules
+   ========================================================================== */
+
+hr,
+.folio-divider {
+  border: none;
+  height: 1px;
+  background: var(--border);
+  position: relative;
+  margin: 3rem auto;
+  max-width: 20rem;
+}
+
+hr::after,
+.folio-divider::after {
+  content: '◆';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--bg);
+  padding: 0 0.75rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+/* ==========================================================================
+   8. Animations & Keyframes
+   ========================================================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Page load fade */
+.folio-page {
+  animation: fadeIn 0.4s ease;
+}
+
+/* Staggered fade-in on article lists */
+.article-list-item {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease forwards;
+  animation-delay: var(--stagger-delay, 0ms);
+}
+
+.article-list-item:nth-child(1) { --stagger-delay: 0ms; }
+.article-list-item:nth-child(2) { --stagger-delay: 50ms; }
+.article-list-item:nth-child(3) { --stagger-delay: 100ms; }
+.article-list-item:nth-child(4) { --stagger-delay: 150ms; }
+.article-list-item:nth-child(5) { --stagger-delay: 200ms; }
+.article-list-item:nth-child(6) { --stagger-delay: 250ms; }
+.article-list-item:nth-child(7) { --stagger-delay: 300ms; }
+.article-list-item:nth-child(8) { --stagger-delay: 350ms; }
+.article-list-item:nth-child(9) { --stagger-delay: 400ms; }
+.article-list-item:nth-child(10) { --stagger-delay: 450ms; }
+
+/* Utility fade */
+.folio-fade {
+  opacity: 0;
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+/* ==========================================================================
+   9. Article Cards
+   ========================================================================== */
+
+.article-card {
+  transition: transform 0.2s ease;
+}
+
+.article-card:hover {
+  transform: translateY(-2px);
+}
+
+.article-card-title {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-size: 1.5rem;
+  line-height: 1.15;
+  color: var(--text);
+  /* Underline slide on hover — applied via background-image */
+  background-image: linear-gradient(var(--text), var(--text));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease;
+}
+
+.article-card:hover .article-card-title {
+  background-size: 100% 1px;
+}
+
+/* ==========================================================================
+   10. Pull Quotes
+   ========================================================================== */
+
+.pullquote,
+blockquote.pullquote {
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: 1.5rem;
+  line-height: 1.4;
+  color: var(--accent);
+  border-left: 3px solid var(--accent);
+  padding-left: 1.5rem;
+  margin: 2.5rem -3rem;
+}
+
+/* ==========================================================================
+   11. app-prose — Article Content
+   ========================================================================== */
+
+/* Drop cap — first paragraph's first letter */
+.app-prose > p:first-of-type::first-letter {
+  float: left;
+  font-size: 4.5em;
+  line-height: 0.8;
+  padding-right: 0.1em;
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--accent);
+  margin-top: 0.05em;
+}
+
+/* Headings */
+.app-prose h1,
+.app-prose h2,
+.app-prose h3,
+.app-prose h4,
+.app-prose h5,
+.app-prose h6 {
+  font-family: var(--font-heading);
+  color: var(--text);
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  line-height: 1.25;
+}
+
+.app-prose h1 { font-size: 2.25rem; }
+.app-prose h2 { font-size: 1.75rem; }
+.app-prose h3 { font-size: 1.4rem; }
+.app-prose h4 { font-size: 1.2rem; }
+
+/* Paragraphs */
+.app-prose p {
+  margin-bottom: 1.5rem;
+}
+
+/* Lists */
+.app-prose ul,
+.app-prose ol {
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.app-prose li {
+  margin-bottom: 0.5rem;
+}
+
+/* Links inside prose */
+.app-prose a {
+  color: var(--accent);
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease;
+}
+
+.app-prose a:hover {
+  background-size: 100% 1px;
+}
+
+/* Blockquotes */
+.app-prose blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* Images */
+.app-prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin: 2rem 0;
+  display: block;
+}
+
+/* Tables */
+.app-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 2rem 0;
+}
+
+.app-prose th {
+  background: var(--surface);
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.app-prose td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Inline code */
+.app-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--surface);
+  padding: 0.15em 0.4em;
+  border-radius: 3px;
+}
+
+/* Code blocks */
+.app-prose pre {
+  background: var(--surface);
+  padding: 1.5rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 2rem 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* Reset inline code styles when inside pre */
+.app-prose pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+}
+
+/* Videos & iframes */
+.app-prose video,
+.app-prose iframe {
+  max-width: 100%;
+  margin: 2rem 0;
+}
+
+/* ==========================================================================
+   12. Homepage Layout
+   ========================================================================== */
+
+.home-grid {
+  display: grid;
+  grid-template-columns: 1fr 22rem;
+  gap: 3rem;
+  padding: 2rem 0;
+}
+
+.home-main-col {
+  min-width: 0;
+}
+
+/* 右侧栏 */
+.home-side-col {
+  position: sticky;
+  top: 5rem;
+  align-self: start;
+}
+
+.sidebar-section {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+/* 右侧栏紧凑列表 */
+.compact-list .article-list-item {
+  padding: 0.5rem 0;
+}
+
+.compact-list .article-card-title {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.compact-list .article-card-meta {
+  font-size: 0.7rem;
+}
+
+/* ==========================================================================
+   13. Posts Listing
+   ========================================================================== */
+
+.year-group {
+  margin-bottom: 3rem;
+}
+
+.year-label {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+/* 桌面端文章列表两栏布局 */
+.year-group .article-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 3rem;
+}
+
+/* 搜索结果也两栏 */
+.search-result-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 3rem;
+}
+
+/* ==========================================================================
+   14. Tags Page
+   ========================================================================== */
+
+.tag-cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  justify-content: center;
+  align-items: baseline;
+  padding: 3rem 0;
+}
+
+/* ==========================================================================
+   15. Comment Section
+   ========================================================================== */
+
+.comment-item {
+  padding: 1.5rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-form textarea {
+  width: 100%;
+  min-height: 120px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem;
+  font-family: var(--font-body);
+  color: var(--text);
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.comment-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.comment-form input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font-body);
+  color: var(--text);
+  transition: border-color 0.2s ease;
+}
+
+.comment-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.comment-form button,
+.folio-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.5rem;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.comment-form button:hover,
+.folio-btn:hover {
+  opacity: 0.85;
+}
+
+/* ==========================================================================
+   16. TOC (Table of Contents)
+   ========================================================================== */
+
+.folio-toc {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+}
+
+.folio-toc ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+
+.folio-toc li {
+  margin-bottom: 0.4rem;
+  font-size: 0.9rem;
+}
+
+.folio-toc a {
+  color: var(--text);
+  text-decoration: none;
+  background-image: none;
+}
+
+.folio-toc a:hover {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   17. Search Page
+   ========================================================================== */
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--text);
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* ==========================================================================
+   18. Error Page
+   ========================================================================== */
+
+.error-container {
+  text-align: center;
+  padding: 6rem 0;
+}
+.search-form-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.search-form-row .search-input {
+  flex: 1;
+  width: auto;
+}
+
+
+.error-title {
+  font-family: var(--font-heading);
+  font-size: 4rem;
+  color: var(--muted);
+}
+
+/* ==========================================================================
+   19. Mobile Navigation
+   ========================================================================== */
+
+.mobile-menu {
+  display: none;
+}
+
+.mobile-menu.active {
+  display: block;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 100;
+  padding: 2rem;
+}
+
+.mobile-menu-toggle {
+  display: none;
+}
+
+/* ==========================================================================
+   20. Footer
+   ========================================================================== */
+
+.folio-footer {
+  border-top: 1px solid var(--border);
+  padding: 3rem 0;
+  margin-top: 4rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.folio-footer a {
+  color: var(--muted);
+  background-image: none;
+}
+
+.folio-footer a:hover {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   21. Pagination
+   ========================================================================== */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 3rem 0;
+}
+
+.pagination a,
+.pagination span {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   22. Version Notice
+   ========================================================================== */
+
+.version-notice {
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* ==========================================================================
+   23. Book Navigation
+   ========================================================================== */
+
+.book-nav {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  margin-top: 2rem;
+}
+
+/* ==========================================================================
+   24. Sibling Navigation (Prev/Next)
+   ========================================================================== */
+
+.sibling-nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
+  margin-top: 3rem;
+}
+
+.sibling-nav a {
+  max-width: 45%;
+}
+
+/* ==========================================================================
+   25. Utility Classes
+   ========================================================================== */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ==========================================================================
+   26. Dark Mode Transitions
+   ========================================================================== */
+
+.folio-container,
+.folio-nav,
+.article-card,
+.comment-item,
+.folio-toc,
+.book-nav,
+.version-notice,
+.hero-featured {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ==========================================================================
+   27. Responsive — Mobile (< 768px)
+   ========================================================================== */
+
+@media (max-width: 767px) {
+  .folio-container {
+    padding: 0 1rem;
+  }
+
+  .article-card-title {
+    font-size: 1.75rem;
+  }
+
+  .hero-featured .article-card-title {
+    font-size: 1.75rem;
+  }
+
+  .home-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* 移动端文章列表、搜索结果回退单栏 */
+  .year-group .article-list,
+  .search-result-list {
+    grid-template-columns: 1fr;
+  }
+
+  .pullquote,
+  blockquote.pullquote {
+    margin: 2rem 0;
+  }
+
+  .folio-nav ul {
+    display: none;
+  }
+
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  /* Remove alternating offset on mobile */
+  .article-list-item:nth-child(even) {
+    padding-left: 0;
+  }
+}
+
+/* ==========================================================================
+   28. Topic Cards (Bibi)
+   ========================================================================== */
+.topic-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 4px;
+}
+
+.topic-meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.topic-label a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.topic-content {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.topic-content p:last-child {
+  margin-bottom: 0;
+}
+
+.topic-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--border);
+}
+
+.topic-reply-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* Comments preview inside topic */
+.topic-comments-preview {
+  margin-top: 1.5rem;
+  background-color: var(--bg);
+  border-radius: 4px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+}
+
+.topic-comment-item {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+}
+
+.topic-comment-item:last-child {
+  margin-bottom: 0;
+}
+
+.topic-comment-avatar img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+
+.topic-comment-body {
+  line-height: 1.4;
+}
+
+.topic-comment-author {
+  font-weight: 600;
+  color: var(--text);
+  margin-right: 0.35rem;
+}
+
+.admin-badge {
+  color: var(--accent);
+  font-size: 0.7rem;
+}
+
+.topic-comment-text {
+  color: var(--muted);
+}
+
+/* ==========================================================================
+   29. Home Top Content (Hero Welcome)
+   ========================================================================== */
+.home-top-content {
+  padding: 4rem 0 2rem;
+  text-align: center;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.home-top-content > p:first-of-type::first-letter {
+  float: none;
+  font-size: inherit;
+  line-height: inherit;
+  padding: 0;
+  color: inherit;
+}
+
+.home-top-content h1,
+.home-top-content h2 {
+  font-size: 3rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+}
+
+.home-top-content p {
+  font-size: 1.25rem;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+/* ==========================================================================
+   30. Header Layout
+   ========================================================================== */
+
+.folio-header {
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 0;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 50;
+  transition: background-color 0.3s ease;
+}
+
+.folio-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.folio-logo {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  background-image: none;
+}
+
+.folio-logo:hover {
+  color: var(--accent);
+  background-size: 0% 1px;
+}
+
+/* Theme toggle button — reset browser button defaults */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.theme-toggle-btn:hover {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   31. Footer Layout
+   ========================================================================== */
+
+.folio-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.folio-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.folio-footer-right ul {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.folio-footer-right a {
+  color: var(--muted);
+  background-image: none;
+  font-size: 1rem;
+}
+
+.folio-footer-right a:hover {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   32. Hero Featured Article
+   ========================================================================== */
+
+.hero-featured {
+  padding: 1rem 0 0;
+}
+
+.hero-title {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 0.5rem 0;
+}
+
+.hero-title a {
+  color: var(--text);
+  background-image: linear-gradient(var(--text), var(--text));
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 0.3s ease;
+}
+
+.hero-title a:hover {
+  background-size: 100% 1px;
+}
+
+.hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  margin-bottom: 0.75rem;
+}
+
+.hero-tags a {
+  color: var(--accent);
+  font-size: 0.8rem;
+  margin-right: 0.25rem;
+}
+
+.hero-excerpt {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  margin-top: 0.5rem;
+}
+
+/* ==========================================================================
+   33. Article List Entry — Article Card Meta & Body
+   ========================================================================== */
+
+.article-card-meta {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+}
+
+/* Article card body — contains title, icons, stats */
+.article-card-body {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Override oversized default — article list titles should be readable, not poster-sized */
+.article-list .article-card-title {
+  font-size: 1.25rem;
+  line-height: 1.35;
+}
+
+.article-card-stats {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+/* Article content preview excerpt */
+.article-card-excerpt {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 0.25rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   34. View All Link & Home Search
+   ========================================================================== */
+
+.view-all-link {
+  display: inline-block;
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.home-search-form {
+  margin-top: 0.75rem;
+}
+
+/* ==========================================================================
+   35. Mobile Menu Overlay
+   ========================================================================== */
+
+.mobile-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.mobile-menu-header button {
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.mobile-menu nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mobile-menu nav li {
+  margin-bottom: 1rem;
+}
+
+.mobile-menu nav a,
+.mobile-menu nav button {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  color: var(--text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mobile-menu nav a:hover,
+.mobile-menu nav button:hover {
+  color: var(--accent);
+}
+
+/* ==========================================================================
+   36. Article Page
+   ========================================================================== */
+
+.folio-article {
+  padding: 2rem 0;
+}
+
+.article-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.article-title {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 1rem;
+  color: var(--text);
+}
+
+.article-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.article-author {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.meta-separator {
+  color: var(--border);
+}
+
+.article-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.article-tag {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: var(--surface);
+  padding: 0.2rem 0.6rem;
+  border-radius: 3px;
+  background-image: none;
+}
+
+.article-tag:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.edit-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ==========================================================================
+   37. Comments Section
+   ========================================================================== */
+
+.comments-section {
+  margin-top: 2rem;
+}
+
+.comments-heading {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.comment-form-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.comment-form-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 767px) {
+  .article-title {
+    font-size: 1.75rem;
+  }
+
+  .comment-form-fields {
+    grid-template-columns: 1fr;
+  }
+}
+}

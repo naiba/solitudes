@@ -1,6 +1,8 @@
 package router
 
 import (
+	"os"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/mojocn/base64Captcha"
 )
@@ -25,7 +27,11 @@ func generateCaptcha(c *fiber.Ctx) error {
 	})
 }
 
-// verifyCaptcha verifies the captcha answer
+// verifyCaptcha verifies the captcha answer.
+// E2E 测试时设置 SOLITUDES_E2E=1 可跳过验证码校验，避免自动化测试卡在验证码上。
 func verifyCaptcha(id, answer string) bool {
+	if os.Getenv("SOLITUDES_E2E") == "1" {
+		return true
+	}
 	return captchaStore.Verify(id, answer, true)
 }

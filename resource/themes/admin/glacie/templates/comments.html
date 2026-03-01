@@ -1,0 +1,106 @@
+{{define "admin/comments"}}
+{{template "admin/header" .}}
+
+<div class="page-header">
+    <h1>{{.Tr.T "comments"}}</h1>
+    <p class="page-subtitle">{{.Tr.T "comments_subtitle"}}</p>
+</div>
+
+<div class="wf-card-static">
+    {{if .Data.comments}}
+    <table class="wf-table">
+        <thead>
+            <tr>
+                <th>{{.Tr.T "author"}}</th>
+                <th>{{.Tr.T "content"}}</th>
+                <th>{{.Tr.T "article"}}</th>
+                <th>{{.Tr.T "email_status"}}</th>
+                <th>{{.Tr.T "created_at"}}</th>
+                <th style="text-align:right">{{.Tr.T "manage"}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Data.comments}}
+            <tr>
+                <td>
+                    <div style="font-weight: 500; color: var(--text-primary);">
+                        {{.Nickname}}
+                        {{if .IsAdmin}}<span class="badge accent">Admin</span>{{end}}
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{.Email}}</div>
+                    {{if .Website}}<div style="font-size: 0.75rem; color: var(--text-muted);">{{.Website}}</div>{{end}}
+                </td>
+                <td style="max-width: 300px;">
+                    <span class="truncate" style="display: inline-block; max-width: 280px;">{{substr .Content 0 80}}</span>
+                </td>
+                <td>
+                    {{if .Article}}
+                    <a href="/{{.Article.Slug}}" target="_blank">{{substr .Article.Title 0 30}}</a>
+                    {{end}}
+                </td>
+                <td>
+                    {{if .EmailReadStatus}}
+                        {{if ptrStrEq .EmailReadStatus "read"}}
+                            <span class="badge success"><i class="fas fa-envelope-open"></i> {{$.Tr.T "email_read"}}</span>
+                        {{else}}
+                            <span class="badge warning"><i class="fas fa-envelope"></i> {{$.Tr.T "email_unread"}}</span>
+                        {{end}}
+                    {{end}}
+                </td>
+                <td style="white-space:nowrap;">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
+                <td style="text-align:right">
+                    <div class="btn-group" style="justify-content: flex-end;">
+                        <button class="btn-glass small danger" onclick="deleteComment('{{.ArticleID}}', '{{.ID}}')">
+                            <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
+                        </button>
+                        <button class="btn-glass small" style="color: var(--warning);" onclick="reportSpam('{{.ArticleID}}', '{{.ID}}')">
+                            <i class="fas fa-ban"></i> {{$.Tr.T "spam"}}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    {{if .Data.page}}
+    <div class="pagination">
+        {{if gt .Data.page.PrevPage 0}}
+            {{if ne .Data.page.PrevPage .Data.page.Page}}
+            <a href="/admin/comments?page={{.Data.page.PrevPage}}"><i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}</a>
+            {{end}}
+        {{end}}
+        <span class="current">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
+        {{if gt .Data.page.NextPage 0}}
+            {{if ne .Data.page.NextPage .Data.page.Page}}
+            <a href="/admin/comments?page={{.Data.page.NextPage}}">{{.Tr.T "next"}} <i class="fas fa-chevron-right"></i></a>
+            {{end}}
+        {{end}}
+    </div>
+    {{end}}
+    {{else}}
+    <div class="empty-state">
+        <i class="fas fa-comments"></i>
+        <p>{{.Tr.T "no_data"}}</p>
+    </div>
+    {{end}}
+</div>
+
+<script>
+function deleteComment(aid, id) {
+    if (!confirm('{{.Tr.T "confirm_delete"}}')) return;
+    ajaxRequest('DELETE', '/admin/comments?aid=' + aid + '&id=' + id, null, function(resp, err) {
+        if (!err) location.reload();
+    });
+}
+function reportSpam(aid, id) {
+    if (!confirm('{{.Tr.T "confirm_spam"}}')) return;
+    ajaxRequest('POST', '/admin/report-spam?aid=' + aid + '&id=' + id, null, function(resp, err) {
+        if (!err) location.reload();
+    });
+}
+</script>
+
+{{template "admin/footer" .}}
+{{end}}

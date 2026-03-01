@@ -1,0 +1,170 @@
+{{define "site/page"}}
+{{template "site/header" .}}
+{{if not .Noindex}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "{{jsonEscape .Data.article.Title}}",
+  "url": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}",
+  "description": "{{jsonEscape .Desc}}",
+  "datePublished": "{{iso8601 .Data.article.CreatedAt}}",
+  "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
+  "author": {
+    "@type": "Person",
+    "name": "{{jsonEscape .Conf.User.Nickname}}",
+    "url": "https://{{.Conf.Site.Domain}}/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://{{.Conf.Site.Domain}}/logo.png"
+    }
+  },
+  "isPartOf": {
+    "@type": "WebSite",
+    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+    "url": "https://{{.Conf.Site.Domain}}/"
+  }
+}
+</script>
+{{end}}
+
+<main id="main-content">
+    <article class="folio-article">
+        <header class="article-header folio-narrow">
+            <h1 class="article-title">{{.Data.article.Title}}</h1>
+            {{if .Login}}
+            <a href="/admin/publish?id={{.Data.article.ID}}" class="edit-link">{{.Tr.T "edit_post"}}</a>
+            {{end}}
+        </header>
+
+        <hr>
+
+        <div class="app-prose folio-narrow">
+            {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
+        </div>
+
+        <div class="folio-narrow article-meta" style="margin-top: 2rem;">
+            {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
+            {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
+            <span class="meta-separator">·</span>
+            {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
+            {{end}}
+        </div>
+    </article>
+
+    <!-- Comments section -->
+    {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
+    <section class="comments-section folio-narrow" id="comments">
+        <hr>
+        <h2 class="comments-heading">{{.Tr.T "comments"}}</h2>
+
+        {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
+
+        {{if .Data.article.Comments}}
+        <div class="pagination">
+            {{if gt .Data.comment_page.Page 1}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i class="fa-solid fa-angle-left"></i></a>{{end}}
+            <span>{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
+            {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}" rel="next" aria-label="{{.Tr.T "next_page"}}"><i class="fa-solid fa-angle-right"></i></a>{{end}}
+        </div>
+        {{end}}
+
+        {{if not .Data.article.DisableComment}}
+        <div class="comment-form" id="reply">
+            <h3>{{.Tr.T "leave_a_comment"}}</h3>
+            <p class="comment-form-hint">{{.Tr.T "may_not_reply_if_email_not_exist"}}</p>
+            <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
+            <textarea id="id_content" rows="6" placeholder="{{.Tr.T "comment_content"}}"></textarea>
+            {{if .Login}}
+            <input type="hidden" maxlength="64" id="id_nickname">
+            {{else}}
+            <div class="comment-form-fields">
+                <div>
+                    <label for="id_nickname" class="sr-only">{{.Tr.T "nickname"}}</label>
+                    <input id="id_nickname" placeholder="{{.Tr.T "nickname"}}" maxlength="64">
+                </div>
+                <div>
+                    <label for="id_email" class="sr-only">{{.Tr.T "email"}}</label>
+                    <input id="id_email" placeholder="{{.Tr.T "email"}} ({{.Tr.T "not_required"}})" maxlength="254">
+                </div>
+                <div>
+                    <label for="id_website" class="sr-only">{{.Tr.T "website"}}</label>
+                    <input id="id_website" placeholder="{{.Tr.T "website"}} ({{.Tr.T "not_required"}})" maxlength="200">
+                </div>
+            </div>
+            {{end}}
+            <button onclick="comment(this)" class="folio-btn">{{.Tr.T "submit_comment"}}</button>
+            <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
+            <input type="hidden" id="id_reply_to" value="">
+        </div>
+        {{end}}
+    </section>
+    {{end}}
+</main>
+
+<script>
+    (function () {
+        fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" });
+        {{if .Login}}
+        document.querySelector("#id_nickname").value = '{{.Conf.User.Nickname}}';
+        {{else}}
+        if (document.querySelector("#id_nickname")) document.querySelector("#id_nickname").value = localStorage.getItem("solitudes_cm_nickname") || '';
+        if (document.querySelector("#id_email")) document.querySelector("#id_email").value = localStorage.getItem("solitudes_cm_email") || '';
+        if (document.querySelector("#id_website")) document.querySelector("#id_website").value = localStorage.getItem("solitudes_cm_website") || '';
+        {{end}}
+    })();
+
+    function reply_to(cid, nickname) {
+        var idContent = document.querySelector("#id_content");
+        idContent.value = '@' + nickname + ' ' + idContent.value;
+        document.querySelector("#id_reply_to").value = cid;
+        idContent.focus();
+    }
+
+    function comment(btn) {
+        if (btn.disabled) return;
+        btn.disabled = true;
+        btn.textContent = '{{.Tr.T "submitting"}}';
+        if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
+            btn.disabled = false;
+            btn.textContent = '{{.Tr.T "submit_comment"}}';
+            alert('{{.Tr.T "comment_required_fields"}}');
+            return;
+        }
+        var cm_nickname = document.querySelector('#id_nickname') ? document.querySelector('#id_nickname').value : "";
+        var cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
+        var cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
+        localStorage.setItem("solitudes_cm_nickname", cm_nickname);
+        localStorage.setItem("solitudes_cm_email", cm_email);
+        localStorage.setItem("solitudes_cm_website", cm_website);
+        var data = {
+            nickname: cm_nickname,
+            email: cm_email,
+            website: cm_website,
+            content: document.querySelector('#id_content').value,
+            version: parseInt('{{.Data.article.Version}}'),
+            slug: document.querySelector('#id_slug').value
+        };
+        if (document.querySelector('#id_reply_to').value) {
+            data.reply_to = document.querySelector('#id_reply_to').value;
+        }
+        fetch("/api/comment", {
+            method: 'POST',
+            headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).then(function(resp) {
+            if (resp.status === 200) { window.location.reload(); return; }
+            resp.text().then(function(str) { alert('{{.Tr.T "submit_failed"}} ' + str); });
+        }).catch(function(e) {
+            alert('{{.Tr.T "submit_failed"}} ' + e);
+        }).finally(function() {
+            btn.disabled = false;
+            btn.textContent = '{{.Tr.T "submit_comment"}}';
+        });
+    }
+</script>
+{{template "site/footer" .}}
+{{end}}

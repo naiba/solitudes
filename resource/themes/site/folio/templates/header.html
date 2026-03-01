@@ -1,0 +1,224 @@
+{{define "site/header"}}
+<!DOCTYPE html>
+<html lang="{{.Tr.Locale}}">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" href="/logo.png">
+    <link rel="shortcut icon" href="/logo.png">
+    <link rel="apple-touch-icon" href="/logo.png">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></noscript>
+    <link rel="stylesheet" href="/static/site/folio/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.cn" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="dns-prefetch" href="https://gravatar.loli.net">
+    <link rel="dns-prefetch" href="https://api.dicebear.com">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
+    <title>{{.Title}}</title>
+    {{if .Noindex}}<meta name="robots" content="noindex">{{end}}
+    <meta name="description" content="{{.Desc}}">
+    <meta name="keywords" content="{{.Keywords}}">
+    <link rel="alternate" type="application/rss+xml" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="https://{{.Conf.Site.Domain}}/feed/rss">
+    <link rel="alternate" type="application/atom+xml" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="https://{{.Conf.Site.Domain}}/feed/atom">
+    <link rel="alternate" type="application/json" title="{{.Conf.Site.SpaceName}} » Feed"
+        href="https://{{.Conf.Site.Domain}}/feed/json">
+    {{if not .Noindex}}<link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.Path}}">{{end}}
+    <meta name="author" content="{{.Conf.User.Nickname}}">
+    <meta property="og:title" content="{{.Title}}">
+    <meta property="og:description" content="{{.Desc}}">
+    <meta property="og:url" content="https://{{.Conf.Site.Domain}}{{.Path}}">
+    <meta property="og:type" content="{{.OgType}}">
+    <meta property="og:site_name" content="{{.Conf.Site.SpaceName}}">
+    {{if eq .OgType "article"}}<meta property="og:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
+    {{else}}<meta property="og:image" content="https://{{.Conf.Site.Domain}}/logo.png">{{end}}
+    {{if eq .OgType "article"}}
+    <meta property="article:published_time" content="{{iso8601 .Data.article.CreatedAt}}">
+    <meta property="article:modified_time" content="{{iso8601 .Data.article.UpdatedAt}}">
+    <meta property="article:author" content="{{.Conf.User.Nickname}}">
+    {{range .Data.article.Tags}}<meta property="article:tag" content="{{.}}">
+    {{end}}{{end}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{.Title}}">
+    <meta name="twitter:description" content="{{.Desc}}">
+    {{if eq .OgType "article"}}<meta name="twitter:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
+    {{else}}<meta name="twitter:image" content="https://{{.Conf.Site.Domain}}/logo.png">{{end}}
+    <!-- Dark mode: apply saved theme preference before paint to avoid flash -->
+    <script>
+        (function(){
+            var t = localStorage.getItem('solitudes_theme') || 'auto';
+            if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+        window.toggleTheme = function() {
+            var current = localStorage.getItem('solitudes_theme') || 'auto';
+            var next = current === 'auto' ? 'dark' : (current === 'dark' ? 'light' : 'auto');
+            localStorage.setItem('solitudes_theme', next);
+            if (next === 'dark' || (next === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            window.updateThemeIcons();
+        };
+        window.updateThemeIcons = function() {
+            var current = localStorage.getItem('solitudes_theme') || 'auto';
+            var icons = document.querySelectorAll('.theme-icon');
+            icons.forEach(function(el) {
+                el.querySelector('.icon-auto').style.display = current === 'auto' ? 'inline' : 'none';
+                el.querySelector('.icon-light').style.display = current === 'light' ? 'inline' : 'none';
+                el.querySelector('.icon-dark').style.display = current === 'dark' ? 'inline' : 'none';
+            });
+        };
+    </script>
+</head>
+
+<body class="folio-page">
+    <a href="#main-content" class="sr-only">{{.Tr.T "skip_to_content"}}</a>
+
+    {{if ne .Path "/"}}
+    {{if not .Noindex}}
+    {{if .Data.article}}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "{{.Tr.T "home"}}",
+          "item": "https://{{.Conf.Site.Domain}}/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{.Tr.T "posts"}}",
+          "item": "https://{{.Conf.Site.Domain}}/posts/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{jsonEscape .Data.article.Title}}",
+          "item": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
+        }
+      ]
+    }
+    </script>
+    {{else}}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "{{.Tr.T "home"}}",
+          "item": "https://{{.Conf.Site.Domain}}/"
+        }{{if .Data.tag}},
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{.Tr.T "tags"}}",
+          "item": "https://{{.Conf.Site.Domain}}/tags/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "{{jsonEscape .Data.tag}}",
+          "item": "https://{{.Conf.Site.Domain}}/tags/{{.Data.tag}}/"
+        }{{else if eq .Path "/tags/"}},
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{.Tr.T "tags"}}",
+          "item": "https://{{.Conf.Site.Domain}}/tags/"
+        }{{else if eq .Path "/posts/"}},
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{.Tr.T "posts"}}",
+          "item": "https://{{.Conf.Site.Domain}}/posts/"
+        }{{else if eq .Path "/search/"}},
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{.Tr.T "search"}}",
+          "item": "https://{{.Conf.Site.Domain}}/search/"
+        }{{end}}
+      ]
+    }
+    </script>
+    {{end}}
+    {{end}}
+    {{end}}
+
+    <!-- Site header / navigation -->
+    <header class="folio-header">
+        <div class="folio-container">
+            <div class="folio-header-inner">
+                <a href="/" class="folio-logo">{{.Conf.Site.SpaceName}}</a>
+                <nav class="folio-nav" aria-label="Main navigation">
+                    <ul>
+                        {{range index .Theme "folio.headermenus"}}
+                        <li><a href="{{.link}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}} {{if and .icon (not .name)}}aria-label="{{.link}}" title="{{.link}}"{{end}}>{{if .icon}}<i class="{{.icon}}"></i> {{end}}{{.name}}</a></li>
+                        {{end}}
+                        <li>
+                            <button onclick="window.toggleTheme()" class="theme-toggle-btn" aria-label="{{.Tr.T "toggle_theme"}}" title="{{.Tr.T "toggle_theme"}}">
+                                <span class="theme-icon">
+                                    <span class="icon-auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+                                    <span class="icon-light" style="display:none"><i class="fa-solid fa-sun"></i></span>
+                                    <span class="icon-dark" style="display:none"><i class="fa-solid fa-moon"></i></span>
+                                </span>
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+                <button class="mobile-menu-toggle" onclick="document.getElementById('folio-mobile-menu').classList.toggle('active')" aria-label="{{.Tr.T "toggle_menu"}}">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile menu overlay -->
+    <div id="folio-mobile-menu" class="mobile-menu">
+        <div class="mobile-menu-header">
+            <a href="/" class="folio-logo">{{.Conf.Site.SpaceName}}</a>
+            <button onclick="document.getElementById('folio-mobile-menu').classList.remove('active')" aria-label="{{.Tr.T "toggle_menu"}}">
+                <i class="fa-solid fa-xmark fa-lg"></i>
+            </button>
+        </div>
+        <nav>
+            <ul>
+                {{range index .Theme "folio.headermenus"}}
+                <li><a href="{{.link}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}}>{{if .icon}}<i class="{{.icon}}"></i> {{end}}{{.name}}</a></li>
+                {{end}}
+                <li>
+                    <button onclick="window.toggleTheme()" class="theme-toggle-btn">
+                        <span class="theme-icon">
+                            <span class="icon-auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+                            <span class="icon-light" style="display:none"><i class="fa-solid fa-sun"></i></span>
+                            <span class="icon-dark" style="display:none"><i class="fa-solid fa-moon"></i></span>
+                        </span>
+                        {{.Tr.T "toggle_theme"}}
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <script>window.updateThemeIcons();</script>
+
+    <div class="folio-container folio-body">
+{{end}}

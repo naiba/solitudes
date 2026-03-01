@@ -1,0 +1,45 @@
+{{define "site/search"}}
+{{template "site/header" .}}
+
+<main id="main-content">
+    <header class="page-header folio-container" style="text-align: center;">
+        <span class="section-label">{{.Tr.T "search_desc"}}</span>
+        <h1 class="page-title">{{.Tr.T "search"}}</h1>
+    </header>
+
+    <section class="search-section folio-container">
+        <form action="/search/" method="get" class="search-form">
+            <label for="search-input" class="sr-only">{{.Tr.T "search"}}</label>
+            <div class="search-form-row">
+                <input id="search-input" class="search-input" name="w" placeholder="{{.Tr.T "search_placeholder"}}">
+                <button class="folio-btn" type="submit">{{.Tr.T "search"}}</button>
+            </div>
+        </form>
+
+        {{if .Data.results}}
+        <div class="search-results">
+            <ul class="search-result-list">
+                {{range .Data.results}}
+                <li class="search-result-item">
+                    <a href="https://{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
+                    <p class="search-result-excerpt">{{.Content|unsafe}}</p>
+                </li>
+                {{end}}
+            </ul>
+        </div>
+        {{else}}
+        <p class="folio-muted" style="text-align: center; margin-top: 3rem;">{{.Tr.T "no_search_results"}}</p>
+        {{end}}
+    </section>
+</main>
+
+<script>
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        var w = params.get('w');
+        if (w) document.getElementById('search-input').value = w;
+        document.title = document.title.replace("#SOL.9527.WORD#", w || '');
+    })();
+</script>
+{{template "site/footer" .}}
+{{end}}

@@ -719,6 +719,7 @@ func setFuncMap(engine *html.Engine) {
 			}
 			return string(runes[start:end])
 		},
+        "mdExcerpt": mdExcerpt,
 		"hasPrefix": strings.HasPrefix,
 		"urlencode": func(s string) string {
 			return url.QueryEscape(s)

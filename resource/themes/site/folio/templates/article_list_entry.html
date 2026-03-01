@@ -1,0 +1,60 @@
+{{define "site/article_list_entry"}}
+<div class="article-card">
+    <div class="article-card-meta">
+        <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
+    </div>
+    {{if .article.IsTopic}}
+    <div class="topic-card">
+        <div class="topic-meta">
+            <span class="topic-label">
+                <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a>
+            </span>
+            {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}
+            {{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog" title="Private"></i> {{end}}
+            <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
+        </div>
+        
+        <!-- Topic Content -->
+        <div class="topic-content app-prose">{{(md .article.ID .article.Content)|unsafe}}</div>
+        
+        <!-- Interactive Footer -->
+        <div class="topic-footer">
+            <span class="topic-stats">
+                <i class="fa-regular fa-eye"></i> {{.article.ReadNum}}
+                {{if .article.CommentNum}}&nbsp;&nbsp;·&nbsp;&nbsp;<i class="fa-regular fa-comment-dots"></i> {{.article.CommentNum}}{{end}}
+            </span>
+            <a href="https://{{.Conf.Site.Domain}}/{{.article.Slug}}" class="topic-reply-link">{{.tr.T "leave_a_comment"}} →</a>
+        </div>
+
+        <!-- Topic Comments Preview -->
+        {{if .article.Comments}}
+        <div class="topic-comments-preview">
+            {{range .article.Comments}}
+            <div class="topic-comment-item">
+                <div class="topic-comment-avatar">
+                    {{if .Email}}
+                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=40&d=mm&r=g" alt="{{.Nickname}}" loading="lazy">
+                    {{else}}
+                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" loading="lazy">
+                    {{end}}
+                </div>
+                <div class="topic-comment-body">
+                    <span class="topic-comment-author">
+                        {{.Nickname}}{{if .IsAdmin}} <i class="fa-solid fa-circle-check admin-badge"></i>{{end}}
+                    </span>
+                    <span class="topic-comment-text">{{.Content}}</span>
+                </div>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+    </div>
+    {{else}}
+    <div class="article-card-body">
+        {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a href="https://{{.Conf.Site.Domain}}/{{.article.Slug}}" class="article-card-title">{{.article.Title}}</a>
+        {{if .article.ReadNum}}<small class="article-card-stats"><i class="fa-regular fa-eye"></i> {{.article.ReadNum}}{{if .article.CommentNum}} · <i class="fa-regular fa-comment-dots"></i> {{.article.CommentNum}}{{end}}</small>{{end}}
+    </div>
+    {{if .article.Content}}<p class="article-card-excerpt">{{mdExcerpt .article.Content 120}}</p>{{end}}
+    {{end}}
+</div>
+{{end}}

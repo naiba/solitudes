@@ -1,0 +1,20 @@
+{{define "site/error"}}
+{{template "site/header" .}}
+
+<main id="main-content">
+    <div class="error-container">
+        <h1 class="error-title">{{.Data.title}}</h1>
+        <p class="error-message">{{.Data.msg}}</p>
+        <hr>
+        <form action="/search/" method="get" class="search-form" style="max-width: 24rem; margin: 2rem auto;">
+            <label for="error-search-input" class="sr-only">{{.Tr.T "search"}}</label>
+            <div class="search-form-row">
+                <input id="error-search-input" class="search-input" name="w" placeholder="{{.Tr.T "search_placeholder"}}">
+                <button class="folio-btn" type="submit">{{.Tr.T "search"}}</button>
+            </div>
+        </form>
+        <a href="/" class="view-all-link">← {{.Tr.T "home"}}</a>
+    </div>
+</main>
+{{template "site/footer" .}}
+{{end}}

@@ -1,0 +1,69 @@
+{{define "admin/login"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{.Tr.T "sign_in"}} - {{.Conf.Site.SpaceName}}</title>
+    {{template "admin/css"}}
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card wf-card-static" style="padding: 2.5rem;">
+            <div class="login-header">
+                <div style="margin-bottom: 1rem;">
+                    <i class="fas fa-snowflake" style="font-size: 2.5rem; color: var(--accent); opacity: 0.8;"></i>
+                </div>
+                <h1>{{.Tr.T "sign_in"}}</h1>
+                <p>{{.Tr.T "sign_in_subtitle"}}</p>
+            </div>
+
+            <form method="POST" action="/admin/login" id="loginForm">
+                <input type="hidden" id="captchaId" name="captchaId" value="">
+
+                <div class="form-group">
+                    <label class="form-label">{{.Tr.T "email"}}</label>
+                    <input type="email" name="email" class="form-input" required autocomplete="email" placeholder="you@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">{{.Tr.T "password"}}</label>
+                    <input type="password" name="password" class="form-input" required autocomplete="current-password">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">{{.Tr.T "captcha"}}</label>
+                    <div class="captcha-row">
+                        <input type="text" name="captcha" class="form-input" required placeholder="{{.Tr.T "enter_captcha"}}" autocomplete="off">
+                        <img id="captchaImage" class="captcha-img" alt="captcha" title="{{.Tr.T "refresh_captcha"}}" onclick="refreshCaptcha()">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-check">
+                        <input type="checkbox" name="remember" value="on">
+                        {{.Tr.T "remember_me"}}
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-glass primary w-full" style="justify-content: center; padding: 0.7rem;">
+                    <i class="fas fa-arrow-right-to-bracket"></i>
+                    {{.Tr.T "sign_in"}}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {{template "admin/js"}}
+    <script>
+    function refreshCaptcha() {
+        $.get('/captcha', function(data) {
+            $('#captchaId').val(data.captchaId);
+            $('#captchaImage').attr('src', data.captchaImage);
+        });
+    }
+    $(function() {
+        refreshCaptcha();
+    });
+    </script>
+</body>
+</html>
+{{end}}

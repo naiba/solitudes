@@ -1,0 +1,21 @@
+{{define "site/tags"}}
+{{template "site/header" .}}
+
+<main id="main-content">
+    <header class="page-header folio-container" style="text-align: center;">
+        <span class="section-label">{{.Tr.T "tags_all_the_tags"}}</span>
+        <h1 class="page-title">{{.Tr.T "tags"}}</h1>
+    </header>
+
+    <section class="tag-cloud folio-container">
+        {{range $i, $tag := .Data.tags}}
+        {{ $count := index $.Data.counts $i }}
+        <a href="https://{{$.Conf.Site.Domain}}/tags/{{$tag}}/" class="tag-cloud-item"
+           style="font-size: {{ if gt $count 10 }}1.75rem{{ else if gt $count 5 }}1.35rem{{ else if gt $count 2 }}1.1rem{{ else }}0.9rem{{ end }};">
+            {{$tag}}<sup>{{$count}}</sup>
+        </a>
+        {{end}}
+    </section>
+</main>
+{{template "site/footer" .}}
+{{end}}
