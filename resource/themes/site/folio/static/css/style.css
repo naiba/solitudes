@@ -346,9 +346,15 @@ blockquote.pullquote {
   margin-bottom: 1.5rem;
 }
 
-/* Lists */
-.app-prose ul,
+/* Lists — restore markers stripped by Tailwind reset */
+.app-prose ul {
+  list-style: disc;
+  margin-bottom: 1.5rem;
+  padding-left: 1.5rem;
+}
+
 .app-prose ol {
+  list-style: decimal;
   margin-bottom: 1.5rem;
   padding-left: 1.5rem;
 }
@@ -418,23 +424,23 @@ blockquote.pullquote {
   border-radius: 3px;
 }
 
-/* Code blocks */
+/* Code blocks — 不设 background，让 hljs 主题完全控制代码块背景色和语法高亮 */
 .app-prose pre {
-  background: var(--surface);
   padding: 1.5rem;
   border-radius: 6px;
   overflow-x: auto;
   margin: 2rem 0;
   font-size: 0.875rem;
   line-height: 1.6;
-}
+  }
 
-/* Reset inline code styles when inside pre */
+/* Reset inline code styles when inside pre, let hljs control everything */
 .app-prose pre code {
   background: none;
   padding: 0;
   border-radius: 0;
   font-size: inherit;
+  display: block;
 }
 
 /* Videos & iframes */
