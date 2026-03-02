@@ -220,6 +220,7 @@ body ol ol {
 }
 
 body ol { list-style: decimal; }
+body ul { list-style: disc; }
 body dt { font-weight: bold; }
 
 body table {

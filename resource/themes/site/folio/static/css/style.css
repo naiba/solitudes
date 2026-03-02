@@ -88,6 +88,19 @@ body::before {
   box-sizing: border-box;
 }
 
+/* 全局文本断词：防止长链接/长单词撑破移动端布局 */
+h1, h2, h3, h4, h5, h6, p, a, li, span, div, time {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.app-prose {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
 /* ==========================================================================
    3. Links (Global)
    ========================================================================== */
