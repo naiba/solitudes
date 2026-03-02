@@ -117,7 +117,7 @@ a:hover {
 }
 
 .folio-narrow {
-  max-width: 38rem;
+  max-width: 58rem;
   margin: 0 auto;
 }
 
@@ -313,7 +313,7 @@ blockquote.pullquote {
 /* Drop cap — first paragraph's first letter */
 .app-prose > p:first-of-type::first-letter {
   float: left;
-  font-size: 4.5em;
+  font-size: 3em;
   line-height: 0.8;
   padding-right: 0.1em;
   font-family: var(--font-heading);
@@ -612,7 +612,9 @@ blockquote.pullquote {
   background: var(--surface);
   border-radius: 8px;
   padding: 1.5rem 2rem;
-  margin: 2rem 0;
+  /* 保留上下间距，水平居中继承自 folio-narrow 的 margin: 0 auto */
+  margin-top: 2rem;
+  margin-bottom: 2rem;
 }
 
 .folio-toc ol {
@@ -1085,7 +1087,7 @@ blockquote.pullquote {
    ========================================================================== */
 
 .hero-featured {
-  padding: 1rem 0 0;
+  padding: 0;
 }
 
 .hero-title {

@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></noscript>
-    <link rel="stylesheet" href="/static/site/folio/css/style.css">
+    <link rel="stylesheet" href="/static/site/folio/css/style.css?v2026030200">
     <link rel="preconnect" href="https://fonts.googleapis.cn" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
@@ -58,6 +58,10 @@
             if (t === 'dark' || (t === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                 document.documentElement.classList.add('dark');
             }
+            // 强制 light 模式时需要加 light class 以覆盖 prefers-color-scheme: dark 的 CSS media query
+            if (t === 'light') {
+                document.documentElement.classList.add('light');
+            }
         })();
         window.toggleTheme = function() {
             var current = localStorage.getItem('solitudes_theme') || 'auto';
@@ -67,6 +71,12 @@
                 document.documentElement.classList.add('dark');
             } else {
                 document.documentElement.classList.remove('dark');
+            }
+            // 强制 light 模式时需要加 light class 以覆盖 prefers-color-scheme: dark 的 CSS media query
+            if (next === 'light') {
+                document.documentElement.classList.add('light');
+            } else {
+                document.documentElement.classList.remove('light');
             }
             window.updateThemeIcons();
         };
