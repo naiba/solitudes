@@ -542,17 +542,173 @@ blockquote.pullquote {
    ========================================================================== */
 
 .comment-item {
-  padding: 1.5rem 0;
-  border-bottom: 1px solid var(--border);
+  padding: 1.75rem;
+  background: var(--surface);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+  transition: border-color 0.2s ease;
 }
 
+.comment-item:hover {
+  border-color: var(--accent);
+}
+
+/* Comment header — avatar + meta side by side */
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* Avatar — 44px circle with subtle border ring */
 .comment-avatar {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
   border-radius: 50%;
-  object-fit: cover;
+  overflow: hidden;
+  border: 2px solid var(--border);
 }
 
+.comment-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Meta info — author name stacked above timestamp */
+.comment-meta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.comment-author {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+/* Override global slide-underline on author links */
+.comment-author a {
+  color: var(--text);
+  background-image: none;
+  transition: color 0.2s ease;
+}
+
+.comment-author a:hover {
+  color: var(--accent);
+  background-size: 0% 1px;
+}
+
+/* Admin badge — subtle accent check icon */
+.comment-author.admin {
+  color: var(--accent);
+}
+
+.comment-author.admin a {
+  color: var(--accent);
+}
+
+.comment-author.admin i {
+  font-size: 0.7em;
+  margin-left: 0.25rem;
+  opacity: 0.85;
+}
+
+/* Timestamp — small, muted, monospaced */
+.comment-time {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Override global slide-underline on time links */
+.comment-time a {
+  color: var(--muted);
+  background-image: none;
+  transition: color 0.2s ease;
+}
+
+.comment-time a:hover {
+  color: var(--accent);
+  background-size: 0% 1px;
+}
+
+/* Comment body — the actual content */
+.comment-body {
+  margin-top: 1rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  line-height: 1.75;
+  color: var(--text);
+}
+
+.comment-body p {
+  margin: 0 0 0.75rem;
+}
+
+.comment-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Reply action — uppercase editorial micro-text */
+.comment-actions {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.comment-actions a {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  background-image: none;
+  transition: opacity 0.2s ease;
+}
+
+.comment-actions a:hover {
+  opacity: 0.7;
+  background-size: 0% 1px;
+}
+
+/* Nested replies — left border + indent for visual hierarchy */
+.comment-children {
+  margin-left: 2rem;
+  padding-left: 1.25rem;
+  border-left: 2px solid var(--border);
+}
+
+/* Nested comments: subtler card treatment for depth feel */
+.comment-children .comment-item {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 1.25rem 0;
+  margin-bottom: 0;
+}
+
+.comment-children .comment-item:last-child {
+  border-bottom: none;
+}
+
+/* Prevent hover border on nested (no border to show) */
+.comment-children .comment-item:hover {
+  border-color: var(--border);
+  border-bottom-color: var(--border);
+}
+
+.comment-children .comment-item:last-child:hover {
+  border-color: transparent;
+}
 .comment-form textarea {
   width: 100%;
   min-height: 120px;
