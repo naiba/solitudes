@@ -57,6 +57,8 @@ html.dark {
 
 html {
   scroll-behavior: smooth;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 body {
@@ -387,19 +389,24 @@ blockquote.pullquote {
 }
 
 /* Images */
+/* 移动端图片防溢出：用 !important 覆盖 Vditor 渲染可能带的 inline width 属性 */
 .app-prose img {
-  max-width: 100%;
-  height: auto;
+  max-width: 100% !important;
+  height: auto !important;
   border-radius: 4px;
   margin: 2rem 0;
   display: block;
 }
 
 /* Tables */
+/* 移动端表格防溢出 */
 .app-prose table {
+  display: block;
   width: 100%;
   border-collapse: collapse;
   margin: 2rem 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .app-prose th {
