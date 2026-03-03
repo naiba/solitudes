@@ -237,12 +237,17 @@ func mdRender(id string, raw string) string {
 }
 
 var mdCleanRegex = regexp.MustCompile(`(?m)^#{1,6}\s+.*$`)
+var mdLinkRegex = regexp.MustCompile(`\[([^\]]*)\]\([^)]+\)`)       // [text](url) → 保留 text
+var mdBareURLRegex = regexp.MustCompile(`https?://[^\s)\]>]+`)        // 裸 URL → 移除，避免预览中出现不可点击的长链接
 var mdSymbolRegex = regexp.MustCompile(`[#*_~\[\]()` + "`" + `>!|{}\-]`)
 var mdImageRegex = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
 var htmlImageRegex = regexp.MustCompile(`<img\s[^>]*src=["']([^"']+)["']`)
 
 func mdExcerpt(content string, maxLen int) string {
 	text := mdCleanRegex.ReplaceAllString(content, "")
+	text = mdImageRegex.ReplaceAllString(text, "")          // ![alt](url) → 移除整个图片引用
+	text = mdLinkRegex.ReplaceAllString(text, "$1")          // [text](url) → 保留 text
+	text = mdBareURLRegex.ReplaceAllString(text, "")         // 裸 URL → 移除
 	text = mdSymbolRegex.ReplaceAllString(text, "")
 	text = strings.Join(strings.Fields(text), " ")
 	runes := []rune(text)

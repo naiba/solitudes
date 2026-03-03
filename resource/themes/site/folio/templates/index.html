@@ -55,6 +55,9 @@
                         {{range $featured.Tags}}<a href="https://{{$.Conf.Site.Domain}}/tags/{{.}}/">{{.}}</a> {{end}}
                     </span>
                     {{end}}
+                {{if $featured.ReadNum}}
+                <span class="hero-stats"><i class="fa-regular fa-eye"></i> {{$featured.ReadNum}}{{if $featured.CommentNum}} · <i class="fa-regular fa-comment-dots"></i> {{$featured.CommentNum}}{{end}}</span>
+                {{end}}
                 </div>
                 {{if $featured.Content}}<p class="hero-excerpt">{{mdExcerpt $featured.Content 200}}</p>{{end}}
             </div>
