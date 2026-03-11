@@ -857,6 +857,10 @@ blockquote.pullquote {
   width: auto;
 }
 
+.search-results {
+  margin-top: 2rem;
+}
+
 
 .error-title {
   font-family: var(--font-heading);
