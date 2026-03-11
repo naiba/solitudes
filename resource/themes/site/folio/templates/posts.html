@@ -41,7 +41,7 @@
 
         <div class="pagination">
             {{if gt .Data.page.Page 1}}<a href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.PrevPage}}/" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i class="fa-solid fa-angle-left"></i> <span>{{.Tr.T "previous_page"}}</span></a>{{end}}
-            <span>{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord) "articles"}}</span>
+            <span>{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord) (.Tr.T "posts")}}</span>
             {{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}<a href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.NextPage}}/" rel="next" aria-label="{{.Tr.T "next_page"}}"><span>{{.Tr.T "next_page"}}</span> <i class="fa-solid fa-angle-right"></i></a>{{end}}
             {{if gt .Data.page.TotalPage 1}}
             <div class="pagination-jump">

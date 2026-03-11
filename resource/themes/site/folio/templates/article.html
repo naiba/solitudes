@@ -147,7 +147,7 @@
         {{if .Data.article.Comments}}
         <div class="pagination">
             {{if gt .Data.comment_page.Page 1}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i class="fa-solid fa-angle-left"></i></a>{{end}}
-            <span>{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
+            <span>{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) (.Tr.T "comments")}}</span>
             {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}" rel="next" aria-label="{{.Tr.T "next_page"}}"><i class="fa-solid fa-angle-right"></i></a>{{end}}
         </div>
         {{end}}
