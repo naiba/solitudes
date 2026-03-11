@@ -925,6 +925,25 @@ blockquote.pullquote {
   font-size: 0.9rem;
 }
 
+/* 分页跳转区域：紧凑布局，避免继承搜索框的全宽样式 */
+.pagination-jump {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.pagination-jump .pagination-input {
+  width: 4rem;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.pagination-jump .folio-btn {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+}
+
 /* ==========================================================================
    22. Version Notice
    ========================================================================== */
