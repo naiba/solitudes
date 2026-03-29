@@ -16,10 +16,11 @@ async function loginAdmin(page: Page): Promise<void> {
   });
   await page.fill('input[name="email"]', 'hi@example.com');
   await page.fill('input[name="password"]', '123456');
+  await expect(page.locator('input[name="captchaId"]')).not.toHaveValue('', { timeout: 5000 });
   await page.fill('input[name="captcha"]', '0');
   await page.click('button[type="submit"]');
-  // 登录后重定向到 /admin（无尾斜杠），兼容两种形式
-  await page.waitForURL(/\/admin/, { timeout: 5000 });
+  await page.waitForURL(/\/admin\/?$/, { timeout: 5000 });
+  await expect(page.locator('input[name="email"]')).toHaveCount(0);
 }
 
 /**
@@ -46,34 +47,46 @@ async function publishTestArticle(
   });
   await page.waitForTimeout(1000);
 
-  await page.fill('#inputTitle', opts.title);
-  await page.fill('#inputSlug', opts.slug);
-  if (opts.tags) {
-    await page.fill('#inputTags', opts.tags);
-  }
-  if (opts.templateId === 2) {
-    await page.selectOption('#selTemplate', '2');
-  }
-  if (opts.isBook) {
-    await page.check('#cbBook');
+  const hasLegacyPublishInputs = await page
+    .locator('#inputTitle')
+    .isVisible()
+    .catch(() => false);
+
+  if (hasLegacyPublishInputs) {
+    await page.fill('#inputTitle', opts.title);
+    await page.fill('#inputSlug', opts.slug);
+    if (opts.tags) {
+      await page.fill('#inputTags', opts.tags);
+    }
+    if (opts.templateId === 2) {
+      await page.selectOption('#selTemplate', '2');
+    } else {
+      await page.selectOption('#selTemplate', '1');
+    }
+    if (opts.isBook) {
+      await page.check('#cbBook');
+    }
+
+    let vditorReady = false;
+    for (let i = 0; i < 20; i++) {
+      vditorReady = await page.evaluate(() => typeof (window as any).publishVditor?.getValue === 'function');
+      if (vditorReady) break;
+      await page.waitForTimeout(500);
+    }
+
+    if (vditorReady) {
+      await page.evaluate((content) => {
+        (window as any).publishVditor.setValue(content);
+      }, opts.content);
+      await page.evaluate(() => {
+        (window as any).publish();
+      });
+      await page.waitForURL(/\/admin\/publish\?id=.+$/, { timeout: 10000 });
+      return;
+    }
   }
 
-  // 等 Vditor 初始化后设置内容，最多等 10 秒
-  let vditorReady = false;
-  for (let i = 0; i < 20; i++) {
-    vditorReady = await page.evaluate(() => !!(window as any).vditor?.getValue);
-    if (vditorReady) break;
-    await page.waitForTimeout(500);
-  }
-
-  if (vditorReady) {
-    await page.evaluate((content) => {
-      (window as any).vditor.setValue(content);
-    }, opts.content);
-    await page.evaluate(() => (window as any).publish());
-  } else {
-    // Vditor CDN 未加载，通过页面内 fetch 发布（自动带 cookie）
-    // 表单字段名参考 publishArticle struct：title, slug, content, tags, template
+  if (!hasLegacyPublishInputs) {
     await page.evaluate(async (o) => {
       const form = new URLSearchParams();
       form.append('title', o.title);
@@ -81,16 +94,21 @@ async function publishTestArticle(
       form.append('content', o.content);
       form.append('tags', o.tags || '');
       form.append('template', String(o.templateId || 1));
+      if (o.isBook) {
+        form.append('is_book', 'on');
+      }
       const resp = await fetch('/admin/publish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: form.toString(),
-        redirect: 'manual',
       });
       console.log('publish status:', resp.status);
+      if (!resp.ok) {
+        throw new Error(`publish fallback failed: ${resp.status}`);
+      }
     }, opts);
   }
-  await page.waitForTimeout(3000);
+  await page.waitForTimeout(1500);
 }
 
 // ============================================================
@@ -268,6 +286,72 @@ test.describe('Seed data & article templates', () => {
   test('Comment section renders (comments_entry.html)', async ({ page }) => {
     await page.goto(BASE + '/e2e-test-article');
     expect(await page.textContent('body')).not.toContain('{{');
+  });
+
+  test('Folio comment form uses semantic fields on article', async ({ page }) => {
+    await page.goto(BASE + '/e2e-test-article');
+
+    await expect(page.locator('form#reply.comment-form')).toBeVisible();
+    await expect(page.locator('textarea#id_content[name="content"]')).toBeVisible();
+    await expect(page.locator('input#id_nickname[name="nickname"]')).toBeVisible();
+    await expect(page.locator('input#id_email[type="email"][name="email"]')).toBeVisible();
+    await expect(page.locator('input#id_website[type="url"][name="website"]')).toBeVisible();
+    await expect(page.locator('#comment_form_status[role="status"]')).toBeVisible();
+    await expect(page.locator('#comment_reply_target')).toBeHidden();
+  });
+
+  test('Folio reply flow shows and clears reply target', async ({ page }) => {
+    await page.goto(BASE + '/e2e-test-article');
+
+    let replyButtonCount = await page.locator('.comment-reply-btn').count();
+    if (replyButtonCount === 0) {
+      await page.evaluate(async () => {
+        const slug = (document.querySelector('#id_slug') as HTMLInputElement | null)?.value || '';
+        const payload = {
+          nickname: 'E2E Reply Author',
+          content: 'E2E seed comment for reply interaction',
+          version: 1,
+          slug,
+        };
+        const resp = await fetch('/api/comment', {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (resp.status !== 200) {
+          throw new Error('seed comment failed: ' + resp.status);
+        }
+      });
+      await page.reload({ waitUntil: 'networkidle' });
+      replyButtonCount = await page.locator('.comment-reply-btn').count();
+    }
+
+    expect(replyButtonCount).toBeGreaterThan(0);
+
+    const firstReplyButton = page.locator('.comment-reply-btn').first();
+    const replyNickname = await firstReplyButton.getAttribute('data-comment-nickname');
+    await expect(firstReplyButton).toBeVisible();
+    await firstReplyButton.click();
+
+    await expect(page.locator('#comment_reply_target')).toBeVisible();
+    if (replyNickname) {
+      await expect(page.locator('#comment_reply_target_text')).toContainText('@' + replyNickname);
+    }
+    await expect(page.locator('#id_reply_to')).not.toHaveValue('');
+
+    await page.click('.comment-reply-cancel');
+    await expect(page.locator('#comment_reply_target')).toBeHidden();
+    await expect(page.locator('#id_reply_to')).toHaveValue('');
+  });
+
+  test('Folio comment form uses semantic fields on page template', async ({ page }) => {
+    await page.goto(BASE + '/e2e-test-page');
+
+    await expect(page.locator('form#reply.comment-form')).toBeVisible();
+    await expect(page.locator('textarea#id_content[name="content"]')).toBeVisible();
+    await expect(page.locator('input#id_nickname[name="nickname"]')).toBeVisible();
+    await expect(page.locator('input#id_email[type="email"][name="email"]')).toBeVisible();
+    await expect(page.locator('input#id_website[type="url"][name="website"]')).toBeVisible();
   });
 
   // --- search ---
