@@ -154,6 +154,15 @@ func publishHandler(c *fiber.Ctx) error {
 		}
 	}
 
+	if newArticle.ID == "" {
+		var existed model.Article
+		if err := solitudes.System.DB.Select("id").Order("created_at DESC").Take(&existed, "slug = ?", newArticle.Slug).Error; err == nil {
+			newArticle.ID = existed.ID
+			newArticle.CreatedAt = time.Now()
+			newArticle.UpdatedAt = time.Now()
+		}
+	}
+
 	originalArticle, err := fetchOriginArticle(newArticle)
 	if err != nil {
 		return fmt.Errorf("failed to fetch original article: %w", err)

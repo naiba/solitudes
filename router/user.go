@@ -124,8 +124,15 @@ func count(c *fiber.Ctx) error {
 	// 	return nil
 	// }
 	// solitudes.System.Cache.Set(key, nil, time.Hour*20)
-	solitudes.System.DB.Model(model.Article{}).
-		Where("slug = ?", c.Query("slug")).
+	var latestArticle model.Article
+	if err := solitudes.System.DB.Select("id").
+		Order("created_at DESC").
+		Take(&latestArticle, "slug = ?", c.Query("slug")).Error; err != nil {
+		return nil
+	}
+
+	solitudes.System.DB.Model(&model.Article{}).
+		Where("id = ?", latestArticle.ID).
 		UpdateColumn("read_num", gorm.Expr("read_num + ?", 1))
 	return nil
 }

@@ -83,6 +83,14 @@ func commentHandler(c *fiber.Ctx) error {
 			return fmt.Errorf("failed to update article comment count: %w", err)
 		}
 
+		if cm.ReplyTo != nil {
+			if err := tx.Model(&model.Article{}).
+				Where("id = ?", cm.ArticleID).
+				UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
+				return fmt.Errorf("failed to rebalance article comment count for reply: %w", err)
+			}
+		}
+
 		return nil
 	})
 
@@ -124,7 +132,7 @@ func generateTrackingToken() (string, error) {
 
 func verifyArticle(cf *commentForm) (*model.Article, error) {
 	var article model.Article
-	if err := solitudes.System.DB.Select("id,version,title,slug").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
+	if err := solitudes.System.DB.Select("id,version,title,slug").Order("created_at DESC").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch article: %w", err)
 	}
 	if cf.Version > article.Version || cf.Version == 0 {

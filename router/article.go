@@ -15,7 +15,7 @@ import (
 
 func article(c *fiber.Ctx) error {
 	var a model.Article
-	if err := solitudes.System.DB.Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
+	if err := solitudes.System.DB.Order("created_at DESC").Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return page404(c)
 		}
@@ -73,6 +73,7 @@ func article(c *fiber.Ctx) error {
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &a.Comments)
+	pg.TotalRecord = int(a.CommentNum)
 	// load childComments
 	relatedChildComments(&a, a.Comments, true)
 
