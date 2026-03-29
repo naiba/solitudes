@@ -687,22 +687,6 @@ blockquote.pullquote {
   border-top: 1px solid var(--border);
 }
 
-.comment-actions a {
-  font-family: var(--font-body);
-  font-size: 0.68rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--accent);
-  background-image: none;
-  transition: opacity 0.2s ease;
-}
-
-.comment-actions a:hover {
-  opacity: 0.7;
-  background-size: 0% 1px;
-}
-
 /* Nested replies — left border + indent for visual hierarchy */
 .comment-children {
   margin-left: 2rem;
@@ -743,45 +727,192 @@ blockquote.pullquote {
   font-family: var(--font-body);
   color: var(--text);
   resize: vertical;
+  font-size: 0.95rem;
   transition: border-color 0.2s ease;
 }
 
+.comment-form {
+  margin-top: 1.5rem;
+  padding: 1.35rem 1.35rem 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 86%, transparent);
+}
+
 .comment-form textarea:focus {
-  outline: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   border-color: var(--accent);
 }
 
 .comment-form input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 0.5rem 0.75rem;
+  min-height: 44px;
+  padding: 0.625rem 0.75rem;
   font-family: var(--font-body);
+  font-size: 0.95rem;
   color: var(--text);
   transition: border-color 0.2s ease;
 }
 
 .comment-form input:focus {
-  outline: none;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
   border-color: var(--accent);
 }
 
+.comment-form input::placeholder,
+.comment-form textarea::placeholder {
+  color: #6b6560;
+}
+
+.comment-form label {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  color: var(--text);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+
+.comment-form h3 {
+  margin-bottom: 0.55rem;
+  font-size: 1.08rem;
+}
+
+.comment-form-status {
+  min-height: 1.35rem;
+  margin: 0 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.comment-form-status:empty {
+  margin-bottom: 0;
+}
+
+.comment-form-error {
+  min-height: 1.2rem;
+  margin: 0.35rem 0 0;
+  color: #b91c1c;
+  font-size: 0.78rem;
+}
+
+.comment-form-error:empty {
+  margin-top: 0;
+  min-height: 0;
+}
+
+.comment-form [aria-invalid="true"] {
+  border-color: #b91c1c;
+}
+
+.comment-reply-target:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.95rem;
+  padding: 0.65rem 0.8rem;
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
+  border: 1px dashed color-mix(in srgb, var(--border) 72%, var(--accent) 28%);
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.comment-reply-target[hidden] {
+  display: none;
+}
+
+.comment-reply-cancel {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.comment-reply-cancel:hover,
+.comment-reply-cancel:focus-visible {
+  text-decoration: underline;
+}
+
 .comment-form button,
-.folio-btn {
+.comment-form .folio-btn {
   background: var(--accent);
   color: #fff;
   border: none;
-  padding: 0.6rem 1.5rem;
+  min-height: 44px;
+  min-width: 44px;
+  margin-top: 1rem;
+  padding: 0.75rem 1.75rem;
   border-radius: 4px;
   font-family: var(--font-body);
   font-weight: 500;
+  letter-spacing: 0.02em;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.15s ease;
 }
 
 .comment-form button:hover,
-.folio-btn:hover {
+.comment-form .folio-btn:hover {
   opacity: 0.85;
+  transform: translateY(-1px);
+}
+
+.comment-form button:disabled,
+.comment-form .folio-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.comment-actions {
+  display: flex;
+  align-items: center;
+}
+
+.comment-reply-btn {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0;
+  position: relative;
+}
+
+.comment-reply-btn:hover,
+.comment-reply-btn:focus-visible {
+  text-decoration: underline;
+}
+
+.comment-reply-btn::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.2rem;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.16s ease;
+}
+
+.comment-reply-btn:hover::after,
+.comment-reply-btn:focus-visible::after {
+  transform: scaleX(1);
 }
 
 /* ==========================================================================
@@ -1538,8 +1669,14 @@ blockquote.pullquote {
 .comment-form-fields {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  gap: 0.95rem;
   margin-bottom: 1rem;
+}
+
+.comment-form-fields > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 @media (max-width: 767px) {
@@ -1549,6 +1686,21 @@ blockquote.pullquote {
 
   .comment-form-fields {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
-}
+
+  .comment-form {
+    padding: 1rem 0.95rem;
+    border-radius: 8px;
+  }
+
+  .comment-form button,
+  .comment-form .folio-btn {
+    width: 100%;
+  }
+
+  .comment-reply-target {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

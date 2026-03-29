@@ -29,11 +29,14 @@
         <p>{{.Content}}</p>
     </div>
     <div class="comment-actions">
-        <a href="javascript:reply_to('{{.ID}}', '{{.Nickname}}')">{{$.tr.T "reply"}}</a>
+        {{/* 使用 button 而非 javascript: 链接，确保键盘与读屏语义正确 */}}
+        <button type="button" class="comment-reply-btn" data-comment-id="{{.ID}}" data-comment-nickname="{{.Nickname}}" onclick="replyToComment(this)">{{$.tr.T "reply"}}</button>
     </div>
 </div>
+{{if .ChildComments}}
 <div class="comment-children">
     {{template "site/comments_entry" (commentsData .ChildComments $.tr)}}
 </div>
+{{end}}
 {{end}}
 {{end}}

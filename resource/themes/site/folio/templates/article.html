@@ -153,33 +153,40 @@
         {{end}}
 
         {{if not .Data.article.DisableComment}}
-        <div class="comment-form" id="reply">
+        <form class="comment-form" id="reply" novalidate>
             <h3>{{.Tr.T "leave_a_comment"}}</h3>
             <p class="comment-form-hint">{{.Tr.T "may_not_reply_if_email_not_exist"}}</p>
-            <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
-            <textarea id="id_content" rows="6" placeholder="{{.Tr.T "comment_content"}}"></textarea>
+            <p class="comment-form-status" id="comment_form_status" role="status" aria-live="polite"></p>
+            <div class="comment-reply-target" id="comment_reply_target" hidden>
+                <span id="comment_reply_target_text"></span>
+                <button type="button" class="comment-reply-cancel" onclick="clearReplyTarget()">{{.Tr.T "cancel"}}</button>
+            </div>
+            <label for="id_content">{{.Tr.T "comment_content"}}</label>
+            <textarea id="id_content" name="content" rows="6" placeholder="{{.Tr.T "comment_content"}}" aria-describedby="comment_content_error" aria-invalid="false"></textarea>
+            <p class="comment-form-error" id="comment_content_error" role="alert"></p>
             {{if .Login}}
-            <input type="hidden" maxlength="64" id="id_nickname">
+            <input type="hidden" maxlength="64" id="id_nickname" name="nickname" autocomplete="nickname">
             {{else}}
             <div class="comment-form-fields">
                 <div>
-                    <label for="id_nickname" class="sr-only">{{.Tr.T "nickname"}}</label>
-                    <input id="id_nickname" placeholder="{{.Tr.T "nickname"}}" maxlength="64">
+                    <label for="id_nickname">{{.Tr.T "nickname"}}</label>
+                    <input id="id_nickname" name="nickname" maxlength="64" autocomplete="nickname" aria-describedby="comment_nickname_error" aria-invalid="false">
+                    <p class="comment-form-error" id="comment_nickname_error" role="alert"></p>
                 </div>
                 <div>
-                    <label for="id_email" class="sr-only">{{.Tr.T "email"}}</label>
-                    <input id="id_email" placeholder="{{.Tr.T "email"}} ({{.Tr.T "not_required"}})" maxlength="254">
+                    <label for="id_email">{{.Tr.T "email"}} ({{.Tr.T "not_required"}})</label>
+                    <input id="id_email" name="email" type="email" maxlength="254" autocomplete="email">
                 </div>
                 <div>
-                    <label for="id_website" class="sr-only">{{.Tr.T "website"}}</label>
-                    <input id="id_website" placeholder="{{.Tr.T "website"}} ({{.Tr.T "not_required"}})" maxlength="200">
+                    <label for="id_website">{{.Tr.T "website"}} ({{.Tr.T "not_required"}})</label>
+                    <input id="id_website" name="website" type="url" maxlength="200" autocomplete="url">
                 </div>
             </div>
             {{end}}
-            <button onclick="comment(this)" class="folio-btn">{{.Tr.T "submit_comment"}}</button>
+            <button type="submit" class="folio-btn" id="comment_submit_btn">{{.Tr.T "submit_comment"}}</button>
             <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
             <input type="hidden" id="id_reply_to" value="">
-        </div>
+        </form>
         {{end}}
     </section>
     {{end}}
@@ -247,24 +254,80 @@
         websiteInput.addEventListener('focus', function() { queriedFields.delete('website'); });
     }
 
-    function reply_to(cid, nickname) {
+    function setFormError(fieldId, errorMessage) {
+        var field = document.querySelector('#' + fieldId);
+        var errorElement = document.querySelector('#comment_' + fieldId.replace('id_', '') + '_error');
+        if (!field || !errorElement) return;
+        field.setAttribute('aria-invalid', errorMessage ? 'true' : 'false');
+        errorElement.textContent = errorMessage;
+    }
+
+    function setFormStatus(statusMessage) {
+        var statusElement = document.querySelector('#comment_form_status');
+        if (!statusElement) return;
+        statusElement.textContent = statusMessage;
+    }
+
+    function clearReplyTarget() {
+        var replyToInput = document.querySelector('#id_reply_to');
+        var replyTarget = document.querySelector('#comment_reply_target');
+        var replyTargetText = document.querySelector('#comment_reply_target_text');
+        if (replyToInput) replyToInput.value = '';
+        if (replyTargetText) replyTargetText.textContent = '';
+        if (replyTarget) replyTarget.hidden = true;
+    }
+
+    function replyToComment(button) {
+        var cid = button.getAttribute('data-comment-id');
+        var nickname = button.getAttribute('data-comment-nickname');
         var idContent = document.querySelector("#id_content");
-        idContent.value = '@' + nickname + ' ' + idContent.value;
+        var replyTarget = document.querySelector('#comment_reply_target');
+        var replyTargetText = document.querySelector('#comment_reply_target_text');
+        if (!idContent || !cid || !nickname) return;
+
+        if (!idContent.value.startsWith('@' + nickname + ' ')) {
+            idContent.value = '@' + nickname + ' ' + idContent.value;
+        }
         document.querySelector("#id_reply_to").value = cid;
+        if (replyTargetText) {
+            replyTargetText.textContent = '{{.Tr.T "replying_to"}} @' + nickname;
+        }
+        if (replyTarget) {
+            replyTarget.hidden = false;
+        }
+        idContent.scrollIntoView({ behavior: 'smooth', block: 'center' });
         idContent.focus();
     }
 
     function comment(btn) {
         if (btn.disabled) return;
-        btn.disabled = true;
-        btn.textContent = '{{.Tr.T "submitting"}}';
-        if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
-            btn.disabled = false;
-            btn.textContent = '{{.Tr.T "submit_comment"}}';
-            alert('{{.Tr.T "comment_required_fields"}}');
+        var nicknameField = document.querySelector('#id_nickname');
+        var contentField = document.querySelector('#id_content');
+        var nicknameValue = nicknameField ? nicknameField.value.trim() : '';
+        var contentValue = contentField ? contentField.value.trim() : '';
+
+        setFormStatus('');
+        setFormError('id_nickname', '');
+        setFormError('id_content', '');
+
+        if (!nicknameValue || !contentValue) {
+            if (!nicknameValue) {
+                setFormError('id_nickname', '{{.Tr.T "comment_required_fields"}}');
+            }
+            if (!contentValue) {
+                setFormError('id_content', '{{.Tr.T "comment_required_fields"}}');
+            }
+            if (!nicknameValue && nicknameField) {
+                nicknameField.focus();
+            } else if (contentField) {
+                contentField.focus();
+            }
             return;
         }
-        var cm_nickname = document.querySelector('#id_nickname') ? document.querySelector('#id_nickname').value : "";
+
+        btn.disabled = true;
+        btn.textContent = '{{.Tr.T "submitting"}}';
+        var cm_nickname = nicknameValue;
         var cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
         var cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
         localStorage.setItem("solitudes_cm_nickname", cm_nickname);
@@ -274,7 +337,7 @@
             nickname: cm_nickname,
             email: cm_email,
             website: cm_website,
-            content: document.querySelector('#id_content').value,
+            content: contentValue,
             version: parseInt('{{.Data.article.Version}}'),
             slug: document.querySelector('#id_slug').value
         };
@@ -287,12 +350,20 @@
             body: JSON.stringify(data)
         }).then(function(resp) {
             if (resp.status === 200) { window.location.reload(); return; }
-            resp.text().then(function(str) { alert('{{.Tr.T "submit_failed"}} ' + str); });
+            resp.text().then(function(str) { setFormStatus('{{.Tr.T "submit_failed"}} ' + str); });
         }).catch(function(e) {
-            alert('{{.Tr.T "submit_failed"}} ' + e);
+            setFormStatus('{{.Tr.T "submit_failed"}} ' + e);
         }).finally(function() {
             btn.disabled = false;
             btn.textContent = '{{.Tr.T "submit_comment"}}';
+        });
+    }
+
+    var commentForm = document.querySelector('#reply');
+    if (commentForm) {
+        commentForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            comment(document.querySelector('#comment_submit_btn'));
         });
     }
 </script>
