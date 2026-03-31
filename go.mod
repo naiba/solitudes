@@ -1,8 +1,6 @@
 module github.com/naiba/solitudes
 
-go 1.24.3
-
-toolchain go1.24.11
+go 1.25.0
 
 require (
 	github.com/88250/lute v0.0.0-20260104085649-d01ee1896e5f
@@ -27,7 +25,7 @@ require (
 	github.com/yanyiwu/gojieba v1.4.6
 	go.uber.org/dig v1.19.0
 	golang.org/x/crypto v0.46.0
-	golang.org/x/sync v0.19.0
+	golang.org/x/sync v0.20.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.6.0
@@ -105,10 +103,10 @@ require (
 	github.com/vanng822/css v1.0.1 // indirect
 	github.com/vanng822/go-premailer v1.28.0 // indirect
 	go.etcd.io/bbolt v1.4.3 // indirect
-	golang.org/x/image v0.23.0 // indirect
+	golang.org/x/image v0.38.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
-	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/text v0.35.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
