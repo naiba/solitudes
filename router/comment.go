@@ -100,9 +100,10 @@ func commentHandler(c *fiber.Ctx) error {
 
 	// Email notify and update email read status
 	go func() {
+		var emailErr error
 		// Only send email if replying to someone else's comment
 		if replyTo != nil && !replyTo.IsAdmin && replyTo.Email != "" && replyTo.Email != cm.Email {
-			emailErr := notify.Email(&cm, replyTo, article, *cm.EmailTrackingToken)
+			emailErr = notify.Email(&cm, replyTo, article, *cm.EmailTrackingToken)
 
 			// Update EmailReadStatus based on email sending result
 			if emailErr == nil {
@@ -114,10 +115,9 @@ func commentHandler(c *fiber.Ctx) error {
 					fmt.Printf("Failed to update email status: %v\n", err)
 				}
 			}
-
-			// Send Telegram notification regardless of email result
-			notify.TGNotify(&cm, article, emailErr)
 		}
+
+		notify.TGNotify(&cm, article, emailErr)
 	}()
 	return nil
 }

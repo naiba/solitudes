@@ -24,7 +24,6 @@ func TGNotify(comment *model.Comment, article *model.Article, err error) {
 		return
 	}
 
-	// 检查配置
 	if solitudes.System.Config.TGBotToken == "" || solitudes.System.Config.TGChatID == "" {
 		return
 	}
