@@ -151,16 +151,27 @@ func themeStaticHandler(c *fiber.Ctx) error {
 		return page404(c)
 	}
 
-	themeStaticPath := ThemeStaticRoot(kind, themeName)
-	fullPath := filepath.Join(themeStaticPath, relativePath)
+	// URL wildcard 必须在主题静态目录内解析，不能再拼成宿主路径后 SendFile。
+	staticRoot, err := os.OpenRoot(ThemeStaticRoot(kind, themeName))
+	if err != nil {
+		return page404(c)
+	}
+	defer staticRoot.Close()
 
-	cleanPath := filepath.Clean(fullPath)
-	if _, err := os.Stat(cleanPath); err != nil {
+	assetFile, err := staticRoot.Open(relativePath)
+	if err != nil {
+		return page404(c)
+	}
+
+	assetInfo, err := assetFile.Stat()
+	if err != nil || assetInfo.IsDir() || assetInfo.Size() > int64(^uint(0)>>1) {
+		assetFile.Close()
 		return page404(c)
 	}
 
 	c.Set("Cache-Control", "public, max-age=2592000")
-	return c.SendFile(cleanPath)
+	c.Type(filepath.Ext(relativePath))
+	return c.SendStream(assetFile, int(assetInfo.Size()))
 }
 
 // isExternalLink 判断是否为外部链接
@@ -237,17 +248,17 @@ func mdRender(id string, raw string) string {
 }
 
 var mdCleanRegex = regexp.MustCompile(`(?m)^#{1,6}\s+.*$`)
-var mdLinkRegex = regexp.MustCompile(`\[([^\]]*)\]\([^)]+\)`)       // [text](url) → 保留 text
-var mdBareURLRegex = regexp.MustCompile(`https?://[^\s)\]>]+`)        // 裸 URL → 移除，避免预览中出现不可点击的长链接
+var mdLinkRegex = regexp.MustCompile(`\[([^\]]*)\]\([^)]+\)`)  // [text](url) → 保留 text
+var mdBareURLRegex = regexp.MustCompile(`https?://[^\s)\]>]+`) // 裸 URL → 移除，避免预览中出现不可点击的长链接
 var mdSymbolRegex = regexp.MustCompile(`[#*_~\[\]()` + "`" + `>!|{}\-]`)
 var mdImageRegex = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
 var htmlImageRegex = regexp.MustCompile(`<img\s[^>]*src=["']([^"']+)["']`)
 
 func mdExcerpt(content string, maxLen int) string {
 	text := mdCleanRegex.ReplaceAllString(content, "")
-	text = mdImageRegex.ReplaceAllString(text, "")          // ![alt](url) → 移除整个图片引用
-	text = mdLinkRegex.ReplaceAllString(text, "$1")          // [text](url) → 保留 text
-	text = mdBareURLRegex.ReplaceAllString(text, "")         // 裸 URL → 移除
+	text = mdImageRegex.ReplaceAllString(text, "")   // ![alt](url) → 移除整个图片引用
+	text = mdLinkRegex.ReplaceAllString(text, "$1")  // [text](url) → 保留 text
+	text = mdBareURLRegex.ReplaceAllString(text, "") // 裸 URL → 移除
 	text = mdSymbolRegex.ReplaceAllString(text, "")
 	text = strings.Join(strings.Fields(text), " ")
 	runes := []rune(text)
@@ -724,7 +735,7 @@ func setFuncMap(engine *html.Engine) {
 			}
 			return string(runes[start:end])
 		},
-        "mdExcerpt": mdExcerpt,
+		"mdExcerpt": mdExcerpt,
 		"hasPrefix": strings.HasPrefix,
 		"urlencode": func(s string) string {
 			return url.QueryEscape(s)
