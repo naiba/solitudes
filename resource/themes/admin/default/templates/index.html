@@ -111,7 +111,7 @@
         if (confirm('{{.Tr.T "confirm_rebuild_search"}}')) {
             ajaxRequest({
                 url: "/admin/rebuild-full-text-search",
-                type: 'GET',
+                type: 'POST',
                 success: () => {
                     alert('{{.Tr.T "rebuild_successful"}}')
                 }

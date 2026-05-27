@@ -150,7 +150,7 @@ function publishTopic() {
 
 function rebuildFullTextSearch() {
     if (!confirm('{{.Tr.T "confirm_rebuild_search"}}')) return;
-    ajaxRequest('GET', '/admin/rebuild-full-text-search', null, function(resp, err) {
+    ajaxRequest('POST', '/admin/rebuild-full-text-search', null, function(resp, err) {
         if (!err) {
             alert('{{.Tr.T "rebuild_successful"}}');
         }

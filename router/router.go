@@ -435,7 +435,7 @@ func Serve() {
 		}
 		return c.Next()
 	})
-	app.Use(trans, auth)
+	app.Use(trans, auth, csrfGuard)
 	app.Get("/", index)
 	app.Get("/favicon.ico", faviconHandler)
 	app.Get("/logo.png", logoHandler)
@@ -469,7 +469,7 @@ func Serve() {
 	admin.Get("/", manager)
 	admin.Get("/publish", publish)
 	admin.Post("/publish", publishHandler)
-	admin.Get("/rebuild-full-text-search", rebuildFullTextSearch)
+	admin.Post("/rebuild-full-text-search", rebuildFullTextSearch)
 	admin.Post("/upload", upload)
 	admin.Post("/fetch", fetch)
 	admin.Get("/comments", comments)
@@ -779,6 +779,37 @@ func loginRequired(c *fiber.Ctx) error {
 	if !c.Locals(solitudes.CtxAuthorized).(bool) {
 		c.Redirect("/admin/login", http.StatusFound)
 		return nil
+	}
+	return c.Next()
+}
+
+func csrfSameOriginHeader(c *fiber.Ctx, header string) bool {
+	raw := c.Get(header)
+	if raw == "" {
+		return false
+	}
+	u, err := url.Parse(raw)
+	if err != nil || u.Host == "" {
+		return false
+	}
+	return strings.EqualFold(u.Host, c.Hostname())
+}
+
+func csrfGuard(c *fiber.Ctx) error {
+	switch c.Method() {
+	case fiber.MethodGet, fiber.MethodHead, fiber.MethodOptions:
+		return c.Next()
+	}
+	origin := c.Get(fiber.HeaderOrigin)
+	referer := c.Get(fiber.HeaderReferer)
+	if origin == "" && referer == "" {
+		return fiber.NewError(fiber.StatusForbidden, "missing Origin and Referer")
+	}
+	if origin != "" && !csrfSameOriginHeader(c, fiber.HeaderOrigin) {
+		return fiber.NewError(fiber.StatusForbidden, "cross-origin request blocked")
+	}
+	if origin == "" && !csrfSameOriginHeader(c, fiber.HeaderReferer) {
+		return fiber.NewError(fiber.StatusForbidden, "cross-origin request blocked")
 	}
 	return c.Next()
 }

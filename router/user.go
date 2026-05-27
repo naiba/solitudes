@@ -53,9 +53,13 @@ func loginHandler(c *fiber.Ctx) error {
 	}
 	solitudes.System.Config.User.TokenExpires = expires.Unix()
 	c.Cookie(&fiber.Cookie{
-		Name:    solitudes.AuthCookie,
-		Value:   string(token),
-		Expires: expires,
+		Name:     solitudes.AuthCookie,
+		Value:    string(token),
+		Path:     "/",
+		Expires:  expires,
+		HTTPOnly: true,
+		SameSite: fiber.CookieSameSiteLaxMode,
+		Secure:   c.Protocol() == "https",
 	})
 	solitudes.System.Config.Save()
 	c.Redirect("/admin", http.StatusFound)
@@ -71,6 +75,16 @@ func logoutHandler(c *fiber.Ctx) error {
 	solitudes.System.Config.User.TokenExpires = time.Now().Unix()
 	solitudes.System.Config.User.Token = ""
 	solitudes.System.Config.Save()
+	c.Cookie(&fiber.Cookie{
+		Name:     solitudes.AuthCookie,
+		Value:    "",
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+		HTTPOnly: true,
+		SameSite: fiber.CookieSameSiteLaxMode,
+		Secure:   c.Protocol() == "https",
+	})
 	c.Redirect("/", http.StatusFound)
 	return nil
 }
