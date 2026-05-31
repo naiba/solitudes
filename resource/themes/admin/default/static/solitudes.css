@@ -678,6 +678,28 @@ body {
   .hover\:bg-gray-300:hover {
     background-color: var(--bg-accent) !important;
   }
+
+  /* Publish-page async dropdowns need explicit colors because their items are injected with utility classes. */
+  #tagsDropdown,
+  #booksDropdown {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: var(--shadow-lg) !important;
+  }
+  #tagsDropdown > div,
+  #booksDropdown > div {
+    color: var(--text-primary) !important;
+  }
+  #tagsDropdown .text-gray-500,
+  #booksDropdown .text-gray-500 {
+    color: var(--text-tertiary) !important;
+  }
+  #tagsDropdown .hover\:bg-gray-100:hover,
+  #booksDropdown .hover\:bg-gray-100:hover {
+    background-color: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+  }
   
   /* Text Colors */
   .text-gray-500 {
