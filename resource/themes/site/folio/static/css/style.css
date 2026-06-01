@@ -929,7 +929,8 @@ blockquote.pullquote {
 }
 
 .folio-toc ol {
-  list-style: decimal;
+  /* Folio TOC template explicitly adds .toc-number labels. Do not use decimal list-style here or browser will duplicate them. */
+  list-style: none;
   padding-left: 1.5rem;
 }
 
