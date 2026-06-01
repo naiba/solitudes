@@ -136,6 +136,20 @@ func ThemeStaticRoot(kind, name string) string {
 	return themeResourcePath(kind, name, "static")
 }
 
+type tocTemplateData struct {
+	Items  []*model.ArticleTOC
+	Prefix string
+}
+
+func newTOCTemplateData(items []*model.ArticleTOC, prefix string) tocTemplateData {
+	return tocTemplateData{Items: items, Prefix: prefix}
+}
+
+func tocNumberLabel(prefix string, index int) string {
+	// Folio prints TOC numbers explicitly, so nested templates must carry the parent prefix instead of restarting at 1.
+	return fmt.Sprintf("%s%d.", prefix, index+1)
+}
+
 // themeStaticHandler handles static file requests dynamically based on kind and theme
 func themeStaticHandler(c *fiber.Ctx) error {
 	kind := c.Params("kind")
@@ -650,6 +664,8 @@ func setFuncMap(engine *html.Engine) {
 		"add": func(a, b int) int {
 			return a + b
 		},
+		"tocTemplateData": newTOCTemplateData,
+		"tocNumberLabel":  tocNumberLabel,
 		"uint2str": func(i uint) string {
 			return fmt.Sprintf("%d", i)
 		},

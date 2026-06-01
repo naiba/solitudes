@@ -72,7 +72,7 @@
             <details open>
                 <summary class="section-label">{{.Tr.T "toc"}}</summary>
                 <ol class="toc">
-                    {{template "site/article_title_item" .Data.article.Toc}}
+                    {{template "site/article_title_item" (tocTemplateData .Data.article.Toc "")}}
                 </ol>
             </details>
         </div>
