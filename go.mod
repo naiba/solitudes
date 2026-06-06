@@ -3,12 +3,12 @@ module github.com/naiba/solitudes
 go 1.25.0
 
 require (
-	github.com/88250/lute v0.0.0-20260104085649-d01ee1896e5f
+	github.com/88250/lute v1.7.6
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047
-	github.com/blevesearch/bleve/v2 v2.5.7
+	github.com/blevesearch/bleve/v2 v2.6.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.30.2
+	github.com/go-playground/validator/v10 v10.30.3
 	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/gofiber/template/html/v2 v2.1.3
 	github.com/gorilla/feeds v1.2.0
@@ -24,7 +24,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/yanyiwu/gojieba v1.4.7
 	go.uber.org/dig v1.19.0
-	golang.org/x/crypto v0.50.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/sync v0.20.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 	gopkg.in/yaml.v3 v3.0.1
@@ -45,7 +45,7 @@ require (
 	github.com/bits-and-blooms/bitset v1.24.4 // indirect
 	github.com/blevesearch/bleve_index_api v1.3.11 // indirect
 	github.com/blevesearch/geo v0.2.5 // indirect
-	github.com/blevesearch/go-faiss v1.0.35 // indirect
+	github.com/blevesearch/go-faiss v1.1.0 // indirect
 	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
 	github.com/blevesearch/gtreap v0.1.1 // indirect
 	github.com/blevesearch/mmap-go v1.2.0 // indirect
@@ -60,6 +60,7 @@ require (
 	github.com/blevesearch/zapx/v14 v14.4.3 // indirect
 	github.com/blevesearch/zapx/v15 v15.4.3 // indirect
 	github.com/blevesearch/zapx/v16 v16.3.4 // indirect
+	github.com/blevesearch/zapx/v17 v17.1.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
@@ -111,9 +112,9 @@ require (
 	github.com/vanng822/go-premailer v1.33.0 // indirect
 	go.etcd.io/bbolt v1.4.3 // indirect
 	golang.org/x/image v0.39.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
-	golang.org/x/sys v0.43.0 // indirect
-	golang.org/x/text v0.36.0 // indirect
+	golang.org/x/net v0.54.0 // indirect
+	golang.org/x/sys v0.45.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
