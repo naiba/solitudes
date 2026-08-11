@@ -1,5 +1,5 @@
-github.com/88250/lute v1.7.6 h1:8F4i53POAR+oEkyClsdHYPU1A7Z8rdxfRfjarD+FL9w=
-github.com/88250/lute v1.7.6/go.mod h1:+wUqx/1kdFDbWtxn9LYJlaCOAeol2pjSO6w+WJTVQsg=
+github.com/88250/lute v1.7.7 h1:2fzFOZjX3bAN1lur0M6maoV6jXQ9Td1mq6BsUrr15zo=
+github.com/88250/lute v1.7.7/go.mod h1:mLbeedMhJIKH5UU+Kes/AevfvTXnPGbkJuIK3m5lZf4=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=
 github.com/Masterminds/goutils v1.1.1/go.mod h1:8cTjp+g8YejhMuvIA5y2vz3BpJxksy863GQaJW2MFNU=
 github.com/Masterminds/semver v1.4.2/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=

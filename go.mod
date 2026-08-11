@@ -1,9 +1,9 @@
 module github.com/naiba/solitudes
 
-go 1.25.0
+go 1.26
 
 require (
-	github.com/88250/lute v1.7.6
+	github.com/88250/lute v1.7.7
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047
 	github.com/blevesearch/bleve/v2 v2.6.0
 	github.com/go-playground/locales v0.14.1
