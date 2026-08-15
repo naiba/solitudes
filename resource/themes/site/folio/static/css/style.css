@@ -209,6 +209,9 @@ a:hover {
    ========================================================================== */
 
 .folio-nav a {
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
   background: none;
   border: none;
   position: relative;
@@ -217,6 +220,7 @@ a:hover {
   font-family: var(--font-body);
   font-weight: 500;
   font-size: 0.85rem;
+  line-height: 1;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   /* Reset global link underline for nav */
@@ -226,7 +230,7 @@ a:hover {
 .folio-nav a::after {
   content: '';
   position: absolute;
-  bottom: -2px;
+  bottom: 3px;
   left: 0;
   width: 0;
   height: 1px;
@@ -244,10 +248,29 @@ a:hover {
 
 .folio-nav ul {
   display: flex;
+  align-items: center;
   gap: 2rem;
   list-style: none;
   margin: 0;
   padding: 0;
+}
+
+.folio-nav li {
+  display: flex;
+  height: 44px;
+  align-items: center;
+}
+
+.folio-nav a i,
+.folio-nav .theme-icon {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.folio-nav .theme-toggle-btn {
+  width: 44px;
+  height: 44px;
 }
 
 /* ==========================================================================
@@ -1468,6 +1491,7 @@ body.mobile-menu-open {
   align-items: center;
   justify-content: center;
   font-size: 0.85rem;
+  line-height: 1;
 }
 
 .theme-toggle-btn:hover {

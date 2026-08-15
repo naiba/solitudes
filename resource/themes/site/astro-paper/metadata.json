@@ -2,7 +2,7 @@
     "id": "astro-paper",
     "name": "AstroPaper",
     "author": "奶爸博客",
-    "version": "1.0",
+    "version": "1.0.0",
     "description": "Minimal, responsive, accessible and SEO-friendly blog theme, fork from github.com/satnaing/astro-paper",
     "link": "https://lifelonglearn.ing",
     "config": {
