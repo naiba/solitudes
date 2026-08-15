@@ -44,7 +44,7 @@ func commenterInfoHandler(c *fiber.Ctx) error {
 		var comment model.Comment
 		query := solitudes.System.DB.
 			Select("nickname, email, website").
-			Where("email = ? AND created_at >= ?", email, oneYearAgo)
+			Where("is_spam = ? AND email = ? AND created_at >= ?", false, email, oneYearAgo)
 
 		if nickname != "" {
 			query = query.Where("nickname = ?", nickname)
@@ -74,7 +74,7 @@ func commenterInfoHandler(c *fiber.Ctx) error {
 		var comment model.Comment
 		query := solitudes.System.DB.
 			Select("nickname, email, website").
-			Where("website = ? AND created_at >= ?", website, oneYearAgo)
+			Where("is_spam = ? AND website = ? AND created_at >= ?", false, website, oneYearAgo)
 
 		if nickname != "" {
 			query = query.Where("nickname = ?", nickname)
@@ -102,7 +102,7 @@ func commenterInfoHandler(c *fiber.Ctx) error {
 		var comments []model.Comment
 		err := solitudes.System.DB.
 			Select("nickname, email, website").
-			Where("nickname = ? AND created_at >= ?", nickname, oneYearAgo).
+			Where("is_spam = ? AND nickname = ? AND created_at >= ?", false, nickname, oneYearAgo).
 			Order("created_at DESC").
 			Limit(10).
 			Find(&comments).Error

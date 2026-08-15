@@ -110,9 +110,7 @@
 
         <!-- Publish Button -->
         <div class="mt-6 flex justify-end">
-            <button 
-                onclick="publish(this)" 
-                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+            <button type="button" onclick="publish(this)" class="admin-button primary">
                 <i class="fa-solid fa-paper-plane mr-2"></i>{{.Tr.T "publish"}}
             </button>
         </div>
@@ -122,12 +120,21 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@3.11.3/dist/index.min.css" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/vditor@3.11.3/dist/index.min.js" crossorigin="anonymous"></script>
 <script>
-    window.onbeforeunload = function (e) { var e = e || window.event; if (e) { e.returnValue = '{{.Tr.T "ensure_content_saved"}}'; } return '{{.Tr.T "ensure_content_saved"}}'; };
+    let unsavedChanges = false;
+    window.addEventListener('beforeunload', function (event) {
+        if (!unsavedChanges) return;
+        event.preventDefault();
+        event.returnValue = '{{.Tr.T "ensure_content_saved"}}';
+    });
     const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const vditor = new Vditor('editSection', {
         theme: isDarkMode ? 'dark' : 'classic',
         after() {
             vditor.setValue('{{.Data.article.Content}}')
+            unsavedChanges = false
+        },
+        input() {
+            unsavedChanges = true
         },
         upload: {
             accept: 'image/*,.mp4,.rar,.zip,.wav,.mp3',
@@ -136,6 +143,8 @@
         },
         height: 500,
     })
+    document.querySelector('.editor-container').addEventListener('input', () => { unsavedChanges = true; });
+    document.querySelector('.editor-container').addEventListener('change', () => { unsavedChanges = true; });
     // Listen for system theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
         vditor.setTheme(e.matches ? 'dark' : 'classic');
@@ -160,6 +169,7 @@
         }
         $("#inputCID").val() && (article.book_refer = $("#inputCID").val())
         $.post("", article, (data, status) => {
+            unsavedChanges = false
             window.location.href = "/" + article.slug
         }).fail((err) => {
             alert('{{.Tr.T "publish_failed"}} ' + err.responseText)

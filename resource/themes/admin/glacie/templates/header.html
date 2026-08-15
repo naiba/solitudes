@@ -1,6 +1,6 @@
 {{define "admin/header"}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{.Tr.Locale}}">
 <head>
     <title>{{.Title}}</title>
     {{template "admin/css"}}
@@ -22,11 +22,11 @@
             {{.Conf.Site.SpaceName}}
         </a>
 
-        <button class="nav-mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('mobile-open')">
-            <i class="fas fa-bars"></i>
+        <button type="button" class="nav-mobile-toggle" aria-label="{{.Tr.T "menu"}}" aria-controls="admin-navigation" aria-expanded="false">
+            <i class="fas fa-bars" aria-hidden="true"></i>
         </button>
 
-        <ul class="nav-links">
+        <ul class="nav-links" id="admin-navigation">
             <li><a href="/admin/" class="nav-link{{if eq .Path "/admin/"}} active{{end}}">
                 <i class="fas fa-chart-pie"></i> {{.Tr.T "dashboard"}}
             </a></li>
@@ -51,17 +51,49 @@
         </ul>
 
         <div class="nav-user">
-            <a href="/" class="btn-glass small" target="_blank" title="{{.Tr.T "view_site"}}">
+            <a href="/" class="btn-glass small" target="_blank" rel="noopener noreferrer" title="{{.Tr.T "view_site"}}">
                 <i class="fas fa-external-link-alt"></i>
             </a>
             <span class="nav-user-name">{{.Conf.User.Nickname}}</span>
             <form action="/logout" method="POST" style="margin:0">
-                <button type="submit" class="btn-glass small danger" title="Logout">
+                <button type="submit" class="btn-glass small danger" title="{{.Tr.T "logout"}}" aria-label="{{.Tr.T "logout"}}">
                     <i class="fas fa-right-from-bracket"></i>
                 </button>
             </form>
         </div>
     </nav>
+
+    <script>
+    (function() {
+        const toggle = document.querySelector('.nav-mobile-toggle');
+        const navigation = document.getElementById('admin-navigation');
+        if (!toggle || !navigation) return;
+
+        const closeNavigation = function() {
+            navigation.classList.remove('mobile-open');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.querySelector('i').className = 'fas fa-bars';
+        };
+
+        toggle.addEventListener('click', function() {
+            const isOpen = navigation.classList.toggle('mobile-open');
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            toggle.querySelector('i').className = isOpen ? 'fas fa-xmark' : 'fas fa-bars';
+        });
+        navigation.addEventListener('click', function(event) {
+            if (event.target.closest('a')) closeNavigation();
+        });
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeNavigation();
+                toggle.focus();
+            }
+        });
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) closeNavigation();
+        });
+    })();
+    </script>
 
     <main>
 {{end}}

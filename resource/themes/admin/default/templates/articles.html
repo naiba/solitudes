@@ -8,7 +8,8 @@
     </div>
 
     <div class="wf-card">
-        <div class="overflow-x-auto">
+        {{if .Data.articles}}
+        <div class="table-scroll">
             <table class="wf-table">
                 <thead>
                     <tr>
@@ -26,7 +27,7 @@
                     {{range .Data.articles}}
                     <tr>
                         <td class="text-gray-600">{{.ID}}</td>
-                        <td><a target="_blank" href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a></td>
+                        <td><a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a></td>
                         <td class="text-gray-600">{{.ReadNum}}</td>
                         <td class="text-gray-500 text-sm">{{.Slug}}</td>
                         <td class="text-center">{{if .IsBook}}<i class="fa-solid fa-check text-green-600"></i>{{end}}</td>
@@ -34,10 +35,10 @@
                         <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                         <td class="actions-cell">
                             <div class="flex gap-2">
-                                <a href="/admin/publish?id={{.ID}}" class="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600">
+                                <a href="/admin/publish?id={{.ID}}" class="admin-button compact">
                                     <i class="fa-solid fa-pen-to-square"></i> {{$.Tr.T "edit"}}
                                 </a>
-                                <button onclick="deleteArticle('{{.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+                                <button type="button" onclick="deleteArticle('{{.ID}}')" class="admin-button compact danger">
                                     <i class="fa-solid fa-trash"></i> {{$.Tr.T "delete"}}
                                 </button>
                             </div>
@@ -47,15 +48,25 @@
                 </tbody>
             </table>
         </div>
-        <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
-            <a href="?page={{.Data.page.PrevPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+        <nav class="admin-pagination" aria-label="{{.Tr.T "page_number" (int2str .Data.page.Page)}}">
+            {{if and (gt .Data.page.PrevPage 0) (ne .Data.page.PrevPage .Data.page.Page)}}
+            <a href="?page={{.Data.page.PrevPage}}" class="admin-button">
                 <i class="fa-solid fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
-            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
-            <a href="?page={{.Data.page.NextPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+            {{end}}
+            <span class="admin-pagination-current" aria-current="page">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
+            {{if and (gt .Data.page.NextPage 0) (ne .Data.page.NextPage .Data.page.Page)}}
+            <a href="?page={{.Data.page.NextPage}}" class="admin-button">
                 {{.Tr.T "next"}} <i class="fa-solid fa-chevron-right"></i>
             </a>
+            {{end}}
+        </nav>
+        {{else}}
+        <div class="admin-empty-state">
+            <i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+            <p>{{.Tr.T "no_data"}}</p>
         </div>
+        {{end}}
     </div>
 </div>
 

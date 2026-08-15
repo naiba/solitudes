@@ -4,6 +4,7 @@
     --foreground: #282728;
     --accent: #006cac;
     --accent-hover: #005a94;
+    --accent-contrast: #ffffff;
     --muted: #f3f4f6;
     --border: #c6dae9; /* Light mode theme border */
 }
@@ -15,6 +16,7 @@
         --foreground: #eaedf3;
         --accent: #ff6b01;
         --accent-hover: #e55a00;
+        --accent-contrast: #211309;
         --muted: #2d3343;
         --border: #6a3b1a; /* Dark mode theme border */
     }
@@ -26,6 +28,7 @@
     --foreground: #eaedf3;
     --accent: #ff6b01;
     --accent-hover: #e55a00;
+    --accent-contrast: #211309;
     --muted: #2d3343;
     --border: #6a3b1a;
 }
@@ -36,10 +39,52 @@
 .text-accent { color: var(--accent); }
 .bg-muted { background-color: var(--muted); }
 .border-border { border-color: var(--border) !important; }
-.bg-accent { background-color: var(--accent); }
+.bg-accent {
+    background-color: var(--accent);
+    color: var(--accent-contrast);
+}
 .hover\:text-accent:hover { color: var(--accent); }
 .hover\:bg-accent-hover:hover { background-color: var(--accent-hover); }
 .decoration-accent { text-decoration-color: var(--accent); }
+
+/* Tailwind's static CDN build does not know theme-defined colors or opacity suffixes. */
+.text-accent-hover { color: var(--accent-hover); }
+.text-foreground\/10 { color: color-mix(in srgb, var(--foreground) 10%, transparent); }
+.text-foreground\/30 { color: color-mix(in srgb, var(--foreground) 30%, transparent); }
+.text-foreground\/40 { color: color-mix(in srgb, var(--foreground) 40%, transparent); }
+.text-foreground\/50 { color: color-mix(in srgb, var(--foreground) 50%, transparent); }
+.text-foreground\/60 { color: color-mix(in srgb, var(--foreground) 60%, transparent); }
+.text-foreground\/70 { color: color-mix(in srgb, var(--foreground) 70%, transparent); }
+.text-foreground\/80 { color: color-mix(in srgb, var(--foreground) 80%, transparent); }
+.text-foreground\/90 { color: color-mix(in srgb, var(--foreground) 90%, transparent); }
+.bg-accent\/5 { background-color: color-mix(in srgb, var(--accent) 5%, transparent); }
+.bg-accent\/10 { background-color: color-mix(in srgb, var(--accent) 10%, transparent); }
+.bg-accent\/20 { background-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+.bg-muted\/20 { background-color: color-mix(in srgb, var(--muted) 20%, transparent); }
+.bg-muted\/30 { background-color: color-mix(in srgb, var(--muted) 30%, transparent); }
+.bg-muted\/50 { background-color: color-mix(in srgb, var(--muted) 50%, transparent); }
+.border-accent { border-color: var(--accent); }
+.border-accent\/20 { border-color: color-mix(in srgb, var(--accent) 20%, transparent); }
+.border-border\/20 { border-color: color-mix(in srgb, var(--border) 20%, transparent); }
+.border-border\/30 { border-color: color-mix(in srgb, var(--border) 30%, transparent); }
+.border-border\/40 { border-color: color-mix(in srgb, var(--border) 40%, transparent); }
+.border-border\/50 { border-color: color-mix(in srgb, var(--border) 50%, transparent); }
+.hover\:bg-accent:hover {
+    color: var(--accent-contrast);
+    background-color: var(--accent);
+}
+.hover\:bg-accent\/5:hover { background-color: color-mix(in srgb, var(--accent) 5%, transparent); }
+.hover\:bg-accent\/10:hover { background-color: color-mix(in srgb, var(--accent) 10%, transparent); }
+.hover\:bg-background:hover { background-color: var(--background); }
+.hover\:bg-muted\/40:hover { background-color: color-mix(in srgb, var(--muted) 40%, transparent); }
+.hover\:border-accent:hover { border-color: var(--accent); }
+.hover\:border-accent\/30:hover { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.hover\:text-accent-hover:hover { color: var(--accent-hover); }
+.hover\:text-white:hover { color: var(--accent-contrast); }
+.text-\[8px\] { font-size: 8px; }
+.text-\[10px\] { font-size: 10px; }
+.text-\[11px\] { font-size: 11px; }
+.text-\[1\.05rem\] { font-size: 1.05rem; }
 
 /* Navigation Active State */
 .nav-link-active {
@@ -107,6 +152,49 @@ ul, li {
 /* Global Reset & Fixes */
 * {
     box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+
+header button,
+#comment-form button[type="submit"] {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+#comment-form input:not([type="hidden"]),
+#comment-form textarea,
+.search-input {
+    color: var(--foreground);
+    background: var(--background);
+}
+
+#comment-form input:not([type="hidden"]):focus,
+#comment-form textarea:focus,
+.search-input:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: wait;
 }
 
 
@@ -332,6 +420,34 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+}
+
+@media (max-width: 639px) {
+    #mobile-menu a,
+    #mobile-menu button {
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+    }
+
+    #comment-form button[type="submit"] {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 /* Typography */

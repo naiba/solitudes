@@ -16,6 +16,7 @@ type Comment struct {
 	IP        string  `gorm:"inet"`
 	UserAgent string
 	IsAdmin   bool
+	IsSpam    bool `gorm:"not null;default:false;index"`
 	// EmailReadStatus tracks email notification read status: nil (not sent/not applicable), "unread", "read"
 	EmailReadStatus *string `gorm:"type:varchar(20);default:NULL"`
 	// EmailTrackingToken is used to verify email tracking requests (prevents spoofing)
@@ -29,4 +30,10 @@ type Comment struct {
 // TableName specifies the table name for Comment model
 func (Comment) TableName() string {
 	return "comments"
+}
+
+// CountsTowardArticle reports whether the comment contributes to the public
+// root-comment count stored on its article.
+func (c Comment) CountsTowardArticle() bool {
+	return c.ReplyTo == nil && !c.IsSpam
 }

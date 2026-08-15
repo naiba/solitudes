@@ -38,7 +38,7 @@
             <div class="wf-card-body">
                 <div class="flex flex-col gap-2">
                     <div id="topicContent"></div>
-                    <button onclick="publishTopic(this)" class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition self-end">
+                    <button type="button" onclick="publishTopic(this)" class="admin-button primary self-end">
                         <i class="fa-solid fa-paper-plane mr-2"></i>{{.Tr.T "publish_now"}}
                     </button>
                 </div>
@@ -95,10 +95,10 @@
                 {{.Tr.T "quick_actions"}}
             </div>
             <div class="wf-card-body space-y-3">
-                <a href="/admin/publish" class="block w-full px-4 py-3 text-center bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                <a href="/admin/publish" class="admin-button primary w-full">
                     <i class="fa-solid fa-plus mr-2"></i>{{.Tr.T "compose"}}
                 </a>
-                <button onclick="rebuildFullTextSearch()" class="block w-full px-4 py-3 text-center bg-red-600 text-white rounded hover:bg-red-700 transition">
+                <button type="button" onclick="rebuildFullTextSearch()" class="admin-button danger w-full">
                     <i class="fa-solid fa-rotate mr-2"></i>{{.Tr.T "rebuild_fulltext_search_data"}}
                 </button>
             </div>

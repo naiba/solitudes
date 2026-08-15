@@ -6,13 +6,27 @@
     <p class="page-subtitle">{{.Tr.T "comments_subtitle"}}</p>
 </div>
 
+<nav class="comment-filter-bar" aria-label="{{.Tr.T "status"}}">
+    <a href="?status=all" class="comment-filter-link{{if eq .Data.status "all"}} active{{end}}">
+        {{.Tr.T "all_comments"}} <span>{{.Data.total_count}}</span>
+    </a>
+    <a href="?status=visible" class="comment-filter-link{{if eq .Data.status "visible"}} active{{end}}">
+        {{.Tr.T "visible_comments"}} <span>{{.Data.visible_count}}</span>
+    </a>
+    <a href="?status=spam" class="comment-filter-link{{if eq .Data.status "spam"}} active{{end}}">
+        {{.Tr.T "spam_comments"}} <span>{{.Data.spam_count}}</span>
+    </a>
+</nav>
+
 <div class="wf-card-static">
     {{if .Data.comments}}
+    <div class="table-scroll">
     <table class="wf-table">
         <thead>
             <tr>
                 <th>{{.Tr.T "author"}}</th>
                 <th>{{.Tr.T "content"}}</th>
+                <th>{{.Tr.T "status"}}</th>
                 <th>{{.Tr.T "article"}}</th>
                 <th>{{.Tr.T "email_status"}}</th>
                 <th>{{.Tr.T "created_at"}}</th>
@@ -21,7 +35,7 @@
         </thead>
         <tbody>
             {{range .Data.comments}}
-            <tr>
+            <tr{{if .IsSpam}} class="spam-row"{{end}}>
                 <td>
                     <div style="font-weight: 500; color: var(--text-primary);">
                         {{.Nickname}}
@@ -29,13 +43,21 @@
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-muted);">{{.Email}}</div>
                     {{if .Website}}<div style="font-size: 0.75rem; color: var(--text-muted);">{{.Website}}</div>{{end}}
+                    <div class="comment-ip"><span>{{$.Tr.T "ip_address"}}:</span> <code>{{if .IP}}{{.IP}}{{else}}—{{end}}</code></div>
                 </td>
                 <td style="max-width: 300px;">
                     <span class="truncate" style="display: inline-block; max-width: 280px;">{{substr .Content 0 80}}</span>
                 </td>
                 <td>
+                    {{if .IsSpam}}
+                    <span class="badge danger"><i class="fas fa-ban"></i> {{$.Tr.T "spam"}}</span>
+                    {{else}}
+                    <span class="badge success"><i class="fas fa-circle-check"></i> {{$.Tr.T "visible_comments"}}</span>
+                    {{end}}
+                </td>
+                <td>
                     {{if .Article}}
-                    <a href="/{{.Article.Slug}}" target="_blank">{{substr .Article.Title 0 30}}</a>
+                    <a href="/{{.Article.Slug}}" target="_blank" rel="noopener noreferrer">{{substr .Article.Title 0 30}}</a>
                     {{end}}
                 </td>
                 <td>
@@ -53,28 +75,35 @@
                         <button class="btn-glass small danger" onclick="deleteComment('{{.ArticleID}}', '{{.ID}}')">
                             <i class="fas fa-trash"></i> {{$.Tr.T "delete"}}
                         </button>
-                        <button class="btn-glass small" style="color: var(--warning);" onclick="reportSpam('{{.ArticleID}}', '{{.ID}}')">
+                        {{if .IsSpam}}
+                        <button class="btn-glass small success" onclick="restoreSpam('{{.ArticleID}}', '{{.ID}}')">
+                            <i class="fas fa-rotate-left"></i> {{$.Tr.T "restore"}}
+                        </button>
+                        {{else}}
+                        <button class="btn-glass small warning" onclick="reportSpam('{{.ArticleID}}', '{{.ID}}')">
                             <i class="fas fa-ban"></i> {{$.Tr.T "spam"}}
                         </button>
+                        {{end}}
                     </div>
                 </td>
             </tr>
             {{end}}
         </tbody>
     </table>
+    </div>
 
     <!-- Pagination -->
     {{if .Data.page}}
     <div class="pagination">
         {{if gt .Data.page.PrevPage 0}}
             {{if ne .Data.page.PrevPage .Data.page.Page}}
-            <a href="/admin/comments?page={{.Data.page.PrevPage}}"><i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}</a>
+            <a href="/admin/comments?status={{.Data.status}}&page={{.Data.page.PrevPage}}"><i class="fas fa-chevron-left"></i> {{.Tr.T "previous"}}</a>
             {{end}}
         {{end}}
         <span class="current">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
         {{if gt .Data.page.NextPage 0}}
             {{if ne .Data.page.NextPage .Data.page.Page}}
-            <a href="/admin/comments?page={{.Data.page.NextPage}}">{{.Tr.T "next"}} <i class="fas fa-chevron-right"></i></a>
+            <a href="/admin/comments?status={{.Data.status}}&page={{.Data.page.NextPage}}">{{.Tr.T "next"}} <i class="fas fa-chevron-right"></i></a>
             {{end}}
         {{end}}
     </div>
@@ -97,6 +126,12 @@ function deleteComment(aid, id) {
 function reportSpam(aid, id) {
     if (!confirm('{{.Tr.T "confirm_spam"}}')) return;
     ajaxRequest('POST', '/admin/report-spam?aid=' + aid + '&id=' + id, null, function(resp, err) {
+        if (!err) location.reload();
+    });
+}
+function restoreSpam(aid, id) {
+    if (!confirm('{{.Tr.T "confirm_restore"}}')) return;
+    ajaxRequest('POST', '/admin/restore-spam?aid=' + aid + '&id=' + id, null, function(resp, err) {
         if (!err) location.reload();
     });
 }

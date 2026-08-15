@@ -64,7 +64,7 @@
                                     <h3 class="font-bold text-gray-900">{{$v.Name}}</h3>
                                     <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{{$v.Version}}</span>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">{{$.Tr.T "by"}} <a href="{{$v.Link}}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline" onclick="event.stopPropagation()">{{$v.Author}}</a></p>
+                                <p class="text-xs text-gray-500 mt-1">{{$.Tr.T "by"}} <a href="{{$v.Link}}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 hover:underline" onclick="event.stopPropagation()">{{$v.Author}}</a></p>
                                 <p class="text-sm text-gray-600 mt-2 line-clamp-2" title="{{$v.Description}}">{{$v.Description}}</p>
                             </div>
                         </div>
@@ -85,7 +85,7 @@
                                     <h3 class="font-bold text-gray-900">{{$v.Name}}</h3>
                                     <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{{$v.Version}}</span>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">{{$.Tr.T "by"}} <a href="{{$v.Link}}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline" onclick="event.stopPropagation()">{{$v.Author}}</a></p>
+                                <p class="text-xs text-gray-500 mt-1">{{$.Tr.T "by"}} <a href="{{$v.Link}}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 hover:underline" onclick="event.stopPropagation()">{{$v.Author}}</a></p>
                                 <p class="text-sm text-gray-600 mt-2 line-clamp-2" title="{{$v.Description}}">{{$v.Description}}</p>
                             </div>
                         </div>
@@ -208,7 +208,7 @@
 
         <!-- Save Button -->
         <div class="flex justify-end">
-            <button type="button" onclick="saveSetting(this)" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+            <button type="button" onclick="saveSetting(this)" class="admin-button primary">
                 <i class="fa-solid fa-floppy-disk mr-2"></i>{{.Tr.T "save"}}
             </button>
         </div>
@@ -216,9 +216,29 @@
 </div>
 
 <script>
-    window.onbeforeunload = function (e) { var e = e || window.event; if (e) { e.returnValue = '{{.Tr.T "ensure_content_saved"}}'; } return '{{.Tr.T "ensure_content_saved"}}'; };
+    let settingsDirty = false;
+    const settingsForm = document.getElementById('settingsForm');
+    settingsForm.addEventListener('input', () => { settingsDirty = true; });
+    settingsForm.addEventListener('change', () => { settingsDirty = true; });
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.setAttribute('role', 'radio');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-checked', String(card.classList.contains('border-blue-500')));
+        card.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                card.click();
+            }
+        });
+    });
+    window.addEventListener('beforeunload', function (event) {
+        if (!settingsDirty) return;
+        event.preventDefault();
+        event.returnValue = '{{.Tr.T "ensure_content_saved"}}';
+    });
 
     function selectTheme(type, id, el) {
+        settingsDirty = true;
         // Update hidden input
         if (type === 'site') {
             document.getElementById('selTheme').value = id;
@@ -227,9 +247,11 @@
             Array.from(container.children).forEach(card => {
                 card.classList.remove('border-blue-500', 'ring-2', 'ring-blue-200');
                 card.classList.add('border-gray-200');
+                card.setAttribute('aria-checked', 'false');
             });
             el.classList.remove('border-gray-200');
             el.classList.add('border-blue-500', 'ring-2', 'ring-blue-200');
+            el.setAttribute('aria-checked', 'true');
         } else if (type === 'admin') {
             document.getElementById('selAdminTheme').value = id;
             // Update visual state
@@ -237,9 +259,11 @@
             Array.from(container.children).forEach(card => {
                 card.classList.remove('border-blue-500', 'ring-2', 'ring-blue-200');
                 card.classList.add('border-gray-200');
+                card.setAttribute('aria-checked', 'false');
             });
             el.classList.remove('border-gray-200');
             el.classList.add('border-blue-500', 'ring-2', 'ring-blue-200');
+            el.setAttribute('aria-checked', 'true');
         }
     }
 
@@ -302,6 +326,7 @@
             body: formData,
         }).then((resp) => {
             if (resp.status == 200) {
+                settingsDirty = false
                 window.location.reload()
             } else {
                 resp.text().then(err => {

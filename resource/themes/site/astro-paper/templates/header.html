@@ -55,7 +55,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
-    <link rel="stylesheet" href="/static/site/astro-paper/css/custom.css?v2026030201">
+    <link rel="stylesheet" href="/static/site/astro-paper/css/custom.css?v2026081501">
     
     <link rel="preconnect" href="https://fonts.googleapis.cn">
     <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
@@ -119,7 +119,7 @@
             z-index: 999;
             padding: 1rem;
             background: var(--accent);
-            color: white;
+            color: var(--accent-contrast);
             text-decoration: none;
             border-radius: 0.5rem;
         }
@@ -147,8 +147,8 @@
                 </a>
                 
                 <nav class="flex items-center gap-4">
-                    <button id="mobile-menu-btn" class="sm:hidden p-2 text-foreground hover:text-accent" aria-label="{{.Tr.T "toggle_menu"}}">
-                        <i class="fa-solid fa-bars text-xl"></i>
+                    <button type="button" id="mobile-menu-btn" class="sm:hidden p-2 text-foreground hover:text-accent" aria-label="{{.Tr.T "toggle_menu"}}" aria-controls="mobile-menu" aria-expanded="false">
+                        <i class="fa-solid fa-bars text-xl" aria-hidden="true"></i>
                     </button>
                     
                     <ul id="desktop-menu" class="hidden sm:flex items-center gap-2">
@@ -162,7 +162,7 @@
                         </li>
                         {{end}}
                         <li>
-                            <button onclick="window.toggleTheme()" class="px-3 py-2 text-sm font-medium hover:text-accent transition" aria-label="{{.Tr.T "toggle_theme"}}">
+                            <button type="button" onclick="window.toggleTheme()" class="px-3 py-2 text-sm font-medium hover:text-accent transition" aria-label="{{.Tr.T "toggle_theme"}}">
                                 <i class="theme-icon theme-icon-light fa-solid fa-sun"></i>
                                 <i class="theme-icon theme-icon-dark fa-solid fa-moon"></i>
                                 <i class="theme-icon theme-icon-auto fa-solid fa-circle-half-stroke"></i>
@@ -182,7 +182,7 @@
                 </li>
                 {{end}}
                 <li>
-                    <button onclick="window.toggleTheme()" class="flex items-center gap-3 w-full text-left px-3 py-2 hover:text-accent" aria-label="{{.Tr.T "toggle_theme"}}">
+                    <button type="button" onclick="window.toggleTheme()" class="flex items-center gap-3 w-full text-left px-3 py-2 hover:text-accent" aria-label="{{.Tr.T "toggle_theme"}}">
                         <div class="w-5 text-center">
                             <i class="theme-icon theme-icon-light fa-solid fa-sun"></i>
                             <i class="theme-icon theme-icon-dark fa-solid fa-moon"></i>
@@ -200,7 +200,7 @@
 {{if ne .Path "/"}}
 {{if .Data.article}}
 <div class="app-layout flex items-center justify-start">
-    <button onclick="history.back()" class="group inline-flex items-center gap-1 hover:text-accent -ms-2 mt-8 mb-2 bg-transparent border-none cursor-pointer text-foreground text-base">
+    <button type="button" onclick="history.back()" class="group inline-flex items-center gap-1 hover:text-accent -ms-2 mt-8 mb-2 bg-transparent border-none cursor-pointer text-foreground text-base">
         <i class="fa-solid fa-chevron-left text-xs group-hover:-translate-x-1 transition-transform"></i>
         <span>{{.Tr.T "go_back"}}</span>
     </button>
@@ -308,9 +308,34 @@
 {{end}}
 
 <script>
-    document.getElementById('mobile-menu-btn').addEventListener('click', function() {
+    (function() {
+        const button = document.getElementById('mobile-menu-btn');
         const mobileMenu = document.getElementById('mobile-menu');
-        mobileMenu.classList.toggle('hidden');
-    });
+        if (!button || !mobileMenu) return;
+
+        const closeMenu = function() {
+            mobileMenu.classList.add('hidden');
+            button.setAttribute('aria-expanded', 'false');
+            button.querySelector('i').className = 'fa-solid fa-bars text-xl';
+        };
+
+        button.addEventListener('click', function() {
+            const isOpen = mobileMenu.classList.toggle('hidden') === false;
+            button.setAttribute('aria-expanded', String(isOpen));
+            button.querySelector('i').className = isOpen ? 'fa-solid fa-xmark text-xl' : 'fa-solid fa-bars text-xl';
+        });
+        mobileMenu.addEventListener('click', function(event) {
+            if (event.target.closest('a')) closeMenu();
+        });
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeMenu();
+                button.focus();
+            }
+        });
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 640) closeMenu();
+        });
+    })();
 </script>
 {{end}}

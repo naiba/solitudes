@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></noscript>
-    <link rel="stylesheet" href="/static/site/folio/css/style.css?v202606010905">
+    <link rel="stylesheet" href="/static/site/folio/css/style.css?v2026081501">
     <link rel="preconnect" href="https://fonts.googleapis.cn" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
@@ -184,7 +184,7 @@
                         <li><a href="{{.link}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}} {{if and .icon (not .name)}}aria-label="{{.link}}" title="{{.link}}"{{end}}>{{if .icon}}<i class="{{.icon}}"></i> {{end}}{{.name}}</a></li>
                         {{end}}
                         <li>
-                            <button onclick="window.toggleTheme()" class="theme-toggle-btn" aria-label="{{.Tr.T "toggle_theme"}}" title="{{.Tr.T "toggle_theme"}}">
+                            <button type="button" onclick="window.toggleTheme()" class="theme-toggle-btn" aria-label="{{.Tr.T "toggle_theme"}}" title="{{.Tr.T "toggle_theme"}}">
                                 <span class="theme-icon">
                                     <span class="icon-auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
                                     <span class="icon-light" style="display:none"><i class="fa-solid fa-sun"></i></span>
@@ -194,18 +194,18 @@
                         </li>
                     </ul>
                 </nav>
-                <button class="mobile-menu-toggle" onclick="document.getElementById('folio-mobile-menu').classList.toggle('active')" aria-label="{{.Tr.T "toggle_menu"}}">
-                    <i class="fa-solid fa-bars"></i>
+                <button type="button" id="folio-menu-toggle" class="mobile-menu-toggle" aria-label="{{.Tr.T "toggle_menu"}}" aria-controls="folio-mobile-menu" aria-expanded="false">
+                    <i class="fa-solid fa-bars" aria-hidden="true"></i>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Mobile menu overlay -->
-    <div id="folio-mobile-menu" class="mobile-menu">
+    <div id="folio-mobile-menu" class="mobile-menu" role="dialog" aria-modal="true" aria-hidden="true">
         <div class="mobile-menu-header">
             <a href="/" class="folio-logo">{{.Conf.Site.SpaceName}}</a>
-            <button onclick="document.getElementById('folio-mobile-menu').classList.remove('active')" aria-label="{{.Tr.T "toggle_menu"}}">
+            <button type="button" id="folio-menu-close" aria-label="{{.Tr.T "toggle_menu"}}">
                 <i class="fa-solid fa-xmark fa-lg"></i>
             </button>
         </div>
@@ -215,7 +215,7 @@
                 <li><a href="{{.link}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}}>{{if .icon}}<i class="{{.icon}}"></i> {{end}}{{.name}}</a></li>
                 {{end}}
                 <li>
-                    <button onclick="window.toggleTheme()" class="theme-toggle-btn">
+                    <button type="button" onclick="window.toggleTheme()" class="theme-toggle-btn" aria-label="{{.Tr.T "toggle_theme"}}">
                         <span class="theme-icon">
                             <span class="icon-auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
                             <span class="icon-light" style="display:none"><i class="fa-solid fa-sun"></i></span>
@@ -228,7 +228,44 @@
         </nav>
     </div>
 
-    <script>window.updateThemeIcons();</script>
+    <script>
+        window.updateThemeIcons();
+        (function() {
+            var menu = document.getElementById('folio-mobile-menu');
+            var toggle = document.getElementById('folio-menu-toggle');
+            var close = document.getElementById('folio-menu-close');
+            if (!menu || !toggle || !close) return;
+
+            function setMenu(open) {
+                menu.classList.toggle('active', open);
+                menu.setAttribute('aria-hidden', String(!open));
+                toggle.setAttribute('aria-expanded', String(open));
+                toggle.querySelector('i').className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+                document.body.classList.toggle('mobile-menu-open', open);
+                if (open) close.focus();
+            }
+
+            toggle.addEventListener('click', function() {
+                setMenu(!menu.classList.contains('active'));
+            });
+            close.addEventListener('click', function() {
+                setMenu(false);
+                toggle.focus();
+            });
+            menu.addEventListener('click', function(event) {
+                if (event.target.closest('a')) setMenu(false);
+            });
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && menu.classList.contains('active')) {
+                    setMenu(false);
+                    toggle.focus();
+                }
+            });
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 768) setMenu(false);
+            });
+        })();
+    </script>
 
     <div class="folio-container folio-body">
 {{end}}

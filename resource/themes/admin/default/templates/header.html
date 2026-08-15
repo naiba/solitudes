@@ -1,6 +1,6 @@
 {{define "admin/header"}}
 <!DOCTYPE html>
-<html>
+<html lang="{{.Tr.Locale}}">
 <head>
     {{template "admin/css"}}
     <style>
@@ -19,7 +19,11 @@
                 <span>Solitudes</span>
             </a>
             
-            <ul class="admin-nav-links">
+            <button type="button" class="admin-mobile-toggle" aria-label="{{.Tr.T "menu"}}" aria-controls="admin-navigation" aria-expanded="false">
+                <i class="fa-solid fa-bars" aria-hidden="true"></i>
+            </button>
+
+            <ul class="admin-nav-links" id="admin-navigation">
                 <li><a href="/admin" class="{{if eq .Path "/admin"}}active{{end}}">
                     <i class="fa-solid fa-gauge"></i>
                     <span>{{.Tr.T "dashboard"}}</span>
@@ -51,7 +55,7 @@
             </ul>
             
             <div class="admin-user-menu">
-                <a href="/" target="_blank" class="text-gray-600 hover:text-gray-900 transition">
+                <a href="/" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-gray-900 transition" title="{{.Tr.T "view_site"}}">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span class="hidden sm:inline ml-1">{{.Tr.T "view_site"}}</span>
                 </a>
@@ -60,7 +64,7 @@
                     <span class="hidden sm:inline text-sm text-gray-700">{{.Conf.User.Nickname}}</span>
                 </div>
                 <form method="POST" action="/logout" style="display: inline;">
-                    <button type="submit" class="text-gray-600 hover:text-red-600 transition">
+                    <button type="submit" class="text-gray-600 hover:text-red-600 transition" title="{{.Tr.T "logout"}}" aria-label="{{.Tr.T "logout"}}">
                         <i class="fa-solid fa-right-from-bracket"></i>
                     </button>
                 </form>
@@ -74,4 +78,35 @@
         <div class="loading-overlay" id="loadingOverlay">
             <div class="loading-spinner"></div>
         </div>
+    <script>
+        (function () {
+            const toggle = document.querySelector('.admin-mobile-toggle');
+            const navigation = document.getElementById('admin-navigation');
+            if (!toggle || !navigation) return;
+
+            const closeNavigation = () => {
+                navigation.classList.remove('mobile-open');
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.querySelector('i').className = 'fa-solid fa-bars';
+            };
+
+            toggle.addEventListener('click', () => {
+                const isOpen = navigation.classList.toggle('mobile-open');
+                toggle.setAttribute('aria-expanded', String(isOpen));
+                toggle.querySelector('i').className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+            });
+            navigation.addEventListener('click', event => {
+                if (event.target.closest('a')) closeNavigation();
+            });
+            document.addEventListener('keydown', event => {
+                if (event.key === 'Escape') {
+                    closeNavigation();
+                    toggle.focus();
+                }
+            });
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 768) closeNavigation();
+            });
+        })();
+    </script>
 {{end}}

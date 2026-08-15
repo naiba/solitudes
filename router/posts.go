@@ -68,7 +68,7 @@ func posts(c *fiber.Ctx) error {
 		// 如果存在 Topic tag，加载前 5 条评论
 		if articles[i].IsTopic() {
 			pagination.Paging(&pagination.Param{
-				DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", articles[i].ID),
+				DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", articles[i].ID),
 				Limit:   5,
 				OrderBy: []string{"created_at DESC"},
 			}, &articles[i].Comments)
@@ -289,7 +289,7 @@ func tags(c *fiber.Ctx) error {
 		// 如果存在 Topic tag，加载前 5 条评论
 		if articles[i].IsTopic() {
 			pagination.Paging(&pagination.Param{
-				DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", articles[i].ID),
+				DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", articles[i].ID),
 				Limit:   5,
 				OrderBy: []string{"created_at DESC"},
 			}, &articles[i].Comments)

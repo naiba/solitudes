@@ -7,13 +7,27 @@
         <p class="page-subtitle">{{.Tr.T "comments_subtitle"}}</p>
     </div>
 
+    <nav class="comment-filter-bar" aria-label="{{.Tr.T "status"}}">
+        <a href="?status=all" class="comment-filter-link{{if eq .Data.status "all"}} active{{end}}">
+            {{.Tr.T "all_comments"}} <span>{{.Data.total_count}}</span>
+        </a>
+        <a href="?status=visible" class="comment-filter-link{{if eq .Data.status "visible"}} active{{end}}">
+            {{.Tr.T "visible_comments"}} <span>{{.Data.visible_count}}</span>
+        </a>
+        <a href="?status=spam" class="comment-filter-link{{if eq .Data.status "spam"}} active{{end}}">
+            {{.Tr.T "spam_comments"}} <span>{{.Data.spam_count}}</span>
+        </a>
+    </nav>
+
     <div class="wf-card">
-        <div class="overflow-x-auto">
+        {{if .Data.comments}}
+        <div class="table-scroll">
             <table class="wf-table">
                 <thead>
                     <tr>
                         <th>ID</th>
                         <th>{{.Tr.T "content"}}</th>
+                        <th>{{.Tr.T "status"}}</th>
                         <th>{{.Tr.T "author"}}</th>
                         <th>{{.Tr.T "article"}}</th>
                         <th>{{.Tr.T "created_at"}}</th>
@@ -23,31 +37,45 @@
                 </thead>
                 <tbody>
                     {{range .Data.comments}}
-                    <tr>
+                    <tr{{if .IsSpam}} class="spam-row"{{end}}>
                         <td class="text-gray-600">{{.ID}}</td>
-                        <td class="max-w-md truncate">{{.Content}}</td>
+                        <td class="max-w-md truncate" title="{{.Content}}">{{.Content}}</td>
+                        <td>
+                            {{if .IsSpam}}
+                            <span class="comment-status-badge spam"><i class="fa-solid fa-ban"></i> {{$.Tr.T "spam"}}</span>
+                            {{else}}
+                            <span class="comment-status-badge visible"><i class="fa-solid fa-circle-check"></i> {{$.Tr.T "visible_comments"}}</span>
+                            {{end}}
+                        </td>
                         <td class="text-sm">
                             <div class="font-medium">{{.Nickname}}</div>
                             <div class="text-gray-500 text-xs">{{.Email}}</div>
-                            {{if .Website}}<div class="text-blue-600 text-xs">{{.Website}}</div>{{end}}
+                            {{if .Website}}<div class="text-xs"><a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener noreferrer" class="text-blue-600 hover:underline">{{.Website}}</a></div>{{end}}
+                            <div class="comment-ip"><span>{{$.Tr.T "ip_address"}}:</span> <code>{{if .IP}}{{.IP}}{{else}}—{{end}}</code></div>
                         </td>
-                        <td><a target="_blank" href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline text-sm">{{.Article.Title}}</a></td>
+                        <td><a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline text-sm">{{.Article.Title}}</a></td>
                         <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                         <td class="text-center">
                             {{if ptrStrEq .EmailReadStatus "read"}}
-                            <i class="fa-solid fa-eye" style="color: #10b981;" title="{{$.Tr.T "email_read"}}"></i>
+                            <i class="fa-solid fa-eye text-green-600" title="{{$.Tr.T "email_read"}}"></i>
                             {{else if ptrStrEq .EmailReadStatus "unread"}}
-                            <i class="fa-solid fa-eye-slash" style="color: #f59e0b;" title="{{$.Tr.T "email_unread"}}"></i>
+                            <i class="fa-solid fa-eye-slash text-orange-500" title="{{$.Tr.T "email_unread"}}"></i>
                             {{end}}
                         </td>
                         <td class="actions-cell">
                             <div class="flex gap-2">
-                                <button onclick="deleteComment('{{.Article.ID}}','{{.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+                                <button type="button" onclick="deleteComment('{{.Article.ID}}','{{.ID}}')" class="admin-button compact danger">
                                     <i class="fa-solid fa-trash"></i> {{$.Tr.T "delete"}}
                                 </button>
-                                <button onclick="reportSpam('{{.Article.ID}}','{{.ID}}')" class="px-3 py-1 text-sm bg-orange-500 text-white rounded hover:bg-orange-600">
+                                {{if .IsSpam}}
+                                <button type="button" onclick="restoreSpam('{{.Article.ID}}','{{.ID}}')" class="admin-button compact success">
+                                    <i class="fa-solid fa-rotate-left"></i> {{$.Tr.T "restore"}}
+                                </button>
+                                {{else}}
+                                <button type="button" onclick="reportSpam('{{.Article.ID}}','{{.ID}}')" class="admin-button compact spam">
                                     <i class="fa-solid fa-triangle-exclamation"></i> {{$.Tr.T "spam"}}
                                 </button>
+                                {{end}}
                             </div>
                         </td>
                     </tr>
@@ -55,15 +83,25 @@
                 </tbody>
             </table>
         </div>
-        <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
-            <a href="?page={{.Data.page.PrevPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+        <nav class="admin-pagination" aria-label="{{.Tr.T "page_number" (int2str .Data.page.Page)}}">
+            {{if and (gt .Data.page.PrevPage 0) (ne .Data.page.PrevPage .Data.page.Page)}}
+            <a href="?status={{.Data.status}}&page={{.Data.page.PrevPage}}" class="admin-button">
                 <i class="fa-solid fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
-            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
-            <a href="?page={{.Data.page.NextPage}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+            {{end}}
+            <span class="admin-pagination-current" aria-current="page">{{.Tr.T "page_number" (int2str .Data.page.Page)}}</span>
+            {{if and (gt .Data.page.NextPage 0) (ne .Data.page.NextPage .Data.page.Page)}}
+            <a href="?status={{.Data.status}}&page={{.Data.page.NextPage}}" class="admin-button">
                 {{.Tr.T "next"}} <i class="fa-solid fa-chevron-right"></i>
             </a>
+            {{end}}
+        </nav>
+        {{else}}
+        <div class="admin-empty-state">
+            <i class="fa-regular fa-comments" aria-hidden="true"></i>
+            <p>{{.Tr.T "no_data"}}</p>
         </div>
+        {{end}}
     </div>
 </div>
 
@@ -87,6 +125,19 @@
         }
         ajaxRequest({
             url: "/admin/report-spam?aid=" + aid + '&id=' + commendId,
+            type: 'POST',
+            success: () => {
+                window.location.reload()
+            }
+        })
+    }
+
+    function restoreSpam(aid, commentId) {
+        if (!confirm('{{.Tr.T "confirm_restore"}}')) {
+            return
+        }
+        ajaxRequest({
+            url: "/admin/restore-spam?aid=" + aid + '&id=' + commentId,
             type: 'POST',
             success: () => {
                 window.location.reload()

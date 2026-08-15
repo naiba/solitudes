@@ -35,12 +35,17 @@
 
             var countdown = 5;
             var countdownEl = document.getElementById('countdown');
-            var timer = setInterval(function () {
+            var updateCountdown = function () {
                 countdownEl.textContent = '{{.Data.auto_redirect}} ' + countdown + ' {{.Data.seconds}}';
+            };
+            updateCountdown();
+            var timer = setInterval(function () {
                 countdown--;
-                if (countdown < 0) {
+                if (countdown <= 0) {
                     clearInterval(timer);
                     window.location.href = targetUrl;
+                } else {
+                    updateCountdown();
                 }
             }, 1000);
 

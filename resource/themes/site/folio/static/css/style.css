@@ -16,6 +16,7 @@
   --bg: #f5f0e8;
   --text: #1c1917;
   --accent: #b45309;
+  --accent-contrast: #ffffff;
   --sage: #6b7f5e;
   --muted: #78716c;
   --border: #d6d0c4;
@@ -32,6 +33,7 @@ html.dark {
   --bg: #0f0f0e;
   --text: #e8e0d0;
   --accent: #d97706;
+  --accent-contrast: #1c1917;
   --sage: #8a9a6c;
   --muted: #a8a29e;
   --border: #2a2926;
@@ -44,6 +46,7 @@ html.dark {
     --bg: #0f0f0e;
     --text: #e8e0d0;
     --accent: #d97706;
+    --accent-contrast: #1c1917;
     --sage: #8a9a6c;
     --muted: #a8a29e;
     --border: #2a2926;
@@ -88,6 +91,24 @@ body::before {
   box-sizing: border-box;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* 全局文本断词：防止长链接/长单词撑破移动端布局 */
 h1, h2, h3, h4, h5, h6, p, a, li, span, div, time {
   overflow-wrap: break-word;
@@ -117,6 +138,43 @@ a {
 
 a:hover {
   background-size: 100% 1px;
+}
+
+.folio-btn {
+  display: inline-flex;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.7rem 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  background-image: none;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.15s ease;
+}
+
+.folio-btn:hover {
+  color: var(--accent-contrast);
+  background-size: 0;
+  filter: brightness(0.92);
+  transform: translateY(-1px);
+}
+
+.folio-btn:active {
+  transform: translateY(0);
+}
+
+.folio-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 
 /* ==========================================================================
@@ -848,7 +906,7 @@ blockquote.pullquote {
 .comment-form button,
 .comment-form .folio-btn {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
   border: none;
   min-height: 44px;
   min-width: 44px;
@@ -968,6 +1026,7 @@ blockquote.pullquote {
 .search-input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 /* ==========================================================================
@@ -1015,10 +1074,23 @@ blockquote.pullquote {
   background: var(--bg);
   z-index: 100;
   padding: 2rem;
+  overflow-y: auto;
+}
+
+body.mobile-menu-open {
+  overflow: hidden;
 }
 
 .mobile-menu-toggle {
   display: none;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
 }
 
 /* ==========================================================================
@@ -1137,6 +1209,23 @@ blockquote.pullquote {
   border-width: 0;
 }
 
+.sr-only:focus,
+.sr-only:focus-visible {
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 9999;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  border-radius: 4px;
+}
+
 /* ==========================================================================
    26. Dark Mode Transitions
    ========================================================================== */
@@ -1189,7 +1278,7 @@ blockquote.pullquote {
   }
 
   .mobile-menu-toggle {
-    display: block;
+    display: inline-flex;
   }
 
   /* Remove alternating offset on mobile */
@@ -1372,7 +1461,12 @@ blockquote.pullquote {
   border: none;
   color: var(--text);
   cursor: pointer;
-  padding: 0.25rem;
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
+  align-items: center;
+  justify-content: center;
   font-size: 0.85rem;
 }
 
@@ -1546,6 +1640,8 @@ blockquote.pullquote {
   color: var(--text);
   cursor: pointer;
   padding: 0.5rem;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .mobile-menu nav ul {
@@ -1566,7 +1662,11 @@ blockquote.pullquote {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
+  display: flex;
+  min-height: 44px;
+  padding: 0.4rem 0;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .mobile-menu nav a:hover,
@@ -1637,7 +1737,7 @@ blockquote.pullquote {
 
 .article-tag:hover {
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 
 .edit-link {
@@ -1703,5 +1803,34 @@ blockquote.pullquote {
   .comment-reply-target {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .search-form-row {
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 420px) {
+  .search-form-row {
+    flex-direction: column;
+  }
+
+  .search-form-row .folio-btn {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

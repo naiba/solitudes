@@ -19,7 +19,7 @@
         var encodedUrl = params.get('url');
 
         if (!encodedUrl) {
-            document.getElementById('redirect-container').innerHTML = '<p>{{.Data.redirect_error_no_url}}</p>';
+            document.getElementById('redirect-container').innerHTML = '<p>{{.Data.error_no_url}}</p>';
             return;
         }
 
@@ -37,16 +37,21 @@
 
             var countdown = 5;
             var countdownEl = document.getElementById('countdown');
+            var updateCountdown = function () {
+                countdownEl.textContent = '{{.Data.auto_redirect}} ' + countdown + ' {{.Data.seconds}}';
+            };
+            updateCountdown();
             var timer = setInterval(function () {
-                countdownEl.textContent = '{{.Data.redirect_auto}} ' + countdown + ' {{.Data.redirect_seconds}}';
                 countdown--;
-                if (countdown < 0) {
+                if (countdown <= 0) {
                     clearInterval(timer);
                     window.location.href = targetUrl;
+                } else {
+                    updateCountdown();
                 }
             }, 1000);
         } catch (e) {
-            document.getElementById('redirect-container').innerHTML = '<p>{{.Data.redirect_error_invalid_url}}</p>';
+            document.getElementById('redirect-container').innerHTML = '<p>{{.Data.error_invalid_url}}</p>';
         }
     })();
 </script>

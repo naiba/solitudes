@@ -45,9 +45,10 @@ func commentHandler(c *fiber.Ctx) error {
 		return fmt.Errorf("failed to determine comment type: %w", err)
 	}
 
+	isSpam := false
 	// akismet anti spam
 	if solitudes.System.Config.Akismet != "" && !isAdmin {
-		isSpam, err := akismet.Check(&akismet.Comment{
+		isSpam, err = akismet.Check(&akismet.Comment{
 			Blog:               "https://" + solitudes.System.Config.Site.Domain, // required
 			UserIP:             c.IP(),                                           // required
 			UserAgent:          string(c.Request().Header.UserAgent()),           // required
@@ -62,32 +63,24 @@ func commentHandler(c *fiber.Ctx) error {
 		if err != nil {
 			return fmt.Errorf("akismet check failed: %w", err)
 		}
-		if isSpam {
-			return errors.New("comment rejected by Akismet Anti-Spam System")
-		}
 	}
 
 	var cm model.Comment
 	if err := fillCommentEntry(c, isAdmin, &cm, &cf, article); err != nil {
 		return err
 	}
+	cm.IsSpam = isSpam
 
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Save(&cm).Error; err != nil {
 			return fmt.Errorf("failed to save comment: %w", err)
 		}
 
-		if err := tx.Model(&model.Article{}).
-			Where("id = ?", cm.ArticleID).
-			UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
-			return fmt.Errorf("failed to update article comment count: %w", err)
-		}
-
-		if cm.ReplyTo != nil {
+		if cm.CountsTowardArticle() {
 			if err := tx.Model(&model.Article{}).
 				Where("id = ?", cm.ArticleID).
-				UpdateColumn("comment_num", gorm.Expr("comment_num - ?", 1)).Error; err != nil {
-				return fmt.Errorf("failed to rebalance article comment count for reply: %w", err)
+				UpdateColumn("comment_num", gorm.Expr("comment_num + ?", 1)).Error; err != nil {
+				return fmt.Errorf("failed to update article comment count: %w", err)
 			}
 		}
 
@@ -96,6 +89,9 @@ func commentHandler(c *fiber.Ctx) error {
 
 	if err != nil {
 		return err
+	}
+	if cm.IsSpam {
+		return nil
 	}
 
 	// Email notify and update email read status
@@ -144,7 +140,7 @@ func verifyArticle(cf *commentForm) (*model.Article, error) {
 func getCommentType(cf *commentForm) (string, *model.Comment, error) {
 	if cf.ReplyTo != nil {
 		var innerReplyTo model.Comment
-		if err := solitudes.System.DB.Take(&innerReplyTo, "id = ?", cf.ReplyTo).Error; err != nil {
+		if err := visibleComments(solitudes.System.DB).Take(&innerReplyTo, "id = ?", cf.ReplyTo).Error; err != nil {
 			return "", nil, fmt.Errorf("failed to find parent comment: %w", err)
 		}
 		return "reply", &innerReplyTo, nil
@@ -174,4 +170,8 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 	cm.IsAdmin = isAdmin
 	cm.Version = cf.Version
 	return nil
+}
+
+func visibleComments(db *gorm.DB) *gorm.DB {
+	return db.Where("is_spam = ?", false)
 }

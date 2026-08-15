@@ -97,7 +97,7 @@ func index(c *fiber.Ctx) error {
 	solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(5).Find(&topics)
 	for i := range topics {
 		pagination.Paging(&pagination.Param{
-			DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", topics[i].ID),
+			DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", topics[i].ID),
 			Limit:   5,
 			OrderBy: []string{"created_at DESC"},
 		}, &topics[i].Comments)

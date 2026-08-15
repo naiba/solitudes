@@ -22,7 +22,7 @@
         
         <div class="mt-8">
             <a href="/" class="text-foreground/60 hover:text-accent transition flex items-center justify-center gap-2">
-                <i class="fa-solid fa-arrow-left text-xs"></i> Go back
+                <i class="fa-solid fa-arrow-left text-xs"></i> {{.Tr.T "go_back"}}
             </a>
         </div>
     </div>
@@ -39,7 +39,7 @@
         const countdownEl = document.getElementById('countdown');
 
         if (!encodedUrl) {
-            container.innerHTML = `<p class="text-red-500 font-medium">{{.Data.redirect_error_no_url}}</p>`;
+            container.innerHTML = `<p class="text-red-500 font-medium">{{.Data.error_no_url}}</p>`;
             return;
         }
 
@@ -60,7 +60,7 @@
             // Countdown logic
             let secondsLeft = 5;
             const updateCountdown = () => {
-                countdownEl.textContent = `{{.Data.redirect_auto}} ${secondsLeft} {{.Data.redirect_seconds}}`;
+                countdownEl.textContent = `{{.Data.auto_redirect}} ${secondsLeft} {{.Data.seconds}}`;
             };
 
             updateCountdown();
@@ -76,7 +76,7 @@
             }, 1000);
 
         } catch (e) {
-            container.innerHTML = `<p class="text-red-500 font-medium">{{.Data.redirect_error_invalid_url}}</p>`;
+            container.innerHTML = `<p class="text-red-500 font-medium">{{.Data.error_invalid_url}}</p>`;
             console.error('Redirect failed:', e);
         }
     })();

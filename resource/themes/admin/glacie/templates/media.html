@@ -8,6 +8,7 @@
 
 <div class="wf-card-static media-list">
     {{if .Data.medias}}
+    <div class="table-scroll">
     <table class="wf-table">
         <thead>
             <tr>
@@ -21,11 +22,11 @@
             {{range .Data.medias}}
             <tr>
                 <td>
-                    <a href="/upload/{{.Filename}}" target="_blank" class="media-filename">{{.Filename}}</a>
+                    <a href="/upload/{{.Filename}}" target="_blank" rel="noopener noreferrer" class="media-filename">{{.Filename}}</a>
                 </td>
                 <td>
                     {{if .Article.ID}}
-                    <a href="/{{.Article.Slug}}{{if .Article.Version}}/v{{.Article.Version}}{{end}}" target="_blank">
+                    <a href="/{{.Article.Slug}}{{if .Article.Version}}/v{{.Article.Version}}{{end}}" target="_blank" rel="noopener noreferrer">
                         {{substr .Article.Title 0 30}}
                     </a>
                     {{else}}
@@ -48,6 +49,7 @@
             {{end}}
         </tbody>
     </table>
+    </div>
 
     <!-- Simple Pagination -->
     <div class="pagination">

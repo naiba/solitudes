@@ -8,7 +8,8 @@
     </div>
 
     <div class="wf-card">
-        <div class="overflow-x-auto">
+        {{if .Data.medias}}
+        <div class="table-scroll">
             <table class="wf-table">
                 <thead>
                     <tr>
@@ -21,11 +22,17 @@
                 <tbody>
                     {{range .Data.medias}}
                     <tr>
-                        <td class="font-mono text-sm text-gray-700">{{.Filename}}</td>
-                        <td><a target="_blank" href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Article.Version}}" class="text-blue-600 hover:underline">{{.Article.Title}}</a></td>
-                        <td class="text-gray-600 text-sm">{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
+                        <td class="font-mono text-sm"><a href="/upload/{{.Filename}}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">{{.Filename}}</a></td>
                         <td>
-                            <button onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')" class="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600">
+                            {{if .Article.ID}}
+                            <a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Article.Version}}" class="text-blue-600 hover:underline">{{.Article.Title}}</a>
+                            {{else}}
+                            <span class="text-gray-500">—</span>
+                            {{end}}
+                        </td>
+                        <td class="text-gray-600 text-sm">{{tf .UploadedAt ($.Tr.T "date_format")}}</td>
+                        <td class="actions-cell">
+                            <button type="button" onclick="deleteFile('{{.Filename}}','{{.Article.ID}}')" class="admin-button compact danger">
                                 <i class="fa-solid fa-trash"></i> {{$.Tr.T "delete"}}
                             </button>
                         </td>
@@ -34,15 +41,23 @@
                 </tbody>
             </table>
         </div>
-        <div class="flex justify-center gap-2 p-4 border-t border-gray-200">
-            <a href="?page={{add .Data.page -1}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+        <nav class="admin-pagination" aria-label="{{.Tr.T "page_number" (int2str .Data.page)}}">
+            {{if gt .Data.page 1}}
+            <a href="?page={{add .Data.page -1}}" class="admin-button">
                 <i class="fa-solid fa-chevron-left"></i> {{.Tr.T "previous"}}
             </a>
-            <span class="px-4 py-2 text-sm bg-blue-600 text-white rounded">{{.Tr.T "page_number" (int2str .Data.page)}}</span>
-            <a href="?page={{add .Data.page 1}}" class="px-4 py-2 text-sm border border-gray-300 rounded hover:bg-gray-50">
+            {{end}}
+            <span class="admin-pagination-current" aria-current="page">{{.Tr.T "page_number" (int2str .Data.page)}}</span>
+            <a href="?page={{add .Data.page 1}}" class="admin-button">
                 {{.Tr.T "next"}} <i class="fa-solid fa-chevron-right"></i>
             </a>
+        </nav>
+        {{else}}
+        <div class="admin-empty-state">
+            <i class="fa-regular fa-file-image" aria-hidden="true"></i>
+            <p>{{.Tr.T "no_data"}}</p>
         </div>
+        {{end}}
     </div>
 </div>
 
@@ -56,7 +71,7 @@
             return
         }
         ajaxRequest({
-            url: "/admin/media?name=" + file,
+            url: "/admin/media?name=" + encodeURIComponent(file),
             type: 'DELETE',
             success: () => {
                 window.location.reload()

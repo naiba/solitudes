@@ -19,6 +19,7 @@
   
   /* Theme accent for buttons/UI elements */
   --theme-accent-color: #ff79c6;
+  --theme-accent-contrast: #311225;
   --theme-accent-hover: #ff92d0;
   --theme-accent-disabled: rgba(255, 121, 198, 0.4);
   --theme-bg-color: #282a36;

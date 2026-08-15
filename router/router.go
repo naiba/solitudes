@@ -489,6 +489,7 @@ func Serve() {
 	admin.Get("/comments", comments)
 	admin.Delete("/comments", deleteComment)
 	admin.Post("/report-spam", reportSpam)
+	admin.Post("/restore-spam", restoreSpam)
 	admin.Get("/articles", manageArticle)
 	admin.Delete("/articles", deleteArticle)
 	admin.Get("/media", media)

@@ -10,18 +10,25 @@
     <div class="wf-card">
         <div class="wf-card-body">
             <div class="flex flex-wrap gap-3">
+                {{if .Data.tags}}
                 {{range $i, $tag := .Data.tags}}
                 <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
                     <span class="font-medium text-gray-700">{{$tag}}</span>
                     <span class="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">{{index $.Data.counts $i}}</span>
                     <div class="flex gap-1">
-                        <button onclick="renameTag('{{$tag}}')" class="p-1 text-blue-600 hover:text-blue-800" title="Rename">
+                        <button type="button" onclick="renameTag('{{$tag}}')" class="p-1 text-blue-600 hover:text-blue-800" title="{{$.Tr.T "edit"}}" aria-label="{{$.Tr.T "edit"}} {{$tag}}">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button onclick="deleteTag('{{$tag}}')" class="p-1 text-red-600 hover:text-red-800" title="Delete">
+                        <button type="button" onclick="deleteTag('{{$tag}}')" class="p-1 text-red-600 hover:text-red-800" title="{{$.Tr.T "delete"}}" aria-label="{{$.Tr.T "delete"}} {{$tag}}">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
+                </div>
+                {{end}}
+                {{else}}
+                <div class="admin-empty-state w-full">
+                    <i class="fa-solid fa-tags" aria-hidden="true"></i>
+                    <p>{{.Tr.T "no_data"}}</p>
                 </div>
                 {{end}}
             </div>
@@ -36,7 +43,7 @@
             return
         }
         ajaxRequest({
-            url: "/admin/tags?oldTagName=" + oldTagName + "&newTagName=" + newTagName,
+            url: "/admin/tags?oldTagName=" + encodeURIComponent(oldTagName) + "&newTagName=" + encodeURIComponent(newTagName),
             type: 'PATCH',
             success: () => {
                 window.location.reload()
@@ -49,7 +56,7 @@
             return
         }
         ajaxRequest({
-            url: "/admin/tags?tagName=" + tag,
+            url: "/admin/tags?tagName=" + encodeURIComponent(tag),
             type: 'DELETE',
             success: () => {
                 window.location.reload()

@@ -68,7 +68,7 @@ func article(c *fiber.Ctx) error {
 		page, _ = strconv.ParseInt(pageSlice, 10, 32)
 	}
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("reply_to is null and article_id = ?", a.ID),
+		DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", a.ID),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
@@ -167,8 +167,8 @@ func relatedChildComments(a *model.Article, cm []*model.Comment, root bool) {
 			idArray = append(idArray, cm[i].ID)
 		}
 		var cms []*model.Comment
-		solitudes.System.DB.Raw(`WITH RECURSIVE cs AS (SELECT comments.* FROM comments WHERE comments.reply_to in (?) union ALL
-		SELECT comments.* FROM comments, cs WHERE comments.reply_to = cs.id)
+		solitudes.System.DB.Raw(`WITH RECURSIVE cs AS (SELECT comments.* FROM comments WHERE comments.is_spam = false AND comments.reply_to in (?) union ALL
+		SELECT comments.* FROM comments, cs WHERE comments.is_spam = false AND comments.reply_to = cs.id)
 		SELECT * FROM cs ORDER BY created_at;`, idArray).Scan(&cms)
 		// map to index
 		for i := range cms {

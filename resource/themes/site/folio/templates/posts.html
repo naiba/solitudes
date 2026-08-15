@@ -47,7 +47,7 @@
             <div class="pagination-jump">
                 <label for="page-input" class="sr-only">{{.Tr.T "go_to_page"}}</label>
                 <input id="page-input" value="{{.Data.page.Page}}" class="search-input pagination-input" type="number" min="1" max="{{.Data.page.TotalPage}}">
-                <button class="folio-btn" onclick="jumpToPage()">{{.Tr.T "go_to_page"}}</button>
+                <button type="button" class="folio-btn" onclick="jumpToPage()">{{.Tr.T "go_to_page"}}</button>
             </div>
             {{end}}
         </div>

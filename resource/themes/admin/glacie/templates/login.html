@@ -1,6 +1,6 @@
 {{define "admin/login"}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{.Tr.Locale}}">
 <head>
     <title>{{.Tr.T "sign_in"}} - {{.Conf.Site.SpaceName}}</title>
     {{template "admin/css"}}
@@ -20,20 +20,20 @@
                 <input type="hidden" id="captchaId" name="captchaId" value="">
 
                 <div class="form-group">
-                    <label class="form-label">{{.Tr.T "email"}}</label>
-                    <input type="email" name="email" class="form-input" required autocomplete="email" placeholder="you@example.com">
+                    <label class="form-label" for="loginEmail">{{.Tr.T "email"}}</label>
+                    <input type="email" id="loginEmail" name="email" class="form-input" required autocomplete="username" placeholder="you@example.com">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">{{.Tr.T "password"}}</label>
-                    <input type="password" name="password" class="form-input" required autocomplete="current-password">
+                    <label class="form-label" for="loginPassword">{{.Tr.T "password"}}</label>
+                    <input type="password" id="loginPassword" name="password" class="form-input" required autocomplete="current-password">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">{{.Tr.T "captcha"}}</label>
+                    <label class="form-label" for="loginCaptcha">{{.Tr.T "captcha"}}</label>
                     <div class="captcha-row">
-                        <input type="text" name="captcha" class="form-input" required placeholder="{{.Tr.T "enter_captcha"}}" autocomplete="off">
-                        <img id="captchaImage" class="captcha-img" alt="captcha" title="{{.Tr.T "refresh_captcha"}}" onclick="refreshCaptcha()">
+                        <input type="text" id="loginCaptcha" name="captcha" class="form-input" required placeholder="{{.Tr.T "enter_captcha"}}" autocomplete="off">
+                        <img id="captchaImage" class="captcha-img" alt="{{.Tr.T "captcha"}}" title="{{.Tr.T "refresh_captcha"}}" tabindex="0" role="button" onclick="refreshCaptcha()" onkeydown="if(event.key === 'Enter' || event.key === ' '){event.preventDefault();refreshCaptcha();}">
                     </div>
                 </div>
 

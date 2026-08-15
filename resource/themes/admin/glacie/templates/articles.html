@@ -13,6 +13,7 @@
 
 <div class="wf-card-static">
     {{if .Data.articles}}
+    <div class="table-scroll">
     <table class="wf-table">
         <thead>
             <tr>
@@ -28,7 +29,7 @@
             {{range .Data.articles}}
             <tr>
                 <td>
-                    <a href="/{{.Slug}}" target="_blank" style="font-weight: 500; color: var(--text-primary);">
+                    <a href="/{{.Slug}}" target="_blank" rel="noopener noreferrer" style="font-weight: 500; color: var(--text-primary);">
                         {{substr .Title 0 40}}
                     </a>
                     {{if .IsBook}}<span class="badge accent"><i class="fas fa-book"></i> </span>{{end}}
@@ -56,6 +57,7 @@
             {{end}}
         </tbody>
     </table>
+    </div>
 
     <!-- Pagination -->
     {{if .Data.page}}

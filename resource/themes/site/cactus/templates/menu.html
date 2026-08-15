@@ -1,20 +1,20 @@
 {{define "site/menu"}}
 <div class="content index py4"> <!-- 使用 content index py4 将页面主体包裹起来，与页脚拆分，在页脚前关闭-->
     <header id="header">
-        <div id="logo" style="background-image: url(/logo.png?20211213);"></div>
+        <a href="/" id="logo" style="background-image: url(/logo.png?20211213);" aria-label="{{.Conf.Site.SpaceName}}"></a>
         <div id="title">
-            <div class="h1">{{.Conf.Site.SpaceName}}</div>
+            <div class="h1"><a href="/">{{.Conf.Site.SpaceName}}</a></div>
         </div>
-        <div id="nav">
-            <ul>
+        <nav id="nav" aria-label="{{.Tr.T "menu"}}">
+            <ul id="cactus-navigation">
                 <li class="icon">
-                    <span><i class="fa-solid fa-bars fa-2x"></i></span>
+                    <button type="button" aria-label="{{.Tr.T "menu"}}" aria-controls="cactus-navigation" aria-expanded="false"><i class="fa-solid fa-bars fa-2x" aria-hidden="true"></i></button>
                 </li>
                 {{range index .Theme "cactus.headermenus"}}
                 <li><a href="{{.link}}" {{if .black}} target="_blank" rel="noopener noreferrer"{{end}}>{{if .icon}}<i class="{{.icon}}"></i>
                         {{end}}{{.name}}</a></li>
                 {{end}}
             </ul>
-        </div>
+        </nav>
     </header>
     {{end}}

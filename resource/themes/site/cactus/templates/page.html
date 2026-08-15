@@ -75,14 +75,14 @@
     {{else}}
     <div class="row">
         <label for="id_nickname" class="sr-only">{{.Tr.T "nickname"}}</label>
-        <input placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname">
+        <input type="text" placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname" autocomplete="name">
         <label for="id_email" class="sr-only">{{.Tr.T "email"}}</label>
-        <input placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email">
+        <input type="email" placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email" autocomplete="email">
         <label for="id_website" class="sr-only">{{.Tr.T "website"}}</label>
-        <input placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website">
+        <input type="url" placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website" autocomplete="url">
     </div>
     {{end}}
-    <button onclick="comment(this)" class="base-button">{{.Tr.T "submit"}}</button>
+    <button type="button" onclick="comment(this)" class="base-button">{{.Tr.T "submit"}}</button>
     <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
     <input type="hidden" id="id_reply_to" value="">
 </div>
@@ -112,7 +112,7 @@
           return
       }
       btn.disabled = true
-      btn.value = '{{.Tr.T "submitting"}}'
+      btn.textContent = '{{.Tr.T "submitting"}}'
       if (!document.querySelector("#id_nickname").value || !document.querySelector("#id_content").value) {
           btn.disabled = false
           alert('{{.Tr.T "comment_required_fields"}}')
@@ -154,7 +154,7 @@
           alert('{{.Tr.T "submit_failed"}} ' + e)
       }).finally(() => {
           btn.disabled = false
-          btn.value = '{{.Tr.T "submit"}}'
+          btn.textContent = '{{.Tr.T "submit"}}'
       })
   }
 </script>

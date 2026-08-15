@@ -384,6 +384,11 @@
             alert('{{.Tr.T "comment_required_fields"}}');
             return;
         }
+
+        const submitButton = this.querySelector('button[type="submit"]');
+        const originalButtonHTML = submitButton.innerHTML;
+        submitButton.disabled = true;
+        submitButton.setAttribute('aria-busy', 'true');
         
         const commentData = {
             content: content,
@@ -405,12 +410,17 @@
                 alert('{{.Tr.T "submit_comment_success"}}');
                 window.location.reload();
             } else {
-                response.text().then(msg => alert('{{.Tr.T "submit_failed"}} ' + msg));
+                return response.text().then(msg => alert('{{.Tr.T "submit_failed"}} ' + msg));
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('{{.Tr.T "submit_failed"}} ' + error);
+        })
+        .finally(() => {
+            submitButton.disabled = false;
+            submitButton.removeAttribute('aria-busy');
+            submitButton.innerHTML = originalButtonHTML;
         });
     });
 </script>

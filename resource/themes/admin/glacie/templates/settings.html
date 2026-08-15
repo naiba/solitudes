@@ -217,16 +217,56 @@
 </form>
 
 <script>
+var settingsDirty = false;
+var settingsForm = document.getElementById('settingsForm');
+settingsForm.addEventListener('input', function() { settingsDirty = true; });
+settingsForm.addEventListener('change', function() { settingsDirty = true; });
+window.addEventListener('beforeunload', function(event) {
+    if (!settingsDirty) return;
+    event.preventDefault();
+    event.returnValue = '{{.Tr.T "ensure_content_saved"}}';
+});
+
+document.querySelectorAll('.collapse-header').forEach(function(header) {
+    header.setAttribute('role', 'button');
+    header.setAttribute('tabindex', '0');
+    header.setAttribute('aria-expanded', String(header.classList.contains('open')));
+    header.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            toggleSection(header);
+        }
+    });
+});
+
+document.querySelectorAll('.theme-card').forEach(function(card) {
+    card.setAttribute('role', 'radio');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-checked', String(card.classList.contains('selected')));
+    card.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            card.click();
+        }
+    });
+});
+
 function toggleSection(header) {
     header.classList.toggle('open');
+    header.setAttribute('aria-expanded', String(header.classList.contains('open')));
     var body = header.nextElementSibling;
     body.classList.toggle('open');
 }
 
 function selectTheme(type, id, el) {
+    settingsDirty = true;
     var container = el.parentElement;
-    container.querySelectorAll('.theme-card').forEach(function(c) { c.classList.remove('selected'); });
+    container.querySelectorAll('.theme-card').forEach(function(c) {
+        c.classList.remove('selected');
+        c.setAttribute('aria-checked', 'false');
+    });
     el.classList.add('selected');
+    el.setAttribute('aria-checked', 'true');
     if (type === 'site') {
         document.getElementById('siteThemeInput').value = id;
     } else {
@@ -246,6 +286,7 @@ function saveSetting() {
         contentType: false,
         success: function() {
             hideLoading();
+            settingsDirty = false;
             location.reload();
         },
         error: function(xhr) {

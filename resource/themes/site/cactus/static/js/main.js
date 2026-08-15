@@ -62,10 +62,21 @@ ready(function () {
     /**
      * Shows the responsive navigation menu on mobile.
      */
-    const mobileMenu = document.querySelector("#header > #nav > ul > .icon");
+    const mobileMenu = document.querySelector("#header > #nav > ul > .icon button");
     if (mobileMenu) {
         mobileMenu.addEventListener('click', function (e) {
-            document.querySelector("#header > #nav > ul").classList.toggle("responsive");
+            const navigation = document.querySelector("#header > #nav > ul");
+            const isOpen = navigation.classList.toggle("responsive");
+            mobileMenu.setAttribute('aria-expanded', String(isOpen));
+            mobileMenu.querySelector('i').className = isOpen ? 'fa-solid fa-xmark fa-2x' : 'fa-solid fa-bars fa-2x';
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape') return;
+            const navigation = document.querySelector("#header > #nav > ul");
+            navigation.classList.remove("responsive");
+            mobileMenu.setAttribute('aria-expanded', 'false');
+            mobileMenu.querySelector('i').className = 'fa-solid fa-bars fa-2x';
+            mobileMenu.focus();
         });
     }
 
@@ -76,7 +87,7 @@ ready(function () {
     if (document.querySelectorAll(".post").length) {
         var menu = document.querySelector("#menu");
         var nav = document.querySelector("#menu > #nav");
-        var menuIcon = document.querySelector("#menu-icon, #menu-icon-tablet");
+        var menuIcons = document.querySelectorAll("#menu-icon, #menu-icon-tablet");
 
         /**
          * Display the menu on hi-res laptops and desktops.
@@ -84,35 +95,33 @@ ready(function () {
         const screenWidth = parseFloat(getComputedStyle(document.documentElement, null).width.replace("px", ""));
         if (screenWidth >= 1440) {
             menu.style.visibility = "visible";
-            menuIcon.classList.add("active");
+            menuIcons.forEach(function(icon) { icon.classList.add("active"); });
         }
 
         /**
          * Display the menu if the menu icon is clicked.
          */
-        menuIcon.addEventListener('click', function () {
-            if (menu.style.visibility === "hidden") {
-                menu.style.visibility = "visible";
-                menuIcon.classList.add("active");
-            } else {
-                menu.style.visibility = "hidden";
-                menuIcon.classList.remove("active");
-            }
-            return false;
+        menuIcons.forEach(function(menuIcon) {
+            menuIcon.addEventListener('click', function () {
+                var isOpen = menu.style.visibility === "visible";
+                menu.style.visibility = isOpen ? "hidden" : "visible";
+                menuIcons.forEach(function(icon) { icon.classList.toggle("active", !isOpen); });
+                return false;
+            });
         });
 
         /**
          * Add a scroll listener to the menu to hide/show the navigation links.
          */
         if (document.querySelectorAll("#menu").length) {
-            window.onscroll = function () {
-                const rect = menu.getBoundingClientRect();
-                const topDistance = rect.top + document.body.scrollTop;
+            window.addEventListener('scroll', function () {
+                const topDistance = document.documentElement.scrollTop || document.body.scrollTop;
+                const navIsVisible = window.getComputedStyle(nav).display !== 'none';
 
                 // hide only the navigation links on desktop
-                if (!matches(nav, ":visible") && topDistance < 50) {
+                if (!navIsVisible && topDistance < 50) {
                     nav.style.display = '';
-                } else if (matches(nav, ":visible") && topDistance > 100) {
+                } else if (navIsVisible && topDistance > 100) {
                     nav.style.display = 'none';
                 }
 
@@ -126,7 +135,7 @@ ready(function () {
                     document.querySelector("#top-icon-tablet").style.display = '';
                     document.querySelector("#menu-icon-tablet").style.display = 'none';
                 }
-            };
+            });
         }
 
         /**
@@ -135,7 +144,7 @@ ready(function () {
          */
         if (document.querySelectorAll("#footer-post").length) {
             var lastScrollTop = 0;
-            window.onscroll = function () {
+            window.addEventListener('scroll', function () {
                 var topDistance = document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
 
                 if (topDistance > lastScrollTop) {
@@ -159,7 +168,7 @@ ready(function () {
                 } else if (topDistance > 100) {
                     document.querySelector("#actions-footer > #top").style.display = '';
                 }
-            };
+            });
         }
     }
 })

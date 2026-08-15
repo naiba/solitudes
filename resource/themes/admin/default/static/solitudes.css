@@ -16,15 +16,21 @@
   
   --accent-primary: #4f6ac3;
   --accent-primary-hover: #3d52a0;
+  --accent-primary-contrast: #ffffff;
   --accent-primary-light: #e7eaf5;
   --accent-primary-bg: #f0f2f9;
   
   --success: #10b981;
+  --success-strong: #047857;
   --success-light: #d1fae5;
   --warning: #f59e0b;
   --warning-light: #fef3c7;
+  --warning-strong: #c2410c;
+  --warning-contrast: #ffffff;
   --danger: #ef4444;
   --danger-light: #fee2e2;
+  --danger-strong: #dc2626;
+  --danger-contrast: #ffffff;
   --info: #3b82f6;
   --info-light: #dbeafe;
   
@@ -62,15 +68,21 @@
     
     --accent-primary: #6b8aef;
     --accent-primary-hover: #8aa7f7;
+    --accent-primary-contrast: #111827;
     --accent-primary-light: #1e3a8a;
     --accent-primary-bg: #1e293b;
     
     --success: #34d399;
+    --success-strong: #6ee7b7;
     --success-light: #064e3b;
     --warning: #fbbf24;
     --warning-light: #78350f;
+    --warning-strong: #fdba74;
+    --warning-contrast: #431407;
     --danger: #f87171;
     --danger-light: #7f1d1d;
+    --danger-strong: #f87171;
+    --danger-contrast: #450a0a;
     --info: #60a5fa;
     --info-light: #1e3a8a;
     
@@ -84,6 +96,24 @@
 /* ========== Base Styles ========== */
 * {
   box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: 3px;
 }
 
 body {
@@ -168,7 +198,7 @@ body {
 
 .admin-nav-links a.active {
   background: var(--accent-primary);
-  color: white;
+  color: var(--accent-primary-contrast);
   box-shadow: var(--shadow-md);
 }
 
@@ -179,12 +209,31 @@ body {
   left: 1rem;
   right: 1rem;
   height: 2px;
-  background: white;
+  background: var(--accent-primary-contrast);
   border-radius: 2px;
 }
 
 .admin-nav-links i {
   font-size: 1.125rem;
+}
+
+.admin-mobile-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: background-color var(--transition-base), border-color var(--transition-base);
+}
+
+.admin-mobile-toggle:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
 }
 
 /* User Menu */
@@ -200,7 +249,7 @@ body {
   gap: 0.75rem;
   padding: 0.5rem 1rem;
   border-radius: var(--radius-md);
-  cursor: pointer;
+  cursor: default;
   transition: all var(--transition-base);
 }
 
@@ -276,7 +325,6 @@ body {
 .wf-card:hover {
   box-shadow: var(--shadow-md);
   border-color: var(--border-hover);
-  transform: translateY(-2px);
 }
 
 .wf-card-header {
@@ -360,6 +408,13 @@ body {
   font-size: 0.9375rem;
 }
 
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}
+
 .wf-table thead th {
   text-align: left;
   padding: 1rem 0.875rem;
@@ -381,7 +436,7 @@ body {
 
 /* 管理栏操作按钮区域，防止按钮换行 */
 .wf-table .actions-cell {
-  min-width: 160px;
+  min-width: 200px;
   white-space: nowrap;
 }
 
@@ -396,6 +451,224 @@ body {
 
 .wf-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* ========== Buttons & Action Hierarchy ========== */
+.admin-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.5rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
+}
+
+.admin-button:hover {
+  background: var(--bg-accent);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-button:active {
+  transform: translateY(1px);
+}
+
+.admin-button.compact {
+  min-height: 2.25rem;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.8125rem;
+}
+
+.admin-button.primary {
+  color: var(--accent-primary-contrast);
+  background: var(--accent-primary);
+}
+
+.admin-button.primary:hover {
+  background: var(--accent-primary-hover);
+  border-color: transparent;
+}
+
+.admin-button.danger {
+  color: var(--danger-contrast);
+  background: var(--danger-strong);
+}
+
+.admin-button.danger:hover {
+  background: var(--danger);
+  border-color: transparent;
+  filter: brightness(0.94);
+}
+
+.admin-button.success {
+  color: #052e16;
+  background: var(--success);
+  border-color: transparent;
+}
+
+.admin-button.success:hover {
+  color: #052e16;
+  background: var(--success);
+  border-color: transparent;
+  filter: brightness(0.92);
+}
+
+/* Spam is intentionally stronger than a neutral action and distinct from delete. */
+.admin-button.spam {
+  color: var(--warning-contrast);
+  background: var(--warning-strong);
+  border-color: transparent;
+}
+
+.admin-button.spam:hover {
+  background: var(--warning-strong);
+  border-color: transparent;
+  filter: brightness(0.9);
+}
+
+.admin-button[disabled],
+.admin-button.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.admin-empty-state {
+  display: flex;
+  min-height: 12rem;
+  padding: 2rem;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+.admin-empty-state i {
+  font-size: 2rem;
+  color: var(--text-muted);
+}
+
+.admin-empty-state p {
+  margin: 0;
+}
+
+.comment-filter-bar {
+  display: flex;
+  margin-bottom: 1rem;
+  padding: 0.35rem;
+  gap: 0.35rem;
+  align-items: center;
+  flex-wrap: wrap;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.comment-filter-link {
+  display: inline-flex;
+  min-height: 40px;
+  padding: 0.5rem 0.8rem;
+  gap: 0.5rem;
+  align-items: center;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.comment-filter-link:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.comment-filter-link.active {
+  color: var(--accent-primary-contrast);
+  background: var(--accent-primary);
+}
+
+.comment-filter-link span {
+  min-width: 1.5rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.comment-status-badge {
+  display: inline-flex;
+  padding: 0.3rem 0.6rem;
+  gap: 0.35rem;
+  align-items: center;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.comment-status-badge.visible {
+  color: var(--success-strong);
+  background: var(--success-light);
+}
+
+.comment-status-badge.spam {
+  color: var(--warning-contrast);
+  background: var(--warning-strong);
+}
+
+.comment-ip {
+  display: flex;
+  margin-top: 0.35rem;
+  gap: 0.35rem;
+  align-items: center;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+}
+
+.comment-ip code {
+  color: var(--text-secondary);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.wf-table tbody tr.spam-row td,
+.wf-table tbody tr.spam-row:hover td {
+  background: color-mix(in srgb, var(--warning-light) 55%, var(--bg-primary));
+}
+
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.admin-pagination-current {
+  min-width: 5rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radius-md);
+  color: var(--accent-primary-contrast);
+  background: var(--accent-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
 }
 
 /* ========== Editor Styles ========== */
@@ -489,8 +762,46 @@ body {
     font-size: 1.25rem;
   }
 
+  .admin-mobile-toggle {
+    display: inline-flex;
+    margin-left: auto;
+    margin-right: 0.5rem;
+  }
+
   .admin-nav-links {
     display: none;
+  }
+
+  .admin-nav-links.mobile-open {
+    display: flex;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    max-height: calc(100vh - 60px);
+    padding: 0.75rem 1rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    overflow-y: auto;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .admin-nav-links.mobile-open a {
+    min-height: 44px;
+  }
+
+  .admin-nav-links a.active::after {
+    display: none;
+  }
+
+  .admin-user-menu {
+    gap: 0.25rem;
+  }
+
+  .admin-user-info {
+    padding: 0.25rem;
   }
 
   .admin-container {
@@ -512,6 +823,26 @@ body {
   
   .editor-title-input {
     font-size: 1.5rem;
+  }
+
+  .wf-table tbody tr:hover {
+    transform: none;
+  }
+
+  .admin-pagination {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 420px) {
+  .admin-logo span,
+  .admin-user-info {
+    display: none;
+  }
+
+  .admin-pagination-current {
+    order: -1;
+    width: 100%;
   }
 }
 
@@ -658,6 +989,21 @@ body {
   max-width: 100%;
   cursor: pointer;
   border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:focus-within {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ========== Dark Mode Overrides for Tailwind Classes ========== */
