@@ -27,9 +27,11 @@
                 <a href="/{{$item.Slug}}" class="inline-block text-xl font-bold text-accent decoration-dashed underline-offset-4 hover:underline transition">
                     <h2 class="inline">{{$item.Title}}</h2>
                 </a>
+                {{if $item.Content}}
                 <div class="mt-2 text-foreground/70 text-sm leading-relaxed search-highlight">
                     {{$item.Content|unsafe}}
                 </div>
+                {{end}}
             </li>
             {{end}}
         </ul>

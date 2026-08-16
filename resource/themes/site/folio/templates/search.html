@@ -22,7 +22,9 @@
                 {{range .Data.results}}
                 <li class="search-result-item">
                     <a href="https://{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
+                    {{if .Content}}
                     <p class="search-result-excerpt">{{.Content|unsafe}}</p>
+                    {{end}}
                 </li>
                 {{end}}
             </ul>

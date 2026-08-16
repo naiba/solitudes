@@ -444,10 +444,17 @@ func Serve() {
 		c.Set("X-Content-Type-Options", "nosniff")
 		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Set("Content-Security-Policy", "frame-ancestors 'self'")
-		if strings.Contains(c.Get("Accept"), "html") {
+		isHTML := strings.Contains(c.Get("Accept"), "html")
+		if isHTML {
 			c.Set("Cache-Control", "public, max-age=60, stale-while-revalidate=300")
 		}
-		return c.Next()
+		err := c.Next()
+		if isHTML {
+			if authorized, ok := c.Locals(solitudes.CtxAuthorized).(bool); ok && authorized {
+				c.Set("Cache-Control", "private, no-store")
+			}
+		}
+		return err
 	})
 	app.Use(trans, auth, csrfGuard)
 	app.Get("/", index)

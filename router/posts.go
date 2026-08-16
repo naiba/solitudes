@@ -44,6 +44,7 @@ func tagsCloud(c *fiber.Ctx) error {
 }
 
 func posts(c *fiber.Ctx) error {
+	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
 	pageStr := c.Params("page")
 	var page int64
 	if pageStr != "" {
@@ -73,9 +74,7 @@ func posts(c *fiber.Ctx) error {
 				OrderBy: []string{"created_at DESC"},
 			}, &articles[i].Comments)
 		}
-		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
-			articles[i].Content = "Private Article"
-		}
+		maskPrivateArticleContent(&articles[i], authorized)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
@@ -89,6 +88,7 @@ func posts(c *fiber.Ctx) error {
 }
 
 func book(c *fiber.Ctx) error {
+	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
 	pageStr := c.Params("page")
 	var page int64
 	if pageStr != "" {
@@ -110,6 +110,7 @@ func book(c *fiber.Ctx) error {
 	}, &articles)
 	for i := range articles {
 		articles[i].RelatedCount(solitudes.System.DB)
+		maskPrivateArticleContent(&articles[i], authorized)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
@@ -219,9 +220,7 @@ func generateFeed(c *fiber.Ctx, format string) (interface{}, error) {
 
 	isAuthorized := c.Locals(solitudes.CtxAuthorized).(bool)
 	for i := range articles {
-		if articles[i].IsPrivate && !isAuthorized {
-			articles[i].Content = "Private Article"
-		}
+		maskPrivateArticleContent(&articles[i], isAuthorized)
 		feed.Items = append(feed.Items, &feeds.Item{
 			Title:       articles[i].Title,
 			Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug},
@@ -260,6 +259,7 @@ func generateFeed(c *fiber.Ctx, format string) (interface{}, error) {
 }
 
 func tags(c *fiber.Ctx) error {
+	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
 	pageStr := c.Params("page")
 	var page int64
 	if pageStr != "" {
@@ -294,9 +294,7 @@ func tags(c *fiber.Ctx) error {
 				OrderBy: []string{"created_at DESC"},
 			}, &articles[i].Comments)
 		}
-		if articles[i].IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
-			articles[i].Content = "Private Article"
-		}
+		maskPrivateArticleContent(&articles[i], authorized)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{

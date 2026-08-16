@@ -77,6 +77,57 @@ var TemplateIndex = map[byte]string{
 	PageTemplateID:    "page",
 }
 
+type articleSearchDocument struct {
+	Slug      string
+	Version   uint
+	Title     string
+	Content   string
+	IsPrivate bool
+}
+
+func newArticleSearchDocument(article *model.Article, version uint, content string) articleSearchDocument {
+	if article.IsPrivate {
+		content = ""
+	}
+	return articleSearchDocument{
+		Slug:      article.Slug,
+		Version:   version,
+		Title:     article.Title,
+		Content:   content,
+		IsPrivate: article.IsPrivate,
+	}
+}
+
+func indexArticleVersion(index bleve.Index, article *model.Article, version uint, content string) error {
+	document := newArticleSearchDocument(article, version, content)
+	indexID := fmt.Sprintf("%s.%d", article.ID, version)
+	if err := index.Index(indexID, document); err != nil {
+		return fmt.Errorf("failed to index article %s: %w", indexID, err)
+	}
+	return nil
+}
+
+func indexArticle(index bleve.Index, article *model.Article) error {
+	if article.IsPrivate {
+		for version := uint(1); version < article.Version; version++ {
+			if err := indexArticleVersion(index, article, version, ""); err != nil {
+				return err
+			}
+		}
+	}
+	return indexArticleVersion(index, article, article.Version, article.Content)
+}
+
+// IndexArticle updates the full-text search document for an article. Private
+// articles remain discoverable by title, but their body is never persisted in
+// the search index.
+func IndexArticle(article *model.Article) error {
+	if System == nil || System.Search == nil {
+		return fmt.Errorf("search index is not initialized")
+	}
+	return indexArticle(System.Search, article)
+}
+
 func newBleveSearch() (bleve.Index, error) {
 	_, err := os.Stat(fullTextSearchIndexPath)
 	var index bleve.Index
@@ -249,10 +300,18 @@ func BuildArticleIndex() {
 		return
 	}
 	for i := range as {
-		System.Search.Index(as[i].GetIndexID(), as[i])
+		if err := indexArticleVersion(System.Search, &as[i], as[i].Version, as[i].Content); err != nil {
+			log.Printf("Failed to index article %s: %v\n", as[i].ID, err)
+		}
 	}
 	for i := range hs {
-		System.Search.Index(hs[i].GetIndexID(), hs[i])
+		if hs[i].Article.ID == "" {
+			log.Printf("Failed to index article history %s.%d: article not found\n", hs[i].ArticleID, hs[i].Version)
+			continue
+		}
+		if err := indexArticleVersion(System.Search, &hs[i].Article, hs[i].Version, hs[i].Content); err != nil {
+			log.Printf("Failed to index article history %s.%d: %v\n", hs[i].ArticleID, hs[i].Version, err)
+		}
 	}
 	num, err := System.Search.DocCount()
 	log.Printf("Doc indexed %d %+v\n", num, err)

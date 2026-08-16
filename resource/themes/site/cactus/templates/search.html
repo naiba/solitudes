@@ -11,9 +11,11 @@
           {{range .Data.results}}
           <li>
             <a href="https://{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
+            {{if .Content}}
             <p class="search-result">
               {{.Content|unsafe}}
             </p>
+            {{end}}
           </li>
           {{end}}
         </ul>

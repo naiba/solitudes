@@ -55,6 +55,10 @@ func article(c *fiber.Ctx) error {
 		title = a.Title
 	}
 
+	// Redact the body before generating any derived data such as the table of
+	// contents or description.
+	maskPrivateArticleContent(&a, c.Locals(solitudes.CtxAuthorized).(bool))
+
 	// 移除过度并发，改用顺序加载（对于单次请求，DB 查询的顺序执行通常比 5 个 goroutine 的调度开销更低且更可控）
 	relatedChapters(&a)
 	relatedBook(&a)
@@ -78,11 +82,6 @@ func article(c *fiber.Ctx) error {
 	relatedChildComments(&a, a.Comments, true)
 
 	a.RelatedCount(solitudes.System.DB)
-
-	// 检查私有博文
-	if a.IsPrivate && !c.Locals(solitudes.CtxAuthorized).(bool) {
-		a.Content = "Private Article"
-	}
 
 	desc := mdExcerpt(a.Content, 150)
 	isOldVersion := c.Params("version") != ""

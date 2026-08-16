@@ -93,9 +93,11 @@ func index(c *fiber.Ctx) error {
 	var articles []model.Article
 	var topics []model.Article
 	var mostRead []model.Article
+	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
 
 	solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(5).Find(&topics)
 	for i := range topics {
+		maskPrivateArticleContent(&topics[i], authorized)
 		pagination.Paging(&pagination.Param{
 			DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", topics[i].ID),
 			Limit:   5,
@@ -107,12 +109,14 @@ func index(c *fiber.Ctx) error {
 	solitudes.System.DB.Where("template_id = ? AND (array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", solitudes.ArticleTemplateID, "Topic").Order("read_num DESC").Limit(3).Find(&mostRead)
 	for i := range mostRead {
 		mostRead[i].RelatedCount(solitudes.System.DB)
+		maskPrivateArticleContent(&mostRead[i], authorized)
 	}
 
 	articleCount := 16 - len(topics)*2
 	solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles)
 	for i := range articles {
 		articles[i].RelatedCount(solitudes.System.DB)
+		maskPrivateArticleContent(&articles[i], authorized)
 	}
 	// Only show "Most Read" section if we have at least 3 items
 	var mostReadData interface{}
