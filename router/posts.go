@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gorilla/feeds"
@@ -16,6 +18,20 @@ import (
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 )
+
+const maxTagLength = 255
+
+func validTagParam(tag string) bool {
+	if tag == "" || utf8.RuneCountInString(tag) > maxTagLength {
+		return false
+	}
+	for _, r := range tag {
+		if unicode.IsControl(r) {
+			return false
+		}
+	}
+	return true
+}
 
 func tagsCloud(c *fiber.Ctx) error {
 	var tags []string
@@ -260,30 +276,31 @@ func generateFeed(c *fiber.Ctx, format string) (interface{}, error) {
 
 func tags(c *fiber.Ctx) error {
 	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
+	tag, err := url.PathUnescape(c.Params("tag"))
+	if err != nil || !validTagParam(tag) {
+		return page404(c)
+	}
 	pageStr := c.Params("page")
 	var page int64
 	if pageStr != "" {
-		var err error
 		page, err = strconv.ParseInt(pageStr, 10, 64)
 		if err != nil {
 			return fmt.Errorf("invalid page format: %w", err)
 		}
 		if page <= 1 {
-			tag, _ := url.QueryUnescape(c.Params("tag"))
 			return c.Redirect("/tags/"+url.PathEscape(tag)+"/", http.StatusMovedPermanently)
 		}
 	}
 	var articles []model.Article
-	tag, _ := url.QueryUnescape(c.Params("tag"))
-	if tag == "" {
-		return page404(c)
-	}
 	pg := pagination.Paging(&pagination.Param{
 		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", tag),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
+	if pg.TotalRecord == 0 || pg.Page > pg.TotalPage {
+		return page404(c)
+	}
 	for i := range articles {
 		articles[i].RelatedCount(solitudes.System.DB)
 		// 如果存在 Topic tag，加载前 5 条评论

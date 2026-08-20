@@ -2,6 +2,7 @@ package router
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ func buildSearchQuery(keywords string) blevequery.Query {
 	publicFilter := bleve.NewBoolFieldQuery(false)
 	publicFilter.SetField("IsPrivate")
 	publicQuery := bleve.NewConjunctionQuery(
-		bleve.NewQueryStringQuery(keywords),
+		bleve.NewMatchQuery(keywords),
 		publicFilter,
 	)
 
@@ -46,7 +47,7 @@ func buildSearchQuery(keywords string) blevequery.Query {
 	legacyPrivateFilter.SetField("IsPrivate")
 	privacyFieldPresent := bleve.NewDisjunctionQuery(legacyPublicFilter, legacyPrivateFilter)
 	legacyQuery := bleve.NewBooleanQuery()
-	legacyQuery.AddMust(bleve.NewQueryStringQuery(keywords))
+	legacyQuery.AddMust(bleve.NewMatchQuery(keywords))
 	legacyQuery.AddMustNot(privacyFieldPresent)
 
 	return bleve.NewDisjunctionQuery(publicQuery, privateQuery, legacyQuery)
@@ -112,7 +113,8 @@ func search(c *fiber.Ctx) error {
 		searchRequest.Highlight = bleve.NewHighlight()
 		searchResult, err := solitudes.System.Search.Search(searchRequest)
 		if err != nil {
-			return fmt.Errorf("failed to perform search: %w", err)
+			log.Printf("failed to perform search: %v", err)
+			return fiber.ErrInternalServerError
 		}
 
 		articleIDs := make([]string, 0, len(searchResult.Hits))

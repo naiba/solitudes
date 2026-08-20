@@ -123,6 +123,30 @@ func TestBuildSearchQueryLimitsPrivateDocumentsToTitle(t *testing.T) {
 	}
 }
 
+func TestBuildSearchQueryTreatsSpecialCharactersAsText(t *testing.T) {
+	index, err := bleve.NewMemOnly(bleve.NewIndexMapping())
+	if err != nil {
+		t.Fatalf("failed to create test index: %v", err)
+	}
+	defer index.Close()
+
+	if err := index.Index("public.1", struct {
+		Title     string
+		Content   string
+		IsPrivate bool
+	}{Title: "Search syntax", Content: "ordinary content"}); err != nil {
+		t.Fatalf("failed to index document: %v", err)
+	}
+
+	for _, keywords := range []string{`"`, `(`, `title:`, `foo AND (`, `[a TO z]`} {
+		t.Run(keywords, func(t *testing.T) {
+			if _, err := index.Search(bleve.NewSearchRequest(buildSearchQuery(keywords))); err != nil {
+				t.Fatalf("special-character search returned an error: %v", err)
+			}
+		})
+	}
+}
+
 func TestBuildSearchResponsesRedactsUsingCurrentDatabaseState(t *testing.T) {
 	hits := blevesearch.DocumentMatchCollection{
 		{

@@ -571,6 +571,7 @@ func goRedirect(c *fiber.Ctx) error {
 }
 
 func page404(c *fiber.Ctx) error {
+	c.Set(fiber.HeaderCacheControl, "no-store")
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	templateName := "site/error"
 	if isAdminPath(c.Path()) {
