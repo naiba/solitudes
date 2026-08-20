@@ -850,6 +850,12 @@ body {
   font-size: 14px;
 }
 
+.post-list .post-item > .meta {
+  flex: 0 0 120px;
+  min-width: 120px;
+  white-space: nowrap;
+}
+
 @media (min-width: 480px) {
   .post-list .post-item {
     display: flex;
