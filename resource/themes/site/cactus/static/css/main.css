@@ -1128,11 +1128,6 @@ article .content .caption {
   box-sizing: border-box;
 }
 
-.pagination-jump .base-button {
-  min-height: 0;
-  padding: 4px 9px;
-}
-
 /* Search */
 .search-input {
   padding: 4px 7px;
@@ -1261,7 +1256,6 @@ code {
   font-size: 1.1rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  min-height: 44px;
 }
 
 .base-button:hover:not(:disabled) {
