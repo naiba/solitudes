@@ -1112,6 +1112,22 @@ article .content .caption {
 .pagination a:hover { background-image: none; }
 .pagination a:hover:not(.active) { color: var(--color-text); }
 
+.pagination-jump {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.pagination-jump .pagination-input {
+  display: inline-block;
+  vertical-align: middle;
+  width: 5rem;
+  padding: 4px 7px;
+  box-sizing: border-box;
+}
+
 /* Search */
 .search-input {
   padding: 4px 7px;
@@ -1240,7 +1256,6 @@ code {
   font-size: 1.1rem;
   cursor: pointer;
   transition: background-color 0.2s ease;
-  min-height: 44px;
 }
 
 .base-button:hover:not(:disabled) {
