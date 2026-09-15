@@ -1123,9 +1123,19 @@ article .content .caption {
 .pagination-jump .pagination-input {
   display: inline-block;
   vertical-align: middle;
-  width: 5rem;
+  flex: 0 0 4.5rem;
+  width: 4.5rem !important;
+  height: 32px;
   padding: 4px 7px;
   box-sizing: border-box;
+  font-size: 0.9rem;
+}
+
+.pagination-jump .base-button {
+  min-height: 32px;
+  padding: 4px 9px;
+  font-size: 0.9rem;
+  line-height: 1.2;
 }
 
 /* Search */
@@ -1273,6 +1283,19 @@ code {
   display: table-cell;
   vertical-align: middle;
   margin-left: 10px;
+}
+
+.home-search-section .search-input {
+  flex: 1;
+  min-width: 0;
+  width: auto !important;
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+.home-search-section .base-button {
+  min-height: 44px;
+  padding: 8px 14px;
 }
 
 #reply-list .comment-meta {
