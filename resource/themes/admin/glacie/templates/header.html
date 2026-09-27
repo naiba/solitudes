@@ -18,7 +18,7 @@
 
     <!-- Navigation -->
     <nav class="glacie-nav">
-        <a href="/admin/" class="nav-logo">
+        <a href="{{if .Account.Role.IsAdmin}}/admin/{{else}}/admin/articles{{end}}" class="nav-logo">
             <i class="fas fa-snowflake"></i>
             {{.Conf.Site.SpaceName}}
         </a>
@@ -28,16 +28,16 @@
         </button>
 
         <ul class="nav-links" id="admin-navigation">
-            <li><a href="/admin/" class="nav-link{{if eq .Path "/admin/"}} active{{end}}">
+            {{if .Account.Role.IsAdmin}}<li><a href="/admin/" class="nav-link{{if eq .Path "/admin/"}} active{{end}}">
                 <i class="fas fa-chart-pie"></i> {{.Tr.T "dashboard"}}
-            </a></li>
+            </a></li>{{end}}
             <li><a href="/admin/publish" class="nav-link{{if eq .Path "/admin/publish"}} active{{end}}">
                 <i class="fas fa-pen-nib"></i> {{.Tr.T "publish"}}
             </a></li>
             <li><a href="/admin/articles" class="nav-link{{if eq .Path "/admin/articles"}} active{{end}}">
                 <i class="fas fa-newspaper"></i> {{.Tr.T "articles"}}
             </a></li>
-            <li><a href="/admin/comments" class="nav-link{{if eq .Path "/admin/comments"}} active{{end}}">
+            {{if .Account.Role.IsAdmin}}<li><a href="/admin/comments" class="nav-link{{if eq .Path "/admin/comments"}} active{{end}}">
                 <i class="fas fa-comments"></i> {{.Tr.T "comments"}}
             </a></li>
             <li><a href="/admin/tags" class="nav-link{{if eq .Path "/admin/tags"}} active{{end}}">
@@ -49,13 +49,16 @@
             <li><a href="/admin/settings" class="nav-link{{if eq .Path "/admin/settings"}} active{{end}}">
                 <i class="fas fa-gear"></i> {{.Tr.T "site_settings"}}
             </a></li>
+            <li><a href="/admin/users" class="nav-link{{if eq .Path "/admin/users"}} active{{end}}"><i class="fas fa-users"></i> {{.Tr.T "users"}}</a></li>{{end}}
+            {{if .Account.Role.IsAdmin}}<li><a href="/admin/oidc/clients" class="nav-link{{if eq .Path "/admin/oidc/clients"}} active{{end}}"><i class="fas fa-key"></i> {{.Tr.T "oidc_clients"}}</a></li>{{end}}
         </ul>
 
         <div class="nav-user">
+            <a href="/account" class="btn-glass small">{{.Tr.T "my_account"}}</a>
             <a href="/" class="btn-glass small" target="_blank" rel="noopener noreferrer" title="{{.Tr.T "view_site"}}">
                 <i class="fas fa-external-link-alt"></i>
             </a>
-            <span class="nav-user-name">{{.Conf.User.Nickname}}</span>
+            <span class="nav-user-name">{{.Account.Nickname}}</span>
             <form action="/logout" method="POST" style="margin:0">
                 <button type="submit" class="btn-glass small danger" title="{{.Tr.T "logout"}}" aria-label="{{.Tr.T "logout"}}">
                     <i class="fas fa-right-from-bracket"></i>

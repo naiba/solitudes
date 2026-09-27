@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v3"
+	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -152,8 +153,16 @@ func settingsHandler(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, "Theme config validation failed: "+err.Error())
 	}
 
+	if sr.NewPassword != "" && sr.OldPassword == "" {
+		return fiber.NewError(http.StatusBadRequest, "old password required")
+	}
+	var changedPassword string
 	if len(sr.OldPassword) > 0 && len(sr.NewPassword) > 0 {
-		if bcrypt.CompareHashAndPassword([]byte(previous.User.Password), []byte(sr.OldPassword)) != nil {
+		passwordHash := previous.User.Password
+		if account := currentAccount(c); account != nil {
+			passwordHash = account.PasswordHash
+		}
+		if bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(sr.OldPassword)) != nil {
 			return errors.New("invalid email or password")
 		}
 		b, err := bcrypt.GenerateFromPassword([]byte(sr.NewPassword), bcrypt.DefaultCost)
@@ -161,6 +170,7 @@ func settingsHandler(c *fiber.Ctx) error {
 			return err
 		}
 		candidate.User.Password = string(b)
+		changedPassword = string(b)
 	}
 
 	for _, fileInput := range []struct {
@@ -188,6 +198,23 @@ func settingsHandler(c *fiber.Ctx) error {
 	if err := candidate.Save(); err != nil {
 		*solitudes.System.Config = previous
 		return fmt.Errorf("save settings: %w", err)
+	}
+	if changedPassword != "" {
+		if account := currentAccount(c); account != nil {
+			if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+				if err := tx.Model(&model.Account{}).Where("id = ?", account.ID).Update("password_hash", changedPassword).Error; err != nil {
+					return err
+				}
+				for _, entry := range []interface{}{&model.LoginSession{}, &model.OIDCRefreshToken{}, &model.OIDCAccessToken{}} {
+					if err := tx.Where("account_id = ?", account.ID).Delete(entry).Error; err != nil {
+						return err
+					}
+				}
+				return nil
+			}); err != nil {
+				return fmt.Errorf("update administrator password and revoke sessions: %w", err)
+			}
+		}
 	}
 	if candidate.Site.Theme != previous.Site.Theme || candidate.Admin.Theme != previous.Admin.Theme {
 		if err := ReloadTemplates(); err != nil {

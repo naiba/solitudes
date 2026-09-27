@@ -1,4 +1,13 @@
 {{define "admin/error"}}
+{{if not .Account}}
+<!doctype html><html lang="{{.Tr.Locale}}"><head><title>{{.Data.title}}</title>{{template "admin/css"}}</head>
+<body><main class="admin-container flex flex-col items-center justify-center min-h-[60vh]" id="main-content">
+    <div class="wf-card max-w-lg w-full text-center"><div class="wf-card-body py-12">
+        <h1>{{.Data.title}}</h1><p>{{.Data.msg}}</p>
+        <a href="/admin/login" class="admin-button primary">{{.Tr.T "sign_in"}}</a>
+    </div></div>
+</main></body></html>
+{{else}}
 {{template "admin/header" .}}
 <div class="admin-container flex flex-col items-center justify-center min-h-[60vh]">
     <div class="wf-card max-w-lg w-full">
@@ -22,4 +31,5 @@
     </div>
 </div>
 {{template "admin/footer" .}}
+{{end}}
 {{end}}

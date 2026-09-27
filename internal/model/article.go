@@ -29,7 +29,9 @@ type SibilingArticle struct {
 
 // Article 文章表
 type Article struct {
-	ID        string `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	ID        string  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	AuthorID  *string `gorm:"type:uuid;index"`
+	Author    Account `gorm:"foreignKey:AuthorID" json:"-"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 

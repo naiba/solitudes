@@ -12,7 +12,7 @@
   "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
   "author": {
     "@type": "Person",
-    "name": "{{jsonEscape .Conf.User.Nickname}}",
+    "name": "{{jsonEscape .Data.article.Author.Nickname}}",
     "url": "https://{{.Conf.Site.Domain}}/"
   },
   "publisher": {
@@ -33,7 +33,7 @@
 {{end}}
 
 <main id="main-content">
-    <article class="folio-article">
+    <article class="folio-article" data-testid="site-article">
         <header class="article-header folio-narrow">
             <h1 class="article-title">{{.Data.article.Title}}</h1>
             {{if .Login}}
@@ -73,7 +73,7 @@
         {{end}}
 
         {{if not .Data.article.DisableComment}}
-        <form class="comment-form" id="reply" novalidate>
+        <form class="comment-form" id="reply" data-testid="comment-form" novalidate>
             <h3>{{.Tr.T "leave_a_comment"}}</h3>
             <p class="comment-form-hint">{{.Tr.T "may_not_reply_if_email_not_exist"}}</p>
             <p class="comment-form-status" id="comment_form_status" role="status" aria-live="polite"></p>
@@ -82,7 +82,7 @@
                 <button type="button" class="comment-reply-cancel" onclick="clearReplyTarget()">{{.Tr.T "cancel"}}</button>
             </div>
             <label for="id_content">{{.Tr.T "comment_content"}}</label>
-            <textarea id="id_content" name="content" rows="6" placeholder="{{.Tr.T "comment_content"}}" aria-describedby="comment_content_error" aria-invalid="false"></textarea>
+            <textarea id="id_content" name="content" data-testid="comment-content" rows="6" placeholder="{{.Tr.T "comment_content"}}" aria-describedby="comment_content_error" aria-invalid="false"></textarea>
             <p class="comment-form-error" id="comment_content_error" role="alert"></p>
             {{if .Login}}
             <input type="hidden" maxlength="64" id="id_nickname" name="nickname" autocomplete="nickname">
@@ -90,12 +90,12 @@
             <div class="comment-form-fields">
                 <div>
                     <label for="id_nickname">{{.Tr.T "nickname"}}</label>
-                    <input id="id_nickname" name="nickname" maxlength="64" autocomplete="nickname" aria-describedby="comment_nickname_error" aria-invalid="false">
+                    <input id="id_nickname" name="nickname" data-testid="comment-nickname" maxlength="64" autocomplete="nickname" aria-describedby="comment_nickname_error" aria-invalid="false">
                     <p class="comment-form-error" id="comment_nickname_error" role="alert"></p>
                 </div>
                 <div>
                     <label for="id_email">{{.Tr.T "email"}} ({{.Tr.T "not_required"}})</label>
-                    <input id="id_email" name="email" type="email" maxlength="254" autocomplete="email">
+                    <input id="id_email" name="email" data-testid="comment-email" type="email" maxlength="254" autocomplete="email">
                 </div>
                 <div>
                     <label for="id_website">{{.Tr.T "website"}} ({{.Tr.T "not_required"}})</label>
@@ -103,7 +103,7 @@
                 </div>
             </div>
             {{end}}
-            <button type="submit" class="folio-btn" id="comment_submit_btn">{{.Tr.T "submit_comment"}}</button>
+            <button type="submit" class="folio-btn" id="comment_submit_btn" data-testid="comment-submit">{{.Tr.T "submit_comment"}}</button>
             <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
             <input type="hidden" id="id_reply_to" value="">
         </form>

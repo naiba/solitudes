@@ -26,7 +26,8 @@ type commentForm struct {
 }
 
 func commentHandler(c *fiber.Ctx) error {
-	isAdmin := c.Locals(solitudes.CtxAuthorized).(bool)
+	account := currentAccount(c)
+	isAdmin := account != nil && account.Role.IsAdmin()
 	var cf commentForm
 	if err := c.BodyParser(&cf); err != nil {
 		return fmt.Errorf("failed to parse comment form: %w", err)
@@ -39,8 +40,11 @@ func commentHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fmt.Errorf("article verification failed: %w", err)
 	}
+	if !canReadArticle(account, article) {
+		return fiber.ErrNotFound
+	}
 
-	commentType, replyTo, err := getCommentType(&cf)
+	commentType, replyTo, err := getCommentType(&cf, article.ID)
 	if err != nil {
 		return fmt.Errorf("failed to determine comment type: %w", err)
 	}
@@ -128,7 +132,7 @@ func generateTrackingToken() (string, error) {
 
 func verifyArticle(cf *commentForm) (*model.Article, error) {
 	var article model.Article
-	if err := solitudes.System.DB.Select("id,version,title,slug").Order("created_at DESC").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
+	if err := solitudes.System.DB.Select("id,version,title,slug,is_private,author_id").Order("created_at DESC").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch article: %w", err)
 	}
 	if cf.Version > article.Version || cf.Version == 0 {
@@ -137,10 +141,10 @@ func verifyArticle(cf *commentForm) (*model.Article, error) {
 	return &article, nil
 }
 
-func getCommentType(cf *commentForm) (string, *model.Comment, error) {
+func getCommentType(cf *commentForm, articleID string) (string, *model.Comment, error) {
 	if cf.ReplyTo != nil {
 		var innerReplyTo model.Comment
-		if err := visibleComments(solitudes.System.DB).Take(&innerReplyTo, "id = ?", cf.ReplyTo).Error; err != nil {
+		if err := visibleComments(solitudes.System.DB).Take(&innerReplyTo, "id = ? AND article_id = ?", cf.ReplyTo, articleID).Error; err != nil {
 			return "", nil, fmt.Errorf("failed to find parent comment: %w", err)
 		}
 		return "reply", &innerReplyTo, nil
@@ -158,8 +162,10 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 	}
 	cm.EmailTrackingToken = &token
 	if isAdmin {
-		cm.Nickname = solitudes.System.Config.User.Nickname
-		cm.Email = solitudes.System.Config.User.Email
+		if account := currentAccount(c); account != nil {
+			cm.Nickname = account.Nickname
+			cm.Email = account.Email
+		}
 	} else {
 		cm.Nickname = cf.Nickname
 		cm.Email = cf.Email

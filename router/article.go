@@ -15,7 +15,7 @@ import (
 
 func article(c *fiber.Ctx) error {
 	var a model.Article
-	if err := solitudes.System.DB.Order("created_at DESC").Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
+	if err := solitudes.System.DB.Preload("Author").Order("created_at DESC").Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return page404(c)
 		}
@@ -55,14 +55,15 @@ func article(c *fiber.Ctx) error {
 		title = a.Title
 	}
 
-	// Redact the body before generating any derived data such as the table of
-	// contents or description.
-	maskPrivateArticleContent(&a, c.Locals(solitudes.CtxAuthorized).(bool))
+	// Private drafts are accessible only to their author or an administrator.
+	if !canReadArticle(currentAccount(c), &a) {
+		return page404(c)
+	}
 
 	// 移除过度并发，改用顺序加载（对于单次请求，DB 查询的顺序执行通常比 5 个 goroutine 的调度开销更低且更可控）
-	relatedChapters(&a)
-	relatedBook(&a)
-	relatedSiblingArticle(&a)
+	relatedChapters(&a, currentAccount(c))
+	relatedBook(&a, currentAccount(c))
+	relatedSiblingArticle(&a, currentAccount(c))
 	a.GenTOC()
 
 	// 仅对评论加载保持 Paging 逻辑（这里由于 Paging 依赖 pg 变量，保持原逻辑但移除 goroutine）
@@ -97,61 +98,40 @@ func article(c *fiber.Ctx) error {
 	}))
 }
 
-func relatedSiblingArticle(p *model.Article) (prev model.Article, next model.Article) {
-	sibiling, _, _ := solitudes.System.SafeCache.Do(solitudes.CacheKeyPrefixRelatedSiblingArticle+p.ID, func() (interface{}, error) {
-		var sb model.SibilingArticle
-		if p.BookRefer == nil {
-			solitudes.System.DB.Select("id,title,slug").Order("created_at ASC").Take(&sb.Next, "book_refer is null and created_at > ?", p.CreatedAt)
-			solitudes.System.DB.Select("id,title,slug").Order("created_at DESC").Where("book_refer is null and created_at < ?", p.CreatedAt).Take(&sb.Prev)
-		} else {
-			// if this is a book chapter
-			solitudes.System.DB.Select("id,title,slug").Order("created_at ASC").Take(&sb.Next, "book_refer = ? and  created_at > ?", p.BookRefer, p.CreatedAt)
-			solitudes.System.DB.Select("id,title,slug").Order("created_at DESC").Where("book_refer = ? and  created_at < ?", p.BookRefer, p.CreatedAt).Take(&sb.Prev)
-		}
-		return sb, nil
-	})
-	if sibiling != nil {
-		x := sibiling.(model.SibilingArticle)
-		p.SibilingArticle = &x
+func relatedSiblingArticle(p *model.Article, account *model.Account) (prev model.Article, next model.Article) {
+	var sb model.SibilingArticle
+	if p.BookRefer == nil {
+		readableArticles(solitudes.System.DB, account).Select("id,title,slug").Order("created_at ASC").Take(&sb.Next, "book_refer is null and created_at > ?", p.CreatedAt)
+		readableArticles(solitudes.System.DB, account).Select("id,title,slug").Order("created_at DESC").Take(&sb.Prev, "book_refer is null and created_at < ?", p.CreatedAt)
+	} else {
+		readableArticles(solitudes.System.DB, account).Select("id,title,slug").Order("created_at ASC").Take(&sb.Next, "book_refer = ? and created_at > ?", p.BookRefer, p.CreatedAt)
+		readableArticles(solitudes.System.DB, account).Select("id,title,slug").Order("created_at DESC").Take(&sb.Prev, "book_refer = ? and created_at < ?", p.BookRefer, p.CreatedAt)
 	}
+	p.SibilingArticle = &sb
 	return
 }
 
-func relatedChapters(p *model.Article) {
+func relatedChapters(p *model.Article, account *model.Account) {
 	if p.IsBook {
-		chapters, _, _ := solitudes.System.SafeCache.Do(solitudes.CacheKeyPrefixRelatedChapters+p.ID, func() (interface{}, error) {
-			return innerRelatedChapters(p.ID), nil
-		})
-		if chapters != nil {
-			x := chapters.([]*model.Article)
-			p.Chapters = x
-		}
+		p.Chapters = innerRelatedChapters(p.ID, account)
 	}
 }
 
-func innerRelatedChapters(pid string) (ps []*model.Article) {
-	solitudes.System.DB.Order("created_at ASC").Find(&ps, "book_refer=?", pid)
+func innerRelatedChapters(pid string, account *model.Account) (ps []*model.Article) {
+	readableArticles(solitudes.System.DB, account).Order("created_at ASC").Find(&ps, "book_refer=?", pid)
 	for i := range ps {
 		if ps[i].IsBook {
-			ps[i].Chapters = innerRelatedChapters(ps[i].ID)
+			ps[i].Chapters = innerRelatedChapters(ps[i].ID, account)
 		}
 	}
 	return
 }
 
-func relatedBook(p *model.Article) {
+func relatedBook(p *model.Article, account *model.Account) {
 	if p.BookRefer != nil {
-		book, err, _ := solitudes.System.SafeCache.Do(solitudes.CacheKeyPrefixRelatedArticle+*p.BookRefer, func() (interface{}, error) {
-			var book model.Article
-			var err error
-			if err = solitudes.System.DB.Take(&book, "id = ?", p.BookRefer).Error; err != nil {
-				return nil, err
-			}
-			return book, err
-		})
-		if err == nil {
-			x := book.(model.Article)
-			p.Book = &x
+		var book model.Article
+		if err := readableArticles(solitudes.System.DB, account).Take(&book, "id = ?", p.BookRefer).Error; err == nil {
+			p.Book = &book
 		}
 	}
 }

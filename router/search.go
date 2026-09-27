@@ -133,7 +133,7 @@ func search(c *fiber.Ctx) error {
 
 		var articles []model.Article
 		if len(articleIDs) > 0 {
-			if err := solitudes.System.DB.Select("id", "slug", "version", "title", "is_private").
+			if err := readableArticles(solitudes.System.DB, currentAccount(c)).Select("id", "slug", "version", "title", "is_private", "author_id").
 				Where("id IN ?", articleIDs).Find(&articles).Error; err != nil {
 				return fmt.Errorf("failed to validate search result visibility: %w", err)
 			}

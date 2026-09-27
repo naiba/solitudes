@@ -30,8 +30,12 @@ func manageArticle(c *fiber.Ctx) error {
 		}
 	}
 	var as []model.Article
+	db := solitudes.System.DB
+	if account := currentAccount(c); account != nil && !account.Role.IsAdmin() {
+		db = db.Where("author_id = ?", account.ID)
+	}
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB,
+		DB:      db.Preload("Author"),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
@@ -54,6 +58,9 @@ func publish(c *fiber.Ctx) error {
 		if err := solitudes.System.DB.Take(&article, "id = ?", id).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("failed to fetch article for editing: %w", err)
 		}
+		if !mayEditArticle(currentAccount(c), &article) {
+			return fiber.ErrNotFound
+		}
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("admin/publish", injectSiteData(c, fiber.Map{
@@ -69,8 +76,11 @@ func deleteArticle(c *fiber.Ctx) error {
 		return errors.New("invalid article id")
 	}
 	var a model.Article
-	if err := solitudes.System.DB.Select("id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
+	if err := solitudes.System.DB.Select("id", "author_id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
 		return fmt.Errorf("failed to find article for deletion: %w", err)
+	}
+	if !mayEditArticle(currentAccount(c), &a) {
+		return fiber.ErrNotFound
 	}
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
@@ -118,6 +128,10 @@ type publishArticle struct {
 }
 
 func publishHandler(c *fiber.Ctx) error {
+	account := currentAccount(c)
+	if account == nil || !account.Role.CanPublish() {
+		return fiber.ErrForbidden
+	}
 	var pa publishArticle
 	if err := c.BodyParser(&pa); err != nil {
 		return fmt.Errorf("failed to parse publish form: %w", err)
@@ -131,6 +145,7 @@ func publishHandler(c *fiber.Ctx) error {
 	}
 	// edit article
 	newArticle := &model.Article{
+		AuthorID:       &account.ID,
 		ID:             pa.ID,
 		Title:          strings.TrimSpace(pa.Title),
 		Slug:           strings.TrimSpace(pa.Slug),
@@ -156,7 +171,10 @@ func publishHandler(c *fiber.Ctx) error {
 
 	if newArticle.ID == "" {
 		var existed model.Article
-		if err := solitudes.System.DB.Select("id").Order("created_at DESC").Take(&existed, "slug = ?", newArticle.Slug).Error; err == nil {
+		if err := solitudes.System.DB.Select("id, author_id").Order("created_at DESC").Take(&existed, "slug = ?", newArticle.Slug).Error; err == nil {
+			if !mayEditArticle(account, &existed) {
+				return fiber.ErrForbidden
+			}
 			newArticle.ID = existed.ID
 			newArticle.CreatedAt = time.Now()
 			newArticle.UpdatedAt = time.Now()
@@ -167,10 +185,17 @@ func publishHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch original article: %w", err)
 	}
+	if originalArticle.ID != "" {
+		if !mayEditArticle(account, &originalArticle) {
+			return fiber.ErrForbidden
+		}
+		newArticle.AuthorID = originalArticle.AuthorID
+	}
 
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if pa.NewVersion == 1 && originalArticle.ID != "" {
 			history := model.ArticleHistory{
+				EditorID:  &account.ID,
 				Content:   originalArticle.Content,
 				Version:   originalArticle.Version,
 				ArticleID: originalArticle.ID,
@@ -222,6 +247,13 @@ func fetchOriginArticle(af *model.Article) (model.Article, error) {
 	}
 
 	return originArticle, nil
+}
+
+func mayEditArticle(account *model.Account, article *model.Article) bool {
+	if account == nil || !account.Role.CanPublish() || article == nil || article.ID == "" {
+		return false
+	}
+	return account.Role.IsAdmin() || article.AuthorID != nil && *article.AuthorID == account.ID
 }
 
 func clearNonUTF8Chars(s string) string {

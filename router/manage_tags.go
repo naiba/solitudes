@@ -1,6 +1,7 @@
 package router
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -60,9 +61,16 @@ func renameTag(c *fiber.Ctx) error {
 
 // searchTags 搜索标签
 func searchTags(c *fiber.Ctx) error {
+	account := currentAccount(c)
 	query := strings.TrimSpace(c.Query("q"))
 	var tags []string
-	rows, err := solitudes.System.DB.Raw(`SELECT DISTINCT unnest(tags) as tag FROM articles WHERE array_to_string(tags, ',') ILIKE ? ORDER BY tag LIMIT 20`, "%"+query+"%").Rows()
+	var rows *sql.Rows
+	var err error
+	if account != nil && account.Role.IsAdmin() {
+		rows, err = solitudes.System.DB.Raw(`SELECT DISTINCT unnest(tags) as tag FROM articles WHERE array_to_string(tags, ',') ILIKE ? ORDER BY tag LIMIT 20`, "%"+query+"%").Rows()
+	} else {
+		rows, err = solitudes.System.DB.Raw(`SELECT DISTINCT unnest(tags) as tag FROM articles WHERE (is_private = false OR author_id = ?) AND array_to_string(tags, ',') ILIKE ? ORDER BY tag LIMIT 20`, account.ID, "%"+query+"%").Rows()
+	}
 	if err != nil {
 		return fmt.Errorf("failed to search tags: %w", err)
 	}
@@ -81,7 +89,7 @@ func searchTags(c *fiber.Ctx) error {
 func searchBooks(c *fiber.Ctx) error {
 	query := strings.TrimSpace(c.Query("q"))
 	var books []model.Article
-	if err := solitudes.System.DB.Where("is_book = ? AND (title ILIKE ? OR slug ILIKE ?)", true, "%"+query+"%", "%"+query+"%").
+	if err := readableArticles(solitudes.System.DB, currentAccount(c)).Where("is_book = ? AND (title ILIKE ? OR slug ILIKE ?)", true, "%"+query+"%", "%"+query+"%").
 		Select("id", "title", "slug").
 		Order("created_at DESC").
 		Limit(20).

@@ -72,6 +72,24 @@ blog-data/
 邮箱：`hi@example.com`
 密码：`123456`
 
+## 用户与 OIDC
+
+已有站点升级时，会从 `data/conf.yml` 的 `user.email`、`user.nickname`、`user.password`（bcrypt 哈希）创建首位管理员，并把旧文章归其所有。新站点对外开放前务必替换示例配置中的默认密码。首次迁移完成前请保留这些配置；旧的配置文件登录令牌不再有效。普通用户可在 `/admin/register` 注册，邮件验证链接一小时内有效，未验证不能登录；注册需配置 SMTP。`/account` 可管理身份和通行密钥。管理员在 `/admin/users` 分配管理员、编辑、普通用户角色；编辑可以直接发布并管理自己的文章，普通用户不能进入写作后台。
+
+请在 `data/conf.yml` 中设置 `site.domain` 为对外域名（必要时含端口），生产环境使用 HTTPS，并配置 `email.host`、`email.port`、`email.user`、`email.pass`、`email.ssl`。可选的上游登录配置：
+
+```yaml
+auth:
+  github: {client_id: "", client_secret: ""}
+  google: {client_id: "", client_secret: ""}
+  oidc: {issuer: "https://identity.example.com", client_id: "", client_secret: ""}
+  webauthn: {rp_id: "blog.example.com", origin: "https://blog.example.com"}
+```
+
+各上游平台的回调地址为 `https://<site.domain>/auth/{github,google,oidc}/callback`。上游必须返回已验证邮箱；若本地已有相同邮箱账号，先登录，再在 `/account` 主动绑定。通行密钥需要 HTTPS 且 RP ID 与 Origin 的主机相同（本地 localhost 开发例外）。未配置的登录方式不会启用。
+
+Solitudes 同时提供 OIDC 服务：管理员在 `/admin/oidc/clients` 注册下游应用，应用使用 `https://<site.domain>/.well-known/openid-configuration` 发现端点。仅允许精确匹配的回调 URI、授权码及 PKCE S256，并要求用户授权。公开客户端无密码；机密客户端密码仅创建时显示一次。禁用客户端会撤销 Access Token 和 Refresh Token；已签发的 ID Token 在过期前仍可通过签名验证，密钥轮换时会保留旧公钥。数据库备份包含 OIDC 签名私钥和客户端凭据，务必妥善保护；未设置 `site.domain` 或数据库不可用时，OIDC 服务不可用。变更域名后需重启服务。
+
 ## 主题系统
 
 Solitudes 支持独立的前台和后台主题。
@@ -117,9 +135,24 @@ go run cmd/web/main.go
 # 运行测试
 go test ./...
 
+# 集成测试：使用专用 PostgreSQL 测试数据库；每次仅创建、清理自身的临时 schema，
+# 邮件由测试内的本地 SMTP catcher 接收，不会向外发送。
+SOLITUDES_TEST_POSTGRES_DSN='postgres://postgres@127.0.0.1:5432/solitudes_test?sslmode=disable' \
+  go test -tags postgres_test ./...
+
+# 浏览器四组合矩阵：先在 e2e/ 内运行 `bun install` 和
+# `bunx playwright install chromium`，使用专用 PostgreSQL 测试数据库。
+# 测试启动隔离的 HTTP 服务及本地 SMTP catcher。
+SOLITUDES_TEST_POSTGRES_DSN='postgres://postgres@127.0.0.1:5432/solitudes_test?sslmode=disable' \
+  go test -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v
+
 # 构建
 go build -o solitudes cmd/web/main.go
 ```
+
+浏览器矩阵覆盖 cactus/folio × default/glacie 的注册与邮件验证、登录、搜索、评论、发布、
+角色修改、账户改密、OIDC 客户端管理及 Folio 主题切换等核心流程；不代表所有功能均有 E2E。
+上游 OAuth、WebAuthn 设备交互、上传、所有设置页面及错误分支仍需补专项浏览器测试。
 
 ## 鸣谢
 

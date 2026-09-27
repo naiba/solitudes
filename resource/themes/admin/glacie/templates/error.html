@@ -1,4 +1,11 @@
 {{define "admin/error"}}
+{{if not .Account}}
+<!doctype html><html lang="{{.Tr.Locale}}"><head><title>{{.Data.title}}</title>{{template "admin/css"}}</head>
+<body><main class="login-wrapper" id="main-content"><div class="login-card wf-card-static" style="padding:2.5rem">
+    <h1>{{.Data.title}}</h1><p>{{.Data.msg}}</p>
+    <a href="/admin/login" class="btn-glass primary">{{.Tr.T "sign_in"}}</a>
+</div></main></body></html>
+{{else}}
 {{template "admin/header" .}}
 
 <div class="error-wrapper">
@@ -17,4 +24,5 @@
 </div>
 
 {{template "admin/footer" .}}
+{{end}}
 {{end}}

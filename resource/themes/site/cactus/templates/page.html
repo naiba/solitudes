@@ -12,7 +12,7 @@
   "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
   "author": {
     "@type": "Person",
-    "name": "{{jsonEscape .Conf.User.Nickname}}",
+    "name": "{{jsonEscape .Data.article.Author.Nickname}}",
     "url": "https://{{.Conf.Site.Domain}}/"
   },
   "publisher": {
@@ -35,7 +35,7 @@
 {{if .Login}}
 <a style="text-align: right;" href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
 {{end}}
-<article class="post" id="main-content" tabindex="-1">
+<article class="post" id="main-content" data-testid="site-article" tabindex="-1">
   <h1 class="posttitle">{{.Data.article.Title}}</h1>
   <div class="content">
     {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
@@ -66,23 +66,23 @@
 </div>
 {{end}}
 {{if not .Data.article.DisableComment}}
-<div id="reply">
+<div id="reply" data-testid="comment-form">
     <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
-    <textarea cols="40" rows="6" id="id_content"
+    <textarea cols="40" rows="6" id="id_content" data-testid="comment-content"
         placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
     {{if .Login}}
     <input type="hidden" maxlength="64" id="id_nickname">
     {{else}}
     <div class="row">
         <label for="id_nickname" class="sr-only">{{.Tr.T "nickname"}}</label>
-        <input type="text" placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname" autocomplete="name">
+        <input type="text" placeholder='{{.Tr.T "nickname"}}' maxlength="64" id="id_nickname" data-testid="comment-nickname" autocomplete="name">
         <label for="id_email" class="sr-only">{{.Tr.T "email"}}</label>
-        <input type="email" placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email" autocomplete="email">
+        <input type="email" placeholder='{{.Tr.T "email"}} ({{.Tr.T "not_required"}})' maxlength="254" id="id_email" data-testid="comment-email" autocomplete="email">
         <label for="id_website" class="sr-only">{{.Tr.T "website"}}</label>
         <input type="url" placeholder='{{.Tr.T "website"}} ({{.Tr.T "not_required"}})' maxlength="200" id="id_website" autocomplete="url">
     </div>
     {{end}}
-    <button type="button" onclick="comment(this)" class="base-button">{{.Tr.T "submit"}}</button>
+    <button type="button" onclick="comment(this)" data-testid="comment-submit" class="base-button">{{.Tr.T "submit"}}</button>
     <input type="hidden" value="{{.Data.article.Slug}}" id="id_slug">
     <input type="hidden" id="id_reply_to" value="">
 </div>
