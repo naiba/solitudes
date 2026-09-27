@@ -217,6 +217,50 @@ body {
   font-size: 1.125rem;
 }
 
+.admin-nav-group { position: relative; }
+.admin-nav-group summary {
+  display: flex; align-items: center; gap: 0.5rem; list-style: none;
+  padding: 0.625rem 0.85rem; border-radius: var(--radius-md);
+  color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+}
+.admin-nav-group summary::-webkit-details-marker { display: none; }
+.admin-nav-group summary:hover, .admin-nav-group summary.active, .admin-nav-group details[open] summary {
+  background: var(--bg-tertiary); color: var(--text-primary);
+}
+.admin-nav-group summary .fa-chevron-down { font-size: 0.7rem; }
+.admin-nav-submenu {
+  position: absolute; top: calc(100% + 0.5rem); left: 0; min-width: 215px;
+  padding: 0.45rem; margin: 0; list-style: none; border-radius: var(--radius-md);
+  background: var(--bg-primary); border: 1px solid var(--border-color); box-shadow: var(--shadow-lg);
+}
+.admin-nav-submenu a { white-space: nowrap; }
+.admin-nav-group:focus-within { z-index: 2; }
+.provider-settings { max-width: 880px; }
+.provider-intro { color: var(--text-secondary); line-height: 1.6; }
+.provider-settings form { display: grid; gap: 1rem; }
+.provider-card { padding: 1.4rem; display: grid; gap: 0.55rem; }
+.provider-card h2 { font-size: 1.15rem; display: flex; align-items: center; gap: 0.75rem; margin: 0; }
+.provider-card p { margin: 0.25rem 0; color: var(--text-secondary); }
+.provider-card code { overflow-wrap: anywhere; }
+.provider-card label:not(.provider-disable) { font-weight: 600; }
+.provider-disable { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+.provider-status, .provider-saved { color: var(--accent-primary); font-size: 0.85rem; }
+
+@media (max-width: 1150px) {
+  .admin-topnav-inner { padding: 0 1rem; }
+  .admin-mobile-toggle { display: inline-flex; margin-left: auto; margin-right: 0.5rem; }
+  .admin-nav-links { display: none; }
+  .admin-nav-links.mobile-open {
+    display: flex; position: fixed; top: 60px; left: 0; right: 0;
+    max-height: calc(100vh - 60px); padding: 0.75rem 1rem 1rem;
+    flex-direction: column; align-items: stretch; overflow-y: auto;
+    background: var(--bg-primary); border-bottom: 1px solid var(--border-color); box-shadow: var(--shadow-lg);
+  }
+  .admin-nav-submenu { position: static; box-shadow: none; margin: 0.25rem 0 0 0.75rem; }
+  .admin-nav-group summary { min-height: 44px; }
+  .admin-nav-links.mobile-open a { min-height: 44px; }
+}
+
 .admin-mobile-toggle {
   display: none;
   align-items: center;

@@ -1,0 +1,24 @@
+{{define "admin/account_oidc_clients"}}
+<!doctype html><html lang="{{.Tr.Locale}}"><head><title>{{.Tr.T "provider_external_apps"}}</title>{{template "admin/css"}}</head>
+<body class="bg-gray-50"><main class="admin-main admin-container provider-settings" id="main-content">
+  <p><a href="/account">← {{.Tr.T "my_account"}}</a></p>
+  <h1>{{.Tr.T "provider_external_apps"}}</h1>
+  <p>{{.Tr.T "owned_clients_hint"}}</p>
+  <p>{{.Tr.T "oidc_issuer"}}: <code>{{.Data.issuer}}</code></p>
+  <section class="wf-card provider-card">
+    <form action="/account/oidc/clients" method="post" data-testid="oidc-client-form">
+      <label for="my-client-name">{{.Tr.T "client_name"}}</label>
+      <input id="my-client-name" class="form-control" name="name" data-testid="oidc-client-name" required maxlength="100">
+      <label for="my-client-redirects">{{.Tr.T "redirect_uris"}}</label>
+      <textarea class="form-control" id="my-client-redirects" name="redirect_uris" data-testid="oidc-client-redirects" rows="3" required></textarea>
+      <label><input type="checkbox" name="public" data-testid="oidc-client-public"> {{.Tr.T "public_client"}}</label>
+      <button class="admin-button primary" type="submit" data-testid="oidc-client-submit">{{.Tr.T "create_client"}}</button>
+    </form>
+  </section>
+  <section class="wf-card provider-card"><h2>{{.Tr.T "provider_external_apps"}}</h2>
+    <ul>{{range .Data.clients}}<li><strong>{{.Name}}</strong> · <code>{{.ID}}</code>
+      {{if .DisabledAt}}({{$.Tr.T "disabled"}}){{else}}<form method="post" action="/account/oidc/clients/{{.ID}}/disable"><button class="admin-button compact danger" type="submit" data-testid="oidc-client-disable">{{$.Tr.T "disable"}}</button></form>{{end}}
+    </li>{{end}}</ul>
+  </section>
+</main></body></html>
+{{end}}

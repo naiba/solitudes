@@ -334,6 +334,90 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 	}
 }
 
+func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
+	db := newPostgresIdentityTestDB(t)
+	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
+		t.Fatal(err)
+	}
+	previous := solitudes.System
+	t.Cleanup(func() { solitudes.System = previous })
+	config := &model.Config{}
+	solitudes.System = &solitudes.SysVariable{DB: db, Config: config}
+	now := time.Now()
+	accounts := []model.Account{
+		{Email: "app-owner@example.com", Nickname: "Owner", Role: model.RoleUser, EmailVerifiedAt: &now},
+		{Email: "another-owner@example.com", Nickname: "Other", Role: model.RoleUser, EmailVerifiedAt: &now},
+		{Email: "app-admin@example.com", Nickname: "Admin", Role: model.RoleAdmin, EmailVerifiedAt: &now},
+	}
+	for i := range accounts {
+		if err := db.Create(&accounts[i]).Error; err != nil {
+			t.Fatal(err)
+		}
+		if err := db.Create(&model.LoginSession{AccountID: accounts[i].ID,
+			TokenHash: secretHash(accounts[i].Email), ExpiresAt: now.Add(time.Hour)}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	clients := []model.OIDCClient{
+		{ID: "owned-app", OwnerID: &accounts[0].ID, Name: "Own", Public: true, RedirectURIsJSON: `["https://own.example.com/callback"]`},
+		{ID: "another-app", OwnerID: &accounts[1].ID, Name: "Other", Public: true, RedirectURIsJSON: `["https://other.example.com/callback"]`},
+		{ID: "legacy-app", Name: "Legacy", Public: true, RedirectURIsJSON: `["https://legacy.example.com/callback"]`},
+	}
+	for i := range clients {
+		if err := db.Create(&clients[i]).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, id := range []string{clients[0].ID, clients[1].ID} {
+		if err := db.Create(&model.OIDCAccessToken{ClientID: id, AccountID: accounts[0].ID,
+			ExpiresAt: now.Add(time.Hour)}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	app := fiber.New()
+	app.Use(auth, csrfGuard)
+	app.Post("/account/oidc/clients/:id/disable", requireAccount, disableOIDCClient)
+	call := func(email, id string) int {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPost, "/account/oidc/clients/"+id+"/disable", nil)
+		req.Host = "localhost:8080"
+		req.Header.Set("Host", "localhost:8080")
+		req.Header.Set("Origin", "http://localhost:8080")
+		req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: email})
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		return resp.StatusCode
+	}
+	for _, id := range []string{clients[1].ID, clients[2].ID} {
+		if status := call(accounts[0].Email, id); status != http.StatusNotFound {
+			t.Fatalf("non-owner disabled %s: %d", id, status)
+		}
+	}
+	var other model.OIDCClient
+	if err := db.Take(&other, "id = ?", clients[1].ID).Error; err != nil || other.DisabledAt != nil {
+		t.Fatalf("unauthorized change to another client: %+v %v", other, err)
+	}
+	if status := call(accounts[0].Email, clients[0].ID); status != http.StatusSeeOther {
+		t.Fatalf("owner could not disable own client: %d", status)
+	}
+	var ownTokens, otherTokens int64
+	if err := db.Model(&model.OIDCAccessToken{}).Where("client_id = ?", clients[0].ID).Count(&ownTokens).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Model(&model.OIDCAccessToken{}).Where("client_id = ?", clients[1].ID).Count(&otherTokens).Error; err != nil {
+		t.Fatal(err)
+	}
+	if ownTokens != 0 || otherTokens != 1 {
+		t.Fatalf("revocation crossed ownership boundary: own=%d other=%d", ownTokens, otherTokens)
+	}
+	if status := call(accounts[2].Email, clients[2].ID); status != http.StatusSeeOther {
+		t.Fatalf("administrator cannot disable legacy client: %d", status)
+	}
+}
+
 func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 	db := newPostgresIdentityTestDB(t)
 	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{},

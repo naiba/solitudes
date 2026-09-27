@@ -9,6 +9,7 @@ import (
 	"mime/quotedprintable"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -50,10 +51,23 @@ func TestBrowserThemeMatrix(t *testing.T) {
 		Role: model.RoleAdmin, EmailVerifiedAt: &now}
 	reader := model.Account{Email: "browser-reader@example.com", Nickname: "Browser Reader", PasswordHash: string(hash),
 		Role: model.RoleUser, EmailVerifiedAt: &now}
-	for _, account := range []*model.Account{&admin, &reader} {
+	editor := model.Account{Email: "browser-editor@example.com", Nickname: "Browser Editor", PasswordHash: string(hash),
+		Role: model.RoleEditor, EmailVerifiedAt: &now}
+	for _, account := range []*model.Account{&admin, &reader, &editor} {
 		if err := db.Create(account).Error; err != nil {
 			t.Fatal(err)
 		}
+	}
+	externalApp := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		_, _ = w.Write([]byte("External app callback"))
+	}))
+	t.Cleanup(externalApp.Close)
+	redirectURI := externalApp.URL + "/callback"
+	client := model.OIDCClient{ID: "browser-public-client", Name: "Browser external app", Public: true,
+		RedirectURIsJSON: fmt.Sprintf("[%q]", redirectURI)}
+	if err := db.Create(&client).Error; err != nil {
+		t.Fatal(err)
 	}
 	article := model.Article{AuthorID: &admin.ID, Slug: "e2e-theme-article", Title: "E2E Theme Article",
 		Content: "A browser-visible article used to test search and comments.", TemplateID: solitudes.ArticleTemplateID, Version: 1}
@@ -72,6 +86,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	config.Site.SpaceDesc = "Browser E2E test site"
 	config.User.Nickname = admin.Nickname
 	config.User.Email = admin.Email
+	config.ConfigFilePath = filepath.Join(t.TempDir(), "conf.yml")
 	smtpPort, mailMessages := startMailCatcher(t)
 	config.Email.Host = "127.0.0.1"
 	config.Email.Port = smtpPort
@@ -168,6 +183,9 @@ func TestBrowserThemeMatrix(t *testing.T) {
 					"E2E_ADMIN_PASSWORD=test-browser-password",
 					"E2E_READER_EMAIL="+reader.Email,
 					"E2E_READER_PASSWORD=test-browser-password",
+					"E2E_EDITOR_EMAIL="+editor.Email,
+					"E2E_OIDC_CLIENT_ID="+client.ID,
+					"E2E_OIDC_REDIRECT_URI="+redirectURI,
 					"E2E_ARTICLE_SLUG="+article.Slug,
 					"E2E_ARTICLE_TITLE="+article.Title,
 				)

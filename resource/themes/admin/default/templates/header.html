@@ -29,7 +29,7 @@
                     <i class="fa-solid fa-gauge"></i>
                     <span>{{.Tr.T "dashboard"}}</span>
                 </a></li>{{end}}
-                <li><a href="/admin/publish" class="{{if hasPrefix .Path "/admin/publish"}}active{{end}}">
+                <li><a href="/admin/publish" data-testid="admin-nav-publish" class="{{if hasPrefix .Path "/admin/publish"}}active{{end}}">
                     <i class="fa-solid fa-plus"></i>
                     <span>{{.Tr.T "compose"}}</span>
                 </a></li>
@@ -37,7 +37,7 @@
                     <i class="fa-solid fa-list"></i>
                     <span>{{.Tr.T "articles"}}</span>
                 </a></li>
-                {{if .Account.Role.IsAdmin}}<li><a href="/admin/comments" class="{{if hasPrefix .Path "/admin/comments"}}active{{end}}">
+                {{if .Account.Role.IsAdmin}}<li class="admin-nav-group"><details data-testid="admin-nav-content-menu"><summary class="{{if or (hasPrefix .Path "/admin/comments") (hasPrefix .Path "/admin/media") (hasPrefix .Path "/admin/tags")}}active{{end}}"><i class="fa-solid fa-folder-open"></i> {{.Tr.T "content_management"}} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary><ul class="admin-nav-submenu"><li><a href="/admin/comments" class="{{if hasPrefix .Path "/admin/comments"}}active{{end}}">
                     <i class="fa-regular fa-comments"></i>
                     <span>{{.Tr.T "comments"}}</span>
                 </a></li>
@@ -49,12 +49,14 @@
                     <i class="fa-solid fa-tags"></i>
                     <span>{{.Tr.T "tags"}}</span>
                 </a></li>
+                </ul></details></li>
+                <li class="admin-nav-group"><details data-testid="admin-nav-identity-menu"><summary class="{{if or (hasPrefix .Path "/admin/users") (hasPrefix .Path "/admin/oidc") (hasPrefix .Path "/admin/auth")}}active{{end}}"><i class="fa-solid fa-shield-halved"></i> {{.Tr.T "identity_management"}} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary><ul class="admin-nav-submenu"><li><a href="/admin/users" class="{{if hasPrefix .Path "/admin/users"}}active{{end}}"><i class="fa-solid fa-users"></i><span>{{.Tr.T "users"}}</span></a></li>
+                <li><a href="/admin/auth/providers" data-testid="admin-nav-providers" class="{{if hasPrefix .Path "/admin/auth"}}active{{end}}"><i class="fa-solid fa-right-to-bracket"></i><span>{{.Tr.T "login_providers"}}</span></a></li>
+                <li><a href="/admin/oidc/clients" class="{{if hasPrefix .Path "/admin/oidc"}}active{{end}}"><i class="fa-solid fa-key"></i><span>{{.Tr.T "provider_external_apps"}}</span></a></li></ul></details></li>
                 <li><a href="/admin/settings" class="{{if hasPrefix .Path "/admin/settings"}}active{{end}}">
                     <i class="fa-solid fa-gear"></i>
                     <span>{{.Tr.T "site_settings"}}</span>
-                </a></li>
-                <li><a href="/admin/users" class="{{if hasPrefix .Path "/admin/users"}}active{{end}}"><i class="fa-solid fa-users"></i><span>{{.Tr.T "users"}}</span></a></li>{{end}}
-                {{if .Account.Role.IsAdmin}}<li><a href="/admin/oidc/clients" class="{{if hasPrefix .Path "/admin/oidc"}}active{{end}}"><i class="fa-solid fa-key"></i><span>{{.Tr.T "oidc_clients"}}</span></a></li>{{end}}
+                </a></li>{{end}}
             </ul>
             
             <div class="admin-user-menu">
@@ -108,8 +110,16 @@
                     toggle.focus();
                 }
             });
+            navigation.querySelectorAll('details').forEach(group => group.addEventListener('toggle', () => {
+                if (group.open) navigation.querySelectorAll('details').forEach(other => {
+                    if (other !== group) other.open = false;
+                });
+            }));
+            document.addEventListener('click', event => {
+                if (!navigation.contains(event.target)) navigation.querySelectorAll('details').forEach(group => group.open = false);
+            });
             window.addEventListener('resize', () => {
-                if (window.innerWidth > 768) closeNavigation();
+                if (window.innerWidth > 1150) closeNavigation();
             });
         })();
     </script>

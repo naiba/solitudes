@@ -13,15 +13,19 @@ import (
 func TestThemeInteractionSelectors(t *testing.T) {
 	contracts := map[string]map[string][]string{
 		"admin": {
-			"login.html":               {"auth-login-form", "auth-email", "auth-password", "auth-captcha", "auth-submit", "auth-register-link"},
-			"register.html":            {"register-form", "register-email", "register-nickname", "register-password", "register-captcha", "register-submit", "resend-form", "resend-email", "resend-captcha", "resend-submit"},
-			"account.html":             {"account-password-form", "account-current-password", "account-new-password", "account-password-submit", "account-passkey-add", "account-logout"},
-			"publish.html":             {"publish-title", "publish-slug", "publish-tags", "publish-template", "publish-content", "publish-private", "publish-submit"},
-			"users.html":               {"user-role-form", "user-role-select", "user-role-save"},
-			"consent.html":             {"oidc-consent-form", "oidc-consent-allow", "oidc-consent-deny"},
-			"oidc_clients.html":        {"oidc-client-form", "oidc-client-name", "oidc-client-redirects", "oidc-client-public", "oidc-client-submit", "oidc-rotate-keys"},
-			"oidc_client_created.html": {"oidc-created-id", "oidc-created-back"},
-			"articles.html":            {"article-edit", "article-delete"},
+			"header.html":                      {"admin-nav-publish", "admin-nav-content-menu", "admin-nav-identity-menu", "admin-nav-providers"},
+			"login.html":                       {"auth-login-form", "auth-email", "auth-password", "auth-captcha", "auth-submit", "auth-register-link"},
+			"login_providers.html":             {"provider-settings-form", "provider-github-id", "provider-github-secret", "provider-google-id", "provider-google-secret", "provider-oidc-issuer", "provider-oidc-id", "provider-oidc-secret", "provider-settings-save"},
+			"register.html":                    {"register-form", "register-email", "register-nickname", "register-password", "register-captcha", "register-submit", "resend-form", "resend-email", "resend-captcha", "resend-submit"},
+			"account.html":                     {"account-password-form", "account-current-password", "account-new-password", "account-password-submit", "account-passkey-add", "account-oidc-clients", "account-logout"},
+			"account_oidc_clients.html":        {"oidc-client-form", "oidc-client-name", "oidc-client-redirects", "oidc-client-public", "oidc-client-submit"},
+			"account_oidc_client_created.html": {"oidc-created-id", "oidc-created-back"},
+			"publish.html":                     {"publish-title", "publish-slug", "publish-tags", "publish-template", "publish-content", "publish-private", "publish-submit"},
+			"users.html":                       {"user-role-form", "user-role-select", "user-role-save"},
+			"consent.html":                     {"oidc-consent-form", "oidc-consent-allow", "oidc-consent-deny"},
+			"oidc_clients.html":                {"oidc-client-form", "oidc-client-name", "oidc-client-redirects", "oidc-client-public", "oidc-client-submit", "oidc-rotate-keys"},
+			"oidc_client_created.html":         {"oidc-created-id", "oidc-created-back"},
+			"articles.html":                    {"article-edit", "article-delete"},
 		},
 		"site": {
 			"search.html":         {"site-search-input", "site-search-submit"},

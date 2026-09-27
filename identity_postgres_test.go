@@ -50,10 +50,17 @@ func TestPostgresLegacyArticlesMigrateToAdministrator(t *testing.T) {
 	if err := db.Exec("SET search_path TO " + quoted + ", public").Error; err != nil {
 		t.Fatal(err)
 	}
-	// Supply the model's UUID default within the disposable schema, without
-	// relying on a database-wide uuid-ossp extension owned by another test.
-	if err := db.Exec(`CREATE FUNCTION uuid_generate_v4() RETURNS uuid LANGUAGE SQL AS 'SELECT gen_random_uuid()'`).Error; err != nil {
+	// migrate() creates uuid-ossp in this schema when it does not exist yet.
+	// If another concurrently running test already installed it elsewhere,
+	// give this isolated schema its own UUID default instead.
+	var installed int64
+	if err := db.Raw(`SELECT count(*) FROM pg_extension WHERE extname = 'uuid-ossp'`).Scan(&installed).Error; err != nil {
 		t.Fatal(err)
+	}
+	if installed > 0 {
+		if err := db.Exec(`CREATE FUNCTION uuid_generate_v4() RETURNS uuid LANGUAGE SQL AS 'SELECT gen_random_uuid()'`).Error; err != nil {
+			t.Fatal(err)
+		}
 	}
 	for _, ddl := range []string{
 		`CREATE TABLE articles (id uuid PRIMARY KEY, slug text CONSTRAINT uni_articles_slug UNIQUE, title text, content text, template_id smallint, version bigint, created_at timestamptz, updated_at timestamptz)`,
