@@ -89,3 +89,52 @@ func TestCactusSettings(t *testing.T) {
 	menu0 := headerMenus[0].(map[string]interface{})
 	assert.Equal(t, "Home", menu0["name"])
 }
+
+func TestInvalidSettingsDoNotChangeConfigOrSave(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := os.MkdirAll("resource/themes/site/cactus", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("resource/themes/site/cactus/metadata.json", []byte(`{"id":"cactus"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll("resource/themes/admin/default", 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile("resource/themes/admin/default/metadata.json", []byte(`{"id":"default"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	previous := solitudes.System
+	t.Cleanup(func() { solitudes.System = previous })
+	cfg := &model.Config{ConfigFilePath: "saved.yml"}
+	cfg.Site.Theme = "cactus"
+	cfg.Admin.Theme = "default"
+	cfg.Site.SpaceName = "Original title"
+	cfg.Site.ThemeConfig = map[string]interface{}{"keep": "unchanged"}
+	solitudes.System = &solitudes.SysVariable{Config: cfg}
+	app := fiber.New()
+	app.Post("/settings", settingsHandler)
+
+	for _, payload := range []string{
+		`{"site_title":"Tampered","site_theme":"../data","theme_config":"keep: changed"}`,
+		`{"site_title":"Tampered","site_theme":"cactus","theme_config":"[not a map]"}`,
+		`{"site_title":"Tampered","site_theme":"cactus","old_password":"incorrect","new_password":"hacked"}`,
+	} {
+		req := httptest.NewRequest(http.MethodPost, "/settings", strings.NewReader(payload))
+		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode < 400 {
+			t.Fatalf("invalid settings status = %d, payload = %s", resp.StatusCode, payload)
+		}
+		if cfg.Site.Theme != "cactus" || cfg.Site.SpaceName != "Original title" || cfg.Site.ThemeConfig["keep"] != "unchanged" {
+			t.Fatalf("invalid settings changed configuration: %+v", cfg.Site)
+		}
+		if _, err := os.Stat("saved.yml"); !os.IsNotExist(err) {
+			t.Fatalf("invalid settings wrote config: %v", err)
+		}
+	}
+}

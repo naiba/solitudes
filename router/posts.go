@@ -204,7 +204,7 @@ func feedHandler(c *fiber.Ctx) error {
 
 	// 使用 singleflight 避免并发刷接口
 	result, err, _ := solitudes.System.SafeCache.Do("feed:"+format, func() (interface{}, error) {
-		return generateFeed(c, format)
+		return generateFeed(format)
 	})
 	if err != nil {
 		return err
@@ -221,7 +221,7 @@ type feedOutput struct {
 	body        string
 }
 
-func generateFeed(c *fiber.Ctx, format string) (interface{}, error) {
+func generateFeed(format string) (interface{}, error) {
 	feed := &feeds.Feed{
 		Title:       solitudes.System.Config.Site.SpaceName,
 		Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain},
@@ -233,20 +233,7 @@ func generateFeed(c *fiber.Ctx, format string) (interface{}, error) {
 	if err := solitudes.System.DB.Order("created_at DESC").Limit(20).Find(&articles).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch articles for feed: %w", err)
 	}
-
-	isAuthorized := c.Locals(solitudes.CtxAuthorized).(bool)
-	for i := range articles {
-		maskPrivateArticleContent(&articles[i], isAuthorized)
-		feed.Items = append(feed.Items, &feeds.Item{
-			Title:       articles[i].Title,
-			Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug},
-			Author:      &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
-			Description: mdExcerpt(articles[i].Content, 200),
-			Content:     luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),
-			Created:     articles[i].CreatedAt,
-			Updated:     articles[i].UpdatedAt,
-		})
-	}
+	feed.Items = publicFeedItems(articles)
 
 	switch format {
 	case "atom":
@@ -272,6 +259,26 @@ func generateFeed(c *fiber.Ctx, format string) (interface{}, error) {
 	default:
 		return nil, fmt.Errorf("unknown feed type: %s", format)
 	}
+}
+
+func publicFeedItems(articles []model.Article) []*feeds.Item {
+	items := make([]*feeds.Item, 0, len(articles))
+	for i := range articles {
+		// The feed has a shared singleflight key: never let an admin request
+		// publish private content to a concurrent anonymous subscriber.
+		maskPrivateArticleContent(&articles[i], false)
+		items = append(items, &feeds.Item{
+			Title:       articles[i].Title,
+			Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug},
+			Author:      &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
+			Description: mdExcerpt(articles[i].Content, 200),
+			Content:     luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),
+			Created:     articles[i].CreatedAt,
+			Updated:     articles[i].UpdatedAt,
+		})
+	}
+
+	return items
 }
 
 func tags(c *fiber.Ctx) error {

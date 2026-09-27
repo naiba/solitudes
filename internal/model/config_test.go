@@ -56,6 +56,15 @@ func TestThemeFallback(t *testing.T) {
 	}
 }
 
+func TestRemovedAstroPaperFallsBackToCactus(t *testing.T) {
+	cfg := &Config{}
+	cfg.Site.Theme = "astro-paper"
+	ApplyThemeFallback(cfg, "cactus", "default", map[string]bool{"cactus": true, "folio": true}, map[string]bool{"default": true})
+	if cfg.Site.Theme != "cactus" {
+		t.Fatalf("removed theme fallback = %q, want cactus", cfg.Site.Theme)
+	}
+}
+
 func TestValidateThemeConfig(t *testing.T) {
 	// Simulate available themes
 	availableThemes := &theme.ThemeList{

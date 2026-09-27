@@ -1,11 +1,13 @@
 package router
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/blevesearch/bleve/v2"
 	blevesearch "github.com/blevesearch/bleve/v2/search"
 
+	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
 
@@ -58,6 +60,23 @@ func TestMaskPrivateArticleContent(t *testing.T) {
 				t.Fatalf("TOC present = %t, want %t", got, test.wantTOC)
 			}
 		})
+	}
+}
+
+func TestPublicFeedItemsNeverIncludePrivateBody(t *testing.T) {
+	previous := solitudes.System
+	t.Cleanup(func() { solitudes.System = previous })
+	solitudes.System = &solitudes.SysVariable{Config: &model.Config{}}
+	articles := []model.Article{
+		{ID: "private", Slug: "private", IsPrivate: true, Content: "unique-private-feed-secret"},
+		{ID: "public", Slug: "public", Content: "public feed entry"},
+	}
+	items := publicFeedItems(articles)
+	if len(items) != 2 || strings.Contains(items[0].Content+items[0].Description, "unique-private-feed-secret") {
+		t.Fatalf("private feed item leaked content: %+v", items)
+	}
+	if !strings.Contains(items[1].Content, "public feed entry") {
+		t.Fatalf("public feed item was redacted: %+v", items[1])
 	}
 }
 

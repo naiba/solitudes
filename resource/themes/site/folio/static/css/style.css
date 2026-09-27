@@ -1858,3 +1858,11 @@ body.mobile-menu-open {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Keep article embeds inside the reading column. */
+#main-content { scroll-margin-top: 1rem; }
+.app-prose img, .app-prose video, .app-prose iframe { max-width: 100%; height: auto; }
+.app-prose pre, .app-prose table { max-width: 100%; overflow-x: auto; }
+@media (max-width: 767px) {
+  .mobile-menu nav a, .mobile-menu nav button { min-height: 44px; display: flex; align-items: center; }
+}

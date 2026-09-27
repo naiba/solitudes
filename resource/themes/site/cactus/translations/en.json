@@ -1,4 +1,5 @@
 [
+    {"locale": "en", "key": "skip_to_content", "trans": "Skip to content"},
     {"locale": "en", "key": "book", "trans": "Book"},
     {"locale": "en", "key": "chapters", "trans": "Chapters"},
     {"locale": "en", "key": "comment_content", "trans": "Comment content"},

@@ -6,6 +6,7 @@
     {{template "admin/css"}}
 </head>
 <body>
+    <a href="#admin-main-content" class="admin-skip-link">{{.Tr.T "skip_to_content"}}</a>
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay">
         <div class="pulse-spinner">
@@ -95,5 +96,5 @@
     })();
     </script>
 
-    <main>
+    <main id="admin-main-content" tabindex="-1">
 {{end}}

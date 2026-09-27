@@ -1,4 +1,5 @@
 [
+    {"locale": "zh", "key": "skip_to_content", "trans": "跳至正文"},
     {"locale": "zh", "key": "book", "trans": "专栏"},
     {"locale": "zh", "key": "chapters", "trans": "章节列表"},
     {"locale": "zh", "key": "comment_content", "trans": "评论内容"},

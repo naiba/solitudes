@@ -1,7 +1,7 @@
 {{define "site/error"}}
 {{template "site/header" .}}
 {{template "site/menu" .}}
-<section>
+<section id="main-content" tabindex="-1">
   <span class="h1">{{.Data.title}}</span>
   <p>{{.Data.msg}}</p>
 </section>

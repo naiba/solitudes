@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></noscript>
-    <link rel="stylesheet" href="/static/site/folio/css/style.css?v2026081502">
+    <link rel="stylesheet" href="/static/site/folio/css/style.css?v2026092701">
     <link rel="preconnect" href="https://fonts.googleapis.cn" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
@@ -259,6 +259,19 @@
                 if (event.key === 'Escape' && menu.classList.contains('active')) {
                     setMenu(false);
                     toggle.focus();
+                }
+                if (event.key === 'Tab' && menu.classList.contains('active')) {
+                    var focusables = menu.querySelectorAll('a[href], button:not([disabled])');
+                    var first = focusables[0];
+                    var last = focusables[focusables.length - 1];
+                    if (!first) return;
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
                 }
             });
             window.addEventListener('resize', function() {

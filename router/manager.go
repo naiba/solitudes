@@ -1,9 +1,14 @@
 package router
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/netip"
+	"net/url"
 	"os"
 	"runtime"
 	"strings"
@@ -111,6 +116,105 @@ var contentTypeList = map[string]string{
 
 const maxUploadSize = 50 * 1024 * 1024 // 50MB
 
+var errUnsafeFetchURL = errors.New("remote image URL must resolve to a public HTTP(S) address")
+
+var blockedFetchNetworks = []netip.Prefix{
+	netip.MustParsePrefix("0.0.0.0/8"),
+	netip.MustParsePrefix("100.64.0.0/10"),
+	netip.MustParsePrefix("192.0.0.0/24"),
+	netip.MustParsePrefix("198.18.0.0/15"),
+	netip.MustParsePrefix("240.0.0.0/4"),
+	netip.MustParsePrefix("64:ff9b::/96"),
+	netip.MustParsePrefix("2001::/32"),
+	netip.MustParsePrefix("2001:db8::/32"),
+	netip.MustParsePrefix("2002::/16"),
+}
+
+func publicFetchIP(ip net.IP) bool {
+	addr, ok := netip.AddrFromSlice(ip)
+	if !ok {
+		return false
+	}
+	addr = addr.Unmap()
+	if !addr.IsGlobalUnicast() || addr.IsPrivate() || addr.IsLoopback() || addr.IsLinkLocalUnicast() {
+		return false
+	}
+	for _, blocked := range blockedFetchNetworks {
+		if blocked.Contains(addr) {
+			return false
+		}
+	}
+	return true
+}
+
+func validateFetchURL(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil {
+		return errUnsafeFetchURL
+	}
+	return nil
+}
+
+func fetchImage(ctx context.Context, raw string) ([]byte, string, error) {
+	if err := validateFetchURL(raw); err != nil {
+		return nil, "", err
+	}
+	transport := &http.Transport{
+		// Never use environment proxies for user-provided URLs.
+		DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {
+			host, port, err := net.SplitHostPort(address)
+			if err != nil {
+				return nil, errUnsafeFetchURL
+			}
+			addresses, err := net.DefaultResolver.LookupIPAddr(ctx, host)
+			if err != nil || len(addresses) == 0 {
+				return nil, errUnsafeFetchURL
+			}
+			for _, addr := range addresses {
+				if !publicFetchIP(addr.IP) {
+					return nil, errUnsafeFetchURL
+				}
+			}
+			return (&net.Dialer{Timeout: 5 * time.Second}).DialContext(ctx, network, net.JoinHostPort(addresses[0].IP.String(), port))
+		},
+	}
+	defer transport.CloseIdleConnections()
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   15 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			if len(via) >= 5 {
+				return errUnsafeFetchURL
+			}
+			return validateFetchURL(req.URL.String())
+		},
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, raw, nil)
+	if err != nil {
+		return nil, "", err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("remote image returned HTTP %d", resp.StatusCode)
+	}
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxUploadSize+1))
+	if err != nil {
+		return nil, "", err
+	}
+	if len(data) > maxUploadSize {
+		return nil, "", errors.New("remote image exceeds upload limit")
+	}
+	ext, ok := contentTypeList[http.DetectContentType(data)]
+	if !ok {
+		return nil, "", errors.New("remote file is not a supported image")
+	}
+	return data, ext, nil
+}
+
 type uploadResp struct {
 	Msg  string `json:"msg,omitempty"`
 	Code int    `json:"code"`
@@ -214,41 +318,13 @@ func fetch(c *fiber.Ctx) error {
 		return err
 	}
 
-	// Get the data
-	resp, err := http.Get(fr.URL)
+	data, ext, err := fetchImage(c.UserContext(), fr.URL)
 	if err != nil {
-		c.Status(http.StatusOK).JSON(fetchResp{
-			Code: http.StatusBadRequest,
-			Msg:  err.Error(),
-		})
-		return err
+		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
-	defer resp.Body.Close()
-
-	var filename string
-	contentType := resp.Header.Get("Content-Type")
-	if ext, ok := contentTypeList[contentType]; ok {
-		filename = fmt.Sprintf("/upload/%s.%s", fid, ext)
-		// Create the file
-		out, err := os.Create("data/" + filename)
-		if err != nil {
-			c.Status(http.StatusOK).JSON(fetchResp{
-				Code: http.StatusBadRequest,
-				Msg:  err.Error(),
-			})
-			return err
-		}
-		defer out.Close()
-
-		// Write the body to file
-		_, err = io.Copy(out, resp.Body)
-		if err != nil {
-			c.Status(http.StatusOK).JSON(fetchResp{
-				Code: http.StatusBadRequest,
-				Msg:  err.Error(),
-			})
-			return err
-		}
+	filename := fmt.Sprintf("/upload/%s.%s", fid, ext)
+	if err := os.WriteFile("data"+filename, data, 0o644); err != nil {
+		return err
 	}
 
 	c.Status(http.StatusOK).JSON(fetchResp{

@@ -5,9 +5,9 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,11 +22,11 @@ func validateMediaFilename(name string) (string, error) {
 	if name == "" {
 		return "", errors.New("missing filename")
 	}
-	cleanName := path.Clean(name)
-	if cleanName != path.Base(cleanName) || cleanName == "." || cleanName == ".." {
+	if name == "." || name == ".." || filepath.Base(name) != name ||
+		strings.ContainsAny(name, `/\`+"\x00") {
 		return "", errors.New("invalid filename")
 	}
-	return cleanName, nil
+	return name, nil
 }
 
 func mediaHandler(c *fiber.Ctx) error {
@@ -34,7 +34,12 @@ func mediaHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
-	return os.Remove(filepath.Join("data/upload", cleanName))
+	root, err := os.OpenRoot("data/upload")
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	return root.Remove(cleanName)
 }
 
 type mediaInfo struct {

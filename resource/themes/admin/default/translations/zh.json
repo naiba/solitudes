@@ -1,4 +1,5 @@
 [
+    {"locale": "zh", "key": "skip_to_content", "trans": "跳至正文"},
     {"locale": "zh", "key": "admin_theme", "trans": "管理主题"},
     {"locale": "zh", "key": "all_comments", "trans": "全部评论"},
     {"locale": "zh", "key": "article", "trans": "文章"},

@@ -30,6 +30,7 @@ func performCSRFRequest(t *testing.T, method string, headers map[string]string) 
 		req.Header.Set(k, v)
 	}
 	req.Host = "example.com"
+	req.Header.Set(fiber.HeaderHost, "example.com")
 	resp, err := app.Test(req, -1)
 	if err != nil {
 		t.Fatalf("app.Test error: %v", err)
@@ -67,8 +68,8 @@ func TestCSRFGuardRejectsCrossOriginRefererWhenOriginMissing(t *testing.T) {
 
 func TestCSRFGuardAllowsSameOriginPost(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
-		fiber.HeaderOrigin:  "https://example.com",
-		fiber.HeaderReferer: "https://example.com/admin",
+		fiber.HeaderOrigin:  "http://example.com",
+		fiber.HeaderReferer: "http://example.com/admin",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -76,7 +77,7 @@ func TestCSRFGuardAllowsSameOriginPost(t *testing.T) {
 
 func TestCSRFGuardAllowsSameOriginRefererOnly(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
-		fiber.HeaderReferer: "https://example.com/admin/settings",
+		fiber.HeaderReferer: "http://example.com/admin/settings",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -88,4 +89,34 @@ func TestCSRFGuardRejectsCrossOriginDelete(t *testing.T) {
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestCSRFGuardRejectsSameHostDifferentScheme(t *testing.T) {
+	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
+		fiber.HeaderOrigin: "https://example.com",
+	})
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestCSRFGuardRejectsSameHostDifferentPort(t *testing.T) {
+	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
+		fiber.HeaderOrigin: "http://example.com:444",
+	})
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
+}
+
+func TestCSRFGuardAllowsSameOriginWithPort(t *testing.T) {
+	app := newCSRFGuardTestApp()
+	req := httptest.NewRequest(http.MethodPost, "/ok", nil)
+	req.Host = "example.com:8080"
+	req.Header.Set(fiber.HeaderHost, "example.com:8080")
+	req.Header.Set(fiber.HeaderOrigin, "http://example.com:8080")
+	resp, err := app.Test(req, -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }

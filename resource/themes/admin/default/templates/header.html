@@ -11,6 +11,7 @@
     <title>{{.Title}}</title>
 </head>
 <body class="bg-gray-50">
+    <a href="#admin-main-content" class="admin-skip-link">{{.Tr.T "skip_to_content"}}</a>
     <!-- Top Navigation -->
     <nav class="admin-topnav">
         <div class="admin-topnav-inner">
@@ -73,7 +74,7 @@
     </nav>
     
     <!-- Main Content -->
-    <main class="admin-main">
+    <main class="admin-main" id="admin-main-content" tabindex="-1">
         <!-- Loading overlay -->
         <div class="loading-overlay" id="loadingOverlay">
             <div class="loading-spinner"></div>

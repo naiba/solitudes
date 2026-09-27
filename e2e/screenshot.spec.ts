@@ -91,14 +91,3 @@ test('Screenshot site theme - folio', async ({ page }) => {
   await page.waitForTimeout(2000);
   await page.screenshot({ path: '/root/solitudes/resource/themes/site/folio/screenshot.png', fullPage: false });
 });
-
-test('Screenshot site theme - astro-paper', async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  
-  // Switch theme via DB directly to avoid UI interactions
-  const { execSync } = require('child_process');
-  execSync('sed -i "s/theme: folio/theme: astro-paper/g" /root/solitudes/data/conf.yml');
-  // Wait for the hot-reload or just trigger it via API? Actually we need to restart server.
-});
-
-// Since changing theme requires server restart, we do it in a separate bash script

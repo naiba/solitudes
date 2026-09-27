@@ -1,4 +1,5 @@
 [
+    {"locale": "en", "key": "skip_to_content", "trans": "Skip to content"},
     {"locale": "en", "key": "admin_theme", "trans": "Admin Theme"},
     {"locale": "en", "key": "all_comments", "trans": "All Comments"},
     {"locale": "en", "key": "article", "trans": "Article"},

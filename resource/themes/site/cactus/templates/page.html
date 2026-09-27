@@ -35,7 +35,7 @@
 {{if .Login}}
 <a style="text-align: right;" href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
 {{end}}
-<article class="post">
+<article class="post" id="main-content" tabindex="-1">
   <h1 class="posttitle">{{.Data.article.Title}}</h1>
   <div class="content">
     {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}

@@ -2,7 +2,6 @@
 set -e
 
 echo "=== Taking screenshot for Folio ==="
-sed -i 's/theme: astro-paper/theme: folio/g' /root/solitudes/data/conf.yml
 pkill -f "go run cmd/web" || true
 sleep 2
 SOLITUDES_E2E=1 nohup go run cmd/web/main.go > /tmp/solitudes.log 2>&1 &
@@ -57,28 +56,6 @@ EOF
 
 cd /root/solitudes/e2e
 bunx playwright test shot_folio.spec.ts
-
-echo "=== Taking screenshot for Astro-Paper ==="
-sed -i 's/theme: folio/theme: astro-paper/g' /root/solitudes/data/conf.yml
-pkill -f "go run cmd/web" || true
-sleep 2
-SOLITUDES_E2E=1 nohup go run cmd/web/main.go > /tmp/solitudes.log 2>&1 &
-sleep 6
-
-cat << 'EOF' > /root/solitudes/e2e/shot_astro.spec.ts
-import { test } from '@playwright/test';
-const BASE = 'http://localhost:8080';
-
-test('Shot Astro', async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto(BASE + '/');
-  await page.evaluate(() => { document.body.style.overflow = 'hidden'; });
-  await page.waitForTimeout(2000);
-  await page.screenshot({ path: '/root/solitudes/resource/themes/site/astro-paper/screenshot.png', fullPage: false });
-});
-EOF
-
-bunx playwright test shot_astro.spec.ts
 
 echo "=== Taking screenshot for Glacie Admin ==="
 cat << 'EOF' > /root/solitudes/e2e/shot_admin.spec.ts

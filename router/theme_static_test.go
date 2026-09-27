@@ -105,3 +105,71 @@ func TestThemeStaticHandlerBlocksTraversalOutsideThemeRoot(t *testing.T) {
 		t.Fatalf("traversal response leaked config: %q", body)
 	}
 }
+
+func TestThemeStaticHandlerRejectsInvalidThemeNameAndSymlink(t *testing.T) {
+	t.Chdir(t.TempDir())
+	writeThemeStaticTestFile(t, "resource/themes/site/cactus/static/css/main.css", "safe")
+	writeThemeStaticTestFile(t, "data/conf.yml", "secret config")
+	if err := os.Symlink(filepath.Join("..", "..", "..", "..", "..", "data", "conf.yml"),
+		"resource/themes/site/cactus/static/config.css"); err != nil {
+		t.Fatal(err)
+	}
+	app := newThemeStaticTestApp(t)
+	for _, requestPath := range []string{
+		"/static/site/%2e%2e/css/main.css",
+		"/static/site/cactus/config.css",
+		"/static/admin/%2e%2e/css/main.css",
+	} {
+		t.Run(requestPath, func(t *testing.T) {
+			resp, err := app.Test(httptest.NewRequest(http.MethodGet, requestPath, nil), -1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			body, _ := io.ReadAll(resp.Body)
+			if resp.StatusCode != http.StatusNotFound || strings.Contains(string(body), "secret config") {
+				t.Fatalf("status = %d, body = %q", resp.StatusCode, body)
+			}
+		})
+	}
+}
+
+func TestThemePreviewRejectsTraversalAndSymlink(t *testing.T) {
+	t.Chdir(t.TempDir())
+	writeThemeStaticTestFile(t, "resource/themes/site/cactus/screenshot.png", "preview")
+	writeThemeStaticTestFile(t, "data/conf.yml", "secret config")
+	app := fiber.New()
+	app.Get("/admin/theme/preview/:kind/:name", themePreview)
+	for _, requestPath := range []string{
+		"/admin/theme/preview/site/cactus",
+		"/admin/theme/preview/site/%2e%2e",
+		"/admin/theme/preview/site/%2e%2e%2f%2e%2e",
+	} {
+		resp, err := app.Test(httptest.NewRequest(http.MethodGet, requestPath, nil), -1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		if requestPath == "/admin/theme/preview/site/cactus" && resp.StatusCode != http.StatusOK {
+			t.Fatalf("valid preview status = %d", resp.StatusCode)
+		}
+		if requestPath != "/admin/theme/preview/site/cactus" && resp.StatusCode == http.StatusOK {
+			t.Fatalf("traversal preview status = %d", resp.StatusCode)
+		}
+	}
+	if err := os.Remove("resource/themes/site/cactus/screenshot.png"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(filepath.Join("..", "..", "..", "..", "data", "conf.yml"),
+		"resource/themes/site/cactus/screenshot.png"); err != nil {
+		t.Fatal(err)
+	}
+	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/admin/theme/preview/site/cactus", nil), -1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("symlink preview status = %d, want 404", resp.StatusCode)
+	}
+}

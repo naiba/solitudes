@@ -30,7 +30,9 @@
                 throw new Error('Invalid protocol');
             }
 
-            document.getElementById('target-url').innerHTML = '<code>' + targetUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code>';
+            var targetCode = document.createElement('code');
+            targetCode.textContent = targetUrl;
+            document.getElementById('target-url').replaceChildren(targetCode);
 
             var continueLink = document.getElementById('continue-link');
             continueLink.href = targetUrl;

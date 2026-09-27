@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -54,69 +55,9 @@ type settingsRequest struct {
 }
 
 func settingsHandler(c *fiber.Ctx) error {
-	var err error
-	var themeChanged bool
-	var originalSiteTheme, originalAdminTheme string
-
-	defer func() {
-		if err == nil {
-			// 同步主题配置
-			themesRoot := "resource/themes"
-			availableThemes, themeErr := theme.LoadThemes(themesRoot)
-			if themeErr == nil {
-				model.SyncThemeConfig(solitudes.System.Config, availableThemes)
-			}
-
-			// 如果主题发生了变化，重新加载模板
-			if themeChanged {
-				if reloadErr := ReloadTemplates(); reloadErr != nil {
-					log.Printf("Failed to reload templates after theme change: %v", reloadErr)
-				} else {
-					// 更新已运行app的Views配置
-					// 注意：这需要在应用启动后才能调用
-					log.Printf("Templates reloaded after theme change")
-				}
-			}
-
-			err = solitudes.System.Config.Save()
-		}
-	}()
-
-	// Store current themes for change detection
-	originalSiteTheme = solitudes.System.Config.Site.Theme
-	originalAdminTheme = solitudes.System.Config.Admin.Theme
-
 	var sr settingsRequest
 	if err := c.BodyParser(&sr); err != nil {
 		return err
-	}
-
-	// 检查主题是否发生变化
-	if sr.SiteTheme != "" && sr.SiteTheme != originalSiteTheme {
-		themeChanged = true
-	}
-	if sr.AdminTheme != "" && sr.AdminTheme != originalAdminTheme {
-		themeChanged = true
-	}
-
-	if file, err := c.FormFile("logo"); err == nil {
-		contentType := file.Header.Get("Content-Type")
-		if file.Size > 5*1024*1024 || (!strings.HasPrefix(contentType, "image/") && contentType != "application/octet-stream") {
-			return fiber.NewError(fiber.StatusBadRequest, "invalid logo file")
-		}
-		if err := c.SaveFile(file, "data/upload/logo.png"); err != nil {
-			return err
-		}
-	}
-
-	if file, err := c.FormFile("favicon"); err == nil {
-		contentType := file.Header.Get("Content-Type")
-		if file.Size > 1*1024*1024 || (!strings.HasPrefix(contentType, "image/") && contentType != "application/octet-stream") {
-			return fiber.NewError(fiber.StatusBadRequest, "invalid favicon file")
-		}
-		if err := c.SaveFile(file, "data/upload/favicon.ico"); err != nil {
-			return err
-		}
 	}
 
 	// Load available themes
@@ -126,12 +67,19 @@ func settingsHandler(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusInternalServerError, "Failed to load themes: "+err.Error())
 	}
 
-	// Temporarily update themes for validation (defer will handle rollback on error)
+	// Validate on an isolated copy: invalid input must never change the running config.
+	previous := *solitudes.System.Config
+	candidate := previous
+	candidate.Site.ThemeConfig = make(map[string]interface{}, len(previous.Site.ThemeConfig))
+	for key, value := range previous.Site.ThemeConfig {
+		candidate.Site.ThemeConfig[key] = value
+	}
+
 	if sr.SiteTheme != "" {
-		solitudes.System.Config.Site.Theme = sr.SiteTheme
+		candidate.Site.Theme = sr.SiteTheme
 	}
 	if sr.AdminTheme != "" {
-		solitudes.System.Config.Admin.Theme = sr.AdminTheme
+		candidate.Admin.Theme = sr.AdminTheme
 	}
 
 	// Find active theme meta (使用当前主题或新主题)
@@ -139,7 +87,7 @@ func settingsHandler(c *fiber.Ctx) error {
 	foundActiveTheme := false
 	targetTheme := sr.SiteTheme
 	if targetTheme == "" {
-		targetTheme = solitudes.System.Config.Site.Theme
+		targetTheme = candidate.Site.Theme
 	}
 	for _, t := range availableThemes.Site {
 		if t.ID == targetTheme {
@@ -150,32 +98,31 @@ func settingsHandler(c *fiber.Ctx) error {
 	}
 
 	// 检查 Telegram 配置是否发生变化
-	tgTokenChanged := solitudes.System.Config.TGBotToken != sr.TgBotToken && sr.TgBotToken != ""
-	tgChatIDChanged := solitudes.System.Config.TGChatID != sr.TgChatId && sr.TgChatId != ""
+	tgTokenChanged := candidate.TGBotToken != sr.TgBotToken && sr.TgBotToken != ""
+	tgChatIDChanged := candidate.TGChatID != sr.TgChatId && sr.TgChatId != ""
 
-	solitudes.System.Config.Site.SpaceName = sr.SiteTitle
-	solitudes.System.Config.Site.SpaceDesc = sr.SiteDesc
-	solitudes.System.Config.TGBotToken = sr.TgBotToken
-	solitudes.System.Config.TGChatID = sr.TgChatId
-	solitudes.System.Config.Email.Host = sr.MailServer
-	solitudes.System.Config.Email.Port = sr.MailPort
-	solitudes.System.Config.Email.User = sr.MailUser
-	solitudes.System.Config.Email.Pass = sr.MailPassword
-	solitudes.System.Config.Email.SSL = sr.MailSSL
-	solitudes.System.Config.Akismet = sr.Akismet
-	solitudes.System.Config.Site.Domain = sr.SiteDomain
-	solitudes.System.Config.Site.SpaceKeywords = sr.SiteKeywords
-	solitudes.System.Config.User.Nickname = sr.Nickname
-	solitudes.System.Config.User.Email = sr.Email
-
-	if solitudes.System.Config.Site.ThemeConfig == nil {
-		solitudes.System.Config.Site.ThemeConfig = make(map[string]interface{})
-	}
+	candidate.Site.SpaceName = sr.SiteTitle
+	candidate.Site.SpaceDesc = sr.SiteDesc
+	candidate.TGBotToken = sr.TgBotToken
+	candidate.TGChatID = sr.TgChatId
+	candidate.Email.Host = sr.MailServer
+	candidate.Email.Port = sr.MailPort
+	candidate.Email.User = sr.MailUser
+	candidate.Email.Pass = sr.MailPassword
+	candidate.Email.SSL = sr.MailSSL
+	candidate.Akismet = sr.Akismet
+	candidate.Site.Domain = sr.SiteDomain
+	candidate.Site.SpaceKeywords = sr.SiteKeywords
+	candidate.User.Nickname = sr.Nickname
+	candidate.User.Email = sr.Email
 
 	var newConfig map[string]interface{}
 	if sr.ThemeConfig != "" {
 		if err := yaml.Unmarshal([]byte(sr.ThemeConfig), &newConfig); err != nil {
 			return fiber.NewError(http.StatusBadRequest, "Invalid theme config YAML: "+err.Error())
+		}
+		if newConfig == nil {
+			newConfig = make(map[string]interface{})
 		}
 
 		// 补充 theme.config 中存在但用户未提交的 key
@@ -187,52 +134,65 @@ func settingsHandler(c *fiber.Ctx) error {
 			}
 		}
 
-		backupThemeConfig := make(map[string]interface{})
-		for k, v := range solitudes.System.Config.Site.ThemeConfig {
-			backupThemeConfig[k] = v
-		}
-
 		for k, v := range newConfig {
-			solitudes.System.Config.Site.ThemeConfig[k] = v
-		}
-
-		if err := model.ValidateThemeConfig(solitudes.System.Config, availableThemes); err != nil {
-			solitudes.System.Config.Site.ThemeConfig = backupThemeConfig
-			return fiber.NewError(http.StatusBadRequest, "Theme config validation failed: "+err.Error())
+			candidate.Site.ThemeConfig[k] = v
 		}
 	} else {
 		// 如果用户没有提交 theme_config，使用 theme.config 中的默认值补充
 		if foundActiveTheme && activeThemeMeta.Config != nil {
-			if solitudes.System.Config.Site.ThemeConfig == nil {
-				solitudes.System.Config.Site.ThemeConfig = make(map[string]interface{})
-			}
 			for k, defaultValue := range activeThemeMeta.Config {
-				if _, exists := solitudes.System.Config.Site.ThemeConfig[k]; !exists {
-					solitudes.System.Config.Site.ThemeConfig[k] = defaultValue
+				if _, exists := candidate.Site.ThemeConfig[k]; !exists {
+					candidate.Site.ThemeConfig[k] = defaultValue
 				}
 			}
 		}
+	}
 
-		backupThemeConfig := make(map[string]interface{})
-		for k, v := range solitudes.System.Config.Site.ThemeConfig {
-			backupThemeConfig[k] = v
-		}
-
-		if err := model.ValidateThemeConfig(solitudes.System.Config, availableThemes); err != nil {
-			solitudes.System.Config.Site.ThemeConfig = backupThemeConfig
-			return fiber.NewError(http.StatusBadRequest, "Theme config validation failed: "+err.Error())
-		}
+	if err := model.ValidateThemeConfig(&candidate, availableThemes); err != nil {
+		return fiber.NewError(http.StatusBadRequest, "Theme config validation failed: "+err.Error())
 	}
 
 	if len(sr.OldPassword) > 0 && len(sr.NewPassword) > 0 {
-		if bcrypt.CompareHashAndPassword([]byte(solitudes.System.Config.User.Password), []byte(sr.OldPassword)) != nil {
+		if bcrypt.CompareHashAndPassword([]byte(previous.User.Password), []byte(sr.OldPassword)) != nil {
 			return errors.New("invalid email or password")
 		}
-		b, err := bcrypt.GenerateFromPassword([]byte(sr.NewPassword), 1)
+		b, err := bcrypt.GenerateFromPassword([]byte(sr.NewPassword), bcrypt.DefaultCost)
 		if err != nil {
 			return err
 		}
-		solitudes.System.Config.User.Password = string(b)
+		candidate.User.Password = string(b)
+	}
+
+	for _, fileInput := range []struct {
+		field, destination string
+		limit              int64
+	}{
+		{"logo", "data/upload/logo.png", 5 * 1024 * 1024},
+		{"favicon", "data/upload/favicon.ico", 1 * 1024 * 1024},
+	} {
+		file, err := c.FormFile(fileInput.field)
+		if err != nil {
+			continue
+		}
+		contentType := file.Header.Get("Content-Type")
+		if file.Size > fileInput.limit || (!strings.HasPrefix(contentType, "image/") && contentType != "application/octet-stream") {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid "+fileInput.field+" file")
+		}
+		if err := c.SaveFile(file, fileInput.destination); err != nil {
+			return err
+		}
+	}
+
+	model.SyncThemeConfig(&candidate, availableThemes)
+	*solitudes.System.Config = candidate
+	if err := candidate.Save(); err != nil {
+		*solitudes.System.Config = previous
+		return fmt.Errorf("save settings: %w", err)
+	}
+	if candidate.Site.Theme != previous.Site.Theme || candidate.Admin.Theme != previous.Admin.Theme {
+		if err := ReloadTemplates(); err != nil {
+			log.Printf("Failed to reload templates after theme change: %v", err)
+		}
 	}
 
 	if (tgTokenChanged || tgChatIDChanged) && solitudes.System.Config.TGBotToken != "" && solitudes.System.Config.TGChatID != "" {

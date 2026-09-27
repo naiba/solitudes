@@ -7,9 +7,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"regexp"
 )
 
 const metadataFileName = "metadata.json"
+
+var validThemeID = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
 
 // LoadThemes scans the provided root directory for site and admin themes.
 func LoadThemes(root string) (*ThemeList, error) {
@@ -37,7 +40,7 @@ func loadThemeList(root, kind string) ([]ThemeMeta, error) {
 
 	var metas []ThemeMeta
 	for _, entry := range entries {
-		if !entry.IsDir() {
+		if !entry.IsDir() || !validThemeID.MatchString(entry.Name()) {
 			continue
 		}
 		metaPath := filepath.Join(themeRoot, entry.Name(), metadataFileName)
@@ -54,6 +57,9 @@ func loadThemeList(root, kind string) ([]ThemeMeta, error) {
 		}
 		if meta.ID == "" {
 			meta.ID = entry.Name()
+		}
+		if meta.ID != entry.Name() {
+			return nil, fmt.Errorf("theme ID %q does not match directory %q", meta.ID, entry.Name())
 		}
 		metas = append(metas, meta)
 	}

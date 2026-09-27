@@ -1197,3 +1197,21 @@ body {
     background-color: var(--bg-accent) !important;
   }
 }
+
+.admin-skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 10001;
+  padding: 0.7rem 1rem;
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #111);
+  border: 2px solid currentColor;
+  border-radius: 0.5rem;
+  transform: translateY(-200%);
+}
+.admin-skip-link:focus { transform: translateY(0); }
+#admin-main-content { scroll-margin-top: 5rem; min-width: 0; }
+@media (max-width: 768px) {
+  .admin-main table { display: block; max-width: 100%; overflow-x: auto; }
+}

@@ -1,7 +1,7 @@
 {{define "site/redirect"}}
 {{template "site/header" .}}
 {{template "site/menu" .}}
-<section>
+<section id="main-content" tabindex="-1">
     <span class="h1">{{.Data.title}}</span>
     <div id="redirect-container">
         <p>{{.Data.msg}}</p>
@@ -28,7 +28,9 @@
                 throw new Error('Invalid protocol');
             }
 
-            document.getElementById('target-url').innerHTML = '<code>' + targetUrl.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</code>';
+            var targetCode = document.createElement('code');
+            targetCode.textContent = targetUrl;
+            document.getElementById('target-url').replaceChildren(targetCode);
 
             var continueLink = document.getElementById('continue-link');
             continueLink.href = targetUrl;

@@ -2,6 +2,7 @@ package router
 
 import (
 	"crypto/md5"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -136,6 +137,8 @@ func ThemeStaticRoot(kind, name string) string {
 	return themeResourcePath(kind, name, "static")
 }
 
+var themeNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
+
 type tocTemplateData struct {
 	Items  []*model.ArticleTOC
 	Prefix string
@@ -156,7 +159,7 @@ func themeStaticHandler(c *fiber.Ctx) error {
 	themeName := c.Params("theme")
 	relativePath := c.Params("*")
 
-	if kind != "site" && kind != "admin" {
+	if (kind != "site" && kind != "admin") || !themeNamePattern.MatchString(themeName) {
 		return page404(c)
 	}
 
@@ -186,6 +189,32 @@ func themeStaticHandler(c *fiber.Ctx) error {
 	c.Set("Cache-Control", "public, max-age=2592000")
 	c.Type(filepath.Ext(relativePath))
 	return c.SendStream(assetFile, int(assetInfo.Size()))
+}
+
+// uploadStaticHandler serves only files inside data/upload, including when
+// the directory contains an unexpected symlink.
+func uploadStaticHandler(c *fiber.Ctx) error {
+	relativePath := c.Params("*")
+	if relativePath == "" || strings.HasSuffix(relativePath, "/") {
+		return page404(c)
+	}
+	root, err := os.OpenRoot("data/upload")
+	if err != nil {
+		return page404(c)
+	}
+	defer root.Close()
+	file, err := root.Open(relativePath)
+	if err != nil {
+		return page404(c)
+	}
+	info, err := file.Stat()
+	if err != nil || info.IsDir() || info.Size() > int64(^uint(0)>>1) {
+		file.Close()
+		return page404(c)
+	}
+	c.Set("Cache-Control", "public, max-age=2592000")
+	c.Type(filepath.Ext(relativePath))
+	return c.SendStream(file, int(info.Size()))
 }
 
 // isExternalLink 判断是否为外部链接
@@ -479,9 +508,7 @@ func Serve() {
 	app.Get("/r/:token", trackEmailReadRedirect)
 	app.Get("/static/i/:token", trackEmailRead)
 	app.Get("/static/:kind/:theme/*", themeStaticHandler)
-	app.Static("/upload", "data/upload", fiber.Static{
-		CacheDuration: 30 * 24 * time.Hour,
-	})
+	app.Get("/upload/*", uploadStaticHandler)
 
 	app.Get("/admin/login", guestRequired, login)
 	app.Post("/admin/login", guestRequired, loginHandler)
@@ -523,22 +550,51 @@ func Serve() {
 func themePreview(c *fiber.Ctx) error {
 	kind := c.Params("kind")
 	name := c.Params("name")
-	if kind != "site" && kind != "admin" {
+	if (kind != "site" && kind != "admin") || !themeNamePattern.MatchString(name) {
 		return c.SendStatus(http.StatusNotFound)
 	}
-	path := fmt.Sprintf("resource/themes/%s/%s/screenshot.png", kind, name)
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	root, err := os.OpenRoot(themeResourcePath(kind, name, ""))
+	if err != nil {
 		return c.SendStatus(http.StatusNotFound)
 	}
-	return c.SendFile(filepath.Clean(path))
+	defer root.Close()
+	file, err := root.Open("screenshot.png")
+	if err != nil {
+		return c.SendStatus(http.StatusNotFound)
+	}
+	info, err := file.Stat()
+	if err != nil || info.IsDir() || info.Size() > int64(^uint(0)>>1) {
+		file.Close()
+		return c.SendStatus(http.StatusNotFound)
+	}
+	c.Type("png")
+	return c.SendStream(file, int(info.Size()))
 }
 
 func serveUploadOrThemeFile(c *fiber.Ctx, uploadPath, themePath string) error {
-	if _, err := os.Stat(uploadPath); err == nil {
-		return c.SendFile(uploadPath)
+	if err := sendRootFile(c, "data/upload", filepath.Base(uploadPath)); err == nil {
+		return nil
 	}
-	fullThemePath := filepath.Join(ThemeStaticRoot("site", solitudes.System.Config.Site.Theme), themePath)
-	return c.SendFile(filepath.Clean(fullThemePath))
+	return sendRootFile(c, ThemeStaticRoot("site", solitudes.System.Config.Site.Theme), themePath)
+}
+
+func sendRootFile(c *fiber.Ctx, rootPath, relativePath string) error {
+	root, err := os.OpenRoot(rootPath)
+	if err != nil {
+		return fiber.ErrNotFound
+	}
+	defer root.Close()
+	file, err := root.Open(relativePath)
+	if err != nil {
+		return fiber.ErrNotFound
+	}
+	info, err := file.Stat()
+	if err != nil || info.IsDir() || info.Size() > int64(^uint(0)>>1) {
+		file.Close()
+		return fiber.ErrNotFound
+	}
+	c.Type(filepath.Ext(relativePath))
+	return c.SendStream(file, int(info.Size()))
 }
 
 func faviconHandler(c *fiber.Ctx) error {
@@ -792,7 +848,7 @@ func setFuncMap(engine *html.Engine) {
 
 func auth(c *fiber.Ctx) error {
 	token := c.Cookies(solitudes.AuthCookie)
-	if len(token) > 0 && token == solitudes.System.Config.User.Token && solitudes.System.Config.User.TokenExpires > time.Now().Unix() {
+	if len(token) > 0 && subtle.ConstantTimeCompare([]byte(token), []byte(solitudes.System.Config.User.Token)) == 1 && solitudes.System.Config.User.TokenExpires > time.Now().Unix() {
 		c.Locals(solitudes.CtxAuthorized, true)
 	} else {
 		c.Locals(solitudes.CtxAuthorized, false)
@@ -814,10 +870,10 @@ func csrfSameOriginHeader(c *fiber.Ctx, header string) bool {
 		return false
 	}
 	u, err := url.Parse(raw)
-	if err != nil || u.Host == "" {
+	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		return false
 	}
-	return strings.EqualFold(u.Host, c.Hostname())
+	return strings.EqualFold(u.Host, c.Get(fiber.HeaderHost)) && strings.EqualFold(u.Scheme, c.Protocol())
 }
 
 func csrfGuard(c *fiber.Ctx) error {

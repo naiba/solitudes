@@ -1750,6 +1750,14 @@ ul:has(li.vditor-task) {
   }
 }
 
+/* Readability and keyboard navigation on narrow screens. */
+#main-content { scroll-margin-top: 1rem; }
+.content img, .content video, .content iframe { max-width: 100%; height: auto; }
+.content pre, .content table { max-width: 100%; overflow-x: auto; }
+@media (max-width: 768px) {
+  #header #nav ul.responsive a { display: flex; align-items: center; min-height: 44px; }
+}
+
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
   .home-topics-section::after {
