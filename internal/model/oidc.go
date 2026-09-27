@@ -5,9 +5,10 @@ import "time"
 // OIDCClient is explicitly registered by an administrator. No dynamic client
 // registration or wildcard redirect URIs are accepted.
 type OIDCClient struct {
-	ID               string `gorm:"primaryKey"`
-	Name             string `gorm:"not null"`
-	SecretHash       string `json:"-"`
+	ID               string  `gorm:"primaryKey"`
+	OwnerID          *string `gorm:"type:uuid;index"`
+	Name             string  `gorm:"not null"`
+	SecretHash       string  `json:"-"`
 	Public           bool
 	RedirectURIsJSON string `gorm:"type:text;not null" json:"-"`
 	DisabledAt       *time.Time

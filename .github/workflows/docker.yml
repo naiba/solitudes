@@ -1,15 +1,50 @@
-name: Build Docker Image
+name: Test and build Docker image
 
 on:
   push:
     branches:
       - master
-    paths-ignore:
-      - "*.md"
-      - ".*"
+  pull_request:
 
 jobs:
+  test:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: solitudes_test
+          POSTGRES_USER: solitudes_test
+          POSTGRES_PASSWORD: test-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U solitudes_test -d solitudes_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      SOLITUDES_TEST_POSTGRES_DSN: postgres://solitudes_test:test-password@127.0.0.1:5432/solitudes_test?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Go unit and handler tests
+        run: go test -p 2 ./...
+      - name: Go tests, including PostgreSQL authorization and OIDC integration
+        run: go test -p 2 -tags postgres_test ./...
+      - uses: oven-sh/setup-bun@v2
+      - name: Install browser test dependencies
+        working-directory: e2e
+        run: |
+          bun install --frozen-lockfile
+          bunx playwright install --with-deps chromium
+      - name: Four-theme Chromium browser matrix
+        run: go test -p 2 -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v -timeout 20m
+
   build:
+    if: github.event_name == 'push'
+    needs: test
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:

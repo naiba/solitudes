@@ -2,6 +2,7 @@ package router
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -90,9 +91,14 @@ func index(c *fiber.Ctx) error {
 	var articles []model.Article
 	var topics []model.Article
 	var mostRead []model.Article
-	db := readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author")
-
-	db.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(5).Find(&topics)
+	// Each query needs a fresh GORM chain: reusing a filtered *gorm.DB
+	// accumulates WHERE clauses (Topic AND NOT Topic makes the home list empty).
+	articlesForViewer := func() *gorm.DB {
+		return readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author")
+	}
+	if err := articlesForViewer().Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(5).Find(&topics).Error; err != nil {
+		return fmt.Errorf("load home topics: %w", err)
+	}
 	for i := range topics {
 		pagination.Paging(&pagination.Param{
 			DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", topics[i].ID),
@@ -102,13 +108,17 @@ func index(c *fiber.Ctx) error {
 	}
 
 	// Fetch top 3 most read articles and books
-	db.Where("template_id = ? AND (array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", solitudes.ArticleTemplateID, "Topic").Order("read_num DESC").Limit(3).Find(&mostRead)
+	if err := articlesForViewer().Where("template_id = ? AND (array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", solitudes.ArticleTemplateID, "Topic").Order("read_num DESC").Limit(3).Find(&mostRead).Error; err != nil {
+		return fmt.Errorf("load popular articles: %w", err)
+	}
 	for i := range mostRead {
 		mostRead[i].RelatedCount(solitudes.System.DB)
 	}
 
 	articleCount := 16 - len(topics)*2
-	db.Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles)
+	if err := articlesForViewer().Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles).Error; err != nil {
+		return fmt.Errorf("load home articles: %w", err)
+	}
 	for i := range articles {
 		articles[i].RelatedCount(solitudes.System.DB)
 	}

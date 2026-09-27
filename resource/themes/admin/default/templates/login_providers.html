@@ -1,0 +1,41 @@
+{{define "admin/login_providers"}}
+{{template "admin/header" .}}
+<div class="admin-container provider-settings">
+  <h1 class="page-title">{{.Tr.T "login_providers"}}</h1>
+  <p class="provider-intro">{{.Tr.T "provider_hint"}} <a href="/admin/oidc/clients">{{.Tr.T "provider_external_apps"}}</a></p>
+  {{if .Data.saved}}<p class="provider-saved" role="status">{{.Tr.T "provider_saved"}}</p>{{end}}
+  <form method="post" action="/admin/auth/providers" data-testid="provider-settings-form">
+    <section class="wf-card provider-card" aria-labelledby="provider-github-heading">
+      <h2 id="provider-github-heading">GitHub <span class="provider-status">{{if .Conf.Auth.GitHub.ClientSecret}}{{.Tr.T "provider_ready"}}{{else}}{{.Tr.T "provider_off"}}{{end}}</span></h2>
+      <p>{{.Tr.T "provider_callback"}}: <code>{{.Data.callback_base}}/auth/github/callback</code></p>
+      <label for="github-id">{{.Tr.T "provider_client_id"}}</label>
+      <input id="github-id" name="github_id" data-testid="provider-github-id" class="form-control" value="{{.Conf.Auth.GitHub.ClientID}}" autocomplete="off">
+      <label for="github-secret">{{.Tr.T "provider_client_secret"}}</label>
+      <input id="github-secret" name="github_secret" data-testid="provider-github-secret" class="form-control" type="password" autocomplete="new-password" placeholder="{{.Tr.T "provider_secret_hint"}}">
+      <label class="provider-disable"><input type="checkbox" name="github_disable" value="true" data-testid="provider-github-disable"> {{.Tr.T "provider_disable"}}</label>
+    </section>
+    <section class="wf-card provider-card" aria-labelledby="provider-google-heading">
+      <h2 id="provider-google-heading">Google <span class="provider-status">{{if .Conf.Auth.Google.ClientSecret}}{{.Tr.T "provider_ready"}}{{else}}{{.Tr.T "provider_off"}}{{end}}</span></h2>
+      <p>{{.Tr.T "provider_callback"}}: <code>{{.Data.callback_base}}/auth/google/callback</code></p>
+      <label for="google-id">{{.Tr.T "provider_client_id"}}</label>
+      <input id="google-id" name="google_id" data-testid="provider-google-id" class="form-control" value="{{.Conf.Auth.Google.ClientID}}" autocomplete="off">
+      <label for="google-secret">{{.Tr.T "provider_client_secret"}}</label>
+      <input id="google-secret" name="google_secret" data-testid="provider-google-secret" class="form-control" type="password" autocomplete="new-password" placeholder="{{.Tr.T "provider_secret_hint"}}">
+      <label class="provider-disable"><input type="checkbox" name="google_disable" value="true" data-testid="provider-google-disable"> {{.Tr.T "provider_disable"}}</label>
+    </section>
+    <section class="wf-card provider-card" aria-labelledby="provider-oidc-heading">
+      <h2 id="provider-oidc-heading">OIDC <span class="provider-status">{{if .Conf.Auth.OIDC.ClientSecret}}{{.Tr.T "provider_ready"}}{{else}}{{.Tr.T "provider_off"}}{{end}}</span></h2>
+      <p>{{.Tr.T "provider_callback"}}: <code>{{.Data.callback_base}}/auth/oidc/callback</code></p>
+      <label for="oidc-issuer">{{.Tr.T "provider_issuer"}}</label>
+      <input id="oidc-issuer" name="oidc_issuer" data-testid="provider-oidc-issuer" class="form-control" type="url" placeholder="https://identity.example.com" value="{{.Conf.Auth.OIDC.Issuer}}" autocomplete="off">
+      <label for="oidc-id">{{.Tr.T "provider_client_id"}}</label>
+      <input id="oidc-id" name="oidc_id" data-testid="provider-oidc-id" class="form-control" value="{{.Conf.Auth.OIDC.ClientID}}" autocomplete="off">
+      <label for="oidc-secret">{{.Tr.T "provider_client_secret"}}</label>
+      <input id="oidc-secret" name="oidc_secret" data-testid="provider-oidc-secret" class="form-control" type="password" autocomplete="new-password" placeholder="{{.Tr.T "provider_secret_hint"}}">
+      <label class="provider-disable"><input type="checkbox" name="oidc_disable" value="true" data-testid="provider-oidc-disable"> {{.Tr.T "provider_disable"}}</label>
+    </section>
+    <button type="submit" class="admin-button primary" data-testid="provider-settings-save">{{.Tr.T "provider_save"}}</button>
+  </form>
+</div>
+{{template "admin/footer" .}}
+{{end}}

@@ -3,6 +3,7 @@
 <body><main class="login-wrapper"><div class="login-card wf-card-static" style="padding:2.5rem">
   <h1>{{.Tr.T "my_account"}}</h1><p>{{.Account.Nickname}} · {{.Account.Email}} · {{.Account.Role}}</p>
   {{if .Account.Role.CanPublish}}<p><a href="/admin/articles">{{.Tr.T "articles"}}</a></p>{{end}}
+  <p><a href="/account/oidc/clients" data-testid="account-oidc-clients">{{.Tr.T "provider_external_apps"}}</a></p>
   <div class="flex gap-3 my-4">
     {{if and .Conf.Auth.GitHub.ClientID .Conf.Auth.GitHub.ClientSecret}}<form method="post" action="/auth/github/link"><button class="btn-glass" type="submit">{{.Tr.T "link_github"}}</button></form>{{end}}
     {{if and .Conf.Auth.Google.ClientID .Conf.Auth.Google.ClientSecret}}<form method="post" action="/auth/google/link"><button class="btn-glass" type="submit">{{.Tr.T "link_google"}}</button></form>{{end}}

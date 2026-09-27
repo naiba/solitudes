@@ -146,10 +146,19 @@ var activeOIDCProvider *op.Provider
 
 func oidcClientsPage(c *fiber.Ctx) error {
 	var clients []model.OIDCClient
-	if err := solitudes.System.DB.Order("created_at DESC").Find(&clients).Error; err != nil {
+	query := solitudes.System.DB.Order("created_at DESC")
+	accountPage := strings.HasPrefix(c.Path(), "/account/")
+	if accountPage {
+		query = query.Where("owner_id = ?", currentAccount(c).ID)
+	}
+	if err := query.Find(&clients).Error; err != nil {
 		return err
 	}
-	return c.Status(http.StatusOK).Render("admin/oidc_clients", injectSiteData(c, fiber.Map{
+	templateName := "admin/oidc_clients"
+	if accountPage {
+		templateName = "admin/account_oidc_clients"
+	}
+	return c.Status(http.StatusOK).Render(templateName, injectSiteData(c, fiber.Map{
 		"title": "OIDC clients", "clients": clients, "issuer": publicBaseURL(),
 	}))
 }
@@ -206,21 +215,34 @@ func createOIDCClient(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	client := model.OIDCClient{ID: clientID, Name: name, SecretHash: hash,
+	ownerID := currentAccount(c).ID
+	client := model.OIDCClient{ID: clientID, OwnerID: &ownerID, Name: name, SecretHash: hash,
 		Public: public, RedirectURIsJSON: string(encoded)}
 	if err := solitudes.System.DB.Create(&client).Error; err != nil {
 		return err
 	}
 	c.Set("Cache-Control", "private, no-store")
-	return c.Status(http.StatusCreated).Render("admin/oidc_client_created", injectSiteData(c, fiber.Map{
+	templateName := "admin/oidc_client_created"
+	if strings.HasPrefix(c.Path(), "/account/") {
+		templateName = "admin/account_oidc_client_created"
+	}
+	return c.Status(http.StatusCreated).Render(templateName, injectSiteData(c, fiber.Map{
 		"title": "OIDC client created", "client_id": clientID, "secret": secret,
 	}))
 }
 
 func disableOIDCClient(c *fiber.Ctx) error {
 	id := c.Params("id")
+	account := currentAccount(c)
+	if account == nil {
+		return fiber.ErrUnauthorized
+	}
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
-		result := tx.Model(&model.OIDCClient{}).Where("id = ? AND disabled_at IS NULL", id).Update("disabled_at", time.Now())
+		client := tx.Model(&model.OIDCClient{}).Where("id = ? AND disabled_at IS NULL", id)
+		if !account.Role.IsAdmin() {
+			client = client.Where("owner_id = ?", account.ID)
+		}
+		result := client.Update("disabled_at", time.Now())
 		if result.Error != nil {
 			return result.Error
 		}
@@ -234,6 +256,9 @@ func disableOIDCClient(c *fiber.Ctx) error {
 	})
 	if err != nil {
 		return err
+	}
+	if strings.HasPrefix(c.Path(), "/account/") {
+		return c.Redirect("/account/oidc/clients", http.StatusSeeOther)
 	}
 	return c.Redirect("/admin/oidc/clients", http.StatusSeeOther)
 }

@@ -41,7 +41,7 @@ func newIdentityTestDB(t *testing.T) *gorm.DB {
 		`CREATE TABLE passkeys (id TEXT PRIMARY KEY, account_id TEXT, credential_id BLOB UNIQUE, public_key BLOB, aaguid BLOB, sign_count INTEGER, user_present BOOL, user_verified BOOL, backup_eligible BOOL, backup_state BOOL, attestation_type TEXT, name TEXT, created_at datetime, updated_at datetime)`,
 		`CREATE TABLE passkey_ceremonies (id TEXT PRIMARY KEY, account_id TEXT, cookie_hash TEXT UNIQUE, purpose TEXT, session_json BLOB, expires_at datetime)`,
 		`CREATE TABLE comments (id TEXT PRIMARY KEY, article_id TEXT, is_spam BOOL)`,
-		`CREATE TABLE o_id_c_clients (id TEXT PRIMARY KEY, name TEXT, secret_hash TEXT, public BOOL, redirect_uris_json TEXT, disabled_at datetime, created_at datetime)`,
+		`CREATE TABLE o_id_c_clients (id TEXT PRIMARY KEY, owner_id TEXT, name TEXT, secret_hash TEXT, public BOOL, redirect_uris_json TEXT, disabled_at datetime, created_at datetime)`,
 		`CREATE TABLE o_id_c_auth_requests (id TEXT PRIMARY KEY, client_id TEXT, account_id TEXT, request_json BLOB, code_hash TEXT UNIQUE, code_used_at datetime, approved BOOL, auth_time datetime, expires_at datetime, created_at datetime)`,
 		`CREATE TABLE o_id_c_access_tokens (id TEXT PRIMARY KEY, client_id TEXT, account_id TEXT, scopes TEXT, expires_at datetime, created_at datetime)`,
 		`CREATE TABLE o_id_c_refresh_tokens (id TEXT PRIMARY KEY, token_hash TEXT UNIQUE, client_id TEXT, account_id TEXT, access_id TEXT, scopes TEXT, auth_time datetime, expires_at datetime)`,
@@ -483,7 +483,12 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 		t.Fatal("PKCE mismatch accepted")
 	}
 	adminApp := fiber.New()
-	adminApp.Post("/admin/oidc/clients/:id/disable", disableOIDCClient)
+	adminApp.Post("/admin/oidc/clients/:id/disable", func(c *fiber.Ctx) error {
+		administrator := account
+		administrator.Role = model.RoleAdmin
+		c.Locals(solitudes.CtxAccount, &administrator)
+		return disableOIDCClient(c)
+	})
 	disableReq := httptest.NewRequest(http.MethodPost, "/admin/oidc/clients/"+client.ID+"/disable", nil)
 	disableResp, err := adminApp.Test(disableReq, -1)
 	if err != nil {

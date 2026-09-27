@@ -76,7 +76,7 @@ Password: `123456`
 
 Existing installations seed the first administrator from `user.email`, `user.nickname`, and the existing bcrypt `user.password` in `data/conf.yml`. Replace the sample/default password before exposing a new installation to the Internet. Keep these values until the first successful migration. After that, login sessions and accounts live in PostgreSQL; the old config token is not accepted. Sign in at `/admin/login`, register at `/admin/register`, and manage your identity/passkeys at `/account`. New email/password accounts must confirm their email (one-hour link) before login; registration requires SMTP. Administrators assign roles at `/admin/users`: editors can publish and manage their own articles, while ordinary users cannot access publishing routes. Existing articles are assigned to the seeded administrator.
 
-Set `site.domain` to the exact public host (include the port if necessary), and serve production traffic over HTTPS. Configure SMTP with `email.host`, `email.port`, `email.user`, `email.pass`, and `email.ssl`. Optional upstream login in `data/conf.yml`:
+Set `site.domain` to the exact public host (include the port if necessary), and serve production traffic over HTTPS. Configure SMTP with `email.host`, `email.port`, `email.user`, `email.pass`, and `email.ssl`. Administrators can configure GitHub, Google, and upstream OIDC sign-in under `/admin/auth/providers` (secrets are never displayed again). The equivalent configuration in `data/conf.yml` is:
 
 ```yaml
 auth:
@@ -88,7 +88,7 @@ auth:
 
 Register the callback `https://<site.domain>/auth/{github,google,oidc}/callback` at each enabled upstream provider. A verified upstream email is required; if that email already exists locally, sign in first and explicitly link the provider from `/account`. Passkeys require a secure origin and matching RP ID (localhost is supported for development). Unconfigured providers are disabled.
 
-Solitudes also acts as an OIDC provider. Register downstream clients in `/admin/oidc/clients`, then point them to `https://<site.domain>/.well-known/openid-configuration`. Use authorization code with PKCE S256 and an exact registered callback URI; a public client has no secret, while a confidential client's secret is displayed only on creation. Users must consent to each authorization. Disabling a client revokes its access and refresh tokens; already issued ID tokens remain cryptographically valid until expiry. Signing-key rotation keeps old public keys available for that interval. The PostgreSQL backup includes OIDC signing keys and client credentials: protect it accordingly. The issuer is unavailable until `site.domain` and the database are configured; restart after changing the domain.
+Solitudes also acts as an OIDC provider: **every verified blog account**, including ordinary users and editors, can sign in to registered external applications. Users can register and manage their own downstream clients under `/account/oidc/clients`; administrators can manage every client under `/admin/oidc/clients`. External applications use `https://<site.domain>/.well-known/openid-configuration`. This is separate from the upstream sign-in providers above. Use authorization code with PKCE S256 and an exact registered callback URI; a public client has no secret, while a confidential client's secret is displayed only on creation. Users must consent to each authorization. Disabling a client revokes its access and refresh tokens; already issued ID tokens remain cryptographically valid until expiry. Signing-key rotation keeps old public keys available for that interval. The PostgreSQL backup includes OIDC signing keys and client credentials: protect it accordingly. The issuer is unavailable until `site.domain` and the database are configured; restart after changing the domain.
 
 ## Theme System
 
@@ -120,7 +120,7 @@ Switch themes from **Admin > System Settings**.
 
 ## Development
 
-**Prerequisites**: Go 1.24+, PostgreSQL
+**Prerequisites**: Go 1.26+, PostgreSQL
 
 ```bash
 git clone https://github.com/naiba/solitudes.git
@@ -153,7 +153,10 @@ go build -o solitudes cmd/web/main.go
 
 The browser matrix covers shared core flows (registration and email verification,
 login, search, comments, publishing, role changes, account password changes,
-OIDC client management and Folio's theme toggle). It is not exhaustive coverage
+OIDC client management and ownership, external OIDC login for users/editors/admins, sign-in
+provider configuration and Folio's theme toggle). Pull requests and pushes to
+`master` run the PostgreSQL and Chromium matrix in CI before Docker images are
+published. It is not exhaustive coverage
 of every feature: external OAuth providers, WebAuthn authenticator ceremonies,
 uploads, every settings page and error path still need dedicated E2E tests.
 

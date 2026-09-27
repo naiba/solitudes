@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 
 const siteTheme = process.env.E2E_SITE_THEME || 'cactus';
 const adminTheme = process.env.E2E_ADMIN_THEME || 'default';
@@ -7,6 +8,9 @@ const adminEmail = process.env.E2E_ADMIN_EMAIL;
 const adminPassword = process.env.E2E_ADMIN_PASSWORD;
 const readerEmail = process.env.E2E_READER_EMAIL;
 const readerPassword = process.env.E2E_READER_PASSWORD;
+const editorEmail = process.env.E2E_EDITOR_EMAIL;
+const oidcClientID = process.env.E2E_OIDC_CLIENT_ID;
+const oidcRedirectURI = process.env.E2E_OIDC_REDIRECT_URI;
 const articleSlug = process.env.E2E_ARTICLE_SLUG;
 const articleTitle = process.env.E2E_ARTICLE_TITLE;
 
@@ -84,6 +88,7 @@ test('registration delivers a verification email before a new reader can sign in
 test('site navigation and search form work in both site themes', async ({ page }) => {
   const home = await page.goto('/', { waitUntil: 'domcontentloaded' });
   expect(home?.status()).toBe(200);
+  if (articleTitle) await expect(page.getByText(articleTitle, { exact: true }).first()).toBeVisible();
   await expect(page.locator(`link[href*="/static/site/${siteTheme}/"]`).first()).toHaveCount(1);
   for (const route of ['/posts/', '/books/', '/tags/']) {
     expect((await page.goto(route, { waitUntil: 'domcontentloaded' }))?.status()).toBe(200);
@@ -165,7 +170,14 @@ test('publish button creates an article using the same controls in both admin th
   await page.evaluate(() => (window as any).__testEditor.setValue('Published using the real button'));
   await page.getByTestId('publish-submit').click();
   await expect.poll(async () => (await page.request.get('/' + slug)).status()).toBe(200);
-  await page.goto('/' + slug, { waitUntil: 'domcontentloaded' });
+  if (adminTheme === 'default') {
+    // Default redirects to the new article; wait for its own navigation to
+    // finish instead of racing it with a second page.goto().
+    await expect(page).toHaveURL(new RegExp(`/${slug}$`));
+  } else {
+    await expect(page).toHaveURL(/\/admin\/publish\?id=/);
+    await page.goto('/' + slug, { waitUntil: 'domcontentloaded' });
+  }
   await expect(page.getByTestId('site-article')).toContainText('Browser UI post');
 });
 
@@ -196,6 +208,105 @@ test('admin creates and disables an OIDC client via the UI', async ({ page }) =>
   const client = page.locator('li').filter({ has: page.getByText(name, { exact: true }) });
   await client.getByTestId('oidc-client-disable').click();
   await expect(page.locator('li').filter({ has: page.getByText(name, { exact: true }) })).toContainText('(');
+});
+
+test('ordinary readers can register their own OIDC app but cannot manage another client', async ({ page }) => {
+  test.skip(!readerEmail || !readerPassword || !oidcClientID, 'Requires isolated reader and another client.');
+  await signIn(page, readerEmail!, readerPassword!, /\/account(?:\?|$)/);
+  await page.addStyleTag({ content: '*, *::before, *::after { animation: none !important; transition: none !important; }' });
+  await page.getByTestId('account-oidc-clients').click();
+  await expect(page).toHaveURL(/\/account\/oidc\/clients$/);
+  expect((await page.request.get('/admin/oidc/clients', { maxRedirects: 0 })).status()).toBe(403);
+  await expect(page.getByText('Browser external app', { exact: true })).toHaveCount(0);
+  const name = `My app ${Date.now()}`;
+  await page.getByTestId('oidc-client-name').fill(name);
+  await page.getByTestId('oidc-client-redirects').fill('http://localhost:9998/callback');
+  await page.getByTestId('oidc-client-public').check();
+  await page.getByTestId('oidc-client-submit').click();
+  const clientID = await page.getByTestId('oidc-created-id').textContent();
+  expect(clientID).toBeTruthy();
+  await page.getByTestId('oidc-created-back').click();
+  await expect(page.getByText(name, { exact: true })).toBeVisible();
+  const denied = await page.request.post(`/account/oidc/clients/${oidcClientID}/disable`,
+    { headers: { Origin: new URL(page.url()).origin }, maxRedirects: 0 });
+  expect(denied.status()).toBe(404);
+  await page.locator('li').filter({ has: page.getByText(name, { exact: true }) }).getByTestId('oidc-client-disable').click();
+  await expect(page.locator('li').filter({ has: page.getByText(name, { exact: true }) })).toContainText('(');
+});
+
+test('admin navigation groups sign-in providers separately from external OIDC applications', async ({ page }) => {
+  test.skip(!adminEmail, 'Requires an isolated administrator.');
+  await signIn(page);
+  await page.getByTestId('admin-nav-identity-menu').locator('summary').click();
+  await page.getByTestId('admin-nav-providers').click();
+  await expect(page).toHaveURL(/\/admin\/auth\/providers$/);
+  for (const id of ['provider-settings-form', 'provider-github-id', 'provider-github-secret',
+    'provider-google-id', 'provider-google-secret', 'provider-oidc-id',
+    'provider-oidc-issuer', 'provider-oidc-secret', 'provider-settings-save']) {
+    await expect(page.getByTestId(id)).toBeVisible();
+  }
+  await page.getByTestId('provider-github-id').fill('browser-github-client');
+  await page.getByTestId('provider-github-secret').fill('browser-github-secret');
+  await page.getByTestId('provider-settings-save').click();
+  await expect(page).toHaveURL(/\/admin\/auth\/providers\?saved=1/);
+  await expect(page.getByTestId('provider-github-id')).toHaveValue('browser-github-client');
+  await expect(page.getByTestId('provider-github-secret')).toHaveValue('');
+  expect(await page.content()).not.toContain('browser-github-secret');
+  await page.getByTestId('provider-github-disable').check();
+  await page.getByTestId('provider-settings-save').click();
+  await expect(page.getByTestId('provider-github-id')).toHaveValue('');
+});
+
+for (const role of ['user', 'editor', 'admin'] as const) {
+  test(`${role} can consent to an external OIDC app and receive their own identity`, async ({ page }) => {
+    const email = role === 'user' ? readerEmail : role === 'editor' ? editorEmail : adminEmail;
+    test.skip(!email || !oidcClientID || !oidcRedirectURI || !readerPassword, 'Requires isolated users and a public OIDC client.');
+    const verifier = 'v'.repeat(64);
+    const challenge = createHash('sha256').update(verifier).digest('base64url');
+    const query = new URLSearchParams({ client_id: oidcClientID!, redirect_uri: oidcRedirectURI!,
+      response_type: 'code', scope: 'openid email profile', state: `browser-${role}`,
+      code_challenge: challenge, code_challenge_method: 'S256' });
+    await page.goto('/authorize?' + query.toString(), { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/admin\/login\?return_to=/);
+    await page.addStyleTag({ content: '*, *::before, *::after { animation: none !important; transition: none !important; }' });
+    await page.getByTestId('auth-email').fill(email!);
+    await page.getByTestId('auth-password').fill(readerPassword!);
+    await page.getByTestId('auth-captcha').fill('0');
+    await expect(page.locator('input[name="captchaId"]')).not.toHaveValue('');
+    await page.getByTestId('auth-submit').click();
+    await expect(page).toHaveURL(/\/oidc\/consent\?authRequestID=/);
+    await page.addStyleTag({ content: '*, *::before, *::after { animation: none !important; transition: none !important; }' });
+    await expect(page.getByText('Browser external app', { exact: true })).toBeVisible();
+    await page.getByTestId('oidc-consent-allow').click();
+    await expect(page).toHaveURL(new RegExp(`^${oidcRedirectURI!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\?`));
+    const callback = new URL(page.url());
+    expect(callback.searchParams.get('state')).toBe(`browser-${role}`);
+    const code = callback.searchParams.get('code');
+    expect(code).toBeTruthy();
+    const token = await page.request.post('/oauth/token', { form: {
+      grant_type: 'authorization_code', client_id: oidcClientID!,
+      redirect_uri: oidcRedirectURI!, code: code!, code_verifier: verifier,
+    } });
+    expect(token.status()).toBe(200);
+    const body = await token.json();
+    expect(body.id_token).toBeTruthy();
+    const userInfo = await page.request.get('/userinfo', { headers: { Authorization: `Bearer ${body.access_token}` } });
+    expect(userInfo.status()).toBe(200);
+    expect((await userInfo.json()).email).toBe(email);
+  });
+}
+
+test('mobile admin navigation keeps provider settings reachable', async ({ page }) => {
+  test.skip(!adminEmail, 'Requires an isolated administrator.');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  const toggle = page.locator(adminTheme === 'glacie' ? '.nav-mobile-toggle' : '.admin-mobile-toggle');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  await page.getByTestId('admin-nav-identity-menu').locator('summary').click();
+  await page.getByTestId('admin-nav-providers').click();
+  await expect(page).toHaveURL(/\/admin\/auth\/providers$/);
 });
 
 test('reader can change their password in both account themes', async ({ page }) => {
