@@ -2,6 +2,7 @@
 <div class="article-card">
     <div class="article-card-meta">
         <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
+        {{if .article.Author.Nickname}} · <span>{{.article.Author.Nickname}}</span>{{end}}
     </div>
     {{if .article.IsTopic}}
     <div class="topic-card">

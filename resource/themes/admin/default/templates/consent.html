@@ -1,0 +1,14 @@
+{{define "admin/consent"}}
+<!doctype html><html lang="{{.Tr.Locale}}"><head>{{template "admin/css"}}<title>{{.Tr.T "authorize_app"}}</title></head>
+<body class="bg-gray-50"><main class="login-container"><div class="login-box">
+  <h1>{{.Tr.T "authorize_app"}}</h1>
+  <p><strong>{{.Data.client}}</strong> {{.Tr.T "requests_access"}} {{.Account.Nickname}}.</p>
+  <ul>{{range .Data.scopes}}<li>{{.}}</li>{{end}}</ul>
+  <p>{{.Tr.T "consent_warning"}}</p>
+  <form method="post" action="/oidc/consent" data-testid="oidc-consent-form">
+    <input type="hidden" name="request_id" value="{{.Data.request_id}}">
+    <button class="admin-button primary" type="submit" name="allow" value="yes" data-testid="oidc-consent-allow">{{.Tr.T "allow"}}</button>
+    <button class="admin-button" type="submit" name="allow" value="no" data-testid="oidc-consent-deny">{{.Tr.T "deny"}}</button>
+  </form>
+</div></main></body></html>
+{{end}}

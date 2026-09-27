@@ -2,10 +2,30 @@ package model
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/naiba/solitudes/internal/theme"
 )
+
+func TestConfigSaveRestrictsSecretFilePermissions(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "conf.yml")
+	if err := os.WriteFile(path, []byte("old"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	config := &Config{ConfigFilePath: path}
+	if err := config.Save(); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0600 {
+		t.Fatalf("config with login secrets is readable by other users: %v", info.Mode().Perm())
+	}
+}
 
 func TestThemeConfig(t *testing.T) {
 	cfg := &Config{

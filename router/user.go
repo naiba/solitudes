@@ -2,8 +2,8 @@ package router
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,6 +21,7 @@ type loginForm struct {
 	Remember  string `form:"remember"`
 	CaptchaID string `form:"captchaId" validate:"required"`
 	Captcha   string `form:"captcha" validate:"required"`
+	ReturnTo  string `form:"return_to"`
 }
 
 func loginHandler(c *fiber.Ctx) error {
@@ -35,46 +36,42 @@ func loginHandler(c *fiber.Ctx) error {
 	if !verifyCaptcha(lf.CaptchaID, lf.Captcha) {
 		return errors.New("invalid captcha")
 	}
-	if lf.Email != solitudes.System.Config.User.Email ||
-		bcrypt.CompareHashAndPassword([]byte(solitudes.System.Config.User.Password),
-			[]byte(lf.Password)) != nil {
+	var account model.Account
+	if err := solitudes.System.DB.Where("email = ? AND disabled_at IS NULL", strings.ToLower(strings.TrimSpace(lf.Email))).Take(&account).Error; err != nil ||
+		bcrypt.CompareHashAndPassword([]byte(account.PasswordHash), []byte(lf.Password)) != nil {
 		return errors.New("invalid email or password")
 	}
-	token, err := bcrypt.GenerateFromPassword([]byte(fmt.Sprintf("%s%d", lf.Password, time.Now().UnixMicro())), bcrypt.DefaultCost)
-	if err != nil {
+	if account.EmailVerifiedAt == nil {
+		return fiber.NewError(http.StatusForbidden, "verify your email before signing in")
+	}
+	if err := issueLoginSession(c, &account, lf.Remember == "on"); err != nil {
 		return err
 	}
-	solitudes.System.Config.User.Token = string(token)
-	var expires time.Time
-	if lf.Remember == "on" {
-		expires = time.Now().AddDate(0, 3, 0)
-	} else {
-		expires = time.Now().Add(time.Hour * 4)
+	if ret := safeReturnPath(lf.ReturnTo); ret != "" {
+		return c.Redirect(ret, http.StatusFound)
 	}
-	solitudes.System.Config.User.TokenExpires = expires.Unix()
-	c.Cookie(&fiber.Cookie{
-		Name:     solitudes.AuthCookie,
-		Value:    string(token),
-		Path:     "/",
-		Expires:  expires,
-		HTTPOnly: true,
-		SameSite: fiber.CookieSameSiteLaxMode,
-		Secure:   c.Protocol() == "https",
-	})
-	solitudes.System.Config.Save()
-	c.Redirect("/admin", http.StatusFound)
-	return nil
+	if account.Role.CanPublish() {
+		if account.Role == model.RoleEditor {
+			return c.Redirect("/admin/articles", http.StatusFound)
+		}
+		return c.Redirect("/admin", http.StatusFound)
+	}
+	return c.Redirect("/account", http.StatusFound)
 }
 
 func login(c *fiber.Ctx) error {
 
-	return c.Status(http.StatusOK).Render("admin/login", injectSiteData(c, fiber.Map{}))
+	return c.Status(http.StatusOK).Render("admin/login", injectSiteData(c, fiber.Map{
+		"return_to": safeReturnPath(c.Query("return_to")),
+	}))
 }
 
 func logoutHandler(c *fiber.Ctx) error {
-	solitudes.System.Config.User.TokenExpires = time.Now().Unix()
-	solitudes.System.Config.User.Token = ""
-	solitudes.System.Config.Save()
+	if token := c.Cookies(solitudes.AuthCookie); token != "" {
+		if err := solitudes.System.DB.Where("token_hash = ?", secretHash(token)).Delete(&model.LoginSession{}).Error; err != nil {
+			return err
+		}
+	}
 	c.Cookie(&fiber.Cookie{
 		Name:     solitudes.AuthCookie,
 		Value:    "",
@@ -93,11 +90,10 @@ func index(c *fiber.Ctx) error {
 	var articles []model.Article
 	var topics []model.Article
 	var mostRead []model.Article
-	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
+	db := readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author")
 
-	solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(5).Find(&topics)
+	db.Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(5).Find(&topics)
 	for i := range topics {
-		maskPrivateArticleContent(&topics[i], authorized)
 		pagination.Paging(&pagination.Param{
 			DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", topics[i].ID),
 			Limit:   5,
@@ -106,17 +102,15 @@ func index(c *fiber.Ctx) error {
 	}
 
 	// Fetch top 3 most read articles and books
-	solitudes.System.DB.Where("template_id = ? AND (array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", solitudes.ArticleTemplateID, "Topic").Order("read_num DESC").Limit(3).Find(&mostRead)
+	db.Where("template_id = ? AND (array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", solitudes.ArticleTemplateID, "Topic").Order("read_num DESC").Limit(3).Find(&mostRead)
 	for i := range mostRead {
 		mostRead[i].RelatedCount(solitudes.System.DB)
-		maskPrivateArticleContent(&mostRead[i], authorized)
 	}
 
 	articleCount := 16 - len(topics)*2
-	solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles)
+	db.Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles)
 	for i := range articles {
 		articles[i].RelatedCount(solitudes.System.DB)
-		maskPrivateArticleContent(&articles[i], authorized)
 	}
 	// Only show "Most Read" section if we have at least 3 items
 	var mostReadData interface{}

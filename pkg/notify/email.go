@@ -188,6 +188,20 @@ func sendEmail(m *gomail.Message) error {
 	return sender.DialAndSend(m)
 }
 
+// SendVerificationEmail delivers a one-time confirmation link. The caller
+// stores only a digest of the token and must never log the raw URL.
+func SendVerificationEmail(recipient, verificationURL string) error {
+	if solitudes.System.Config.Email.Host == "" || solitudes.System.Config.Email.User == "" {
+		return errors.New("SMTP is not configured")
+	}
+	m := gomail.NewMessage()
+	m.SetHeader("From", solitudes.System.Config.Email.User)
+	m.SetHeader("To", recipient)
+	m.SetHeader("Subject", "Verify your Solitudes email")
+	m.SetBody("text/plain", "Confirm your email address to finish registration:\n\n"+verificationURL+"\n\nThis link expires in one hour.")
+	return sendEmail(m)
+}
+
 // replaceString replaces {0} placeholder with value
 func replaceString(text, value string) string {
 	return strings.ReplaceAll(text, "{0}", value)

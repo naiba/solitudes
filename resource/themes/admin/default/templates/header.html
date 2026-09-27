@@ -15,7 +15,7 @@
     <!-- Top Navigation -->
     <nav class="admin-topnav">
         <div class="admin-topnav-inner">
-            <a href="/admin" class="admin-logo">
+            <a href="{{if .Account.Role.IsAdmin}}/admin{{else}}/admin/articles{{end}}" class="admin-logo">
                 <i class="fa-solid fa-pen-to-square"></i>
                 <span>Solitudes</span>
             </a>
@@ -25,10 +25,10 @@
             </button>
 
             <ul class="admin-nav-links" id="admin-navigation">
-                <li><a href="/admin" class="{{if eq .Path "/admin"}}active{{end}}">
+                {{if .Account.Role.IsAdmin}}<li><a href="/admin" class="{{if eq .Path "/admin"}}active{{end}}">
                     <i class="fa-solid fa-gauge"></i>
                     <span>{{.Tr.T "dashboard"}}</span>
-                </a></li>
+                </a></li>{{end}}
                 <li><a href="/admin/publish" class="{{if hasPrefix .Path "/admin/publish"}}active{{end}}">
                     <i class="fa-solid fa-plus"></i>
                     <span>{{.Tr.T "compose"}}</span>
@@ -37,7 +37,7 @@
                     <i class="fa-solid fa-list"></i>
                     <span>{{.Tr.T "articles"}}</span>
                 </a></li>
-                <li><a href="/admin/comments" class="{{if hasPrefix .Path "/admin/comments"}}active{{end}}">
+                {{if .Account.Role.IsAdmin}}<li><a href="/admin/comments" class="{{if hasPrefix .Path "/admin/comments"}}active{{end}}">
                     <i class="fa-regular fa-comments"></i>
                     <span>{{.Tr.T "comments"}}</span>
                 </a></li>
@@ -53,16 +53,19 @@
                     <i class="fa-solid fa-gear"></i>
                     <span>{{.Tr.T "site_settings"}}</span>
                 </a></li>
+                <li><a href="/admin/users" class="{{if hasPrefix .Path "/admin/users"}}active{{end}}"><i class="fa-solid fa-users"></i><span>{{.Tr.T "users"}}</span></a></li>{{end}}
+                {{if .Account.Role.IsAdmin}}<li><a href="/admin/oidc/clients" class="{{if hasPrefix .Path "/admin/oidc"}}active{{end}}"><i class="fa-solid fa-key"></i><span>{{.Tr.T "oidc_clients"}}</span></a></li>{{end}}
             </ul>
             
             <div class="admin-user-menu">
+                <a href="/account" class="text-gray-600 hover:text-gray-900 transition" title="{{.Tr.T "my_account"}}">{{.Tr.T "my_account"}}</a>
                 <a href="/" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-gray-900 transition" title="{{.Tr.T "view_site"}}">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     <span class="hidden sm:inline ml-1">{{.Tr.T "view_site"}}</span>
                 </a>
                 <div class="admin-user-info">
-                    <div class="admin-user-avatar">{{substr .Conf.User.Nickname 0 1}}</div>
-                    <span class="hidden sm:inline text-sm text-gray-700">{{.Conf.User.Nickname}}</span>
+                    <div class="admin-user-avatar">{{substr .Account.Nickname 0 1}}</div>
+                    <span class="hidden sm:inline text-sm text-gray-700">{{.Account.Nickname}}</span>
                 </div>
                 <form method="POST" action="/logout" style="display: inline;">
                     <button type="submit" class="text-gray-600 hover:text-red-600 transition" title="{{.Tr.T "logout"}}" aria-label="{{.Tr.T "logout"}}">

@@ -12,22 +12,24 @@
                 <h1>Solitudes</h1>
                 <p>{{.Tr.T "sign_in_subtitle"}}</p>
             </div>
+            {{if .Conf.Auth.WebAuthn.RPID}}<button type="button" id="passkey-login" data-testid="auth-passkey" class="admin-button w-full mt-4">{{.Tr.T "sign_in_passkey"}}</button>{{end}}
 
-            <form method="post" id="loginForm">
+            <form method="post" id="loginForm" data-testid="auth-login-form">
+                <input type="hidden" name="return_to" value="{{.Data.return_to}}">
                 <div class="form-group">
                     <label class="form-label" for="loginEmail">{{.Tr.T "email"}}</label>
-                    <input type="email" id="loginEmail" name="email" class="form-control" placeholder='{{.Tr.T "email"}}' autocomplete="username" required>
+                    <input type="email" id="loginEmail" name="email" data-testid="auth-email" class="form-control" placeholder='{{.Tr.T "email"}}' autocomplete="username" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="loginPassword">{{.Tr.T "password"}}</label>
-                    <input type="password" id="loginPassword" name="password" class="form-control" placeholder='{{.Tr.T "password"}}' autocomplete="current-password" required>
+                    <input type="password" id="loginPassword" name="password" data-testid="auth-password" class="form-control" placeholder='{{.Tr.T "password"}}' autocomplete="current-password" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="loginCaptcha">{{.Tr.T "captcha"}}</label>
                     <div class="flex gap-2">
-                        <input type="text" id="loginCaptcha" name="captcha" class="form-control flex-1" placeholder='{{.Tr.T "enter_captcha"}}' autocomplete="off" required maxlength="5">
+                        <input type="text" id="loginCaptcha" name="captcha" data-testid="auth-captcha" class="form-control flex-1" placeholder='{{.Tr.T "enter_captcha"}}' autocomplete="off" required maxlength="5">
                         <button type="button" class="admin-button" onclick="refreshCaptcha()" title="{{.Tr.T "refresh_captcha"}}" aria-label="{{.Tr.T "refresh_captcha"}}">
                             <i class="fa-solid fa-rotate"></i>
                         </button>
@@ -43,10 +45,16 @@
                     <label for="remember">{{.Tr.T "remember_me"}}</label>
                 </div>
                 
-                <button type="submit" class="admin-button primary w-full">
+                <button type="submit" data-testid="auth-submit" class="admin-button primary w-full">
                     {{.Tr.T "sign_in"}}
                 </button>
             </form>
+            <p class="text-center mt-4"><a href="/admin/register" data-testid="auth-register-link">{{.Tr.T "create_account"}}</a></p>
+            <div class="text-center mt-4">
+                {{if and .Conf.Auth.GitHub.ClientID .Conf.Auth.GitHub.ClientSecret}}<a class="admin-button" href="/auth/github?return_to={{.Data.return_to}}">{{.Tr.T "sign_in_github"}}</a>{{end}}
+                {{if and .Conf.Auth.Google.ClientID .Conf.Auth.Google.ClientSecret}}<a class="admin-button" href="/auth/google?return_to={{.Data.return_to}}">{{.Tr.T "sign_in_google"}}</a>{{end}}
+                {{if and .Conf.Auth.OIDC.Issuer .Conf.Auth.OIDC.ClientID}}<a class="admin-button" href="/auth/oidc?return_to={{.Data.return_to}}">{{.Tr.T "sign_in_sso"}}</a>{{end}}
+            </div>
         </div>
     </div>
     
@@ -82,6 +90,7 @@
             });
         }
     </script>
+<script src="/static/admin/default/passkeys.js?v2026092702" defer></script>
 </body>
 </html>
 {{end}}

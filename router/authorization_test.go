@@ -25,6 +25,14 @@ func TestMediaDeleteRequiresLoginAndSameOrigin(t *testing.T) {
 	}
 	previous := solitudes.System
 	t.Cleanup(func() { solitudes.System = previous })
+	previousLookup := sessionLookup
+	t.Cleanup(func() { sessionLookup = previousLookup })
+	sessionLookup = func(token string) (*model.Account, error) {
+		if token == "valid-token" {
+			return &model.Account{Role: model.RoleAdmin}, nil
+		}
+		return nil, errNoAccount
+	}
 	cfg := &model.Config{}
 	cfg.User.Token = "valid-token"
 	cfg.User.TokenExpires = time.Now().Add(time.Hour).Unix()
@@ -73,6 +81,9 @@ func TestMediaDeleteRequiresLoginAndSameOrigin(t *testing.T) {
 func TestExpiredAdminTokenCannotDeleteMedia(t *testing.T) {
 	previous := solitudes.System
 	t.Cleanup(func() { solitudes.System = previous })
+	previousLookup := sessionLookup
+	t.Cleanup(func() { sessionLookup = previousLookup })
+	sessionLookup = func(token string) (*model.Account, error) { return nil, errNoAccount }
 	cfg := &model.Config{}
 	cfg.User.Token = "expired"
 	cfg.User.TokenExpires = time.Now().Add(-time.Minute).Unix()
@@ -91,5 +102,50 @@ func TestExpiredAdminTokenCannotDeleteMedia(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusFound {
 		t.Fatalf("expired token status = %d, want 302", resp.StatusCode)
+	}
+}
+
+func TestAccountRolesRestrictPublishingAndAdministration(t *testing.T) {
+	previousLookup := sessionLookup
+	t.Cleanup(func() { sessionLookup = previousLookup })
+	sessionLookup = func(token string) (*model.Account, error) {
+		switch token {
+		case "admin":
+			return &model.Account{Role: model.RoleAdmin}, nil
+		case "editor":
+			return &model.Account{Role: model.RoleEditor}, nil
+		case "user":
+			return &model.Account{Role: model.RoleUser}, nil
+		}
+		return nil, errNoAccount
+	}
+	app := fiber.New()
+	app.Use(auth)
+	app.Get("/admin/publish", loginRequired, func(c *fiber.Ctx) error { return c.SendStatus(http.StatusOK) })
+	app.Get("/admin/users", loginRequired, requireAdmin, func(c *fiber.Ctx) error { return c.SendStatus(http.StatusOK) })
+	for _, tc := range []struct {
+		role, path string
+		status     int
+	}{
+		{"admin", "/admin/publish", http.StatusOK},
+		{"admin", "/admin/users", http.StatusOK},
+		{"editor", "/admin/publish", http.StatusOK},
+		{"editor", "/admin/users", http.StatusForbidden},
+		{"user", "/admin/publish", http.StatusForbidden},
+		{"user", "/admin/users", http.StatusForbidden},
+		{"", "/admin/publish", http.StatusFound},
+	} {
+		req := httptest.NewRequest(http.MethodGet, tc.path, nil)
+		if tc.role != "" {
+			req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: tc.role})
+		}
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != tc.status {
+			t.Errorf("%s %s: got %d, want %d", tc.role, tc.path, resp.StatusCode, tc.status)
+		}
 	}
 }

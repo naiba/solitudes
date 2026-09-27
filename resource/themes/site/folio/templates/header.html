@@ -43,7 +43,7 @@
     {{if eq .OgType "article"}}
     <meta property="article:published_time" content="{{iso8601 .Data.article.CreatedAt}}">
     <meta property="article:modified_time" content="{{iso8601 .Data.article.UpdatedAt}}">
-    <meta property="article:author" content="{{.Conf.User.Nickname}}">
+    <meta property="article:author" content="{{.Data.article.Author.Nickname}}">
     {{range .Data.article.Tags}}<meta property="article:tag" content="{{.}}">
     {{end}}{{end}}
     <meta name="twitter:card" content="summary_large_image">

@@ -1,0 +1,20 @@
+{{define "admin/users"}}
+{{template "admin/header" .}}
+<div class="admin-container">
+  <h1 class="page-title">{{.Tr.T "users"}}</h1>
+  <div class="wf-card"><div class="table-scroll"><table class="wf-table">
+    <thead><tr><th>{{.Tr.T "nickname"}}</th><th>{{.Tr.T "email"}}</th><th>{{.Tr.T "role"}}</th><th>{{.Tr.T "manage"}}</th></tr></thead>
+    <tbody>{{range .Data.users}}<tr>
+      <td>{{.Nickname}}</td><td>{{.Email}}</td><td>{{.Role}}</td>
+      <td>{{if ne .ID $.Account.ID}}<form method="post" action="/admin/users/{{.ID}}/role" data-testid="user-role-form">
+        <label><span class="sr-only">{{$.Tr.T "role"}}</span><select name="role" data-testid="user-role-select">
+          <option value="user" {{if eq .Role "user"}}selected{{end}}>{{$.Tr.T "role_user"}}</option>
+          <option value="editor" {{if eq .Role "editor"}}selected{{end}}>{{$.Tr.T "role_editor"}}</option>
+          <option value="admin" {{if eq .Role "admin"}}selected{{end}}>{{$.Tr.T "role_admin"}}</option>
+        </select></label><button type="submit" class="admin-button compact" data-testid="user-role-save">{{$.Tr.T "save"}}</button>
+      </form>{{end}}</td>
+    </tr>{{end}}</tbody>
+  </table></div></div>
+</div>
+{{template "admin/footer" .}}
+{{end}}

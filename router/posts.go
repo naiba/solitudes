@@ -1,6 +1,7 @@
 package router
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,7 +37,16 @@ func validTagParam(tag string) bool {
 func tagsCloud(c *fiber.Ctx) error {
 	var tags []string
 	var counts []int
-	rows, err := solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles group by t order by count desc`).Rows()
+	account := currentAccount(c)
+	var rows *sql.Rows
+	var err error
+	if account != nil && account.Role.IsAdmin() {
+		rows, err = solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles group by t order by count desc`).Rows()
+	} else if account != nil && account.Role.CanPublish() {
+		rows, err = solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles where is_private = false or author_id = ? group by t order by count desc`, account.ID).Rows()
+	} else {
+		rows, err = solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles where is_private = false group by t order by count desc`).Rows()
+	}
 	if err != nil {
 		return fmt.Errorf("failed to fetch tags cloud: %w", err)
 	}
@@ -60,7 +70,6 @@ func tagsCloud(c *fiber.Ctx) error {
 }
 
 func posts(c *fiber.Ctx) error {
-	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
 	pageStr := c.Params("page")
 	var page int64
 	if pageStr != "" {
@@ -75,7 +84,7 @@ func posts(c *fiber.Ctx) error {
 	}
 	var articles []model.Article
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("array_length(tags, 1) is null").Or("NOT tags @> ARRAY[?]::varchar[]", "Topic"),
+		DB:      readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author").Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic"),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
@@ -90,7 +99,6 @@ func posts(c *fiber.Ctx) error {
 				OrderBy: []string{"created_at DESC"},
 			}, &articles[i].Comments)
 		}
-		maskPrivateArticleContent(&articles[i], authorized)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
@@ -104,7 +112,6 @@ func posts(c *fiber.Ctx) error {
 }
 
 func book(c *fiber.Ctx) error {
-	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
 	pageStr := c.Params("page")
 	var page int64
 	if pageStr != "" {
@@ -119,14 +126,13 @@ func book(c *fiber.Ctx) error {
 	}
 	var articles []model.Article
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("is_book is true"),
+		DB:      readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author").Where("is_book is true"),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
 	}, &articles)
 	for i := range articles {
 		articles[i].RelatedCount(solitudes.System.DB)
-		maskPrivateArticleContent(&articles[i], authorized)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
@@ -230,7 +236,7 @@ func generateFeed(format string) (interface{}, error) {
 		Updated:     time.Now(),
 	}
 	var articles []model.Article
-	if err := solitudes.System.DB.Order("created_at DESC").Limit(20).Find(&articles).Error; err != nil {
+	if err := solitudes.System.DB.Where("is_private = false").Preload("Author").Order("created_at DESC").Limit(20).Find(&articles).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch articles for feed: %w", err)
 	}
 	feed.Items = publicFeedItems(articles)
@@ -270,7 +276,7 @@ func publicFeedItems(articles []model.Article) []*feeds.Item {
 		items = append(items, &feeds.Item{
 			Title:       articles[i].Title,
 			Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug},
-			Author:      &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
+			Author:      &feeds.Author{Name: articles[i].Author.Nickname},
 			Description: mdExcerpt(articles[i].Content, 200),
 			Content:     luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),
 			Created:     articles[i].CreatedAt,
@@ -282,7 +288,6 @@ func publicFeedItems(articles []model.Article) []*feeds.Item {
 }
 
 func tags(c *fiber.Ctx) error {
-	authorized := c.Locals(solitudes.CtxAuthorized).(bool)
 	tag, err := url.PathUnescape(c.Params("tag"))
 	if err != nil || !validTagParam(tag) {
 		return page404(c)
@@ -300,7 +305,7 @@ func tags(c *fiber.Ctx) error {
 	}
 	var articles []model.Article
 	pg := pagination.Paging(&pagination.Param{
-		DB:      solitudes.System.DB.Where("tags @> ARRAY[?]::varchar[]", tag),
+		DB:      readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author").Where("tags @> ARRAY[?]::varchar[]", tag),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC"},
@@ -318,7 +323,6 @@ func tags(c *fiber.Ctx) error {
 				OrderBy: []string{"created_at DESC"},
 			}, &articles[i].Comments)
 		}
-		maskPrivateArticleContent(&articles[i], authorized)
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{

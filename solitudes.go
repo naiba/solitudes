@@ -1,9 +1,11 @@
 package solitudes
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -26,6 +28,8 @@ import (
 const (
 	// CtxAuthorized 用户已认证
 	CtxAuthorized = "cazed"
+	// CtxAccount is the authenticated database account, if one exists.
+	CtxAccount = "account"
 	// CtxTranslator 翻译
 	CtxTranslator = "ct"
 	// AuthCookie 用户认证使用的Cookie名
@@ -239,8 +243,43 @@ func migrate() error {
 	if err := System.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
 		return fmt.Errorf("failed to create uuid-ossp extension: %w", err)
 	}
-	if err := System.DB.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.User{}, &model.FeedVisit{}); err != nil {
+	if err := System.DB.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.ExternalIdentity{}, &model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}, &model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.FeedVisit{}); err != nil {
 		return fmt.Errorf("failed to auto migrate models: %w", err)
+	}
+	// A pre-existing installation owns its administrator identity in conf.yml.
+	// Seed exactly that account, never promote the first public registrant.
+	adminEmail := strings.ToLower(strings.TrimSpace(System.Config.User.Email))
+	var admin model.Account
+	err := System.DB.Where("role = ?", model.RoleAdmin).Order("created_at ASC").Take(&admin).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return fmt.Errorf("load administrator account: %w", err)
+	}
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		var accountCount int64
+		if err := System.DB.Model(&model.Account{}).Count(&accountCount).Error; err != nil {
+			return err
+		}
+		if accountCount == 0 && adminEmail != "" && System.Config.User.Password != "" {
+			now := time.Now()
+			nickname := strings.TrimSpace(System.Config.User.Nickname)
+			if nickname == "" {
+				nickname = "Administrator"
+			}
+			admin = model.Account{
+				Email: adminEmail, Nickname: nickname,
+				PasswordHash: System.Config.User.Password, Role: model.RoleAdmin,
+				EmailVerifiedAt: &now,
+			}
+			if err := System.DB.Create(&admin).Error; err != nil {
+				return fmt.Errorf("seed administrator: %w", err)
+			}
+		} else {
+			return errors.New("no administrator account; configure the legacy user to bootstrap an empty database")
+		}
+	}
+	// Existing articles keep their original owner through a repeatable backfill.
+	if err := System.DB.Model(&model.Article{}).Where("author_id IS NULL").Update("author_id", admin.ID).Error; err != nil {
+		return fmt.Errorf("backfill article authors: %w", err)
 	}
 	return nil
 }

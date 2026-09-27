@@ -15,25 +15,25 @@
     <div class="form-row mb-3">
         <div class="form-group" style="margin-bottom:0">
             <label class="form-label">{{.Tr.T "title"}}</label>
-            <input type="text" id="inputTitle" class="form-input" placeholder="{{.Tr.T "article_title_placeholder"}}" value="{{.Data.article.Title}}">
+            <input type="text" id="inputTitle" data-testid="publish-title" class="form-input" placeholder="{{.Tr.T "article_title_placeholder"}}" value="{{.Data.article.Title}}">
         </div>
         <div class="form-group" style="margin-bottom:0">
             <label class="form-label">{{.Tr.T "slug"}}</label>
-            <input type="text" id="inputSlug" class="form-input" placeholder="{{.Tr.T "lowercase_hyphens_only"}}" value="{{.Data.article.Slug}}">
+            <input type="text" id="inputSlug" data-testid="publish-slug" class="form-input" placeholder="{{.Tr.T "lowercase_hyphens_only"}}" value="{{.Data.article.Slug}}">
         </div>
     </div>
 
     <!-- Tags -->
     <div class="form-group dropdown-container">
         <label class="form-label">{{.Tr.T "tags"}}</label>
-        <input type="text" id="inputTags" class="form-input" placeholder="{{.Tr.T "comma_separated_tags"}}" value="{{.Data.article.RawTags}}" autocomplete="off">
+        <input type="text" id="inputTags" data-testid="publish-tags" class="form-input" placeholder="{{.Tr.T "comma_separated_tags"}}" value="{{.Data.article.RawTags}}" autocomplete="off">
         <div class="dropdown-menu" id="tagsDropdown"></div>
     </div>
 
     <!-- Editor -->
     <div class="form-group">
         <label class="form-label">{{.Tr.T "content"}}</label>
-        <div id="editSection" style="min-height: 500px;"></div>
+        <div id="editSection" data-testid="publish-content" style="min-height: 500px;"></div>
     </div>
 
     <!-- Article Settings -->
@@ -43,7 +43,7 @@
         <div class="form-row mb-3">
             <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">{{.Tr.T "template"}}</label>
-                <select id="selTemplate" class="form-select">
+                <select id="selTemplate" data-testid="publish-template" class="form-select">
                     {{range $k, $v := .Data.templates}}
                     <option value="{{$k}}" {{if eq $k $.Data.article.TemplateID}}selected{{end}}>{{$v}}</option>
                     {{end}}
@@ -62,7 +62,7 @@
                 {{.Tr.T "its_a_book"}}
             </label>
             <label class="form-check">
-                <input type="checkbox" id="cbPrivate" {{if .Data.article.IsPrivate}}checked{{end}}>
+                <input type="checkbox" id="cbPrivate" data-testid="publish-private" {{if .Data.article.IsPrivate}}checked{{end}}>
                 {{.Tr.T "private"}}
             </label>
             <label class="form-check">
@@ -83,7 +83,7 @@
         <a href="/admin/articles" class="btn-glass">
             <i class="fas fa-arrow-left"></i> {{.Tr.T "back_to_dashboard"}}
         </a>
-        <button class="btn-glass primary" onclick="publish()">
+        <button class="btn-glass primary" data-testid="publish-submit" onclick="publish()">
             <i class="fas fa-paper-plane"></i> {{.Tr.T "publish_now"}}
         </button>
     </div>

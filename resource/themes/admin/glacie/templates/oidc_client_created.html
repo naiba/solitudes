@@ -1,0 +1,7 @@
+{{define "admin/oidc_client_created"}}
+{{template "admin/header" .}}<div class="wf-card-static p-4">
+  <h1>{{.Tr.T "client_created"}}</h1><p>{{.Tr.T "copy_secret_once"}}</p>
+  <p>{{.Tr.T "client_id"}}: <code data-testid="oidc-created-id">{{.Data.client_id}}</code></p>
+  {{if .Data.secret}}<p>{{.Tr.T "client_secret"}}: <code>{{.Data.secret}}</code></p>{{end}}
+  <a href="/admin/oidc/clients" data-testid="oidc-created-back">{{.Tr.T "oidc_clients"}}</a>
+</div>{{template "admin/footer" .}}{{end}}

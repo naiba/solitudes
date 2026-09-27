@@ -30,7 +30,26 @@ type Config struct {
 
 	Database string
 	Akismet  string
-	Email    struct {
+	Auth     struct {
+		GitHub struct {
+			ClientID     string `yaml:"client_id"`
+			ClientSecret string `yaml:"client_secret"`
+		} `yaml:"github"`
+		Google struct {
+			ClientID     string `yaml:"client_id"`
+			ClientSecret string `yaml:"client_secret"`
+		} `yaml:"google"`
+		OIDC struct {
+			Issuer       string `yaml:"issuer"`
+			ClientID     string `yaml:"client_id"`
+			ClientSecret string `yaml:"client_secret"`
+		} `yaml:"oidc"`
+		WebAuthn struct {
+			RPID   string `yaml:"rp_id"`
+			Origin string `yaml:"origin"`
+		} `yaml:"webauthn"`
+	} `yaml:"auth"`
+	Email struct {
 		Host string
 		Port int
 		User string
@@ -60,7 +79,13 @@ func (c *Config) Save() error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(c.ConfigFilePath, b, os.FileMode(0644))
+	if err := os.Chmod(c.ConfigFilePath, 0600); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	if err := os.WriteFile(c.ConfigFilePath, b, os.FileMode(0600)); err != nil {
+		return err
+	}
+	return os.Chmod(c.ConfigFilePath, 0600)
 }
 
 // ApplyThemeFallback ensures configured themes exist in the available list.

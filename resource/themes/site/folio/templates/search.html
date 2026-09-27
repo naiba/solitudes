@@ -11,8 +11,8 @@
         <form action="/search/" method="get" class="search-form">
             <label for="search-input" class="sr-only">{{.Tr.T "search"}}</label>
             <div class="search-form-row">
-                <input id="search-input" class="search-input" name="w" placeholder="{{.Tr.T "search_placeholder"}}">
-                <button class="folio-btn" type="submit">{{.Tr.T "search"}}</button>
+                <input id="search-input" class="search-input" name="w" data-testid="site-search-input" placeholder="{{.Tr.T "search_placeholder"}}">
+                <button class="folio-btn" type="submit" data-testid="site-search-submit">{{.Tr.T "search"}}</button>
             </div>
         </form>
 

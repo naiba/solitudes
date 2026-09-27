@@ -11,3 +11,6 @@ user:
 site:
   spacename: Solitudes
   spacedesc: We love writing
+  domain: blog.example.com # Public HTTPS host; required for OIDC and verification links.
+# Email/password registration requires SMTP. Optional upstream providers and
+# WebAuthn are configured under auth; see README.md for the full example.

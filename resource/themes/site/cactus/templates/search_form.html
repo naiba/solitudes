@@ -4,8 +4,8 @@
     <form action="/search/" method="get">
         <div class="row">
             <label for="search-input" class="sr-only">{{.Tr.T "search"}}</label>
-            <input id="search-input" class="search-input" name="w">
-            <button class="base-button" type="submit">{{.Tr.T "search"}}</button>
+            <input id="search-input" class="search-input" name="w" data-testid="site-search-input">
+            <button class="base-button" type="submit" data-testid="site-search-submit">{{.Tr.T "search"}}</button>
         </div>
     </form>
 </section>

@@ -2,7 +2,6 @@ package router
 
 import (
 	"crypto/md5"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -405,11 +404,22 @@ func ReloadTemplates() error {
 	return LoadTemplates()
 }
 
-// Serve web service
-func Serve() {
+// newApp builds the HTTP application so browser tests can serve the real
+// routes against an isolated database without modifying the production config.
+func newApp() *fiber.App {
+	return newAppWithRoutes(nil)
+}
+
+func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	// 加载模板
 	if err := LoadTemplates(); err != nil {
 		log.Printf("Warning: Failed to load templates: %v", err)
+	}
+	activeOIDCProvider = nil
+	if provider, err := newOIDCProvider(); err != nil {
+		log.Printf("OIDC provider unavailable: %v", err)
+	} else {
+		activeOIDCProvider = provider
 	}
 
 	dbErrors := []error{
@@ -422,11 +432,16 @@ func Serve() {
 		Views:                   globalDynamicEngine,
 		ErrorHandler: func(c *fiber.Ctx, e error) error {
 			// 404 页面
-			if e == gorm.ErrRecordNotFound {
+			if errors.Is(e, gorm.ErrRecordNotFound) {
 				return page404(c)
 			}
 			title := "Unknown error"
 			errMsg := e.Error()
+			status := http.StatusInternalServerError
+			var fiberError *fiber.Error
+			if errors.As(e, &fiberError) {
+				status = fiberError.Code
+			}
 			if lo.ContainsBy(dbErrors, func(item error) bool {
 				return errors.Is(e, item)
 			}) {
@@ -438,13 +453,13 @@ func Serve() {
 				if isAdminPath(c.Path()) {
 					templateName = "admin/error"
 				}
-				return c.Status(http.StatusInternalServerError).Render(templateName, injectSiteData(c, fiber.Map{
+				return c.Status(status).Render(templateName, injectSiteData(c, fiber.Map{
 					"title":   title,
 					"msg":     errMsg,
 					"noindex": true,
 				}))
 			}
-			_, e = c.Status(http.StatusInternalServerError).WriteString(errMsg)
+			_, e = c.Status(status).WriteString(errMsg)
 			return e
 		},
 	})
@@ -485,6 +500,14 @@ func Serve() {
 		}
 		return err
 	})
+	// Protocol endpoints authenticate clients with OAuth credentials and must
+	// not be subject to browser Origin/Referer CSRF checks.
+	if activeOIDCProvider != nil {
+		protocolHandler := oidcHTTPHandler(activeOIDCProvider)
+		for _, path := range []string{"/.well-known", "/authorize", "/oauth", "/userinfo", "/revoke", "/end_session", "/keys", "/healthz", "/ready"} {
+			app.Use(path, protocolHandler)
+		}
+	}
 	app.Use(trans, auth, csrfGuard)
 	app.Get("/", index)
 	app.Get("/favicon.ico", faviconHandler)
@@ -498,7 +521,7 @@ func Serve() {
 	app.Get("/r/go", goRedirect)
 	app.Get("/robots.txt", robotsHandler)
 	app.Get("/sitemap.xml", sitemapHandler)
-	app.Post("/logout", loginRequired, logoutHandler)
+	app.Post("/logout", requireAccount, logoutHandler)
 	app.Get("/captcha", generateCaptcha)
 	app.Post("/api/comment", commentHandler)
 	app.Post("/api/count", count)
@@ -512,31 +535,56 @@ func Serve() {
 
 	app.Get("/admin/login", guestRequired, login)
 	app.Post("/admin/login", guestRequired, loginHandler)
+	app.Get("/admin/register", guestRequired, registerPage)
+	app.Post("/admin/register", guestRequired, registerHandler)
+	app.Post("/admin/resend-verification", resendVerification)
+	app.Get("/admin/verify-email", verifyEmailHandler)
+	app.Get("/account", requireAccount, accountPage)
+	app.Post("/account/password", requireAccount, changeAccountPassword)
+	app.Get("/oidc/consent", consentPage)
+	app.Post("/oidc/consent", requireAccount, consentHandler)
+	app.Get("/auth/:provider/callback", oauthCallback)
+	app.Post("/auth/:provider/link", requireAccount, beginOAuthLink)
+	app.Get("/auth/:provider", guestRequired, beginOAuthLogin)
+	app.Post("/auth/passkey/login/begin", beginPasskeyLogin)
+	app.Post("/auth/passkey/login/finish", finishPasskeyLogin)
+	app.Post("/account/passkeys/begin", requireAccount, beginPasskeyRegistration)
+	app.Post("/account/passkeys/finish", requireAccount, finishPasskeyRegistration)
+	app.Delete("/account/passkeys/:id", requireAccount, deletePasskey)
 
 	admin := app.Group("/admin/", loginRequired)
-	admin.Get("/", manager)
+	admin.Get("/", requireAdmin, manager)
+	admin.Get("/users", requireAdmin, usersPage)
+	admin.Post("/users/:id/role", requireAdmin, setUserRole)
+	admin.Get("/oidc/clients", requireAdmin, oidcClientsPage)
+	admin.Post("/oidc/clients", requireAdmin, createOIDCClient)
+	admin.Post("/oidc/clients/:id/disable", requireAdmin, disableOIDCClient)
+	admin.Post("/oidc/keys/rotate", requireAdmin, rotateOIDCKeys)
 	admin.Get("/publish", publish)
 	admin.Post("/publish", publishHandler)
-	admin.Post("/rebuild-full-text-search", rebuildFullTextSearch)
+	admin.Post("/rebuild-full-text-search", requireAdmin, rebuildFullTextSearch)
 	admin.Post("/upload", upload)
-	admin.Post("/fetch", fetch)
-	admin.Get("/comments", comments)
-	admin.Delete("/comments", deleteComment)
-	admin.Post("/report-spam", reportSpam)
-	admin.Post("/restore-spam", restoreSpam)
+	admin.Post("/fetch", requireAdmin, fetch)
+	admin.Get("/comments", requireAdmin, comments)
+	admin.Delete("/comments", requireAdmin, deleteComment)
+	admin.Post("/report-spam", requireAdmin, reportSpam)
+	admin.Post("/restore-spam", requireAdmin, restoreSpam)
 	admin.Get("/articles", manageArticle)
 	admin.Delete("/articles", deleteArticle)
-	admin.Get("/media", media)
-	admin.Delete("/media", mediaHandler)
-	admin.Get("/settings", settings)
-	admin.Post("/settings", settingsHandler)
-	admin.Get("/tags", tagsManagePage)
-	admin.Delete("/tags", deleteTag)
-	admin.Patch("/tags", renameTag)
+	admin.Get("/media", requireAdmin, media)
+	admin.Delete("/media", requireAdmin, mediaHandler)
+	admin.Get("/settings", requireAdmin, settings)
+	admin.Post("/settings", requireAdmin, settingsHandler)
+	admin.Get("/tags", requireAdmin, tagsManagePage)
+	admin.Delete("/tags", requireAdmin, deleteTag)
+	admin.Patch("/tags", requireAdmin, renameTag)
 	admin.Get("/api/search-tags", searchTags)
 	admin.Get("/api/search-books", searchBooks)
 	admin.Get("/theme/preview/:kind/:name", themePreview)
 
+	if extraRoutes != nil {
+		extraRoutes(app)
+	}
 	app.Get("/:slug/:version?", article)
 	app.Use(page404)
 
@@ -544,7 +592,14 @@ func Serve() {
 		app.Use(logger.New())
 	}
 
-	app.Listen(":8080")
+	return app
+}
+
+// Serve web service
+func Serve() {
+	if err := newApp().Listen(":8080"); err != nil {
+		log.Printf("web server stopped: %v", err)
+	}
 }
 
 func themePreview(c *fiber.Ctx) error {
@@ -848,7 +903,9 @@ func setFuncMap(engine *html.Engine) {
 
 func auth(c *fiber.Ctx) error {
 	token := c.Cookies(solitudes.AuthCookie)
-	if len(token) > 0 && subtle.ConstantTimeCompare([]byte(token), []byte(solitudes.System.Config.User.Token)) == 1 && solitudes.System.Config.User.TokenExpires > time.Now().Unix() {
+	account, err := sessionLookup(token)
+	if err == nil && account != nil {
+		c.Locals(solitudes.CtxAccount, account)
 		c.Locals(solitudes.CtxAuthorized, true)
 	} else {
 		c.Locals(solitudes.CtxAuthorized, false)
@@ -857,9 +914,13 @@ func auth(c *fiber.Ctx) error {
 }
 
 func loginRequired(c *fiber.Ctx) error {
-	if !c.Locals(solitudes.CtxAuthorized).(bool) {
+	account := currentAccount(c)
+	if account == nil {
 		c.Redirect("/admin/login", http.StatusFound)
 		return nil
+	}
+	if !account.Role.CanPublish() {
+		return fiber.ErrForbidden
 	}
 	return c.Next()
 }
@@ -896,9 +957,11 @@ func csrfGuard(c *fiber.Ctx) error {
 }
 
 func guestRequired(c *fiber.Ctx) error {
-	if c.Locals(solitudes.CtxAuthorized).(bool) {
-		c.Redirect("/admin", http.StatusFound)
-		return nil
+	if account := currentAccount(c); account != nil {
+		if account.Role.CanPublish() {
+			return c.Redirect("/admin", http.StatusFound)
+		}
+		return c.Redirect("/account", http.StatusFound)
 	}
 	return c.Next()
 }
@@ -961,7 +1024,9 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	soli["Desc"] = desc
 	soli["OgType"] = ogType
 	soli["Noindex"] = noindex
-	soli["Login"] = c.Locals(solitudes.CtxAuthorized)
+	account := currentAccount(c)
+	soli["Account"] = account
+	soli["Login"] = account != nil && account.Role.CanPublish()
 	soli["Data"] = data
 	soli["Tr"] = c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	soli["Path"] = c.Path()

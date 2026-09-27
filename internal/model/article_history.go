@@ -7,7 +7,8 @@ import (
 
 // ArticleHistory 文章修订历史
 type ArticleHistory struct {
-	ArticleID string `gorm:"type:uuid;index"`
+	ArticleID string  `gorm:"type:uuid;index"`
+	EditorID  *string `gorm:"type:uuid;index"`
 	Article   Article
 	Version   uint   `gorm:"index"`
 	Desc      string `gorm:"text"`
