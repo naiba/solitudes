@@ -24,8 +24,8 @@ jobs:
     env:
       SOLITUDES_TEST_POSTGRES_DSN: postgres://solitudes_test:test-password@127.0.0.1:5432/solitudes_test?sslmode=disable
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
           cache: true
