@@ -2,20 +2,21 @@
 {{template "site/header" .}}
 
 <main id="main-content">
-    <header class="page-header folio-container" style="text-align: center;">
-        <span class="section-label">{{.Tr.T "tags_all_the_tags"}}</span>
+    <header class="page-header folio-container">
         <h1 class="page-title">{{.Tr.T "tags"}}</h1>
+        <p class="page-description">{{.Tr.T "tags_all_the_tags"}}</p>
     </header>
 
     <section class="tag-cloud folio-container">
         {{range $i, $tag := .Data.tags}}
         {{ $count := index $.Data.counts $i }}
-        <a href="https://{{$.Conf.Site.Domain}}/tags/{{$tag}}/" class="tag-cloud-item"
+        <a data-testid="tag-entry" href="/tags/{{pathEscape $tag}}/" class="tag-cloud-item"
            style="font-size: {{ if gt $count 10 }}1.75rem{{ else if gt $count 5 }}1.35rem{{ else if gt $count 2 }}1.1rem{{ else }}0.9rem{{ end }};">
             {{$tag}}<sup>{{$count}}</sup>
         </a>
         {{end}}
     </section>
+{{template "site/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
 </main>
 {{template "site/footer" .}}
 {{end}}

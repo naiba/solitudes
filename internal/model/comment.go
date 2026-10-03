@@ -7,13 +7,15 @@ type Comment struct {
 	ID        string    `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
 	CreatedAt time.Time `gorm:"index"`
 
-	ReplyTo   *string `gorm:"type:uuid;index;default:NULL" form:"reply_to"`
-	Nickname  string  `form:"nickname" validate:"required" gorm:"index:idx_nickname;index:idx_nickname_email"`
-	Content   string  `form:"content" validate:"required" gorm:"text"`
-	Website   string  `form:"website"`
-	Version   uint    `form:"-"`
-	Email     string  `form:"email" gorm:"index:idx_email;index:idx_nickname_email"`
-	IP        string  `gorm:"inet"`
+	ReplyTo   *string  `gorm:"type:uuid;index;default:NULL" form:"reply_to"`
+	Nickname  string   `form:"nickname" validate:"required" gorm:"index:idx_nickname_email"`
+	Content   string   `form:"content" validate:"required" gorm:"text"`
+	Website   string   `form:"website"`
+	Version   uint     `form:"-"`
+	Email     string   `form:"email" gorm:"index:idx_email;index:idx_nickname_email"`
+	AccountID *string  `gorm:"type:uuid;index;default:NULL" form:"-"`
+	Account   *Account `gorm:"foreignKey:AccountID" form:"-"`
+	IP        string   `gorm:"inet"`
 	UserAgent string
 	IsAdmin   bool
 	IsSpam    bool `gorm:"not null;default:false;index"`
@@ -24,6 +26,7 @@ type Comment struct {
 
 	ArticleID     *string `gorm:"type:uuid;index;default:NULL" form:"article_id" validate:"required,uuid"`
 	Article       *Article
+	ReplyCount    int64      `gorm:"-" form:"-"`
 	ChildComments []*Comment `gorm:"foreignkey:ReplyTo" form:"-" validate:"-"`
 }
 
@@ -36,4 +39,26 @@ func (Comment) TableName() string {
 // root-comment count stored on its article.
 func (c Comment) CountsTowardArticle() bool {
 	return c.ReplyTo == nil && !c.IsSpam
+}
+
+// PublicRole is derived from an authenticated account, never from a visitor's
+// nickname or email. Legacy staff comments without an account retain their badge.
+func (c Comment) PublicRole() string {
+	if c.AccountID != nil && c.Account != nil {
+		switch c.Account.Role {
+		case RoleAdmin, RoleEditor, RoleUser:
+			return string(c.Account.Role)
+		}
+	}
+	if c.IsAdmin {
+		return string(RoleAdmin)
+	}
+	return "guest"
+}
+
+func (c Comment) PublicName() string {
+	if c.AccountID != nil && c.Account != nil && c.Account.Nickname != "" {
+		return c.Account.Nickname
+	}
+	return c.Nickname
 }

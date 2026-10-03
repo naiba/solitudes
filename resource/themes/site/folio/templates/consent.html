@@ -1,0 +1,16 @@
+{{define "site/consent"}}
+{{template "site/header" .}}
+<main id="main-content" class="auth-shell folio-container" data-testid="site-auth-page"><div class="auth-card">
+  <p class="auth-eyebrow">{{.Tr.T "auth_eyebrow"}}</p>
+  <h1>{{.Tr.T "authorize_app"}}</h1>
+  {{template "site/oidc_application" .}}
+  <p>{{.Tr.T "requests_access"}} <strong>{{.Account.Nickname}}</strong>.</p>
+  <ul class="auth-scopes" data-testid="oidc-requested-scopes">{{range .Data.scopes}}<li>{{if eq . "openid"}}{{$.Tr.T "scope_identity"}}{{else if eq . "email"}}{{$.Tr.T "scope_email"}}{{else if eq . "profile"}}{{$.Tr.T "scope_profile"}}{{else if eq . "offline_access"}}{{$.Tr.T "scope_offline"}}{{else}}{{.}}{{end}}</li>{{end}}</ul>
+  <p class="auth-warning">{{.Tr.T "consent_warning"}}</p>
+  <form action="/oidc/consent" method="post" data-testid="oidc-consent-form">
+    <input type="hidden" name="request_id" value="{{.Data.request_id}}">
+    <div class="auth-decisions"><button class="auth-primary" type="submit" name="allow" value="yes" data-testid="oidc-consent-allow">{{.Tr.T "allow"}}</button><button class="auth-secondary" type="submit" name="allow" value="no" data-testid="oidc-consent-deny">{{.Tr.T "deny"}}</button></div>
+  </form>
+</div></main>
+{{template "site/footer" .}}
+{{end}}

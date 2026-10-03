@@ -1,0 +1,22 @@
+/* The outer shell owns gutters; nested sections must not inset them again. */
+:root { --site-width: 72rem; --reading-width: 58rem; --auth-width: 36rem; --site-gutter: clamp(1rem, 2.5vw, 1.5rem); --page-gap: clamp(1.5rem, 3vw, 2rem); }
+html { scrollbar-gutter: stable; background: var(--bg); }
+.folio-container { box-sizing: border-box; width: 100%; max-width: var(--site-width); padding-inline: var(--site-gutter); margin-inline: auto; }
+.folio-container .folio-container { max-width: none; padding-inline: 0; }
+.account-center, .reader-circle, .public-profile { width: 100%; max-width: none; padding-inline: 0; }
+.folio-narrow, .folio-article .folio-narrow, .comments-section.folio-narrow { box-sizing: border-box; width: 100%; max-width: var(--reading-width); margin-inline: auto; }
+.folio-container .auth-shell { max-width: var(--auth-width); }
+.folio-body { display: flow-root; }
+.folio-header-inner { min-height: 44px; }
+.folio-logo { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1100px) {
+  .folio-header .folio-nav { display: none; }
+  .folio-header .mobile-menu-toggle { display: inline-flex; flex-shrink: 0; }
+}
+.folio-body > #main-content { display: flow-root; margin-top: var(--page-gap); padding-top: 0; }
+#main-content > :first-child { margin-top: 0; }
+#main-content > .folio-article, #main-content .article-header, #main-content > .journal-masthead { padding-top: 0; }
+.comment-navigation { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: .75rem 0 1rem; }
+.comment-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; }
+.comment-navigation a, .comment-thread-link { display: inline-flex; align-items: center; min-height: 36px; font-size: .85rem; }
+@media (max-width: 500px) { .comment-children { margin-left: .75rem; padding-left: .75rem; } }

@@ -1,20 +1,15 @@
-{{define "admin/users"}}
-{{template "admin/header" .}}
-<div class="admin-container">
-  <h1 class="page-title">{{.Tr.T "users"}}</h1>
-  <div class="wf-card"><div class="table-scroll"><table class="wf-table">
-    <thead><tr><th>{{.Tr.T "nickname"}}</th><th>{{.Tr.T "email"}}</th><th>{{.Tr.T "role"}}</th><th>{{.Tr.T "manage"}}</th></tr></thead>
-    <tbody>{{range .Data.users}}<tr>
-      <td>{{.Nickname}}</td><td>{{.Email}}</td><td>{{.Role}}</td>
-      <td>{{if ne .ID $.Account.ID}}<form method="post" action="/admin/users/{{.ID}}/role" data-testid="user-role-form">
-        <label><span class="sr-only">{{$.Tr.T "role"}}</span><select name="role" data-testid="user-role-select">
-          <option value="user" {{if eq .Role "user"}}selected{{end}}>{{$.Tr.T "role_user"}}</option>
-          <option value="editor" {{if eq .Role "editor"}}selected{{end}}>{{$.Tr.T "role_editor"}}</option>
-          <option value="admin" {{if eq .Role "admin"}}selected{{end}}>{{$.Tr.T "role_admin"}}</option>
-        </select></label><button type="submit" class="admin-button compact" data-testid="user-role-save">{{$.Tr.T "save"}}</button>
-      </form>{{end}}</td>
-    </tr>{{end}}</tbody>
-  </table></div></div>
-</div>
-{{template "admin/footer" .}}
-{{end}}
+{{define "admin/users"}}{{template "admin/header" .}}
+<div class="identity-admin"><h1>{{.Tr.T "users"}}</h1>{{template "admin/identity_stats" .}}
+<form class="identity-filters" method="get" action="/admin/users">
+<label>{{.Tr.T "identity_user_search"}}<input name="q" value="{{.Data.q}}" maxlength="100" data-testid="admin-user-search"></label>
+<label>{{.Tr.T "role"}}<select name="role"><option value="">{{.Tr.T "identity_all"}}</option><option value="admin" {{if eq .Data.role "admin"}}selected{{end}}>{{.Tr.T "role_admin"}}</option><option value="editor" {{if eq .Data.role "editor"}}selected{{end}}>{{.Tr.T "role_editor"}}</option><option value="user" {{if eq .Data.role "user"}}selected{{end}}>{{.Tr.T "role_user"}}</option></select></label>
+<button type="submit" data-testid="admin-user-filter">{{.Tr.T "identity_filter"}}</button><a href="/admin/users">{{.Tr.T "identity_reset"}}</a></form>
+<div class="identity-card"><table class="identity-table wf-table mobile-card-table user-table"><thead><tr><th>{{.Tr.T "nickname"}}</th><th>{{.Tr.T "email"}}</th><th>{{.Tr.T "identity_owned_apps"}}</th><th>{{.Tr.T "role"}}</th><th>{{.Tr.T "manage"}}</th></tr></thead>
+<tbody>{{range .Data.users}}<tr data-testid="admin-user-row">
+<td data-label="{{$.Tr.T "nickname"}}"><a href="/admin/users/{{.ID}}" data-testid="admin-user-detail">{{.Nickname}}</a><small>{{if .DisabledAt}}{{$.Tr.T "disabled"}}{{else if not .EmailVerifiedAt}}{{$.Tr.T "identity_unverified"}}{{end}}</small></td>
+<td data-label="{{$.Tr.T "email"}}">{{.Email}}</td>
+<td data-label="{{$.Tr.T "identity_owned_apps"}}"><a href="/admin/oidc/clients?owner_id={{.ID}}" data-testid="user-app-count">{{.AppCount}}</a></td>
+<td data-label="{{$.Tr.T "role"}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else}}{{$.Tr.T "role_user"}}{{end}}</td>
+<td data-label="{{$.Tr.T "manage"}}">{{if ne .ID $.Account.ID}}<form method="post" action="/admin/users/{{.ID}}/role" data-testid="user-role-form"><label><span class="sr-only">{{$.Tr.T "role"}}</span><select name="role" data-testid="user-role-select"><option value="user" {{if eq .Role "user"}}selected{{end}}>{{$.Tr.T "role_user"}}</option><option value="editor" {{if eq .Role "editor"}}selected{{end}}>{{$.Tr.T "role_editor"}}</option><option value="admin" {{if eq .Role "admin"}}selected{{end}}>{{$.Tr.T "role_admin"}}</option></select></label><button type="submit" data-testid="user-role-save">{{$.Tr.T "save"}}</button></form>{{end}}</td>
+</tr>{{else}}<tr><td colspan="5">{{.Tr.T "identity_empty"}}</td></tr>{{end}}</tbody></table></div>
+{{template "admin/identity_pagination" .}}</div>{{template "admin/footer" .}}{{end}}

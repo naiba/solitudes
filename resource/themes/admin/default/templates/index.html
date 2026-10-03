@@ -1,107 +1,35 @@
 {{define "admin/index"}}
 {{template "admin/header" .}}
-
 <div class="admin-container">
-    <div class="page-header">
-        <h1 class="page-title">{{.Tr.T "dashboard"}}</h1>
-        <p class="page-subtitle">{{.Tr.T "dashboard_subtitle"}}</p>
+    <div class="page-header with-action">
+        <div><h1 class="page-title">{{.Tr.T "dashboard"}}</h1><p class="page-subtitle">{{.Tr.T "dashboard_subtitle"}}</p></div>
+        <a href="/admin/publish" class="admin-button primary"><i class="fa-solid fa-plus" aria-hidden="true"></i>{{.Tr.T "compose"}}</a>
     </div>
-
     <div class="stats-grid">
-        <div class="stat-card">
-            <h2 class="stat-value">{{.Data.articleNum}}</h2>
-            <p class="stat-label">{{.Tr.T "articles"}}</p>
-        </div>
-        <div class="stat-card">
-            <h2 class="stat-value">{{.Data.lastArticlePublish}}</h2>
-            <p class="stat-label">{{.Tr.T "days_left_from_the_last_post"}}</p>
-        </div>
-        <div class="stat-card">
-            <h2 class="stat-value">{{.Data.commentNum}}</h2>
-            <p class="stat-label">{{.Tr.T "comments"}}</p>
-        </div>
-        <div class="stat-card">
-            <h2 class="stat-value">{{.Data.lastComment}}</h2>
-            <p class="stat-label">{{.Tr.T "days_left_from_the_last_comment"}}</p>
-        </div>
-        <div class="stat-card">
-            <h2 class="stat-value">{{.Data.rssSubscriberCount}}</h2>
-            <p class="stat-label">{{.Tr.T "rss_subscribers"}}</p>
-        </div>
+        <div class="stat-card"><p class="stat-label">{{.Tr.T "articles"}}<i class="fa-regular fa-file-lines" aria-hidden="true"></i></p><h2 class="stat-value">{{.Data.articleNum}}</h2><p class="stat-note">{{.Tr.T "days_left_from_the_last_post"}}: {{.Data.lastArticlePublish}}</p></div>
+        <div class="stat-card"><p class="stat-label">{{.Tr.T "comments"}}<i class="fa-regular fa-comments" aria-hidden="true"></i></p><h2 class="stat-value">{{.Data.commentNum}}</h2><p class="stat-note">{{.Tr.T "days_left_from_the_last_comment"}}: {{.Data.lastComment}}</p></div>
+        <div class="stat-card"><p class="stat-label">{{.Tr.T "rss_subscribers"}}<i class="fa-solid fa-rss" aria-hidden="true"></i></p><h2 class="stat-value">{{.Data.rssSubscriberCount}}</h2></div>
     </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div class="wf-card md:col-span-2 lg:col-span-3">
-            <div class="wf-card-header">
-                {{.Tr.T "quick_topic_publish"}}
-            </div>
-            <div class="wf-card-body">
-                <div class="flex flex-col gap-2">
-                    <div id="topicContent"></div>
-                    <button type="button" onclick="publishTopic(this)" class="admin-button primary self-end">
-                        <i class="fa-solid fa-paper-plane mr-2"></i>{{.Tr.T "publish_now"}}
-                    </button>
-                </div>
-            </div>
-        </div>
+    <section class="dashboard-identity">
+        <div class="section-heading"><h2>{{.Tr.T "identity_management"}}</h2><a href="/admin/audit">{{.Tr.T "security_audit"}} →</a></div>
+        {{template "admin/identity_stats" .}}
+    </section>
+    <div class="dashboard-grid">
         <div class="wf-card">
-            <div class="wf-card-header">
-                {{.Tr.T "system_stats"}}
-            </div>
-            <div class="wf-card-body">
-                <div class="space-y-3">
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span class="text-gray-600">{{.Tr.T "labels"}}</span>
-                        <span class="font-semibold text-gray-900">{{.Data.tagNum}}</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span class="text-gray-600">{{.Tr.T "memory_usage"}}</span>
-                        <span class="font-semibold text-gray-900">{{.Data.memoryUsage}}M</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span class="text-gray-600">{{.Tr.T "gc_num"}}</span>
-                        <span class="font-semibold text-gray-900">{{.Data.gcNum}}</span>
-                    </div>
-                    <div class="flex justify-between items-center py-2">
-                        <span class="text-gray-600">{{.Tr.T "routine_num"}}</span>
-                        <span class="font-semibold text-gray-900">{{.Data.routineNum}}</span>
-                    </div>
-                </div>
-            </div>
+            <div class="wf-card-header">{{.Tr.T "quick_topic_publish"}}</div>
+            <div class="wf-card-body"><div class="flex flex-col gap-2"><div id="topicContent"></div><button type="button" onclick="publishTopic(this)" class="admin-button primary self-end"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i>{{.Tr.T "publish_now"}}</button></div></div>
         </div>
-
-        <div class="wf-card">
-            <div class="wf-card-header">
-                {{.Tr.T "rss_requests_top_4"}}
-            </div>
-            <div class="wf-card-body">
-                <div class="space-y-3">
-                    {{range .Data.rssSubscribers}}
-                    <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-                        <span class="text-gray-600">{{.IP}}</span>
-                        <span class="font-semibold text-gray-900">{{.Count}}</span>
-                    </div>
-                    {{else}}
-                    <div class="py-4 text-center text-gray-400">
-                        {{.Tr.T "no_data"}}
-                    </div>
-                    {{end}}
-                </div>
-            </div>
-        </div>
-
-        <div class="wf-card">
-            <div class="wf-card-header">
-                {{.Tr.T "quick_actions"}}
-            </div>
-            <div class="wf-card-body space-y-3">
-                <a href="/admin/publish" class="admin-button primary w-full">
-                    <i class="fa-solid fa-plus mr-2"></i>{{.Tr.T "compose"}}
-                </a>
-                <button type="button" onclick="rebuildFullTextSearch()" class="admin-button danger w-full">
-                    <i class="fa-solid fa-rotate mr-2"></i>{{.Tr.T "rebuild_fulltext_search_data"}}
-                </button>
-            </div>
+        <div class="dashboard-side">
+            <div class="wf-card"><div class="wf-card-header">{{.Tr.T "system_stats"}}</div><div class="wf-card-body space-y-3">
+                <div class="flex justify-between"><span class="text-gray-600">{{.Tr.T "labels"}}</span><span>{{.Data.tagNum}}</span></div>
+                <div class="flex justify-between"><span class="text-gray-600">{{.Tr.T "memory_usage"}}</span><span>{{.Data.memoryUsage}} MB</span></div>
+                <div class="flex justify-between"><span class="text-gray-600">{{.Tr.T "gc_num"}}</span><span>{{.Data.gcNum}}</span></div>
+                <div class="flex justify-between"><span class="text-gray-600">{{.Tr.T "routine_num"}}</span><span>{{.Data.routineNum}}</span></div>
+                <button type="button" onclick="rebuildFullTextSearch()" class="admin-button w-full"><i class="fa-solid fa-rotate" aria-hidden="true"></i>{{.Tr.T "rebuild_fulltext_search_data"}}</button>
+            </div></div>
+            <div class="wf-card"><div class="wf-card-header">{{.Tr.T "rss_requests_top_4"}}</div><div class="wf-card-body space-y-3">
+                {{range .Data.rssSubscribers}}<div class="flex justify-between"><span class="text-gray-600">{{.IP}}</span><span>{{.Count}}</span></div>{{else}}<p class="text-sm text-gray-500">{{.Tr.T "no_data"}}</p>{{end}}
+            </div></div>
         </div>
     </div>
 </div>
@@ -132,7 +60,7 @@
             slug: "",
             template: 1,
             is_book: false,
-            is_private: false,
+            visibility: "public",
             new_version: 0
         };
         
@@ -151,10 +79,10 @@
     }
 </script>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@3.11.3/dist/index.min.css" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/vditor@3.11.3/dist/index.min.js" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/index.css" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/index.min.js" crossorigin="anonymous"></script>
 <script>
-    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDarkMode = document.documentElement.dataset.theme === 'dark';
     const vditor = new Vditor('topicContent', {
         theme: isDarkMode ? 'dark' : 'classic',
         height: 200,
@@ -172,8 +100,8 @@
         },
     })
     // Listen for system theme changes
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-        vditor.setTheme(e.matches ? 'dark' : 'classic');
+    document.addEventListener('solitudes:theme', e => {
+        vditor.setTheme(e.detail === 'dark' ? 'dark' : 'classic');
     });
 </script>
 

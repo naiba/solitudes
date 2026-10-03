@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/mail"
+	"net/url"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/notify"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
 type registrationForm struct {
@@ -27,7 +29,12 @@ type registrationForm struct {
 }
 
 func registerPage(c *fiber.Ctx) error {
-	return c.Status(http.StatusOK).Render("admin/register", injectSiteData(c, fiber.Map{}))
+	c.Set("Cache-Control", "no-store")
+	return c.Status(http.StatusOK).Render("site/register", injectSiteData(c, fiber.Map{
+		"title": c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("create_account"), "noindex": true,
+		"registration_available": validSiteDomain() && solitudes.System.Config.Email.Host != "" && solitudes.System.Config.Email.User != "",
+		"return_to":              safeReturnPath(c.Query("return_to")),
+	}))
 }
 
 func normalizeRegistration(form *registrationForm) error {
@@ -76,13 +83,13 @@ func registerHandler(c *fiber.Ctx) error {
 	if err := solitudes.System.DB.Create(&account).Error; err != nil {
 		return fmt.Errorf("create account: %w", err)
 	}
-	if err := sendVerification(&account); err != nil {
+	if err := sendVerification(&account, safeReturnPath(c.FormValue("return_to"))); err != nil {
 		return fiber.NewError(http.StatusServiceUnavailable, "account created but verification email could not be sent; try resending")
 	}
 	return c.Status(http.StatusAccepted).SendString("Check your email to verify your account before signing in.")
 }
 
-func sendVerification(account *model.Account) error {
+func sendVerification(account *model.Account, returnTo string) error {
 	token, err := newSecret()
 	if err != nil {
 		return err
@@ -97,7 +104,11 @@ func sendVerification(account *model.Account) error {
 	}).Error; err != nil {
 		return err
 	}
-	return notify.SendVerificationEmail(account.Email, publicBaseURL()+"/admin/verify-email?token="+token)
+	link := publicBaseURL() + "/verify-email?token=" + token
+	if returnTo != "" {
+		link += "&return_to=" + url.QueryEscape(returnTo)
+	}
+	return notify.SendVerificationEmail(account.Email, link)
 }
 
 func resendVerification(c *fiber.Ctx) error {
@@ -123,7 +134,7 @@ func resendVerification(c *fiber.Ctx) error {
 			return err
 		}
 		if recent < 3 {
-			if err := sendVerification(&account); err != nil {
+			if err := sendVerification(&account, safeReturnPath(c.FormValue("return_to"))); err != nil {
 				return fiber.NewError(http.StatusServiceUnavailable, "verification email unavailable")
 			}
 		}
@@ -137,5 +148,9 @@ func verifyEmailHandler(c *fiber.Ctx) error {
 	if err := verifyAccountEmail(c.Query("token")); err != nil {
 		return fiber.NewError(http.StatusBadRequest, "invalid or expired verification link")
 	}
-	return c.Redirect("/admin/login?verified=1", http.StatusFound)
+	redirect := "/login?verified=1"
+	if target := safeReturnPath(c.Query("return_to")); target != "" {
+		redirect += "&return_to=" + url.QueryEscape(target)
+	}
+	return c.Redirect(redirect, http.StatusFound)
 }

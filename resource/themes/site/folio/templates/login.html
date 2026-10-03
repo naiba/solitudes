@@ -1,0 +1,35 @@
+{{define "site/login"}}
+{{template "site/header" .}}
+<main id="main-content" class="auth-shell folio-container" data-testid="site-auth-page">
+  <div class="auth-card">
+    <p class="auth-eyebrow">{{.Tr.T "auth_eyebrow"}}</p>
+    <h1>{{.Tr.T "sign_in"}}</h1>
+    <p>{{.Tr.T "auth_sign_in_intro"}}</p>
+    {{if .Data.oidc_client}}{{template "site/oidc_application" .}}{{end}}
+    {{if .Data.verified}}<p role="status">{{.Tr.T "email_verified"}}</p>{{end}}
+    <form action="/login" method="post" id="loginForm" data-testid="auth-login-form">
+      <input type="hidden" name="return_to" value="{{.Data.return_to}}">
+      <label for="loginEmail">{{.Tr.T "email"}}</label>
+      <input id="loginEmail" name="email" type="email" autocomplete="username" data-testid="auth-email" required>
+      {{if .Conf.Auth.WebAuthn.RPID}}<button type="button" id="passkey-login" data-testid="auth-passkey" class="auth-secondary" data-unsupported-webauthn="{{.Tr.T "unsupported_webauthn"}}">{{.Tr.T "sign_in_passkey"}}</button>{{end}}
+      <label for="loginPassword">{{.Tr.T "auth_password"}}</label>
+      <input id="loginPassword" name="password" type="password" autocomplete="current-password" data-testid="auth-password" required>
+      <label for="loginCaptcha">{{.Tr.T "auth_captcha"}}</label>
+      <div class="auth-captcha"><input id="loginCaptcha" name="captcha" autocomplete="off" data-testid="auth-captcha" required maxlength="5"><button type="button" data-refresh-captcha="captchaImage" aria-label="{{.Tr.T "refresh_captcha"}}">↻</button></div>
+      <input type="hidden" name="captchaId" id="captchaId">
+      <img id="captchaImage" class="auth-captcha-image" alt="{{.Tr.T "auth_captcha"}}">
+      <label class="auth-check"><input type="checkbox" name="remember" value="on">{{.Tr.T "remember_me"}}</label>
+      <button class="auth-primary" type="submit" data-testid="auth-submit">{{.Tr.T "sign_in"}}</button>
+    </form>
+    <p class="auth-switch">{{.Tr.T "auth_no_account"}} <a href="/register{{if .Data.return_to}}?return_to={{urlquery .Data.return_to}}{{end}}" data-testid="auth-register-link">{{.Tr.T "create_account"}}</a></p>
+    {{if or (and .Conf.Auth.GitHub.ClientID .Conf.Auth.GitHub.ClientSecret) (and .Conf.Auth.Google.ClientID .Conf.Auth.Google.ClientSecret) (and .Conf.Auth.OIDC.Issuer .Conf.Auth.OIDC.ClientID)}}
+    <div class="auth-providers"><p>{{.Tr.T "auth_other_methods"}}</p>
+      {{if and .Conf.Auth.GitHub.ClientID .Conf.Auth.GitHub.ClientSecret}}<a href="/auth/github?return_to={{urlquery .Data.return_to}}">GitHub</a>{{end}}
+      {{if and .Conf.Auth.Google.ClientID .Conf.Auth.Google.ClientSecret}}<a href="/auth/google?return_to={{urlquery .Data.return_to}}">Google</a>{{end}}
+      {{if and .Conf.Auth.OIDC.Issuer .Conf.Auth.OIDC.ClientID}}<a href="/auth/oidc?return_to={{urlquery .Data.return_to}}">{{.Tr.T "auth_sso"}}</a>{{end}}
+    </div>{{end}}
+  </div>
+</main>
+<script src="/static/site/folio/js/auth.js" defer></script>
+{{template "site/footer" .}}
+{{end}}

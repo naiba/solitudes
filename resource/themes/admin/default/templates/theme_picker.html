@@ -1,0 +1,27 @@
+{{define "admin/theme_picker"}}
+<section class="wf-card" data-theme-kind="{{.kind}}">
+    <h2 class="wf-card-header" id="theme-heading-{{.kind}}">{{.title}}</h2>
+    <div class="wf-card-body">
+        <p class="theme-picker-help" id="theme-help-{{.kind}}">{{.tr.T "theme_selection_help"}}</p>
+        <div class="theme-picker-grid" role="radiogroup" aria-labelledby="theme-heading-{{.kind}}" aria-describedby="theme-help-{{.kind}}" data-testid="{{.kind}}-theme-select">
+            {{range .themes}}
+            <div class="theme-option" data-testid="theme-card">
+                <input type="radio" class="theme-choice" id="theme-{{$.kind}}-{{.ID}}" name="{{$.kind}}_theme" value="{{.ID}}" aria-label="{{.Name}}" {{if eq $.selected .ID}}checked{{end}} data-testid="theme-choice">
+                <label class="theme-card" for="theme-{{$.kind}}-{{.ID}}">
+                    <span class="theme-preview">
+                        <span class="theme-preview-fallback" aria-hidden="true">{{$.tr.T "no_preview"}}</span>
+                        <img src="/admin/theme/preview/{{$.kind}}/{{.ID}}?v={{.Version}}" alt="" width="640" height="400" onerror="this.hidden=true;this.previousElementSibling.removeAttribute('aria-hidden')" data-testid="theme-preview">
+                    </span>
+                    <span class="theme-card-content">
+                        <span class="theme-card-heading"><span class="theme-name">{{.Name}}</span>{{if .Version}}<span class="theme-version">{{.Version}}</span>{{end}}</span>
+                        <span class="theme-description">{{.Description}}</span>
+                        <span class="theme-selected" aria-hidden="true"><i class="fa-solid fa-check" aria-hidden="true"></i> {{$.tr.T "theme_selected"}}</span>
+                    </span>
+                </label>
+                <p class="theme-author">{{$.tr.T "by"}} {{if .Link}}<a href="{{.Link}}" target="_blank" rel="noopener noreferrer">{{.Author}}</a>{{else}}{{.Author}}{{end}}</p>
+            </div>
+            {{end}}
+        </div>
+    </div>
+</section>
+{{end}}

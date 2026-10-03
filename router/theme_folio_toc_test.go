@@ -21,13 +21,12 @@ func TestFolioTocUsesSingleNumberingSource(t *testing.T) {
 		t.Errorf("Folio article_title_item.html missing explicit `.toc-number` markup")
 	}
 
-	cssContent := readFolioThemeFile(t, "static", "css", "style.css")
-	tocListRule := extractCSSRuleBlock(t, cssContent, ".folio-toc ol")
-
-	comment := "Folio TOC template explicitly adds .toc-number labels. Do not use decimal list-style here or browser will duplicate them."
-	if !strings.Contains(tocListRule, comment) {
-		t.Errorf("Folio style.css missing explanatory comment for TOC numbering: %q", comment)
+	readingTemplate := readFolioThemeFile(t, "templates", "reading_tools.html")
+	if !strings.Contains(readingTemplate, `class="reader-toc"`) {
+		t.Fatal("TOC test must target the class used by the reading template")
 	}
+	cssContent := readFolioThemeFile(t, "static", "css", "reading.css")
+	tocListRule := extractCSSRuleBlock(t, cssContent, ".reader-toc ol")
 	if !strings.Contains(tocListRule, "list-style: none;") {
 		t.Errorf("Folio TOC rule missing `list-style: none;` to disable browser markers")
 	}
@@ -41,8 +40,7 @@ func TestFolioTocRendersHierarchicalNumbering(t *testing.T) {
 		"add": func(a, b int) int {
 			return a + b
 		},
-		"tocTemplateData": newTOCTemplateData,
-		"tocNumberLabel":  tocNumberLabel,
+		"dict": templateDict,
 	}).Parse(readFolioThemeFile(t, "templates", "article_title_item.html"))
 	if err != nil {
 		t.Fatalf("parse Folio TOC template: %v", err)
@@ -69,7 +67,7 @@ func TestFolioTocRendersHierarchicalNumbering(t *testing.T) {
 	}
 
 	var rendered bytes.Buffer
-	if err := folioTocTemplate.ExecuteTemplate(&rendered, "site/article_title_item", newTOCTemplateData(tocItems, "")); err != nil {
+	if err := folioTocTemplate.ExecuteTemplate(&rendered, "site/article_title_item", map[string]interface{}{"Items": tocItems, "Prefix": ""}); err != nil {
 		t.Fatalf("render Folio TOC template: %v", err)
 	}
 
@@ -87,11 +85,11 @@ func extractCSSRuleBlock(t *testing.T, cssContent, selector string) string {
 	if ruleStart == -1 {
 		t.Fatalf("style.css missing %s rule", selector)
 	}
-	ruleEnd := strings.Index(cssContent[ruleStart:], "\n}")
+	ruleEnd := strings.Index(cssContent[ruleStart:], "}")
 	if ruleEnd == -1 {
 		t.Fatalf("style.css has unterminated %s rule", selector)
 	}
-	return cssContent[ruleStart : ruleStart+ruleEnd+len("\n}")]
+	return cssContent[ruleStart : ruleStart+ruleEnd+1]
 }
 
 func readFolioThemeFile(t *testing.T, parts ...string) string {

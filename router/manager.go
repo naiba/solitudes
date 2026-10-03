@@ -24,6 +24,10 @@ import (
 )
 
 func manager(c *fiber.Ctx) error {
+	overview, err := cachedIdentityOverview()
+	if err != nil {
+		return err
+	}
 	var articleNum, commentNum int64
 	var lastArticle model.Article
 	var lastComment model.Comment
@@ -76,6 +80,7 @@ func manager(c *fiber.Ctx) error {
 	runtime.ReadMemStats(&m)
 
 	c.Status(http.StatusOK).Render("admin/index", injectSiteData(c, fiber.Map{
+		"overview":           overview,
 		"title":              c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("dashboard"),
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
@@ -225,6 +230,9 @@ type uploadResp struct {
 }
 
 func upload(c *fiber.Ctx) error {
+	if err := requirePublishRole(c); err != nil {
+		return err
+	}
 	form, err := c.MultipartForm()
 	if err != nil {
 		c.Status(http.StatusOK).JSON(uploadResp{

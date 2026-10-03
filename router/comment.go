@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/adtac/go-akismet/akismet"
 	"github.com/gofiber/fiber/v2"
@@ -17,7 +18,7 @@ import (
 
 type commentForm struct {
 	ReplyTo  *string `json:"reply_to" validate:"omitempty,uuid4"`
-	Nickname string  `json:"nickname" validate:"required"`
+	Nickname string  `json:"nickname"`
 	Content  string  `json:"content" validate:"required" gorm:"text"`
 	Slug     string  `json:"slug" validate:"required" gorm:"index"`
 	Website  string  `json:"website" validate:"omitempty,url"`
@@ -32,8 +33,15 @@ func commentHandler(c *fiber.Ctx) error {
 	if err := c.BodyParser(&cf); err != nil {
 		return fmt.Errorf("failed to parse comment form: %w", err)
 	}
+	if account != nil {
+		// Ignore all client-supplied identity fields for a signed-in commenter.
+		cf.Nickname, cf.Email, cf.Website = account.Nickname, account.Email, ""
+	}
 	if err := validator.StructCtx(c.Context(), &cf); err != nil {
 		return fmt.Errorf("comment form validation failed: %w", err)
+	}
+	if account == nil && (strings.TrimSpace(cf.Nickname) == "" || len([]rune(cf.Nickname)) > 64) {
+		return fiber.NewError(fiber.StatusBadRequest, "guest nickname must be 1–64 characters")
 	}
 
 	article, err := verifyArticle(&cf)
@@ -95,7 +103,7 @@ func commentHandler(c *fiber.Ctx) error {
 		return err
 	}
 	if cm.IsSpam {
-		return nil
+		return c.JSON(fiber.Map{"pending": true})
 	}
 
 	// Email notify and update email read status
@@ -119,7 +127,9 @@ func commentHandler(c *fiber.Ctx) error {
 
 		notify.TGNotify(&cm, article, emailErr)
 	}()
-	return nil
+	// Return only the new identifier, so paginated clients can navigate to the
+	// posted comment without echoing email, IP or notification tracking data.
+	return c.JSON(fiber.Map{"id": cm.ID})
 }
 
 func generateTrackingToken() (string, error) {
@@ -132,7 +142,7 @@ func generateTrackingToken() (string, error) {
 
 func verifyArticle(cf *commentForm) (*model.Article, error) {
 	var article model.Article
-	if err := solitudes.System.DB.Select("id,version,title,slug,is_private,author_id").Order("created_at DESC").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
+	if err := solitudes.System.DB.Select("id,version,title,slug,visibility,author_id").Order("created_at DESC").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch article: %w", err)
 	}
 	if cf.Version > article.Version || cf.Version == 0 {
@@ -161,13 +171,12 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 		return fmt.Errorf("failed to generate tracking token: %w", err)
 	}
 	cm.EmailTrackingToken = &token
-	if isAdmin {
-		if account := currentAccount(c); account != nil {
-			cm.Nickname = account.Nickname
-			cm.Email = account.Email
-		}
+	if account := currentAccount(c); account != nil {
+		cm.AccountID = &account.ID
+		cm.Nickname = account.Nickname
+		cm.Email = account.Email
 	} else {
-		cm.Nickname = cf.Nickname
+		cm.Nickname = strings.TrimSpace(cf.Nickname)
 		cm.Email = cf.Email
 		cm.Website = cf.Website
 		cm.IP = c.IP()
@@ -180,4 +189,34 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 
 func visibleComments(db *gorm.DB) *gorm.DB {
 	return db.Where("is_spam = ?", false)
+}
+
+func publicCommentAuthor(db *gorm.DB) *gorm.DB {
+	return db.Select("id, nickname, role")
+}
+
+func loadCommentAccounts(comments []*model.Comment) error {
+	ids := make([]string, 0, len(comments))
+	for _, cm := range comments {
+		if cm.AccountID != nil {
+			ids = append(ids, *cm.AccountID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	var accounts []model.Account
+	if err := solitudes.System.DB.Select("id, nickname, role").Where("id IN ?", ids).Find(&accounts).Error; err != nil {
+		return err
+	}
+	byID := make(map[string]*model.Account, len(accounts))
+	for i := range accounts {
+		byID[accounts[i].ID] = &accounts[i]
+	}
+	for _, cm := range comments {
+		if cm.AccountID != nil {
+			cm.Account = byID[*cm.AccountID]
+		}
+	}
+	return nil
 }

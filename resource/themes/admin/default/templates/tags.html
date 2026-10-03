@@ -13,13 +13,13 @@
                 {{if .Data.tags}}
                 {{range $i, $tag := .Data.tags}}
                 <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                    <span class="font-medium text-gray-700">{{$tag}}</span>
+                    <span data-testid="tag-entry" class="font-medium text-gray-700">{{$tag}}</span>
                     <span class="text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">{{index $.Data.counts $i}}</span>
                     <div class="flex gap-1">
-                        <button type="button" onclick="renameTag('{{$tag}}')" class="p-1 text-blue-600 hover:text-blue-800" title="{{$.Tr.T "edit"}}" aria-label="{{$.Tr.T "edit"}} {{$tag}}">
+                        <button type="button" onclick="renameTag('{{$tag}}')" class="admin-icon-button" title="{{$.Tr.T "edit"}}" aria-label="{{$.Tr.T "edit"}} {{$tag}}">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button type="button" onclick="deleteTag('{{$tag}}')" class="p-1 text-red-600 hover:text-red-800" title="{{$.Tr.T "delete"}}" aria-label="{{$.Tr.T "delete"}} {{$tag}}">
+                        <button type="button" onclick="deleteTag('{{$tag}}')" class="admin-icon-button text-red-600 hover:text-red-800" title="{{$.Tr.T "delete"}}" aria-label="{{$.Tr.T "delete"}} {{$tag}}">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </div>
@@ -34,6 +34,7 @@
             </div>
         </div>
     </div>
+{{template "admin/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
 </div>
 
 <script>

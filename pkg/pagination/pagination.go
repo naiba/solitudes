@@ -1,10 +1,27 @@
 package pagination
 
 import (
-	"math"
+	"errors"
+	"fmt"
+	"strconv"
 
 	"gorm.io/gorm"
 )
+
+const MaxPage = 1000
+
+var ErrInvalidPage = errors.New("invalid page number")
+
+func Parse(raw string) (int, error) {
+	if raw == "" {
+		return 1, nil
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n < 1 || n > MaxPage {
+		return 0, ErrInvalidPage
+	}
+	return n, nil
+}
 
 // Param 分页参数
 type Param struct {
@@ -28,18 +45,21 @@ type Paginator struct {
 }
 
 // Paginate 分页查询
-func Paging(p *Param, result interface{}) *Paginator {
+func Paging(p *Param, result interface{}) (*Paginator, error) {
 	db := p.DB
 	if p.ShowSQL {
 		db = db.Debug()
 	}
 
 	// 设置默认值
-	if p.Page < 1 {
+	if p.Page == 0 {
 		p.Page = 1
 	}
 	if p.Limit == 0 {
 		p.Limit = 10
+	}
+	if p.Page < 1 || p.Page > MaxPage || p.Limit < 1 || p.Limit > 100 {
+		return nil, ErrInvalidPage
 	}
 
 	// 添加排序
@@ -51,7 +71,9 @@ func Paging(p *Param, result interface{}) *Paginator {
 
 	// 计算总记录数
 	var count int64
-	db.Model(result).Count(&count)
+	if err := db.Session(&gorm.Session{}).Model(result).Count(&count).Error; err != nil {
+		return nil, fmt.Errorf("count page: %w", err)
+	}
 
 	// 计算偏移量
 	offset := 0
@@ -60,10 +82,12 @@ func Paging(p *Param, result interface{}) *Paginator {
 	}
 
 	// 查询记录
-	db.Limit(p.Limit).Offset(offset).Find(result)
+	if err := db.Limit(p.Limit).Offset(offset).Find(result).Error; err != nil {
+		return nil, fmt.Errorf("query page: %w", err)
+	}
 
 	// 计算总页数
-	totalPage := int(math.Ceil(float64(count) / float64(p.Limit)))
+	totalPage := max(1, int((count+int64(p.Limit)-1)/int64(p.Limit)))
 
 	// 计算上一页和下一页
 	prevPage := p.Page
@@ -72,7 +96,7 @@ func Paging(p *Param, result interface{}) *Paginator {
 	}
 
 	nextPage := p.Page
-	if p.Page < totalPage {
+	if p.Page < totalPage && p.Page < MaxPage {
 		nextPage = p.Page + 1
 	}
 
@@ -85,5 +109,5 @@ func Paging(p *Param, result interface{}) *Paginator {
 		PrevPage:    prevPage,
 		NextPage:    nextPage,
 		Records:     result,
-	}
+	}, nil
 }

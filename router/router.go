@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"html/template"
@@ -36,6 +37,7 @@ import (
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/content"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
@@ -59,7 +61,7 @@ func init() {
 			}
 			attrs := [][]string{
 				{"src", luteUtil.BytesToStr(luteHtml.EscapeHTML(dest.Tokens))},
-				{"alt", n.Text()},
+				{"alt", luteUtil.BytesToStr(luteHtml.EscapeHTML([]byte(n.Text())))},
 				{"loading", "lazy"},
 			}
 			if title := n.ChildByType(ast.NodeLinkTitle); nil != title && nil != title.Tokens {
@@ -137,20 +139,6 @@ func ThemeStaticRoot(kind, name string) string {
 }
 
 var themeNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
-
-type tocTemplateData struct {
-	Items  []*model.ArticleTOC
-	Prefix string
-}
-
-func newTOCTemplateData(items []*model.ArticleTOC, prefix string) tocTemplateData {
-	return tocTemplateData{Items: items, Prefix: prefix}
-}
-
-func tocNumberLabel(prefix string, index int) string {
-	// Folio prints TOC numbers explicitly, so nested templates must carry the parent prefix instead of restarting at 1.
-	return fmt.Sprintf("%s%d.", prefix, index+1)
-}
 
 // themeStaticHandler handles static file requests dynamically based on kind and theme
 func themeStaticHandler(c *fiber.Ctx) error {
@@ -289,25 +277,11 @@ func mdRender(id string, raw string) string {
 	return luteEngine.MarkdownStr(id, raw)
 }
 
-var mdCleanRegex = regexp.MustCompile(`(?m)^#{1,6}\s+.*$`)
-var mdLinkRegex = regexp.MustCompile(`\[([^\]]*)\]\([^)]+\)`)  // [text](url) → 保留 text
-var mdBareURLRegex = regexp.MustCompile(`https?://[^\s)\]>]+`) // 裸 URL → 移除，避免预览中出现不可点击的长链接
-var mdSymbolRegex = regexp.MustCompile(`[#*_~\[\]()` + "`" + `>!|{}\-]`)
 var mdImageRegex = regexp.MustCompile(`!\[([^\]]*)\]\(([^)]+)\)`)
 var htmlImageRegex = regexp.MustCompile(`<img\s[^>]*src=["']([^"']+)["']`)
 
-func mdExcerpt(content string, maxLen int) string {
-	text := mdCleanRegex.ReplaceAllString(content, "")
-	text = mdImageRegex.ReplaceAllString(text, "")   // ![alt](url) → 移除整个图片引用
-	text = mdLinkRegex.ReplaceAllString(text, "$1")  // [text](url) → 保留 text
-	text = mdBareURLRegex.ReplaceAllString(text, "") // 裸 URL → 移除
-	text = mdSymbolRegex.ReplaceAllString(text, "")
-	text = strings.Join(strings.Fields(text), " ")
-	runes := []rune(text)
-	if len(runes) > maxLen {
-		return string(runes[:maxLen]) + "…"
-	}
-	return text
+func mdExcerpt(markdown string, maxLen int) string {
+	return content.Excerpt(markdown, maxLen)
 }
 
 func mdFirstImage(content string) string {
@@ -422,9 +396,6 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 		activeOIDCProvider = provider
 	}
 
-	dbErrors := []error{
-		gorm.ErrInvalidTransaction,
-	}
 	app := fiber.New(fiber.Config{
 		EnableTrustedProxyCheck: solitudes.System.Config.EnableTrustedProxyCheck,
 		TrustedProxies:          solitudes.System.Config.TrustedProxies,
@@ -435,19 +406,23 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 			if errors.Is(e, gorm.ErrRecordNotFound) {
 				return page404(c)
 			}
-			title := "Unknown error"
+			tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+			title := tr.T("500_title")
 			errMsg := e.Error()
 			status := http.StatusInternalServerError
 			var fiberError *fiber.Error
 			if errors.As(e, &fiberError) {
 				status = fiberError.Code
 			}
-			if lo.ContainsBy(dbErrors, func(item error) bool {
-				return errors.Is(e, item)
-			}) {
-				title = "DB error"
-				errMsg = "Please contact the webmaster"
+			if status >= http.StatusInternalServerError {
+				log.Printf("request failed request_id=%s status=%d error_type=%T", c.GetRespHeader("X-Request-ID"), status, e)
+				errMsg = tr.T("500_msg")
+			} else if status == http.StatusForbidden {
+				title, errMsg = tr.T("403_title"), tr.T("403_msg")
+			} else {
+				title = fmt.Sprintf("%d %s", status, http.StatusText(status))
 			}
+			c.Set(fiber.HeaderCacheControl, "no-store")
 			if strings.Contains(string(c.Request().Header.Peek("Accept")), "html") {
 				templateName := "site/error"
 				if isAdminPath(c.Path()) {
@@ -456,6 +431,7 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 				return c.Status(status).Render(templateName, injectSiteData(c, fiber.Map{
 					"title":   title,
 					"msg":     errMsg,
+					"status":  status,
 					"noindex": true,
 				}))
 			}
@@ -469,7 +445,7 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 		if len(p) > 1 {
 			hasSlash := p[len(p)-1] == '/'
 			trimmed := strings.TrimRight(p, "/")
-			isList := trimmed == "/posts" || trimmed == "/books" || trimmed == "/tags" || trimmed == "/search" ||
+			isList := trimmed == "/posts" || trimmed == "/books" || trimmed == "/tags" || trimmed == "/search" || trimmed == "/readers" ||
 				strings.HasPrefix(trimmed, "/tags/") || strings.HasPrefix(trimmed, "/posts/") || strings.HasPrefix(trimmed, "/books/")
 			needRedirect := (isList && !hasSlash) || (!isList && hasSlash)
 			if needRedirect {
@@ -489,17 +465,25 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		c.Set("Content-Security-Policy", "frame-ancestors 'self'")
 		isHTML := strings.Contains(c.Get("Accept"), "html")
-		if isHTML {
-			c.Set("Cache-Control", "public, max-age=60, stale-while-revalidate=300")
+		c.Set("Cache-Control", "no-store")
+		if isHTML && (c.Method() == fiber.MethodGet || c.Method() == fiber.MethodHead) {
+			// Audience changes must not leave stale publicly cached bodies.
+			c.Set("Cache-Control", "no-cache, must-revalidate")
+		} else if isHTML {
+			c.Set("Cache-Control", "no-store")
 		}
 		err := c.Next()
-		if isHTML {
-			if authorized, ok := c.Locals(solitudes.CtxAuthorized).(bool); ok && authorized {
-				c.Set("Cache-Control", "private, no-store")
+		if authorized, ok := c.Locals(solitudes.CtxAuthorized).(bool); ok && authorized {
+			c.Set("Cache-Control", "private, no-store")
+		} else if isHTML {
+			if c.Response().StatusCode() >= http.StatusMultipleChoices ||
+				len(c.Response().Header.PeekAll(fiber.HeaderSetCookie)) > 0 {
+				c.Set("Cache-Control", "no-store")
 			}
 		}
 		return err
 	})
+	app.Use(auditMiddleware)
 	// Protocol endpoints authenticate clients with OAuth credentials and must
 	// not be subject to browser Origin/Referer CSRF checks.
 	if activeOIDCProvider != nil {
@@ -516,6 +500,8 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	app.Get("/posts/:page?/", posts)
 	app.Get("/books/:page?/", book)
 	app.Get("/search/", search)
+	app.Get("/readers/", readerCircle)
+	app.Get("/users/:id", publicUserProfile)
 	app.Get("/tags/:tag/:page?/", tags)
 	app.Get("/tags/", tagsCloud)
 	app.Get("/r/go", goRedirect)
@@ -533,17 +519,29 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	app.Get("/static/:kind/:theme/*", themeStaticHandler)
 	app.Get("/upload/*", uploadStaticHandler)
 
-	app.Get("/admin/login", guestRequired, login)
-	app.Post("/admin/login", guestRequired, loginHandler)
-	app.Get("/admin/register", guestRequired, registerPage)
-	app.Post("/admin/register", guestRequired, registerHandler)
-	app.Post("/admin/resend-verification", resendVerification)
-	app.Get("/admin/verify-email", verifyEmailHandler)
+	app.Get("/login", guestRequired, login)
+	app.Post("/login", guestRequired, loginHandler)
+	app.Get("/register", guestRequired, registerPage)
+	app.Post("/register", guestRequired, registerHandler)
+	app.Post("/resend-verification", resendVerification)
+	app.Get("/verify-email", verifyEmailHandler)
 	app.Get("/account", requireAccount, accountPage)
+	app.Post("/account/profile", requireAccount, updateAccountProfile)
 	app.Post("/account/password", requireAccount, changeAccountPassword)
+	app.Post("/account/identities/:provider/unlink", requireAccount, unlinkAccountIdentity)
 	app.Get("/account/oidc/clients", requireAccount, oidcClientsPage)
 	app.Post("/account/oidc/clients", requireAccount, createOIDCClient)
+	app.Post("/account/oidc/clients/:id/metadata", requireAccount, updateOIDCClient)
 	app.Post("/account/oidc/clients/:id/disable", requireAccount, disableOIDCClient)
+	// Removed authentication URLs must not fall through to the /admin/
+	// authentication middleware, which would redirect instead of returning 404.
+	app.Use("/admin/", func(c *fiber.Ctx) error {
+		switch strings.TrimSuffix(c.Path(), "/") {
+		case "/admin/login", "/admin/register", "/admin/verify-email", "/admin/resend-verification":
+			return fiber.ErrNotFound
+		}
+		return c.Next()
+	})
 	app.Get("/oidc/consent", consentPage)
 	app.Post("/oidc/consent", requireAccount, consentHandler)
 	app.Get("/auth/:provider/callback", oauthCallback)
@@ -558,11 +556,15 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	admin := app.Group("/admin/", loginRequired)
 	admin.Get("/", requireAdmin, manager)
 	admin.Get("/users", requireAdmin, usersPage)
+	admin.Get("/users/:id", requireAdmin, adminUserDetail)
+	admin.Get("/audit", requireAdmin, auditPage)
 	admin.Post("/users/:id/role", requireAdmin, setUserRole)
 	admin.Get("/auth/providers", requireAdmin, loginProvidersPage)
 	admin.Post("/auth/providers", requireAdmin, saveLoginProviders)
 	admin.Get("/oidc/clients", requireAdmin, oidcClientsPage)
+	admin.Get("/oidc/clients/:id", requireAdmin, adminClientDetail)
 	admin.Post("/oidc/clients", requireAdmin, createOIDCClient)
+	admin.Post("/oidc/clients/:id/metadata", requireAdmin, updateOIDCClient)
 	admin.Post("/oidc/clients/:id/disable", requireAdmin, disableOIDCClient)
 	admin.Post("/oidc/keys/rotate", requireAdmin, rotateOIDCKeys)
 	admin.Get("/publish", publish)
@@ -696,6 +698,7 @@ func page404(c *fiber.Ctx) error {
 	c.Status(http.StatusNotFound).Render(templateName, injectSiteData(c, fiber.Map{
 		"title":   tr.T("404_title"),
 		"msg":     tr.T("404_msg"),
+		"status":  http.StatusNotFound,
 		"noindex": true,
 	}))
 	return nil
@@ -719,64 +722,58 @@ Sitemap: https://%s/sitemap.xml
 }
 
 func sitemapHandler(c *fiber.Ctx) error {
-	domain := solitudes.System.Config.Site.Domain
-	var sb strings.Builder
-	sb.WriteString(`<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-`)
-	sb.WriteString(fmt.Sprintf(`  <url>
-    <loc>https://%s/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
-`, domain))
+	type sitemapURL struct {
+		Location   string `xml:"loc"`
+		LastMod    string `xml:"lastmod,omitempty"`
+		ChangeFreq string `xml:"changefreq"`
+		Priority   string `xml:"priority"`
+	}
+	sitemap := struct {
+		XMLName xml.Name     `xml:"http://www.sitemaps.org/schemas/sitemap/0.9 urlset"`
+		URLs    []sitemapURL `xml:"url"`
+	}{}
+	baseURL := "https://" + solitudes.System.Config.Site.Domain
+	sitemap.URLs = append(sitemap.URLs, sitemapURL{Location: baseURL + "/", ChangeFreq: "daily", Priority: "1.0"})
 	var articles []model.Article
-	if err := solitudes.System.DB.Order("created_at DESC").Find(&articles).Error; err != nil {
+	if err := solitudes.System.DB.Select("slug", "updated_at", "created_at").Where("visibility = ?", model.VisibilityPublic).Order("created_at DESC").Find(&articles).Error; err != nil {
 		return fmt.Errorf("failed to fetch articles for sitemap: %w", err)
 	}
 	for _, article := range articles {
-		if article.IsPrivate {
-			continue
+		modified := article.UpdatedAt
+		if modified.IsZero() {
+			modified = article.CreatedAt
 		}
-		sb.WriteString(fmt.Sprintf(`  <url>
-    <loc>https://%s/%s</loc>
-    <lastmod>%s</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-`, domain, article.Slug, article.UpdatedAt.Format("2006-01-02")))
+		entry := sitemapURL{Location: baseURL + "/" + url.PathEscape(article.Slug), ChangeFreq: "monthly", Priority: "0.8"}
+		if !modified.IsZero() {
+			entry.LastMod = modified.Format("2006-01-02")
+		}
+		sitemap.URLs = append(sitemap.URLs, entry)
 	}
-	sb.WriteString(fmt.Sprintf(`  <url>
-    <loc>https://%s/posts/</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://%s/books/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://%s/tags/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-`, domain, domain, domain))
+	sitemap.URLs = append(sitemap.URLs,
+		sitemapURL{Location: baseURL + "/posts/", ChangeFreq: "daily", Priority: "0.6"},
+		sitemapURL{Location: baseURL + "/books/", ChangeFreq: "weekly", Priority: "0.6"},
+		sitemapURL{Location: baseURL + "/tags/", ChangeFreq: "weekly", Priority: "0.5"},
+	)
+	var listedReaders int64
+	if err := eligibleReaders(solitudes.System.DB).Count(&listedReaders).Error; err != nil {
+		return fmt.Errorf("count public reader circle members: %w", err)
+	}
+	if listedReaders > 0 {
+		sitemap.URLs = append(sitemap.URLs, sitemapURL{Location: baseURL + "/readers/", ChangeFreq: "daily", Priority: "0.5"})
+	}
 	var tags []string
-	if err := solitudes.System.DB.Raw(`SELECT DISTINCT t FROM articles, unnest(articles.tags) AS t WHERE t IS NOT NULL`).Scan(&tags).Error; err != nil {
+	if err := solitudes.System.DB.Raw(`SELECT DISTINCT t FROM articles, unnest(articles.tags) AS t WHERE visibility = 'public' AND t IS NOT NULL AND t <> '' ORDER BY t`).Scan(&tags).Error; err != nil {
 		return fmt.Errorf("failed to fetch tags for sitemap: %w", err)
 	}
 	for _, tag := range tags {
-		sb.WriteString(fmt.Sprintf(`  <url>
-    <loc>https://%s/tags/%s/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
-  </url>
-`, domain, url.QueryEscape(tag)))
+		sitemap.URLs = append(sitemap.URLs, sitemapURL{Location: baseURL + "/tags/" + url.PathEscape(tag) + "/", ChangeFreq: "weekly", Priority: "0.5"})
 	}
-	sb.WriteString(`</urlset>`)
-	c.Set("Content-Type", "application/xml")
-	return c.Status(http.StatusOK).SendString(sb.String())
+	body, err := xml.MarshalIndent(sitemap, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode sitemap: %w", err)
+	}
+	c.Set("Content-Type", "application/xml; charset=utf-8")
+	return c.Status(http.StatusOK).SendString(xml.Header + string(body))
 }
 
 func setFuncMap(engine *html.Engine) {
@@ -789,8 +786,6 @@ func setFuncMap(engine *html.Engine) {
 		"add": func(a, b int) int {
 			return a + b
 		},
-		"tocTemplateData": newTOCTemplateData,
-		"tocNumberLabel":  tocNumberLabel,
 		"uint2str": func(i uint) string {
 			return fmt.Sprintf("%d", i)
 		},
@@ -814,20 +809,10 @@ func setFuncMap(engine *html.Engine) {
 		"iso8601": func(t time.Time) string {
 			return t.Format(time.RFC3339)
 		},
-		"md": mdRender,
-		"articleIdx": func(t model.Article) string {
-			return t.GetIndexID()
-		},
-		"oldVersions": func(latestVersion uint, slug string) string {
-			var sb strings.Builder
-			for i := latestVersion - 1; i > 0; i-- {
-				sb.WriteString(fmt.Sprintf(`<a href="/%s/v%d">v%d</a>`, slug, i, i))
-				if i > 1 {
-					sb.WriteString(", ")
-				}
-			}
-			return sb.String()
-		},
+		"md":            mdRender,
+		"randomIndices": randomIndices,
+		"dict":          templateDict,
+		"pathEscape":    url.PathEscape,
 		"last": func(x int, a interface{}) bool {
 			return x == reflect.ValueOf(a).Len()-1
 		},
@@ -837,20 +822,6 @@ func setFuncMap(engine *html.Engine) {
 				return false
 			}
 			return *ptr == val
-		},
-		"articleData": func(article *model.Article, tr *translator.Translator) fiber.Map {
-			return fiber.Map{
-				"article": article,
-				"tr":      tr,
-				"Conf":    solitudes.System.Config,
-			}
-		},
-		"commentsData": func(comments []*model.Comment, tr *translator.Translator) fiber.Map {
-			return fiber.Map{
-				"comments": comments,
-				"tr":       tr,
-				"Conf":     solitudes.System.Config,
-			}
 		},
 		"substr": func(v interface{}, start, length int) string {
 			var s string
@@ -876,8 +847,9 @@ func setFuncMap(engine *html.Engine) {
 			}
 			return string(runes[start:end])
 		},
-		"mdExcerpt": mdExcerpt,
-		"hasPrefix": strings.HasPrefix,
+		"mdExcerpt":       mdExcerpt,
+		"hasPrefix":       strings.HasPrefix,
+		"tocHeadingCount": tocHeadingCount,
 		"urlencode": func(s string) string {
 			return url.QueryEscape(s)
 		},
@@ -921,8 +893,10 @@ func auth(c *fiber.Ctx) error {
 func loginRequired(c *fiber.Ctx) error {
 	account := currentAccount(c)
 	if account == nil {
-		c.Redirect("/admin/login", http.StatusFound)
-		return nil
+		if c.Method() == fiber.MethodGet {
+			return c.Redirect("/login?return_to="+url.QueryEscape(c.OriginalURL()), http.StatusFound)
+		}
+		return c.Redirect("/login", http.StatusFound)
 	}
 	if !account.Role.CanPublish() {
 		return fiber.ErrForbidden
@@ -963,8 +937,8 @@ func csrfGuard(c *fiber.Ctx) error {
 
 func guestRequired(c *fiber.Ctx) error {
 	if account := currentAccount(c); account != nil {
-		if account.Role.CanPublish() {
-			return c.Redirect("/admin", http.StatusFound)
+		if target := safeReturnPath(c.Query("return_to")); target != "" {
+			return c.Redirect(target, http.StatusFound)
 		}
 		return c.Redirect("/account", http.StatusFound)
 	}
@@ -978,20 +952,11 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 
 	if k, ok := data["title"]; ok && k.(string) != "" {
 		title = data["title"].(string) + " - " + siteName
-		if len([]rune(title)) < 30 && siteDesc != siteName {
-			title = title + " | " + siteDesc
-		}
-		if len([]rune(title)) < 30 {
-			title = title + " | " + solitudes.System.Config.Site.SpaceKeywords
-		}
 	} else {
 		if siteDesc != "" && siteDesc != siteName {
 			title = siteName + " - " + siteDesc
 		} else {
 			title = siteName
-		}
-		if len([]rune(title)) < 30 {
-			title = title + " | " + solitudes.System.Config.Site.SpaceKeywords
 		}
 	}
 
@@ -1005,9 +970,6 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 		desc = data["desc"].(string)
 	} else {
 		desc = siteDesc
-	}
-	if len([]rune(desc)) < 60 {
-		desc = desc + " - " + siteName + " | " + solitudes.System.Config.Site.SpaceKeywords
 	}
 
 	ogType := "website"
@@ -1025,12 +987,17 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	soli["Theme"] = solitudes.System.Config.Site.ThemeConfig
 	soli["Title"] = title
 	soli["Keywords"] = keywords
-	soli["BuildVersion"] = solitudes.BuildVersion
+	buildVersion := solitudes.BuildVersion
+	if strings.HasPrefix(buildVersion, "_BuildV") {
+		buildVersion = "dev"
+	}
+	soli["BuildVersion"] = buildVersion
 	soli["Desc"] = desc
 	soli["OgType"] = ogType
 	soli["Noindex"] = noindex
 	account := currentAccount(c)
 	soli["Account"] = account
+	soli["Queries"] = &TemplateQueries{db: solitudes.System.DB, account: account, notice: accessNoticeFor(c)}
 	soli["Login"] = account != nil && account.Role.CanPublish()
 	soli["Data"] = data
 	soli["Tr"] = c.Locals(solitudes.CtxTranslator).(*translator.Translator)

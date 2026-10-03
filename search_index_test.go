@@ -8,6 +8,33 @@ import (
 	"github.com/naiba/solitudes/internal/model"
 )
 
+func TestIndexArticleStripsRestrictedBlocksAndHistoricalBodies(t *testing.T) {
+	index, err := bleve.NewMemOnly(bleve.NewIndexMapping())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer index.Close()
+	a := model.Article{ID: "article", Version: 1, Slug: "story", Title: "Story", Content: "oldsecret"}
+	if err := indexArticle(index, &a); err != nil {
+		t.Fatal(err)
+	}
+	a.Version = 2
+	a.Content = "publictoken\n\n```access:members\nmembersecret\n```\n\n```access:editors\neditorsecret\n```"
+	if err := indexArticle(index, &a); err != nil {
+		t.Fatal(err)
+	}
+	for _, token := range []string{"oldsecret", "membersecret", "editorsecret"} {
+		result, err := index.Search(bleve.NewSearchRequest(bleve.NewMatchQuery(token)))
+		if err != nil || result.Total != 0 {
+			t.Fatalf("index leaked %s: %+v %v", token, result, err)
+		}
+	}
+	result, err := index.Search(bleve.NewSearchRequest(bleve.NewMatchQuery("publictoken")))
+	if err != nil || result.Total != 1 {
+		t.Fatal("public block not searchable", result, err)
+	}
+}
+
 func TestIndexArticleVersionOmitsPrivateContent(t *testing.T) {
 	index, err := bleve.NewMemOnly(bleve.NewIndexMapping())
 	if err != nil {
@@ -16,12 +43,12 @@ func TestIndexArticleVersionOmitsPrivateContent(t *testing.T) {
 	defer index.Close()
 
 	article := model.Article{
-		ID:        "private-article",
-		Slug:      "private-roadmap",
-		Version:   1,
-		Title:     "Confidential Roadmap",
-		Content:   "privatebodytoken must never be indexed",
-		IsPrivate: true,
+		ID:         "private-article",
+		Slug:       "private-roadmap",
+		Version:    1,
+		Title:      "Confidential Roadmap",
+		Content:    "privatebodytoken must never be indexed",
+		Visibility: model.VisibilityPrivate,
 	}
 	if err := indexArticleVersion(index, &article, article.Version, article.Content); err != nil {
 		t.Fatalf("failed to index private article: %v", err)
@@ -92,12 +119,12 @@ func TestIndexArticleRewritesAllPrivateVersionsWithoutContent(t *testing.T) {
 	}
 
 	article := model.Article{
-		ID:        "private-article",
-		Slug:      "private-roadmap",
-		Version:   3,
-		Title:     "Confidential Roadmap",
-		Content:   "currentprivatebodytoken",
-		IsPrivate: true,
+		ID:         "private-article",
+		Slug:       "private-roadmap",
+		Version:    3,
+		Title:      "Confidential Roadmap",
+		Content:    "currentprivatebodytoken",
+		Visibility: model.VisibilityPrivate,
 	}
 	if err := indexArticle(index, &article); err != nil {
 		t.Fatalf("failed to update private article index: %v", err)

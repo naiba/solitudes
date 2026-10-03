@@ -4,7 +4,7 @@
 <body><main class="admin-container flex flex-col items-center justify-center min-h-[60vh]" id="main-content">
     <div class="wf-card max-w-lg w-full text-center"><div class="wf-card-body py-12">
         <h1>{{.Data.title}}</h1><p>{{.Data.msg}}</p>
-        <a href="/admin/login" class="admin-button primary">{{.Tr.T "sign_in"}}</a>
+        <a href="/login" class="admin-button primary">{{.Tr.T "sign_in"}}</a>
     </div></div>
 </main></body></html>
 {{else}}
@@ -16,15 +16,15 @@
             {{.Data.title}}
         </div>
         <div class="wf-card-body py-12 text-center">
-            <h1 class="text-6xl font-bold text-gray-200 mb-4">Error</h1>
+            <h1 class="text-6xl font-bold text-gray-300 mb-4">{{.Data.status}}</h1>
             <p class="text-gray-600 mb-8 italic">
                 {{.Data.msg}}
             </p>
             
             <div class="flex justify-center">
-                <a href="/admin" class="admin-button primary">
+                <a href="{{if .Account.Role.IsAdmin}}/admin{{else if .Account.Role.CanPublish}}/admin/articles{{else}}/account{{end}}" class="admin-button primary" data-testid="error-recovery-link">
                     <i class="fa-solid fa-house text-sm"></i>
-                    {{.Tr.T "back_to_dashboard"}}
+                    {{if .Account.Role.IsAdmin}}{{.Tr.T "back_to_dashboard"}}{{else if .Account.Role.CanPublish}}{{.Tr.T "articles"}}{{else}}{{.Tr.T "my_account"}}{{end}}
                 </a>
             </div>
         </div>

@@ -16,9 +16,12 @@ func (r Role) IsAdmin() bool    { return r == RoleAdmin }
 // Account is a login identity. The legacy Config.User remains only a migration
 // source and for site-wide attribution settings; it is never used for login.
 type Account struct {
-	ID              string     `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
-	Email           string     `gorm:"uniqueIndex;not null" json:"email"`
-	Nickname        string     `gorm:"not null" json:"nickname"`
+	ID       string `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
+	Email    string `gorm:"uniqueIndex;not null" json:"email"`
+	Nickname string `gorm:"not null" json:"nickname"`
+	Bio      string `gorm:"type:text" json:"bio,omitempty"`
+	// Accounts participate in the reader circle unless they opt out.
+	DirectoryHidden bool       `gorm:"not null;default:false" json:"-"`
 	PasswordHash    string     `json:"-"`
 	Role            Role       `gorm:"not null;default:user" json:"role"`
 	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
@@ -40,7 +43,7 @@ type EmailAction struct {
 	AccountID string    `gorm:"type:uuid;not null;index"`
 	TokenHash string    `gorm:"size:64;uniqueIndex;not null"`
 	Purpose   string    `gorm:"not null"`
-	ExpiresAt time.Time `gorm:"not null"`
+	ExpiresAt time.Time `gorm:"not null;index"`
 	UsedAt    *time.Time
 	CreatedAt time.Time
 }
@@ -75,5 +78,5 @@ type PasskeyCeremony struct {
 	CookieHash  string    `gorm:"size:64;uniqueIndex;not null"`
 	Purpose     string    `gorm:"not null"`
 	SessionJSON []byte    `gorm:"type:bytea;not null"`
-	ExpiresAt   time.Time `gorm:"not null"`
+	ExpiresAt   time.Time `gorm:"not null;index"`
 }

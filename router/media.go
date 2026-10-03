@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -51,17 +50,15 @@ type mediaInfo struct {
 var errEnded = errors.New("file walk eneded")
 
 func media(c *fiber.Ctx) error {
-	rawPage := c.Query("page")
-	page64, _ := strconv.ParseInt(rawPage, 10, 64)
-	page := int(page64)
-	if page < 1 {
-		page = 1
+	page, err := listPage(c.Query("page"))
+	if err != nil {
+		return err
 	}
 	var files []os.FileInfo
 	start := (page - 1) * 15
-	end := page * 15
+	end := page*15 + 1
 	fileIndex := 0
-	err := filepath.Walk("data/upload", func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk("data/upload", func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -80,8 +77,14 @@ func media(c *fiber.Ctx) error {
 		}
 		return nil
 	})
-	if err != nil && err != errEnded {
+	// A fresh installation may not have an upload directory yet. Treat it as
+	// an empty library instead of making the entire media page a 500.
+	if err != nil && err != errEnded && !errors.Is(err, fs.ErrNotExist) {
 		return err
+	}
+	more := len(files) > 15
+	if more {
+		files = files[:15]
 	}
 	var innerMedias []mediaInfo
 	for _, f := range files {
@@ -98,9 +101,10 @@ func media(c *fiber.Ctx) error {
 		innerMedias = append(innerMedias, item)
 	}
 	c.Status(http.StatusOK).Render("admin/media", injectSiteData(c, fiber.Map{
-		"title":  c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_media"),
-		"medias": innerMedias,
-		"page":   page,
+		"title":      c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_media"),
+		"medias":     innerMedias,
+		"page":       page,
+		"navigation": pageNavigationFor(c, "page", page, more, ""),
 	}))
 	return nil
 }

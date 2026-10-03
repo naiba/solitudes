@@ -15,7 +15,7 @@
   "author": {
     "@type": "Person",
     "name": "{{jsonEscape .Data.article.Author.Nickname}}",
-    "url": "https://{{.Conf.Site.Domain}}/"
+    "url": "https://{{.Conf.Site.Domain}}/{{if .Data.article.Author.ID}}users/{{.Data.article.Author.ID}}{{end}}"
   },
   "publisher": {
     "@type": "Organization",
@@ -38,8 +38,9 @@
         <!-- Article header -->
         <header class="article-header folio-narrow">
             <h1 class="article-title">{{.Data.article.Title}}</h1>
-            <div class="article-meta">
-                <span class="article-author">{{.Data.article.Author.Nickname}}</span>
+            <div class="article-byline" data-testid="article-byline">
+            <div class="article-meta" data-testid="article-meta">
+                <span class="article-author">{{if .Data.article.Author.ID}}<a href="/users/{{.Data.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.Data.article.Author.Nickname}}</a>{{else}}{{.Data.article.Author.Nickname}}{{end}}</span>
                 <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
                 {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
                 <span class="meta-separator">·</span>
@@ -51,6 +52,9 @@
                 <span class="meta-separator">·</span>
                 <span><i class="fa-regular fa-eye"></i> <span class="read-count">{{.Data.article.ReadNum}}</span>{{if .Data.article.CommentNum}} · <i class="fa-regular fa-comment-dots"></i> {{.Data.article.CommentNum}}{{end}}</span>
                 {{end}}
+                {{if and .Login (or .Account.Role.IsAdmin (eq .Account.ID .Data.article.Author.ID))}}<a href="/admin/publish?id={{.Data.article.ID}}" class="edit-link" data-testid="article-edit-link">{{.Tr.T "edit_post"}}</a>{{end}}
+            </div>
+            {{template "site/share_button" .}}
             </div>
             {{if .Data.article.RawTags}}
             <div class="article-tags">
@@ -59,74 +63,57 @@
                 {{end}}
             </div>
             {{end}}
-            {{if .Login}}
-            <a href="/admin/publish?id={{.Data.article.ID}}" class="edit-link">{{.Tr.T "edit_post"}}</a>
-            {{end}}
+            <hr class="article-divider" aria-hidden="true">
         </header>
 
-        <hr>
-
-        <!-- Table of Contents -->
-        {{if .Data.article.Toc}}
-        <div class="folio-toc folio-narrow">
-            <details open>
-                <summary class="section-label">{{.Tr.T "toc"}}</summary>
-                <ol class="toc">
-                    {{template "site/article_title_item" (tocTemplateData .Data.article.Toc "")}}
-                </ol>
-            </details>
-        </div>
-        {{end}}
+        {{template "site/reading_toc" .}}
 
         <!-- Article content -->
-        <div class="app-prose folio-narrow">
+        <div class="app-prose folio-narrow reading-content" data-reading-content>
             {{if gt .Data.article.NewVersion .Data.article.Version}}
             <div class="version-notice">
                 {{(.Tr.T "has_new_version" (.Data.article.Version|uint2str) .Data.article.Slug (.Data.article.NewVersion|uint2str) (.Data.article.NewVersion|uint2str))|unsafe}}
             </div>
-            {{else if gt .Data.article.Version 1}}
+            {{else if and .Data.can_read_history (gt .Data.article.Version 1)}}
             <div class="version-notice">
-                {{(.Tr.T "has_old_version" (.Data.article.Version|uint2str) (oldVersions .Data.article.Version .Data.article.Slug))|unsafe}}
+                {{.Tr.T "article_history"}}: {{range .Data.article.PreviousVersions}}<a href="/{{$.Data.article.Slug}}/v{{.}}">v{{.}}</a> {{end}}
             </div>
             {{end}}
 
-            {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
+            {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
 
             {{if .Data.article.IsBook}}
             <h4>{{.Tr.T "chapters"}}</h4>
-            {{template "site/article_chapters" (articleData .Data.article .Tr)}}
+            {{template "site/article_chapters" (dict "article" .Data.article "tr" .Tr "Conf" $.Conf "Queries" $.Queries)}}
             {{end}}
         </div>
 
         <!-- Book navigation (if article belongs to a book) -->
         {{if .Data.article.Book}}
-        <div class="book-nav folio-narrow">
-            <span class="section-label">{{.Tr.T "book"}}</span>
-            <a href="/{{.Data.article.Book.Slug}}"><strong>{{.Data.article.Book.Title}}</strong></a>
-            <span class="meta-separator">—</span>
-            <span class="section-label">{{.Tr.T "chapters"}}</span>
+        <nav class="book-nav folio-narrow" aria-label="{{.Tr.T "chapters"}}" data-testid="book-navigation">
+            <a href="/{{.Data.article.Book.Slug}}" data-testid="book-parent">{{.Tr.T "back_to_book"}} · {{.Data.article.Book.Title}}</a>
             <ul class="book-chapter-list">
                 {{if .Data.article.SibilingArticle.Prev.ID}}
-                <li>{{.Tr.T "prev_chapter"}}: <a href="/{{.Data.article.SibilingArticle.Prev.Slug}}">{{.Data.article.SibilingArticle.Prev.Title}}</a></li>
+                <li>{{.Tr.T "prev_chapter"}}: <a href="/{{.Data.article.SibilingArticle.Prev.Slug}}" data-testid="book-previous">{{.Data.article.SibilingArticle.Prev.Title}}</a></li>
                 {{end}}
-                <li class="current-chapter">{{.Data.article.Title}}</li>
+                <li class="current-chapter" aria-current="page">{{.Data.article.Title}}</li>
                 {{if .Data.article.SibilingArticle.Next.ID}}
-                <li>{{.Tr.T "next_chapter"}}: <a href="/{{.Data.article.SibilingArticle.Next.Slug}}">{{.Data.article.SibilingArticle.Next.Title}}</a></li>
+                <li>{{.Tr.T "next_chapter"}}: <a href="/{{.Data.article.SibilingArticle.Next.Slug}}" data-testid="book-next">{{.Data.article.SibilingArticle.Next.Title}}</a></li>
                 {{end}}
             </ul>
-        </div>
+        </nav>
         {{end}}
 
         <!-- Sibling article navigation (prev/next) -->
-        {{if or .Data.article.SibilingArticle.Prev .Data.article.SibilingArticle.Next}}
+        {{if and (not .Data.article.Book) (or .Data.article.SibilingArticle.Prev.ID .Data.article.SibilingArticle.Next.ID)}}
         <nav class="sibling-nav folio-narrow" aria-label="Article navigation">
-            {{if .Data.article.SibilingArticle.Prev}}
+            {{if .Data.article.SibilingArticle.Prev.ID}}
             <a href="https://{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Prev.Slug}}" class="sibling-prev">
                 <span class="section-label">{{.Tr.T "previous"}}</span>
                 <span class="sibling-title">{{.Data.article.SibilingArticle.Prev.Title}}</span>
             </a>
             {{else}}<span></span>{{end}}
-            {{if .Data.article.SibilingArticle.Next}}
+            {{if .Data.article.SibilingArticle.Next.ID}}
             <a href="https://{{.Conf.Site.Domain}}/{{.Data.article.SibilingArticle.Next.Slug}}" class="sibling-next">
                 <span class="section-label">{{.Tr.T "next"}}</span>
                 <span class="sibling-title">{{.Data.article.SibilingArticle.Next.Title}}</span>
@@ -142,19 +129,15 @@
         <hr>
         <h2 class="comments-heading">{{.Tr.T "comments"}}</h2>
 
-        {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
+{{template "site/comment_navigation" .}}
+{{template "site/comments_entry" (dict "comments" .Data.article.Comments "tr" .Tr "Conf" $.Conf "thread" .Data.thread)}}
 
-        {{if .Data.article.Comments}}
-        <div class="pagination">
-            {{if gt .Data.comment_page.Page 1}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i class="fa-solid fa-angle-left"></i></a>{{end}}
-            <span>{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) (.Tr.T "comments")}}</span>
-            {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}" rel="next" aria-label="{{.Tr.T "next_page"}}"><i class="fa-solid fa-angle-right"></i></a>{{end}}
-        </div>
-        {{end}}
+        {{template "site/pagination" (dict "nav" .Data.comment_navigation "tr" .Tr)}}
 
         {{if not .Data.article.DisableComment}}
         <form class="comment-form" id="reply" data-testid="comment-form" novalidate>
             <h3>{{.Tr.T "leave_a_comment"}}</h3>
+{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
             <p class="comment-form-hint">{{.Tr.T "may_not_reply_if_email_not_exist"}}</p>
             <p class="comment-form-status" id="comment_form_status" role="status" aria-live="polite"></p>
             <div class="comment-reply-target" id="comment_reply_target" hidden>
@@ -164,7 +147,7 @@
             <label for="id_content">{{.Tr.T "comment_content"}}</label>
             <textarea id="id_content" name="content" data-testid="comment-content" rows="6" placeholder="{{.Tr.T "comment_content"}}" aria-describedby="comment_content_error" aria-invalid="false"></textarea>
             <p class="comment-form-error" id="comment_content_error" role="alert"></p>
-            {{if .Login}}
+            {{if .Account}}
             <input type="hidden" maxlength="64" id="id_nickname" name="nickname" autocomplete="nickname">
             {{else}}
             <div class="comment-form-fields">
@@ -194,7 +177,8 @@
 
 <script>
     (function () {
-        document.querySelector("#id_nickname").value = localStorage.getItem("solitudes_cm_nickname") || '{{if .Login}}{{.Conf.User.Nickname}}{{end}}';
+        var nickname = document.querySelector("#id_nickname");
+        if (nickname) nickname.value = {{if .Account}}'{{.Account.Nickname}}'{{else}}localStorage.getItem("solitudes_cm_nickname") || ''{{end}};
         if (document.querySelector("#id_email")) {
             document.querySelector("#id_email").value = localStorage.getItem("solitudes_cm_email") || '';
         }
@@ -330,9 +314,11 @@
         var cm_nickname = nicknameValue;
         var cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
         var cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
+        {{if not .Account}}
         localStorage.setItem("solitudes_cm_nickname", cm_nickname);
         localStorage.setItem("solitudes_cm_email", cm_email);
         localStorage.setItem("solitudes_cm_website", cm_website);
+        {{end}}
         var data = {
             nickname: cm_nickname,
             email: cm_email,
@@ -349,7 +335,11 @@
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         }).then(function(resp) {
-            if (resp.status === 200) { window.location.reload(); return; }
+            if (resp.status === 200) { return resp.json().then(function(result) {
+                        window.location.href = result.id
+                            ? location.pathname + '?thread=' + encodeURIComponent(result.id) + '#comment-' + encodeURIComponent(result.id)
+                            : location.pathname + '?comment_page=1#comments';
+                    }); }
             resp.text().then(function(str) { setFormStatus('{{.Tr.T "submit_failed"}} ' + str); });
         }).catch(function(e) {
             setFormStatus('{{.Tr.T "submit_failed"}} ' + e);

@@ -14,6 +14,7 @@
         <input 
             class="editor-title-input w-full" 
             id="inputTitle" data-testid="publish-title"
+            aria-label="{{.Tr.T "title"}}"
             placeholder="{{.Tr.T "article_title_placeholder"}}" 
             value="{{.Data.article.Title}}"
             autocomplete="off">
@@ -89,9 +90,14 @@
                     <input{{if .Data.article.IsBook}} checked{{end}} id="cbBook" type="checkbox" class="rounded border-gray-300">
                     <span class="text-sm text-gray-700">{{.Tr.T "its_a_book"}}</span>
                 </label>
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input{{if .Data.article.IsPrivate}} checked{{end}} id="cbPrivate" data-testid="publish-private" type="checkbox" class="rounded border-gray-300">
-                    <span class="text-sm text-gray-700">{{.Tr.T "private"}}</span>
+                <label class="flex items-center gap-2" for="articleVisibility">
+                    <span class="text-sm text-gray-700">{{.Tr.T "article_visibility"}}</span>
+                    <select id="articleVisibility" data-testid="publish-visibility" class="rounded border-gray-300">
+                        <option value="public" {{if .Data.article.Public}}selected{{end}}>{{.Tr.T "visibility_public"}}</option>
+                        <option value="members" {{if eq .Data.article.Visibility "members"}}selected{{end}}>{{.Tr.T "visibility_members"}}</option>
+                        <option value="editors" {{if eq .Data.article.Visibility "editors"}}selected{{end}}>{{.Tr.T "visibility_editors"}}</option>
+                        <option value="private" {{if eq .Data.article.Visibility "private"}}selected{{end}}>{{.Tr.T "visibility_private"}}</option>
+                    </select>
                 </label>
                 <label class="flex items-center gap-2 cursor-pointer">
                     <input{{if .Data.article.DisableComment}} checked{{end}} id="cbDisableComment" type="checkbox" class="rounded border-gray-300">
@@ -107,9 +113,29 @@
 
         <!-- Editor -->
         <div id="editSection" data-testid="publish-content" style="min-height: 400px;"></div>
+        <p class="text-sm text-gray-500 mt-2">{{.Tr.T "access_help"}}</p>
+        <dialog id="accessDialog" class="access-dialog" aria-labelledby="accessDialogTitle" data-testid="access-dialog">
+            <form method="dialog">
+                <h2 id="accessDialogTitle">{{.Tr.T "access_insert"}}</h2>
+                <label for="accessLevel">{{.Tr.T "article_visibility"}}</label>
+                <select id="accessLevel" data-testid="access-level">
+                    <option value="members">{{.Tr.T "visibility_members"}}</option>
+                    <option value="editors">{{.Tr.T "visibility_editors"}}</option>
+                    <option value="private">{{.Tr.T "visibility_private"}}</option>
+                </select>
+                <label for="accessContent">Markdown</label>
+                <textarea id="accessContent" rows="7" data-testid="access-content"></textarea>
+                <p>{{.Tr.T "access_help"}}</p>
+                <div class="access-dialog-actions">
+                    <button value="cancel" class="admin-button">{{.Tr.T "cancel"}}</button>
+                    <button type="button" id="insertAccess" data-testid="access-insert" class="admin-button primary">{{.Tr.T "access_insert"}}</button>
+                </div>
+            </form>
+        </dialog>
 
         <!-- Publish Button -->
-        <div class="mt-6 flex justify-end">
+        <div class="settings-save-bar publish-save-bar mt-6">
+            <span role="status" data-testid="publish-status" id="publishStatus"></span>
             <button type="button" onclick="publish(this)" data-testid="publish-submit" class="admin-button primary">
                 <i class="fa-solid fa-paper-plane mr-2"></i>{{.Tr.T "publish"}}
             </button>
@@ -117,24 +143,22 @@
     </div>
 </div>
 
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@3.11.3/dist/index.min.css" crossorigin="anonymous">
-<script src="https://cdn.jsdelivr.net/npm/vditor@3.11.3/dist/index.min.js" crossorigin="anonymous"></script>
+<script src="/static/admin/default/publish-guard.js?v2026100401"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/index.css" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/index.min.js" crossorigin="anonymous"></script>
+<script src="/static/admin/default/access-editor.js?v2026100403"></script>
 <script>
-    let unsavedChanges = false;
-    window.addEventListener('beforeunload', function (event) {
-        if (!unsavedChanges) return;
-        event.preventDefault();
-        event.returnValue = '{{.Tr.T "ensure_content_saved"}}';
-    });
-    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const isDarkMode = document.documentElement.dataset.theme === 'dark';
     const vditor = new Vditor('editSection', {
         theme: isDarkMode ? 'dark' : 'classic',
+        toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike', '|', 'list', 'ordered-list', 'check', 'quote', 'line', 'code', 'inline-code', 'insert-before', 'insert-after', '|', 'upload', 'link', 'table', {
+            name: 'restricted-content', tip: '{{.Tr.T "access_insert"}}',
+            icon: '<svg viewBox="0 0 24 24"><path d="M6 10V6a6 6 0 0 1 12 0v4h2v14H4V10zm2 0h8V6a4 4 0 0 0-8 0z"/></svg>',
+            click() { SolitudesAccessEditor.open(vditor); }
+        }, '|', 'undo', 'redo', '|', 'edit-mode', 'content-theme', 'export', 'outline', 'preview', 'fullscreen'],
         after() {
             vditor.setValue('{{.Data.article.Content}}')
-            unsavedChanges = false
-        },
-        input() {
-            unsavedChanges = true
+            SolitudesPublishGuard.attach(vditor);
         },
         upload: {
             accept: 'image/*,.mp4,.rar,.zip,.wav,.mp3',
@@ -143,11 +167,9 @@
         },
         height: 500,
     })
-    document.querySelector('.editor-container').addEventListener('input', () => { unsavedChanges = true; });
-    document.querySelector('.editor-container').addEventListener('change', () => { unsavedChanges = true; });
     // Listen for system theme changes
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-        vditor.setTheme(e.matches ? 'dark' : 'classic');
+    document.addEventListener('solitudes:theme', e => {
+        vditor.setTheme(e.detail === 'dark' ? 'dark' : 'classic');
     });
     
     function publish(btn) {
@@ -163,14 +185,21 @@
             template: parseInt($("#selTemplate").val()),
             tags: $("#inputTags").val(),
             is_book: document.getElementById('cbBook').checked,
-            is_private: document.getElementById('cbPrivate').checked,
+            visibility: document.getElementById('articleVisibility').value,
             disable_comment: document.getElementById('cbDisableComment').checked,
             new_version: document.getElementById('cbNewVersion').checked ? 1 : 0,
         }
         $("#inputCID").val() && (article.book_refer = $("#inputCID").val())
+        const submitted = SolitudesPublishGuard.snapshot();
+        document.getElementById('publishStatus').textContent = '';
         $.post("", article, (data, status) => {
-            unsavedChanges = false
-            window.location.href = "/" + article.slug
+            document.getElementById('inputID').value = data.ID;
+            SolitudesPublishGuard.saved(submitted);
+            if (SolitudesPublishGuard.changed()) {
+                document.getElementById('publishStatus').textContent = '{{.Tr.T "publish_saved_new_changes"}}';
+                return;
+            }
+            window.location.href = "/" + data.Slug
         }).fail((err) => {
             alert('{{.Tr.T "publish_failed"}} ' + err.responseText)
         }).always(() => {

@@ -1,0 +1,31 @@
+{{define "site/share_button"}}
+<button type="button" class="article-share" data-share-open data-testid="article-share" aria-label="{{.Tr.T "share_article"}}" title="{{.Tr.T "share_article"}}" aria-haspopup="dialog" aria-controls="article-share-dialog" data-url="https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"><i class="fa-solid fa-share-nodes" aria-hidden="true"></i> {{.Tr.T "share"}}</button>
+{{end}}
+
+{{define "site/share_dialog"}}
+<dialog id="article-share-dialog" class="reader-share-dialog" data-testid="article-share-dialog" aria-labelledby="article-share-title" data-url="https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}" data-title="{{.Data.article.Title}}" data-copied="{{.Tr.T "link_copied"}}" data-hint="{{.Tr.T "copy_link_hint"}}">
+    <div class="reader-dialog-heading"><h2 id="article-share-title">{{.Tr.T "share_article"}}</h2><button type="button" data-share-close aria-label="{{.Tr.T "reading_close"}}">×</button></div>
+    <p class="reader-share-title">{{.Data.article.Title}}</p>
+    <label for="article-share-url">{{.Tr.T "reading_link"}}</label>
+    <input id="article-share-url" type="url" readonly value="https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}" data-testid="article-share-fallback">
+    <div class="reader-share-actions">
+        <button type="button" data-share-copy data-testid="article-share-copy">{{.Tr.T "reading_copy"}}</button>
+        <button type="button" data-share-native data-testid="article-share-native" hidden>{{.Tr.T "reading_system_share"}}</button>
+        <a data-share-email href="mailto:?subject={{.Data.article.Title|urlencode}}&amp;body={{printf "https://%s/%s" .Conf.Site.Domain .Data.article.Slug|urlencode}}">{{.Tr.T "reading_email"}}</a>
+        <a href="https://x.com/intent/post?url={{printf "https://%s/%s" .Conf.Site.Domain .Data.article.Slug|urlencode}}&amp;text={{.Data.article.Title|urlencode}}" target="_blank" rel="noopener noreferrer">X <span aria-hidden="true">↗</span></a>
+    </div>
+    <p role="status" aria-live="polite" data-testid="article-share-status"></p>
+</dialog>
+{{end}}
+
+{{define "site/reading_toc"}}
+{{if ge (tocHeadingCount .Data.article.Toc) 3}}
+<aside class="reader-toc" data-testid="article-toc">
+    <details>
+        <summary><span>{{.Tr.T "toc"}}</span><span class="reader-progress-label" data-testid="reading-progress">0%</span></summary>
+        <nav aria-label="{{.Tr.T "toc"}}"><ol class="toc">{{template "site/article_title_item" (dict "Items" .Data.article.Toc "Prefix" "")}}</ol></nav>
+    </details>
+    <progress max="100" value="0" aria-label="{{.Tr.T "reading_progress"}}"></progress>
+</aside>
+{{end}}
+{{end}}

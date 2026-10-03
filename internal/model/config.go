@@ -28,9 +28,13 @@ type Config struct {
 	TGBotToken string
 	TGChatID   string
 
-	Database string
-	Akismet  string
-	Auth     struct {
+	Database     string
+	DatabasePool DatabasePoolConfig `yaml:"database_pool"`
+	// Zero retains detailed audit events indefinitely; positive values opt in
+	// to irreversible detail deletion, preserving compact lifetime login counts.
+	AuditRetentionDays int `yaml:"audit_retention_days"`
+	Akismet            string
+	Auth               struct {
 		GitHub struct {
 			ClientID     string `yaml:"client_id"`
 			ClientSecret string `yaml:"client_secret"`

@@ -115,8 +115,48 @@ func TestPostgresLegacyArticlesMigrateToAdministrator(t *testing.T) {
 	if err := migrate(); err != nil {
 		t.Fatalf("repeat migration: %v", err)
 	}
+	if !db.Migrator().HasColumn(&model.Account{}, "directory_hidden") {
+		t.Fatal("reader circle opt-out column is missing")
+	}
+	var directoryColumns []string
+	if err := db.Raw(`SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='accounts' AND column_name LIKE 'directory_%'`).Scan(&directoryColumns).Error; err != nil || len(directoryColumns) != 1 || directoryColumns[0] != "directory_hidden" {
+		t.Fatalf("expected one reader circle preference: %v %v", directoryColumns, err)
+	}
+	if err := db.Take(&admin, "id = ?", admin.ID).Error; err != nil || admin.DirectoryHidden {
+		t.Fatalf("existing verified member should be visible: %+v err=%v", admin, err)
+	}
 	var count int64
 	if err := db.Model(&model.Account{}).Count(&count).Error; err != nil || count != 1 {
 		t.Fatalf("repeated migration created extra accounts: %d %v", count, err)
+	}
+	if err := db.Raw(`SELECT count(*) FROM pg_indexes WHERE schemaname=current_schema() AND tablename='articles' AND indexdef LIKE '%UNIQUE%' AND indexdef LIKE '%(slug)%'`).Scan(&count).Error; err != nil || count != 1 {
+		t.Fatalf("migration retained duplicate/missing slug indexes: %d %v", count, err)
+	}
+}
+
+func TestPostgresDatabasePoolLimits(t *testing.T) {
+	dsn := os.Getenv("SOLITUDES_TEST_POSTGRES_DSN")
+	if dsn == "" {
+		t.Skip("set SOLITUDES_TEST_POSTGRES_DSN")
+	}
+	for _, limit := range []int{0, 2} {
+		db, err := newDatabase(&model.Config{Database: dsn, DatabasePool: model.DatabasePoolConfig{MaxOpen: limit}})
+		if err != nil {
+			t.Fatal(err)
+		}
+		pool, err := db.DB()
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := limit
+		if want == 0 {
+			want = 20
+		}
+		if got := pool.Stats().MaxOpenConnections; got != want {
+			t.Errorf("pool limit=%d want %d", got, want)
+		}
+		if err := pool.Close(); err != nil {
+			t.Fatal(err)
+		}
 	}
 }

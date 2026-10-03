@@ -5,11 +5,12 @@
 <h1 class="sr-only">{{.Title}}</h1>
 <section id="tags">
   {{range $i,$tag := .Data.tags}}
-  <a href="https://{{$.Conf.Site.Domain}}/tags/{{$tag}}/">
+  <a data-testid="tag-entry" href="/tags/{{pathEscape $tag}}/">
     {{$tag}} <small>{{index $.Data.counts $i}}</small>
   </a>
   {{end}}
 </section>
+{{template "site/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
 </main>
 {{template "site/footer" .}}
 {{end}}

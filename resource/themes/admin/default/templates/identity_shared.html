@@ -1,0 +1,24 @@
+{{define "admin/identity_stats"}}
+<div class="identity-stats" data-testid="identity-totals">
+<a href="/admin/users">{{.Tr.T "users"}} <strong data-testid="identity-total-users">{{.Data.overview.Users}}</strong></a>
+<a href="/admin/oidc/clients">{{.Tr.T "oidc_clients"}} <strong>{{.Data.overview.Clients}}</strong></a>
+<a href="/admin/oidc/clients?status=active">{{.Tr.T "identity_active_apps"}} <strong>{{.Data.overview.ActiveClients}}</strong></a>
+<a href="/admin/audit?action=oidc.login">{{.Tr.T "identity_app_logins"}} <strong>{{.Data.overview.Logins}}</strong></a>
+</div><p class="identity-hint">{{.Tr.T "identity_stats_hint"}} {{.Tr.T "identity_overview_refresh"}}</p>
+{{if .Data.overview.StartedAt}}<p class="identity-hint">{{.Tr.T "audit_started"}}: {{tf .Data.overview.StartedAt "2006-01-02 15:04:05"}} UTC</p>{{end}}
+{{end}}
+{{define "admin/identity_pagination"}}
+<nav class="identity-pagination" aria-label="{{.Tr.T "identity_pagination"}}"><span>{{.Tr.T "identity_results"}}: {{.Data.total}} · {{.Tr.T "identity_page"}} {{.Data.page}}</span>
+{{if .Data.previous}}<a href="{{.Data.previous}}" data-testid="identity-previous">{{.Tr.T "previous_page"}}</a>{{end}}
+{{if .Data.next}}<a href="{{.Data.next}}" data-testid="identity-next">{{.Tr.T "next_page"}}</a>{{end}}</nav>
+{{end}}
+{{define "admin/identity_client_cards"}}
+<ul class="identity-client-list oidc-client-list">{{range .Data.clients}}<li class="identity-card" data-testid="admin-client-row">
+<div class="identity-card-heading"><a href="/admin/oidc/clients/{{.ID}}" data-testid="admin-client-detail"><strong>{{.Name}}</strong></a><span>{{if .DisabledAt}}({{$.Tr.T "disabled"}}){{else}}{{$.Tr.T "identity_active"}}{{end}}</span></div>
+<code>{{.ID}}</code>
+<p>{{$.Tr.T "application_owner"}}: {{if and .OwnerID .OwnerName}}<a href="/admin/users/{{.OwnerID}}" data-testid="admin-client-owner">{{.OwnerName}}</a>{{else}}{{$.Tr.T "application_owner_unknown"}}{{end}}</p>
+<div class="identity-metrics"><span>{{$.Tr.T "identity_app_logins"}}: <b data-testid="client-login-count">{{.LoginCount}}</b></span><span>{{$.Tr.T "identity_login_users"}}: <b data-testid="client-login-users">{{.LoginUsers}}</b></span><span>{{$.Tr.T "identity_last_login"}}: {{if .LastLoginAt}}{{tf .LastLoginAt "2006-01-02 15:04"}}{{else}}—{{end}}</span></div>
+<div class="identity-actions"><a href="/admin/oidc/clients/{{.ID}}">{{$.Tr.T "identity_details"}}</a><a href="/admin/audit?client_id={{.ID}}">{{$.Tr.T "security_audit"}}</a></div>
+{{if not .DisabledAt}}<form method="post" action="/admin/oidc/clients/{{.ID}}/disable"><button type="submit" class="identity-danger" data-testid="oidc-client-disable">{{$.Tr.T "disable"}}</button></form>{{end}}
+</li>{{else}}<li class="identity-card">{{.Tr.T "identity_empty"}}</li>{{end}}</ul>
+{{end}}

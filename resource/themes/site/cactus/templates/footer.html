@@ -17,8 +17,8 @@
     </div>
 </footer>
 
-<script src="/static/site/cactus/js/main.js?v2026081501"></script>
-<script src="https://cdn.jsdelivr.net/npm/vditor@3.11.3/dist/method.min.js"></script>
+<script src="/static/site/cactus/js/main.js?v2026100602"></script>
+<script src="https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/method.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css"></noscript>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
@@ -67,6 +67,8 @@
     })()
 </script>
 {{ $code := index .Theme "cactus.customcode" }}{{ if $code }}{{ printf "%s" $code | unsafe }}{{ end }}
+{{if .Data.article}}{{template "site/share_dialog" .}}{{end}}
+<script defer src="/static/site/cactus/js/reading.js?v2026100502"></script>
 </body>
 
 </html>

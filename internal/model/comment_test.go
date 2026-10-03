@@ -23,3 +23,37 @@ func TestCommentCountsTowardArticle(t *testing.T) {
 		})
 	}
 }
+
+func TestCommentPublicRoleUsesAccountNotClaimedIdentity(t *testing.T) {
+	id := "10000000-0000-4000-8000-000000000001"
+	for _, tt := range []struct {
+		name string
+		cm   Comment
+		want string
+	}{
+		{"visitor", Comment{Nickname: "Administrator", Email: "admin@example.com"}, "guest"},
+		{"legacy staff", Comment{IsAdmin: true}, "admin"},
+		{"authenticated member", Comment{AccountID: &id, Account: &Account{Role: RoleUser}}, "user"},
+		{"authenticated editor", Comment{AccountID: &id, Account: &Account{Role: RoleEditor}}, "editor"},
+		{"authenticated administrator", Comment{AccountID: &id, Account: &Account{Role: RoleAdmin}}, "admin"},
+		{"removed account", Comment{AccountID: &id}, "guest"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cm.PublicRole(); got != tt.want {
+				t.Fatalf("PublicRole() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCommentPublicNameFollowsVerifiedAccount(t *testing.T) {
+	id := "10000000-0000-4000-8000-000000000001"
+	cm := Comment{Nickname: "Previous Name", AccountID: &id, Account: &Account{Nickname: "Current Name"}}
+	if got := cm.PublicName(); got != "Current Name" {
+		t.Fatalf("PublicName() = %q", got)
+	}
+	cm.Account = nil
+	if got := cm.PublicName(); got != "Previous Name" {
+		t.Fatalf("missing account fallback = %q", got)
+	}
+}

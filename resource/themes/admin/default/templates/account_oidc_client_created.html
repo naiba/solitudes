@@ -1,9 +1,0 @@
-{{define "admin/account_oidc_client_created"}}
-<!doctype html><html lang="{{.Tr.Locale}}"><head><title>{{.Tr.T "client_created"}}</title>{{template "admin/css"}}</head>
-<body class="bg-gray-50"><main class="admin-main admin-container provider-settings" id="main-content"><div class="wf-card provider-card">
-  <h1>{{.Tr.T "client_created"}}</h1><p>{{.Tr.T "copy_secret_once"}}</p>
-  <p>{{.Tr.T "client_id"}}: <code data-testid="oidc-created-id">{{.Data.client_id}}</code></p>
-  {{if .Data.secret}}<p>{{.Tr.T "client_secret"}}: <code>{{.Data.secret}}</code></p>{{end}}
-  <a href="/account/oidc/clients" data-testid="oidc-created-back">{{.Tr.T "provider_external_apps"}}</a>
-</div></main></body></html>
-{{end}}

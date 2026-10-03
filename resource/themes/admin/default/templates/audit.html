@@ -1,0 +1,19 @@
+{{define "admin/audit"}}{{template "admin/header" .}}
+<div class="identity-admin"><h1>{{.Tr.T "security_audit"}}</h1><p class="identity-hint">{{.Tr.T "audit_privacy_hint"}}</p>
+<p class="identity-hint" data-testid="audit-retention">{{if .Data.retention_days}}{{.Tr.T "audit_retention_days"}} {{.Data.retention_days}} {{.Tr.T "audit_retention_suffix"}}{{else}}{{.Tr.T "audit_retention_forever"}}{{end}}</p>
+<form action="/admin/audit" method="get" class="identity-filters" data-testid="audit-filter-form">
+<label>{{.Tr.T "audit_action"}}<select name="action" data-testid="audit-action-filter"><option value="">{{.Tr.T "identity_all"}}</option>{{range .Data.actions}}<option value="{{.}}" {{if eq . $.Data.action}}selected{{end}}>{{$.Tr.T .}}</option>{{end}}</select></label>
+<label>{{.Tr.T "audit_outcome"}}<select name="outcome"><option value="">{{.Tr.T "identity_all"}}</option><option value="success" {{if eq .Data.outcome "success"}}selected{{end}}>{{.Tr.T "audit_success"}}</option><option value="failure" {{if eq .Data.outcome "failure"}}selected{{end}}>{{.Tr.T "audit_failure"}}</option><option value="denied" {{if eq .Data.outcome "denied"}}selected{{end}}>{{.Tr.T "audit_denied"}}</option></select></label>
+<label>{{.Tr.T "audit_user"}}<input name="user_id" value="{{.Data.user_id}}" maxlength="64"></label>
+<label>{{.Tr.T "client_id"}}<input name="client_id" value="{{.Data.client_id}}" maxlength="64"></label>
+<label>{{.Tr.T "audit_request"}}<input name="request_id" value="{{.Data.request_id}}" maxlength="64" data-testid="audit-request-filter"></label>
+<label>IP<input name="ip" value="{{.Data.ip}}" maxlength="64" data-testid="audit-ip-filter"></label>
+<label>{{.Tr.T "audit_since"}}<input type="date" name="since" value="{{.Data.since}}"></label><label>{{.Tr.T "audit_until"}}<input type="date" name="until" value="{{.Data.until}}"></label>
+<button type="submit" data-testid="audit-filter-submit">{{.Tr.T "identity_filter"}}</button><a href="/admin/audit">{{.Tr.T "identity_reset"}}</a></form>
+<ol class="identity-audit-list">{{range .Data.events}}<li class="identity-card" data-testid="audit-event">
+<div class="identity-card-heading"><strong>{{$.Tr.T .Action}}</strong><span class="identity-outcome outcome-{{.Outcome}}">{{if eq .Outcome "success"}}{{$.Tr.T "audit_success"}}{{else if eq .Outcome "denied"}}{{$.Tr.T "audit_denied"}}{{else}}{{$.Tr.T "audit_failure"}}{{end}}</span><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt "2006-01-02 15:04:05"}} UTC</time></div>
+<div class="identity-metrics"><span>{{$.Tr.T "audit_actor"}}: {{if .ActorID}}<a href="/admin/users/{{.ActorID}}">{{if index $.Data.actor_names .ActorID}}{{index $.Data.actor_names .ActorID}}{{else}}{{.ActorID}}{{end}}</a>{{else}}{{$.Tr.T "audit_anonymous"}}{{end}}</span>{{if .ClientID}}<a href="/admin/oidc/clients/{{.ClientID}}">{{$.Tr.T "client_id"}}: {{.ClientID}}</a>{{end}}{{if .TargetID}}<span>{{$.Tr.T "audit_target"}}: {{.TargetID}}</span>{{end}}</div>
+<p><code>{{.Action}}</code> · {{.Method}} {{.Route}}{{if .Status}} · HTTP {{.Status}}{{end}}{{if .Reason}} · <code>{{.Reason}}</code>{{end}}</p>{{if .Details}}<p>{{.Details}}</p>{{end}}
+<small>{{$.Tr.T "audit_request"}}: <code>{{.RequestID}}</code> · IP: {{.IP}}</small>
+</li>{{else}}<li class="identity-card">{{.Tr.T "identity_empty"}}</li>{{end}}</ol>
+{{template "admin/identity_pagination" .}}</div>{{template "admin/footer" .}}{{end}}

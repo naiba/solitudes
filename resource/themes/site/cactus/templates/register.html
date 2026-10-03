@@ -1,0 +1,34 @@
+{{define "site/register"}}
+{{template "site/header" .}}
+{{template "site/menu" .}}
+<main id="main-content" class="auth-shell" data-testid="site-auth-page">
+  <div class="auth-card">
+    <p class="auth-eyebrow">{{.Tr.T "auth_eyebrow"}}</p>
+    <h1>{{.Tr.T "create_account"}}</h1>
+    <p>{{.Tr.T "auth_register_intro"}}</p>
+    <p class="auth-notice" data-testid="register-reader-circle-notice">{{.Tr.T "register_reader_circle_notice"}}</p>
+    {{if not .Data.registration_available}}<p class="auth-notice" role="status">{{.Tr.T "auth_registration_unavailable"}}</p>{{end}}
+    <form action="/register" method="post" data-testid="register-form">
+      <input type="hidden" name="return_to" value="{{.Data.return_to}}">
+      <label for="register-email">{{.Tr.T "email"}}</label><input id="register-email" name="email" type="email" autocomplete="email" data-testid="register-email" required>
+      <label for="register-nickname">{{.Tr.T "nickname"}}</label><input id="register-nickname" name="nickname" autocomplete="nickname" maxlength="80" data-testid="register-nickname" required>
+      <label for="register-password">{{.Tr.T "auth_password"}}</label><input id="register-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="72" data-testid="register-password" required>
+      <label for="register-captcha">{{.Tr.T "auth_captcha"}}</label><div class="auth-captcha"><input id="register-captcha" name="captcha" autocomplete="off" data-testid="register-captcha" required><button type="button" data-refresh-captcha="register-captcha-image" aria-label="{{.Tr.T "refresh_captcha"}}">↻</button></div>
+      <input type="hidden" id="register-captcha-id" name="captchaId"><img id="register-captcha-image" class="auth-captcha-image" alt="{{.Tr.T "auth_captcha"}}">
+      <button class="auth-primary" type="submit" data-testid="register-submit" {{if not .Data.registration_available}}disabled{{end}}>{{.Tr.T "create_account"}}</button>
+    </form>
+    <p class="auth-switch">{{.Tr.T "auth_have_account"}} <a href="/login{{if .Data.return_to}}?return_to={{urlquery .Data.return_to}}{{end}}">{{.Tr.T "sign_in"}}</a></p>
+    <details class="auth-resend"><summary>{{.Tr.T "resend_verification"}}</summary>
+      <form action="/resend-verification" method="post" data-testid="resend-form">
+        <input type="hidden" name="return_to" value="{{.Data.return_to}}">
+        <label for="resend-email">{{.Tr.T "email"}}</label><input id="resend-email" name="email" type="email" autocomplete="email" data-testid="resend-email" required>
+        <label for="resend-captcha">{{.Tr.T "auth_captcha"}}</label><div class="auth-captcha"><input id="resend-captcha" name="captcha" autocomplete="off" data-testid="resend-captcha" required><button type="button" data-refresh-captcha="resend-captcha-image" aria-label="{{.Tr.T "refresh_captcha"}}">↻</button></div>
+        <input type="hidden" id="resend-captcha-id" name="captchaId"><img id="resend-captcha-image" class="auth-captcha-image" alt="{{.Tr.T "auth_captcha"}}">
+        <button class="auth-secondary" type="submit" data-testid="resend-submit" {{if not .Data.registration_available}}disabled{{end}}>{{.Tr.T "resend_verification"}}</button>
+      </form>
+    </details>
+  </div>
+</main>
+<script src="/static/site/cactus/js/auth.js" defer></script>
+{{template "site/footer" .}}
+{{end}}

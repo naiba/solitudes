@@ -1,6 +1,7 @@
 package solitudes
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -18,6 +19,7 @@ import (
 	"gopkg.in/yaml.v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/internal/theme"
@@ -90,7 +92,13 @@ type articleSearchDocument struct {
 }
 
 func newArticleSearchDocument(article *model.Article, version uint, content string) articleSearchDocument {
-	if article.IsPrivate {
+	if version != article.Version {
+		content = ""
+	}
+	view := *article
+	view.Content = content
+	content = view.ContentFor(nil, nil)
+	if !article.Public() {
 		content = ""
 	}
 	return articleSearchDocument{
@@ -98,7 +106,7 @@ func newArticleSearchDocument(article *model.Article, version uint, content stri
 		Version:   version,
 		Title:     article.Title,
 		Content:   content,
-		IsPrivate: article.IsPrivate,
+		IsPrivate: !article.Public(),
 	}
 }
 
@@ -112,14 +120,34 @@ func indexArticleVersion(index bleve.Index, article *model.Article, version uint
 }
 
 func indexArticle(index bleve.Index, article *model.Article) error {
-	if article.IsPrivate {
-		for version := uint(1); version < article.Version; version++ {
-			if err := indexArticleVersion(index, article, version, ""); err != nil {
-				return err
-			}
+	for version := uint(1); version < article.Version; version++ {
+		if err := indexArticleVersion(index, article, version, ""); err != nil {
+			return err
 		}
 	}
 	return indexArticleVersion(index, article, article.Version, article.Content)
+}
+
+// Rewrite persisted pre-access-control indexes once. A crash retries the scrub
+// on the next start; the marker is written only after every batch succeeds.
+func upgradeArticleAccessIndex() error {
+	const key = "article-access-schema-v1"
+	marker, err := System.Search.GetInternal([]byte(key))
+	if err != nil || len(marker) > 0 {
+		return err
+	}
+	var articles []model.Article
+	if err := System.DB.FindInBatches(&articles, 100, func(tx *gorm.DB, batch int) error {
+		for i := range articles {
+			if err := indexArticle(System.Search, &articles[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	}).Error; err != nil {
+		return err
+	}
+	return System.Search.SetInternal([]byte(key), []byte("1"))
 }
 
 // IndexArticle updates the full-text search document for an article. Private
@@ -171,6 +199,9 @@ func newCache() *cache.Cache {
 }
 
 func newDatabase(conf *model.Config) (*gorm.DB, error) {
+	if err := conf.ValidateDatabasePolicy(); err != nil {
+		return nil, err
+	}
 	db, err := gorm.Open(postgres.Open(conf.Database), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
@@ -178,6 +209,15 @@ func newDatabase(conf *model.Config) (*gorm.DB, error) {
 	if conf.Debug {
 		db = db.Debug()
 	}
+	pool, _ := conf.DatabasePool.WithDefaults() // Validated before connecting.
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("configure database pool: %w", err)
+	}
+	sqlDB.SetMaxOpenConns(pool.MaxOpen)
+	sqlDB.SetMaxIdleConns(pool.MaxIdle)
+	sqlDB.SetConnMaxLifetime(time.Duration(pool.LifetimeSeconds) * time.Second)
+	sqlDB.SetConnMaxIdleTime(time.Duration(pool.IdleSeconds) * time.Second)
 	return db, nil
 }
 
@@ -240,11 +280,22 @@ func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache,
 }
 
 func migrate() error {
+	if err := System.DB.AutoMigrate(&model.AuditEvent{}, &model.LoginSummary{}); err != nil {
+		return fmt.Errorf("migrate security audit: %w", err)
+	}
+	if err := System.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&model.AuditEvent{
+		ID: "audit-initialized", Action: "audit.enabled", Outcome: "success", CreatedAt: time.Now().UTC(),
+	}).Error; err != nil {
+		return fmt.Errorf("initialize security audit: %w", err)
+	}
 	if err := System.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
 		return fmt.Errorf("failed to create uuid-ossp extension: %w", err)
 	}
 	if err := System.DB.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.ExternalIdentity{}, &model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}, &model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.FeedVisit{}); err != nil {
 		return fmt.Errorf("failed to auto migrate models: %w", err)
+	}
+	if err := model.MigrateArticleVisibility(System.DB); err != nil {
+		return fmt.Errorf("migrate article visibility: %w", err)
 	}
 	// A pre-existing installation owns its administrator identity in conf.yml.
 	// Seed exactly that account, never promote the first public registrant.
@@ -281,16 +332,18 @@ func migrate() error {
 	if err := System.DB.Model(&model.Article{}).Where("author_id IS NULL").Update("author_id", admin.ID).Error; err != nil {
 		return fmt.Errorf("backfill article authors: %w", err)
 	}
-	return nil
+	return model.MigrateDatabasePolicy(System.DB)
 }
 
-func cleanOldFeedVisits() {
-	result := System.DB.Where("created_at < ?", time.Now().AddDate(0, 0, -7)).Delete(&model.FeedVisit{})
-	if result.Error != nil {
-		log.Printf("Failed to clean old feed visits: %v", result.Error)
-	} else {
-		log.Printf("Cleaned %d old feed visit records", result.RowsAffected)
+func maintainDatabase() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	count, err := model.MaintainDatabase(ctx, System.DB, time.Now().UTC(), System.Config.AuditRetentionDays)
+	if err != nil {
+		log.Printf("Database maintenance failed after removing %d expired records: %v", count, err)
+		return
 	}
+	log.Printf("Database maintenance removed %d expired records", count)
 }
 
 func provide() error {
@@ -366,14 +419,17 @@ func Init() {
 		if err := migrate(); err != nil {
 			log.Fatalf("Database migration failed: %v", err)
 		}
+		if err := upgradeArticleAccessIndex(); err != nil {
+			log.Fatalf("Article index access upgrade failed: %v", err)
+		}
 	}
 
 	c := cron.New()
-	_, err := c.AddFunc("0 0 * * *", cleanOldFeedVisits)
+	_, err := c.AddFunc("17 * * * *", maintainDatabase)
 	if err != nil {
 		log.Printf("Failed to start cron job: %v", err)
 	} else {
 		c.Start()
-		log.Println("Cron job started: cleanOldFeedVisits at 00:00 daily")
+		log.Println("Cron job started: bounded database maintenance hourly")
 	}
 }

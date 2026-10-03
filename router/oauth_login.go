@@ -169,13 +169,7 @@ func oauthCallback(c *fiber.Ctx) error {
 	if attempt.ReturnTo != "" {
 		return c.Redirect(attempt.ReturnTo, http.StatusFound)
 	}
-	if attempt.AccountID != nil || account.Role == model.RoleUser {
-		return c.Redirect("/account", http.StatusFound)
-	}
-	if account.Role == model.RoleEditor {
-		return c.Redirect("/admin/articles", http.StatusFound)
-	}
-	return c.Redirect("/admin", http.StatusFound)
+	return c.Redirect("/account", http.StatusFound)
 }
 
 func findOrLinkExternalIdentity(attempt *model.OAuthAttempt, identity upstreamIdentity, loggedIn *model.Account) (*model.Account, error) {

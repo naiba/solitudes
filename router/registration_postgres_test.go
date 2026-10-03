@@ -23,6 +23,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -30,7 +31,7 @@ import (
 	"github.com/naiba/solitudes/internal/model"
 )
 
-func newPostgresIdentityTestDB(t *testing.T) *gorm.DB {
+func newPostgresIdentityTestDB(t testing.TB) *gorm.DB {
 	t.Helper()
 	dsn := os.Getenv("SOLITUDES_TEST_POSTGRES_DSN")
 	if dsn == "" {
@@ -69,7 +70,7 @@ func newPostgresIdentityTestDB(t *testing.T) *gorm.DB {
 	if err := db.Exec(`CREATE FUNCTION uuid_generate_v4() RETURNS uuid LANGUAGE SQL AS 'SELECT gen_random_uuid()'`).Error; err != nil {
 		t.Fatal(err)
 	}
-	if err := db.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}); err != nil {
+	if err := db.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.AuditEvent{}, &model.LoginSummary{}); err != nil {
 		t.Fatal(err)
 	}
 	return db
@@ -156,9 +157,9 @@ func TestPostgresRegistrationSMTPAndVerifiedLogin(t *testing.T) {
 	t.Setenv("SOLITUDES_E2E", "1")
 	app := fiber.New()
 	app.Use(auth, csrfGuard)
-	app.Post("/admin/register", guestRequired, registerHandler)
-	app.Post("/admin/login", guestRequired, loginHandler)
-	app.Get("/admin/verify-email", verifyEmailHandler)
+	app.Post("/register", guestRequired, registerHandler)
+	app.Post("/login", guestRequired, loginHandler)
+	app.Get("/verify-email", verifyEmailHandler)
 	post := func(path string, fields url.Values) *http.Response {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(fields.Encode()))
@@ -174,14 +175,18 @@ func TestPostgresRegistrationSMTPAndVerifiedLogin(t *testing.T) {
 	}
 	fields := url.Values{"email": {"reader@example.com"}, "nickname": {"Reader"},
 		"password": {"some-long-password"}, "captcha": {"test"}, "captchaId": {"test"}}
-	resp := post("/admin/register", fields)
+	resp := post("/register", fields)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusAccepted {
 		t.Fatalf("registration status: %d", resp.StatusCode)
 	}
+	var pending model.Account
+	if err := db.Take(&pending, "email = ?", "reader@example.com").Error; err != nil || pending.DirectoryHidden || pending.EmailVerifiedAt != nil {
+		t.Fatalf("unverified new account directory preference: %+v err=%v", pending, err)
+	}
 	login := url.Values{"email": {"reader@example.com"}, "password": {"some-long-password"},
 		"captcha": {"test"}, "captchaId": {"test"}}
-	resp = post("/admin/login", login)
+	resp = post("/login", login)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("unverified account logged in: %d", resp.StatusCode)
@@ -196,7 +201,7 @@ func TestPostgresRegistrationSMTPAndVerifiedLogin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	linkPattern := regexp.MustCompile(`http://localhost:8080/admin/verify-email\?token=[a-f0-9]{64}`)
+	linkPattern := regexp.MustCompile(`http://localhost:8080/verify-email\?token=[a-f0-9]{64}`)
 	link := linkPattern.FindString(string(decoded))
 	if link == "" || !strings.Contains(message, "To: reader@example.com") {
 		t.Fatal("SMTP message has no verification link or unexpected recipient")
@@ -226,13 +231,13 @@ func TestPostgresRegistrationSMTPAndVerifiedLogin(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("reused verification link: %d", resp.StatusCode)
 	}
-	resp = post("/admin/login", login)
+	resp = post("/login", login)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusFound || len(resp.Cookies()) == 0 {
 		t.Fatalf("verified login: %d (cookies: %d)", resp.StatusCode, len(resp.Cookies()))
 	}
 	var account model.Account
-	if err := db.Take(&account, "email = ?", "reader@example.com").Error; err != nil || account.EmailVerifiedAt == nil || account.Role != model.RoleUser {
+	if err := db.Take(&account, "email = ?", "reader@example.com").Error; err != nil || account.EmailVerifiedAt == nil || account.Role != model.RoleUser || account.DirectoryHidden {
 		t.Fatalf("registered account: %+v %v", account, err)
 	}
 }
@@ -274,8 +279,11 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 	}
 	app := fiber.New()
 	app.Use(auth, csrfGuard)
+	app.Get("/admin/publish", loginRequired, publish)
 	app.Post("/admin/publish", loginRequired, publishHandler)
+	app.Get("/admin/articles", loginRequired, manageArticle)
 	app.Delete("/admin/articles", loginRequired, deleteArticle)
+	app.Post("/admin/upload", loginRequired, upload)
 	call := func(role model.Role, method, path string, fields url.Values) int {
 		t.Helper()
 		var requestBody io.Reader
@@ -308,6 +316,52 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 	if status := call(model.RoleUser, http.MethodPost, "/admin/publish", form); status != http.StatusForbidden {
 		t.Fatalf("ordinary user published: %d", status)
 	}
+	// A member is denied even if the article belongs to them, and cannot
+	// impersonate an editor by submitting an author_id in the form.
+	memberArticle := model.Article{AuthorID: &accounts[2].ID, Slug: "member-owned", Title: "Old member post",
+		Content: "member content", TemplateID: solitudes.ArticleTemplateID, Version: 1}
+	if err := db.Create(&memberArticle).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, target := range []model.Article{article, memberArticle} {
+		form.Set("id", target.ID)
+		form.Set("slug", target.Slug)
+		form.Set("author_id", accounts[1].ID)
+		if status := call(model.RoleUser, http.MethodPost, "/admin/publish", form); status != http.StatusForbidden {
+			t.Fatalf("ordinary user edited article %s: %d", target.ID, status)
+		}
+		if status := call(model.RoleUser, http.MethodDelete, "/admin/articles?id="+target.ID, nil); status != http.StatusForbidden {
+			t.Fatalf("ordinary user deleted article %s: %d", target.ID, status)
+		}
+		if status := call(model.RoleUser, http.MethodGet, "/admin/publish?id="+target.ID, nil); status != http.StatusForbidden {
+			t.Fatalf("ordinary user opened editor for article %s: %d", target.ID, status)
+		}
+	}
+	form.Set("id", "")
+	form.Set("slug", "member-new-post")
+	if status := call(model.RoleUser, http.MethodPost, "/admin/publish", form); status != http.StatusForbidden {
+		t.Fatalf("ordinary user created article: %d", status)
+	}
+	if status := call(model.RoleUser, http.MethodGet, "/admin/publish", nil); status != http.StatusForbidden {
+		t.Fatalf("ordinary user opened new article editor: %d", status)
+	}
+	if status := call(model.RoleUser, http.MethodGet, "/admin/articles", nil); status != http.StatusForbidden {
+		t.Fatalf("ordinary user viewed article management: %d", status)
+	}
+	if status := call(model.RoleUser, http.MethodPost, "/admin/upload", nil); status != http.StatusForbidden {
+		t.Fatalf("ordinary user reached uploads: %d", status)
+	}
+	var memberStored model.Article
+	if err := db.Take(&memberStored, "id = ?", memberArticle.ID).Error; err != nil || memberStored.Content != "member content" {
+		t.Fatalf("member changed their article: %+v %v", memberStored, err)
+	}
+	var memberNewCount int64
+	if err := db.Model(&model.Article{}).Where("slug = ?", "member-new-post").Count(&memberNewCount).Error; err != nil || memberNewCount != 0 {
+		t.Fatalf("member created article: count=%d, err=%v", memberNewCount, err)
+	}
+	form.Del("author_id")
+	form.Set("id", article.ID)
+	form.Set("slug", article.Slug)
 	var stored model.Article
 	if err := db.Take(&stored, "id = ?", article.ID).Error; err != nil || stored.Content != "original content" {
 		t.Fatalf("unauthorized write changed article: %+v %v", stored, err)
@@ -331,6 +385,61 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 	stored = model.Article{}
 	if err := db.Take(&stored, "id = ?", owned.ID).Error; err != nil || stored.AuthorID == nil || *stored.AuthorID != accounts[1].ID || stored.Content != "changed content" {
 		t.Fatalf("editor edit changed ownership or failed: %+v %v", stored, err)
+	}
+	form.Set("content", `<script>alert(1)</script>`)
+	if status := call(model.RoleEditor, http.MethodPost, "/admin/publish", form); status != http.StatusForbidden {
+		t.Fatalf("editor added a script: %d", status)
+	}
+	if err := db.Take(&stored, "id = ?", owned.ID).Error; err != nil || stored.Content != "changed content" {
+		t.Fatalf("rejected script modified article: %+v %v", stored, err)
+	}
+	form.Set("content", "admin content\n<script>console.log('admin')</script>")
+	if status := call(model.RoleAdmin, http.MethodPost, "/admin/publish", form); status != http.StatusOK {
+		t.Fatalf("administrator unable to add script to editor's article: %d", status)
+	}
+	form.Set("content", "editor prose\n<script>console.log('admin')</script>")
+	if status := call(model.RoleEditor, http.MethodPost, "/admin/publish", form); status != http.StatusOK {
+		t.Fatalf("editor cannot update prose while preserving admin script: %d", status)
+	}
+	form.Set("content", "editor prose\n<script>console.log('changed')</script>")
+	if status := call(model.RoleEditor, http.MethodPost, "/admin/publish", form); status != http.StatusForbidden {
+		t.Fatalf("editor changed administrator's script: %d", status)
+	}
+	const inlineScript = "admin note <script>alert(1)</script> tail"
+	form.Set("content", inlineScript)
+	if status := call(model.RoleAdmin, http.MethodPost, "/admin/publish", form); status != http.StatusOK {
+		t.Fatalf("administrator unable to save inline script: %d", status)
+	}
+	form.Set("content", "editor note <script>alert(2)</script> tail")
+	if status := call(model.RoleEditor, http.MethodPost, "/admin/publish", form); status != http.StatusForbidden {
+		t.Fatalf("editor changed inline script body: %d", status)
+	}
+	if err := db.Take(&stored, "id = ?", owned.ID).Error; err != nil || stored.Content != inlineScript {
+		t.Fatalf("rejected inline script edit changed article: %+v %v", stored, err)
+	}
+}
+
+func TestPostgresOIDCLegacyClientMetadataMigration(t *testing.T) {
+	db := newPostgresIdentityTestDB(t)
+	if err := db.Exec(`CREATE TABLE o_id_c_clients (
+		id text PRIMARY KEY, owner_id uuid, name text NOT NULL, secret_hash text,
+		public boolean, redirect_uris_json text NOT NULL, disabled_at timestamptz, created_at timestamptz
+	)`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec(`INSERT INTO o_id_c_clients (id, name, public, redirect_uris_json)
+		VALUES ('legacy-client', 'Existing application', true, '["https://app.example.test/callback"]')`).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.AutoMigrate(&model.OIDCClient{}); err != nil {
+		t.Fatalf("migrate existing OAuth clients: %v", err)
+	}
+	var legacy model.OIDCClient
+	if err := db.Take(&legacy, "id = ?", "legacy-client").Error; err != nil {
+		t.Fatal(err)
+	}
+	if legacy.Name != "Existing application" || legacy.Description != "" || legacy.HomepageURL != "" {
+		t.Fatalf("metadata migration changed existing app: %+v", legacy)
 	}
 }
 
@@ -420,6 +529,16 @@ func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
 
 func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 	db := newPostgresIdentityTestDB(t)
+	assertLoginCount := func(want int64) {
+		t.Helper()
+		var count int64
+		if err := db.Model(&model.AuditEvent{}).Where("action = ?", "oidc.login").Count(&count).Error; err != nil {
+			t.Fatal(err)
+		}
+		if count != want {
+			t.Fatalf("application logins: got %d, want %d", count, want)
+		}
+	}
 	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{},
 		&model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
 		t.Fatal(err)
@@ -435,7 +554,8 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 		t.Fatal(err)
 	}
 	client := model.OIDCClient{ID: "downstream-app", Name: "App", Public: true,
-		RedirectURIsJSON: `["http://localhost:9999/callback"]`}
+		RedirectURIsJSON:   `["http://localhost:9999/callback"]`,
+		PostLogoutURIsJSON: `["http://localhost:9999/signed-out"]`}
 	if err := db.Create(&client).Error; err != nil {
 		t.Fatal(err)
 	}
@@ -461,6 +581,36 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 		!strings.Contains(resp.Body.String(), `"issuer":"http://localhost:8080"`) {
 		t.Fatalf("discovery failed: %d %s", resp.Code, resp.Body.String())
 	}
+	metadataApp := fiber.New()
+	metadataApp.Use("/.well-known", oidcHTTPHandler(provider))
+	for _, path := range []string{"/.well-known/openid-configuration", "/.well-known/oauth-authorization-server"} {
+		metadataRequest := httptest.NewRequest(http.MethodGet, path, nil)
+		metadataRequest.Host = "localhost:8080"
+		metadataRequest.Header.Set("Host", "localhost:8080")
+		response, err := metadataApp.Test(metadataRequest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var metadata struct {
+			Issuer               string   `json:"issuer"`
+			Responses            []string `json:"response_types_supported"`
+			Grants               []string `json:"grant_types_supported"`
+			Methods              []string `json:"token_endpoint_auth_methods_supported"`
+			PKCE                 []string `json:"code_challenge_methods_supported"`
+			RevocationMethods    []string `json:"revocation_endpoint_auth_methods_supported"`
+			IntrospectionMethods []string `json:"introspection_endpoint_auth_methods_supported"`
+			RequestParameter     bool     `json:"request_parameter_supported"`
+		}
+		err = json.NewDecoder(response.Body).Decode(&metadata)
+		response.Body.Close()
+		if err != nil || response.StatusCode != http.StatusOK || metadata.Issuer != "http://localhost:8080" ||
+			len(metadata.Responses) != 1 || metadata.Responses[0] != "code" || len(metadata.Grants) != 2 ||
+			len(metadata.Methods) != 2 || len(metadata.PKCE) != 1 || metadata.PKCE[0] != "S256" ||
+			len(metadata.RevocationMethods) != 2 || len(metadata.IntrospectionMethods) != 1 ||
+			metadata.IntrospectionMethods[0] != "client_secret_basic" || metadata.RequestParameter {
+			t.Fatalf("unsafe metadata at %s: status=%d payload=%+v err=%v", path, response.StatusCode, metadata, err)
+		}
+	}
 	verifier := strings.Repeat("v", 64)
 	digest := sha256.Sum256([]byte(verifier))
 	query := url.Values{"client_id": {client.ID}, "redirect_uri": {"http://localhost:9999/callback"},
@@ -473,6 +623,28 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 	badRedirect.Set("redirect_uri", "http://localhost:9998/attacker")
 	if resp := request(http.MethodGet, "/authorize?"+badRedirect.Encode(), nil); resp.Code == http.StatusFound {
 		t.Fatal("unregistered OIDC redirect accepted")
+	}
+	for _, field := range []string{"code_challenge", "code_challenge_method"} {
+		invalid := url.Values{}
+		for key, values := range query {
+			invalid[key] = append([]string(nil), values...)
+		}
+		invalid.Del(field)
+		if resp := request(http.MethodGet, "/authorize?"+invalid.Encode(), nil); resp.Code == http.StatusFound {
+			if destination, err := url.Parse(resp.Header().Get("Location")); err == nil && destination.Path == "/oidc/consent" {
+				t.Fatalf("authorization without %s accepted", field)
+			}
+		}
+	}
+	implicit := url.Values{}
+	for key, values := range query {
+		implicit[key] = append([]string(nil), values...)
+	}
+	implicit.Set("response_type", "token")
+	if resp := request(http.MethodGet, "/authorize?"+implicit.Encode(), nil); resp.Code == http.StatusFound {
+		if destination, err := url.Parse(resp.Header().Get("Location")); err == nil && destination.Path == "/oidc/consent" {
+			t.Fatal("implicit response accepted")
+		}
 	}
 	start := request(http.MethodGet, "/authorize?"+query.Encode(), nil)
 	redirect, err := url.Parse(start.Header().Get("Location"))
@@ -493,6 +665,7 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 		t.Fatalf("callback: %d %v %v", callback.Code, redirect, err)
 	}
 	code := redirect.Query().Get("code")
+	assertLoginCount(0) // Opening/approving consent is not a login.
 	form := url.Values{"grant_type": {"authorization_code"}, "client_id": {client.ID},
 		"redirect_uri": {"http://localhost:9999/callback"}, "code_verifier": {verifier}, "code": {code}}
 	result := request(http.MethodPost, "/oauth/token", form)
@@ -510,6 +683,7 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 	if replay := request(http.MethodPost, "/oauth/token", form); replay.Code == http.StatusOK {
 		t.Fatal("authorization code replay accepted")
 	}
+	assertLoginCount(1)
 	userReq := httptest.NewRequest(http.MethodGet, "/userinfo", nil)
 	userReq.Header.Set("Authorization", "Bearer "+tokens.Access)
 	userResp := httptest.NewRecorder()
@@ -525,6 +699,143 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 	if replay := request(http.MethodPost, "/oauth/token", refresh); replay.Code == http.StatusOK {
 		t.Fatal("old refresh token accepted after rotation")
 	}
+	assertLoginCount(1) // Neither token rotation nor failed replay increments it.
+	// A new authorization code with the wrong verifier must never count.
+	badStart := request(http.MethodGet, "/authorize?"+query.Encode(), nil)
+	badLocation, err := url.Parse(badStart.Header().Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	badID := badLocation.Query().Get("authRequestID")
+	if err := db.Model(&model.OIDCAuthRequest{}).Where("id = ?", badID).Updates(map[string]interface{}{"approved": true, "account_id": account.ID, "auth_time": time.Now()}).Error; err != nil {
+		t.Fatal(err)
+	}
+	badCallback := request(http.MethodGet, "/authorize/callback?id="+url.QueryEscape(badID), nil)
+	badLocation, err = url.Parse(badCallback.Header().Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	badForm := url.Values{"grant_type": {"authorization_code"}, "client_id": {client.ID}, "redirect_uri": {"http://localhost:9999/callback"}, "code_verifier": {strings.Repeat("x", 64)}, "code": {badLocation.Query().Get("code")}}
+	if response := request(http.MethodPost, "/oauth/token", badForm); response.Code == http.StatusOK {
+		t.Fatal("invalid PKCE accepted")
+	}
+	assertLoginCount(1)
+	// Pure OAuth 2.1 clients need an access token even without the openid scope.
+	oauthOnly := url.Values{}
+	for key, values := range query {
+		oauthOnly[key] = append([]string(nil), values...)
+	}
+	oauthOnly.Set("scope", "email profile")
+	start = request(http.MethodGet, "/authorize?"+oauthOnly.Encode(), nil)
+	redirect, err = url.Parse(start.Header().Get("Location"))
+	if err != nil || start.Code != http.StatusFound || redirect.Path != "/oidc/consent" {
+		t.Fatalf("OAuth-only authorization: %d %v %v %s", start.Code, redirect, err, start.Body.String())
+	}
+	authID = redirect.Query().Get("authRequestID")
+	if err := db.Model(&model.OIDCAuthRequest{}).Where("id = ?", authID).
+		Updates(map[string]interface{}{"approved": true, "account_id": account.ID, "auth_time": time.Now()}).Error; err != nil {
+		t.Fatal(err)
+	}
+	callback = request(http.MethodGet, "/authorize/callback?id="+url.QueryEscape(authID), nil)
+	redirect, err = url.Parse(callback.Header().Get("Location"))
+	if err != nil || callback.Code != http.StatusFound || redirect.Query().Get("code") == "" {
+		t.Fatalf("OAuth-only code: %d %v %v", callback.Code, redirect, err)
+	}
+	form.Set("code", redirect.Query().Get("code"))
+	result = request(http.MethodPost, "/oauth/token", form)
+	if result.Code != http.StatusOK || !strings.Contains(result.Body.String(), `"access_token"`) {
+		t.Fatalf("OAuth-only token exchange: %d %s", result.Code, result.Body.String())
+	}
+	secretHashBytes, err := bcrypt.GenerateFromPassword([]byte("test-client-secret"), bcrypt.MinCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+	confidential := model.OIDCClient{ID: "confidential-app", Name: "Private app", SecretHash: string(secretHashBytes),
+		RedirectURIsJSON: `["http://localhost:9999/callback"]`}
+	if err := db.Create(&confidential).Error; err != nil {
+		t.Fatal(err)
+	}
+	query.Set("client_id", confidential.ID)
+	start = request(http.MethodGet, "/authorize?"+query.Encode(), nil)
+	redirect, err = url.Parse(start.Header().Get("Location"))
+	if err != nil || start.Code != http.StatusFound || redirect.Path != "/oidc/consent" {
+		t.Fatalf("confidential authorization: %d %v %v", start.Code, redirect, err)
+	}
+	authID = redirect.Query().Get("authRequestID")
+	if err := db.Model(&model.OIDCAuthRequest{}).Where("id = ?", authID).
+		Updates(map[string]interface{}{"approved": true, "account_id": account.ID, "auth_time": time.Now()}).Error; err != nil {
+		t.Fatal(err)
+	}
+	callback = request(http.MethodGet, "/authorize/callback?id="+url.QueryEscape(authID), nil)
+	redirect, err = url.Parse(callback.Header().Get("Location"))
+	if err != nil || callback.Code != http.StatusFound || redirect.Query().Get("code") == "" {
+		t.Fatalf("confidential code: %d %v %v", callback.Code, redirect, err)
+	}
+	privateForm := url.Values{"grant_type": {"authorization_code"}, "redirect_uri": {"http://localhost:9999/callback"},
+		"code_verifier": {verifier}, "code": {redirect.Query().Get("code")}}
+	privateRequest := httptest.NewRequest(http.MethodPost, "/oauth/token", strings.NewReader(privateForm.Encode()))
+	privateRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	privateRequest.SetBasicAuth(confidential.ID, "test-client-secret")
+	privateResult := httptest.NewRecorder()
+	provider.ServeHTTP(privateResult, privateRequest)
+	if privateResult.Code != http.StatusOK || !strings.Contains(privateResult.Body.String(), `"access_token"`) {
+		t.Fatalf("client_secret_basic exchange: %d %s", privateResult.Code, privateResult.Body.String())
+	}
+	var privateTokens struct {
+		Access string `json:"access_token"`
+	}
+	if err := json.Unmarshal(privateResult.Body.Bytes(), &privateTokens); err != nil || privateTokens.Access == "" {
+		t.Fatalf("confidential token response: %v", err)
+	}
+	clientRequest := func(path string, form url.Values) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.SetBasicAuth(confidential.ID, "test-client-secret")
+		resp := httptest.NewRecorder()
+		provider.ServeHTTP(resp, req)
+		return resp
+	}
+	introspect := url.Values{"token": {privateTokens.Access}}
+	if resp := clientRequest("/oauth/introspect", introspect); resp.Code != http.StatusOK ||
+		!strings.Contains(resp.Body.String(), `"active":true`) {
+		t.Fatalf("introspection rejected live token: %d %s", resp.Code, resp.Body.String())
+	}
+	if resp := clientRequest("/revoke", introspect); resp.Code != http.StatusOK {
+		t.Fatalf("revocation failed: %d %s", resp.Code, resp.Body.String())
+	}
+	if resp := clientRequest("/oauth/introspect", introspect); resp.Code != http.StatusOK ||
+		!strings.Contains(resp.Body.String(), `"active":false`) {
+		t.Fatalf("revoked token still active: %d %s", resp.Code, resp.Body.String())
+	}
+	badLogout := request(http.MethodGet, "/end_session?"+url.Values{
+		"id_token_hint": {tokens.ID}, "post_logout_redirect_uri": {"https://attacker.example.test/"},
+	}.Encode(), nil)
+	if badLogout.Code == http.StatusFound {
+		t.Fatal("end_session redirected to an unregistered logout URL")
+	}
+	logout := request(http.MethodGet, "/end_session?"+url.Values{
+		"id_token_hint": {tokens.ID}, "post_logout_redirect_uri": {"http://localhost:9999/signed-out"},
+		"state": {"logout-state"},
+	}.Encode(), nil)
+	location, err := url.Parse(logout.Header().Get("Location"))
+	if err != nil || logout.Code != http.StatusFound || location.Path != "/signed-out" || location.Query().Get("state") != "logout-state" {
+		t.Fatalf("RP-initiated logout: %d %v %v %s", logout.Code, location, err, logout.Body.String())
+	}
+	var rotatedTokens struct {
+		Access string `json:"access_token"`
+	}
+	if err := json.Unmarshal(rotated.Body.Bytes(), &rotatedTokens); err != nil || rotatedTokens.Access == "" {
+		t.Fatalf("refresh response missing access token: %v", err)
+	}
+	userReq = httptest.NewRequest(http.MethodGet, "/userinfo", nil)
+	userReq.Header.Set("Authorization", "Bearer "+rotatedTokens.Access)
+	userResp = httptest.NewRecorder()
+	provider.ServeHTTP(userResp, userReq)
+	if userResp.Code == http.StatusOK {
+		t.Fatal("logged-out application's access token still worked")
+	}
+	assertLoginCount(3) // OAuth-only grants count too; logout/revocation retain history.
 }
 
 func TestPostgresSiblingArticleQueriesDoNotShareConditions(t *testing.T) {

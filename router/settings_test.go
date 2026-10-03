@@ -17,6 +17,9 @@ import (
 )
 
 func TestCactusSettings(t *testing.T) {
+	t.Chdir(t.TempDir())
+	previous := solitudes.System
+	t.Cleanup(func() { solitudes.System = previous })
 	// Initialize config
 	solitudes.System = &solitudes.SysVariable{
 		Config: &model.Config{
@@ -35,16 +38,13 @@ func TestCactusSettings(t *testing.T) {
 
 	app := fiber.New()
 	// Mock config save
-	solitudes.System.Config.ConfigFilePath = "/tmp/solitudes-test-config.yml"
+	solitudes.System.Config.ConfigFilePath = "settings.yml"
 	app.Post("/settings", func(c *fiber.Ctx) error {
 		// Ensure theme directories exist for validation
 		os.MkdirAll("resource/themes/site/cactus", 0755)
 		os.WriteFile("resource/themes/site/cactus/metadata.json", []byte(`{"name":"Cactus","id":"cactus","config":{"cactus.customcode":"string","cactus.headermenus":"array","cactus.footermenus":"array"}}`), 0644)
 		os.MkdirAll("resource/themes/admin/default", 0755)
 		os.WriteFile("resource/themes/admin/default/metadata.json", []byte(`{"name":"Default","id":"default"}`), 0644)
-		defer func() {
-			os.RemoveAll("resource")
-		}()
 		return settingsHandler(c)
 	})
 
@@ -116,9 +116,10 @@ func TestInvalidSettingsDoNotChangeConfigOrSave(t *testing.T) {
 	app.Post("/settings", settingsHandler)
 
 	for _, payload := range []string{
+		`{"site_title":"Tampered","admin_theme":"glacie"}`,
+		`{"site_title":"Tampered","admin_theme":"../default"}`,
 		`{"site_title":"Tampered","site_theme":"../data","theme_config":"keep: changed"}`,
 		`{"site_title":"Tampered","site_theme":"cactus","theme_config":"[not a map]"}`,
-		`{"site_title":"Tampered","site_theme":"cactus","old_password":"incorrect","new_password":"hacked"}`,
 	} {
 		req := httptest.NewRequest(http.MethodPost, "/settings", strings.NewReader(payload))
 		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
@@ -130,7 +131,7 @@ func TestInvalidSettingsDoNotChangeConfigOrSave(t *testing.T) {
 		if resp.StatusCode < 400 {
 			t.Fatalf("invalid settings status = %d, payload = %s", resp.StatusCode, payload)
 		}
-		if cfg.Site.Theme != "cactus" || cfg.Site.SpaceName != "Original title" || cfg.Site.ThemeConfig["keep"] != "unchanged" {
+		if cfg.Admin.Theme != "default" || cfg.Site.Theme != "cactus" || cfg.Site.SpaceName != "Original title" || cfg.Site.ThemeConfig["keep"] != "unchanged" {
 			t.Fatalf("invalid settings changed configuration: %+v", cfg.Site)
 		}
 		if _, err := os.Stat("saved.yml"); !os.IsNotExist(err) {

@@ -1,8 +1,9 @@
 {
   "id": "default",
-  "name": "Admin Default",
+  "name": "Solitudes Admin",
   "author": "奶爸博客",
-  "version": "1.0.0",
-  "description": "Default admin theme",
-  "link": "https://lifelonglearn.ing"
+  "version": "2.1.0",
+  "description": "Modern administration workspace with accessible navigation and responsive layouts",
+  "link": "https://lifelonglearn.ing",
+  "config": {}
 }

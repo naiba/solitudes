@@ -2,24 +2,21 @@
 {{template "admin/header" .}}
 
 <div class="admin-container">
-    <div class="page-header">
+    <div class="page-header with-action"><div>
         <h1 class="page-title">{{.Tr.T "manage_articles"}}</h1>
-        <p class="page-subtitle">{{.Tr.T "articles_subtitle"}}</p>
+        <p class="page-subtitle">{{.Tr.T "articles_subtitle"}}</p></div><a href="/admin/publish" class="admin-button primary"><i class="fa-solid fa-plus" aria-hidden="true"></i>{{.Tr.T "compose"}}</a>
     </div>
 
     <div class="wf-card">
         {{if .Data.articles}}
         <div class="table-scroll">
-            <table class="wf-table">
+            <table class="wf-table mobile-card-table article-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>{{.Tr.T "title"}}</th>
                         <th>{{.Tr.T "author"}}</th>
                         <th>{{.Tr.T "read"}}</th>
-                        <th>{{.Tr.T "slug"}}</th>
-                        <th>{{.Tr.T "book"}}</th>
-                        <th>{{.Tr.T "private"}}</th>
+                        <th>{{.Tr.T "status"}}</th>
                         <th>{{.Tr.T "created_at"}}</th>
                         <th>{{.Tr.T "manage"}}</th>
                     </tr>
@@ -27,15 +24,12 @@
                 <tbody>
                     {{range .Data.articles}}
                     <tr>
-                        <td class="text-gray-600">{{.ID}}</td>
-                        <td><a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a></td>
-                        <td>{{.Author.Nickname}}</td>
-                        <td class="text-gray-600">{{.ReadNum}}</td>
-                        <td class="text-gray-500 text-sm">{{.Slug}}</td>
-                        <td class="text-center">{{if .IsBook}}<i class="fa-solid fa-check text-green-600"></i>{{end}}</td>
-                        <td class="text-center">{{if .IsPrivate}}<i class="fa-solid fa-lock text-gray-600"></i>{{end}}</td>
-                        <td class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
-                        <td class="actions-cell">
+                        <td data-label="{{$.Tr.T "title"}}" class="article-primary"><a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a><small>/{{.Slug}}</small></td>
+                        <td data-label="{{$.Tr.T "author"}}">{{.Author.Nickname}}</td>
+                        <td data-label="{{$.Tr.T "read"}}" class="text-gray-600">{{.ReadNum}}</td>
+                        <td data-label="{{$.Tr.T "status"}}"><span class="article-state">{{if not .Public}}<i class="fa-solid fa-lock" aria-hidden="true"></i> {{$.Tr.T (printf "visibility_%s" .Visibility)}}{{else}}{{$.Tr.T "visibility_public"}}{{end}}</span>{{if .IsBook}} <span class="article-state">{{$.Tr.T "book"}}</span>{{end}}</td>
+                        <td data-label="{{$.Tr.T "created_at"}}" class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
+                        <td data-label="{{$.Tr.T "manage"}}" class="actions-cell">
                             <div class="flex gap-2">
                                 <a href="/admin/publish?id={{.ID}}" data-testid="article-edit" class="admin-button compact">
                                     <i class="fa-solid fa-pen-to-square"></i> {{$.Tr.T "edit"}}

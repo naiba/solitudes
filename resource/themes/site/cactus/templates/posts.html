@@ -1,14 +1,14 @@
 {{define "site/posts"}}
 {{template "site/header" .}}
-{{if gt .Data.page.Page 1}}
-<link rel="prev" href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.PrevPage}}/">
+{{if .Data.navigation.Previous}}
+<link rel="prev" href="{{.Data.navigation.Previous}}">
 {{end}}
-{{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}
-<link rel="next" href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.NextPage}}/">
+{{if .Data.navigation.Next}}
+<link rel="next" href="{{.Data.navigation.Next}}">
 {{end}}
 {{template "site/menu" .}}
 <main id="main-content">
-<h1 class="sr-only">{{.Title}}</h1>
+{{if eq .Data.what "books"}}<h1>{{.Tr.T "books"}}</h1><p>{{.Tr.T "books_all_the_books"}}</p>{{else}}<h1 class="sr-only">{{.Title}}</h1>{{end}}
 <section id="posts">
     {{if not .Data.articles}}
     <ul class="post-list">
@@ -20,22 +20,23 @@
     {{range $s := .Data.articles}}
     {{range $j,$a := $s}}
     {{if eq $j 0}}<h2>{{$a.CreatedAt.Year}}</h2><ul class="post-list">{{end}}
-    {{template "site/article_list_entry" (articleData $a $.Tr)}}
+    {{template "site/article_list_entry" (dict "article" $a "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}
     {{end}}
     </ul>
     {{end}}
     {{end}}
   <div class="pagination">
-    {{if gt .Data.page.Page 1}}<a href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.PrevPage}}/" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i
+    {{if .Data.navigation.Previous}}<a href="{{.Data.navigation.Previous}}" data-testid="pagination-previous" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i
         class="fa-solid fa-angle-left"></i><span class="sr-only">{{.Tr.T "previous_page"}}</span></a>{{end}}
+    {{$kind := .Tr.T "posts"}}{{if eq .Data.what "books"}}{{$kind = .Tr.T "books"}}{{end}}
     <span
-      class="page-number">{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord) "articles"}}</span>
-    {{if and (gt .Data.page.NextPage 1) (lt .Data.page.Page .Data.page.TotalPage)}}<a
-      href="https://{{.Conf.Site.Domain}}/{{.Data.what}}/{{.Data.page.NextPage}}/" rel="next" aria-label="{{.Tr.T "next_page"}}"><i class="fa-solid fa-angle-right"></i><span class="sr-only">{{.Tr.T "next_page"}}</span></a>{{end}}
+      class="page-number">{{.Tr.T "pagination" (int2str .Data.page.Page) (int2str .Data.page.TotalPage) (int2str .Data.page.TotalRecord) $kind}}</span>
+    {{if .Data.navigation.Next}}<a
+      href="{{.Data.navigation.Next}}" data-testid="pagination-next" rel="next" aria-label="{{.Tr.T "next_page"}}"><i class="fa-solid fa-angle-right"></i><span class="sr-only">{{.Tr.T "next_page"}}</span></a>{{end}}
     {{if gt .Data.page.TotalPage 1}}
     <div class="pagination-jump">
       <label for="page-input" class="sr-only">{{.Tr.T "go_to_page"}}</label>
-      <input id="page-input" value="{{.Data.page.Page}}" class="search-input pagination-input" type="number" min="1" max="{{.Data.page.TotalPage}}">
+      <input id="page-input" value="{{.Data.page.Page}}" class="search-input pagination-input" type="number" min="1" max="{{if gt .Data.page.TotalPage 1000}}1000{{else}}{{.Data.page.TotalPage}}{{end}}">
       <button type="button" class="base-button">{{.Tr.T "go_to_page"}}</button>
     </div>
     {{end}}
@@ -43,10 +44,12 @@
 </section>
 </main>
 <script>
-  document.querySelector('.pagination button').addEventListener('click', function () {
-    const page = document.querySelector('.pagination input').value;
+  document.querySelector('.pagination button')?.addEventListener('click', function () {
+    const input = document.querySelector('.pagination input');
+    const page = Number(input.value);
+    if (!input.reportValidity() || !Number.isInteger(page) || page < 1) return;
     if (page) {
-      window.location.href = 'https://{{.Conf.Site.Domain}}/{{.Data.what}}/' + page + '/';
+      window.location.href = '{{.Data.archive_base}}' + page + '/';
     }
   });
 </script>

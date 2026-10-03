@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/adtac/go-akismet/akismet"
 	"github.com/gofiber/fiber/v2"
@@ -33,17 +32,12 @@ func normalizeCommentStatus(status string) string {
 }
 
 func comments(c *fiber.Ctx) error {
-	rawPage := c.Query("page")
-	var page int64
-	if rawPage != "" {
-		var err error
-		page, err = strconv.ParseInt(rawPage, 10, 32)
-		if err != nil {
-			return fmt.Errorf("invalid page format: %w", err)
-		}
+	page, err := listPage(c.Query("page"))
+	if err != nil {
+		return err
 	}
 	status := normalizeCommentStatus(c.Query("status"))
-	db := solitudes.System.DB.Preload("Article")
+	db := solitudes.System.DB.Preload("Article").Preload("Account")
 	switch status {
 	case commentStatusVisible:
 		db = db.Where("is_spam = ?", false)
@@ -51,12 +45,15 @@ func comments(c *fiber.Ctx) error {
 		db = db.Where("is_spam = ?", true)
 	}
 	var cs []model.Comment
-	pg := pagination.Paging(&pagination.Param{
+	pg, err := pagination.Paging(&pagination.Param{
 		DB:      db,
 		Page:    int(page),
 		Limit:   20,
-		OrderBy: []string{"created_at DESC"},
+		OrderBy: []string{"created_at DESC, id DESC"},
 	}, &cs)
+	if err != nil {
+		return err
+	}
 	var visibleCount, spamCount int64
 	if err := solitudes.System.DB.Model(&model.Comment{}).Where("is_spam = ?", false).Count(&visibleCount).Error; err != nil {
 		return fmt.Errorf("failed to count visible comments: %w", err)

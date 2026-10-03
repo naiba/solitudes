@@ -1,0 +1,21 @@
+{{define "site/reader_circle"}}
+{{template "site/header" .}}
+<main id="main-content" class="reader-circle folio-container" data-testid="reader-circle">
+  <header class="reader-circle-intro"><span class="section-label">{{.Tr.T "reader_circle"}}</span><h1>{{.Tr.T "reader_circle"}}</h1><p>{{.Tr.T "reader_circle_intro"}}</p>{{if .Account}}{{if .Account.DirectoryHidden}}<a class="circle-join" href="/account" data-testid="reader-circle-join">{{.Tr.T "manage_reader_circle"}}</a>{{end}}{{else}}<a class="circle-join" href="/register" data-testid="reader-circle-join">{{.Tr.T "join_reader_circle"}}</a>{{end}}</header>
+  <div class="reader-circle-layout{{if gt .Data.page 1}} reader-circle-layout-single{{end}}">
+  {{if eq .Data.page 1}}<section aria-labelledby="circle-feed-title" class="circle-feed"><div class="circle-section-heading"><h2 id="circle-feed-title">{{.Tr.T "recent_circle_activity"}}</h2><p class="circle-hint">{{.Tr.T "recent_circle_activity_hint"}}</p></div>
+    {{if .Data.activity}}<ol class="circle-feed-list">{{range .Data.activity}}<li class="circle-feed-item" data-testid="reader-circle-activity"><div class="circle-feed-byline"><a href="/users/{{.AccountID}}" data-testid="reader-circle-activity-author">{{.Nickname}}</a><span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else}}{{$.Tr.T "role_user"}}{{end}}</span><time datetime="{{iso8601 .HappenedAt}}">{{tf .HappenedAt ($.Tr.T "date_format")}}</time></div><div class="circle-feed-action"><span>{{if eq .Kind "comment"}}{{$.Tr.T "circle_commented"}}{{else}}{{$.Tr.T "circle_published"}}{{end}}</span> <a href="/{{.ArticleSlug}}{{if eq .Kind "comment"}}?thread={{.CommentID}}#comment-{{.CommentID}}{{end}}" data-testid="reader-circle-activity-link">{{.ArticleTitle}}</a></div>{{if .Excerpt}}<p class="circle-feed-excerpt">{{.Excerpt}}</p>{{end}}</li>{{end}}</ol>{{else}}<p>{{.Tr.T "active_readers_empty"}}</p>{{end}}
+  </section>{{end}}
+  <div class="reader-circle-members">
+  {{if eq .Data.page 1}}<section aria-labelledby="circle-active-title"><div class="circle-section-heading"><h2 id="circle-active-title">{{.Tr.T "active_readers"}}</h2><p class="circle-hint">{{.Tr.T "active_readers_hint"}}</p></div>
+    {{if .Data.active}}<ul class="reader-cards">{{range .Data.active}}<li class="reader-card" data-testid="reader-circle-active"><div class="reader-card-head"><a class="reader-card-name" href="/users/{{.ID}}" data-testid="reader-circle-member">{{.Nickname}}</a><span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else}}{{$.Tr.T "role_user"}}{{end}}</span></div>{{if .Bio}}<p>{{.Bio}}</p>{{end}}<small>{{$.Tr.T "public_activity"}} {{.ActivityCount}}</small></li>{{end}}</ul>{{else}}<p>{{.Tr.T "active_readers_empty"}}</p>{{end}}
+  </section>{{end}}
+  <section aria-labelledby="circle-new-title"><div class="circle-section-heading"><h2 id="circle-new-title">{{.Tr.T "new_readers"}}</h2><p class="circle-hint">{{.Tr.T "reader_circle_home_intro"}}</p></div>
+    {{if .Data.latest}}<ul class="reader-cards">{{range .Data.latest}}<li class="reader-card" data-testid="reader-circle-latest"><div class="reader-card-head"><a class="reader-card-name" href="/users/{{.ID}}" data-testid="reader-circle-member">{{.Nickname}}</a><span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else}}{{$.Tr.T "role_user"}}{{end}}</span></div>{{if .Bio}}<p>{{.Bio}}</p>{{end}}<small>{{$.Tr.T "joined_at"}} <time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></small></li>{{end}}</ul>{{else}}<p>{{.Tr.T "reader_circle_empty"}}</p>{{end}}
+    <nav class="circle-pagination" aria-label="{{.Tr.T "new_readers"}}">{{if .Data.previous}}<a data-testid="pagination-previous" href="?page={{add .Data.page -1}}">{{.Tr.T "previous_page"}}</a>{{end}}{{if .Data.more}}<a data-testid="pagination-next" href="?page={{add .Data.page 1}}">{{.Tr.T "next_page"}}</a>{{end}}</nav>
+  </section>
+  </div>
+  </div>
+</main>
+{{template "site/footer" .}}
+{{end}}

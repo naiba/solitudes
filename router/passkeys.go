@@ -252,23 +252,38 @@ func finishPasskeyLogin(c *fiber.Ctx) error {
 	if target := safeReturnPath(input.ReturnTo); target != "" {
 		return c.JSON(fiber.Map{"redirect": target})
 	}
-	if account.Role == model.RoleAdmin {
-		return c.JSON(fiber.Map{"redirect": "/admin"})
-	}
-	if account.Role == model.RoleEditor {
-		return c.JSON(fiber.Map{"redirect": "/admin/articles"})
-	}
 	return c.JSON(fiber.Map{"redirect": "/account"})
 }
 
 func deletePasskey(c *fiber.Ctx) error {
 	account := currentAccount(c)
-	result := solitudes.System.DB.Where("account_id = ? AND id = ?", account.ID, c.Params("id")).Delete(&model.Passkey{})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected == 0 {
-		return fiber.ErrNotFound
+	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		var owner model.Account
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&owner, "id = ?", account.ID).Error; err != nil {
+			return err
+		}
+		usableIdentity, err := hasUsableExternalIdentity(tx, account.ID, "")
+		if err != nil {
+			return err
+		}
+		var keys int64
+		if err := tx.Model(&model.Passkey{}).Where("account_id = ?", account.ID).Count(&keys).Error; err != nil {
+			return err
+		}
+		if owner.PasswordHash == "" && !usableIdentity && keys <= 1 {
+			return fiber.NewError(http.StatusConflict, "cannot remove the last sign-in method")
+		}
+		result := tx.Where("account_id = ? AND id = ?", account.ID, c.Params("id")).Delete(&model.Passkey{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return fiber.ErrNotFound
+		}
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 	return c.SendStatus(http.StatusNoContent)
 }

@@ -13,7 +13,7 @@
   "author": {
     "@type": "Person",
     "name": "{{jsonEscape .Data.article.Author.Nickname}}",
-    "url": "https://{{.Conf.Site.Domain}}/"
+    "url": "https://{{.Conf.Site.Domain}}/{{if .Data.article.Author.ID}}users/{{.Data.article.Author.ID}}{{end}}"
   },
   "publisher": {
     "@type": "Organization",
@@ -31,46 +31,45 @@
 }
 </script>
 {{end}}
-{{template "site/menu" .}}
-{{if .Login}}
-<a style="text-align: right;" href="/admin/publish?id={{.Data.article.ID}}">[edit]</a>
-{{end}}
+{{template "site/article_menu" .}}
+<div class="content index py4">
 <article class="post" id="main-content" data-testid="site-article" tabindex="-1">
+  <header>
   <h1 class="posttitle">{{.Data.article.Title}}</h1>
-  <div class="content">
-    {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
-  </div>
-  <div class="meta" style="margin-top: 1em; color: #666; font-size: 0.9em;">
+  <div class="article-byline" data-testid="article-byline">
+  <div class="meta" data-testid="article-meta">
+    {{if .Data.article.Author.ID}}<span>{{.Tr.T "written_by"}} <a href="/users/{{.Data.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.Data.article.Author.Nickname}}</a></span>{{end}}
+    <span>
     {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
     {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
      · {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
     {{end}}
+    </span>
+    {{if and .Login (or .Account.Role.IsAdmin (eq .Account.ID .Data.article.Author.ID))}}<a href="/admin/publish?id={{.Data.article.ID}}" data-testid="article-edit-link">{{.Tr.T "edit_article"}}</a>{{end}}
+  </div>
+  {{template "site/share_button" .}}
+  </div>
+  </header>
+  <div class="content" data-reading-content>
+    {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
   </div>
 </article>
+{{template "site/article_mobile_menu" .}}
 
 {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
-<div id="reply-list">
+<span id="comments"></span><div id="reply-list">
     <h2>{{.Tr.T "comments"}}</h2>
-    {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
+{{template "site/comment_navigation" .}}
+{{template "site/comments_entry" (dict "comments" .Data.article.Comments "tr" .Tr "Conf" $.Conf "thread" .Data.thread)}}
 </div>
-{{if .Data.article.Comments}}
-<div class="pagination">
-    {{if gt .Data.comment_page.Page 1}}<a
-        href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}"><i
-            class="fa-solid fa-angle-left"></i></a>{{end}}
-    <span class="page-number">{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str
-        .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) "comments"}}</span>
-    {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a
-        href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}"><i
-            class="fa-solid fa-angle-right"></i></a>{{end}}
-</div>
-{{end}}
+{{template "site/pagination" (dict "nav" .Data.comment_navigation "tr" .Tr)}}
 {{if not .Data.article.DisableComment}}
 <div id="reply" data-testid="comment-form">
+{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<p class="comment-identity">{{.Tr.T "guest_comment_hint"}} <a href="/login?return_to=%2F{{.Data.article.Slug}}%23reply">{{.Tr.T "sign_in"}}</a> · <a href="/register?return_to=%2F{{.Data.article.Slug}}%23reply">{{.Tr.T "create_account"}}</a></p>{{end}}
     <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
     <textarea cols="40" rows="6" id="id_content" data-testid="comment-content"
         placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
-    {{if .Login}}
+    {{if .Account}}
     <input type="hidden" maxlength="64" id="id_nickname">
     {{else}}
     <div class="row">
@@ -92,8 +91,8 @@
 <script>
   window.onload = function () {
     fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })
-    {{if .Login}}
-    document.querySelector("#id_nickname").value = '{{.Conf.User.Nickname}}'
+    {{if .Account}}
+    if (document.querySelector("#id_nickname")) document.querySelector("#id_nickname").value = '{{.Account.Nickname}}'
     {{else}}
     document.querySelector("#id_nickname") && (document.querySelector("#id_nickname").value = localStorage.getItem("solitudes_cm_nickname") || '')
     document.querySelector("#id_email") && (document.querySelector("#id_email").value = localStorage.getItem("solitudes_cm_email") || '')
@@ -121,9 +120,11 @@
       const cm_nickname = document.querySelector('#id_nickname') ? document.querySelector('#id_nickname').value : "";
       const cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
       const cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
+      {{if not .Account}}
       localStorage.setItem("solitudes_cm_nickname", cm_nickname)
       localStorage.setItem("solitudes_cm_email", cm_email)
       localStorage.setItem("solitudes_cm_website", cm_website)
+      {{end}}
       var data = {
           nickname: cm_nickname,
           email: cm_email,
@@ -144,8 +145,11 @@
           body: JSON.stringify(data)
       }).then(resp => {
           if (resp.status == 200) {
-              window.location.reload()
-              return
+              return resp.json().then(function(result) {
+                        window.location.href = result.id
+                            ? location.pathname + '?thread=' + encodeURIComponent(result.id) + '#comment-' + encodeURIComponent(result.id)
+                            : location.pathname + '?comment_page=1#comments';
+                    });
           }
           resp.text().then(str => {
               alert('{{.Tr.T "submit_failed"}} ' + str)

@@ -1,7 +1,6 @@
 package router
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
@@ -15,28 +14,13 @@ import (
 )
 
 func tagsManagePage(c *fiber.Ctx) error {
-	var tags []string
-	var counts []int
-	rows, err := solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles group by t order by count desc`).Rows()
+	data, err := pagedTags(c, solitudes.System.DB)
 	if err != nil {
-		return fmt.Errorf("failed to fetch tags cloud: %w", err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var line string
-		var count int
-		if err := rows.Scan(&count, &line); err != nil {
-			return fmt.Errorf("failed to scan tag row: %w", err)
-		}
-		tags = append(tags, line)
-		counts = append(counts, count)
+		return err
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("admin/tags", injectSiteData(c, fiber.Map{
-		"title":  tr.T("manage_tags"),
-		"tags":   tags,
-		"counts": counts,
-	}))
+	data["title"] = tr.T("manage_tags")
+	return c.Status(http.StatusOK).Render("admin/tags", injectSiteData(c, data))
 }
 
 func deleteTag(c *fiber.Ctx) error {
@@ -64,13 +48,8 @@ func searchTags(c *fiber.Ctx) error {
 	account := currentAccount(c)
 	query := strings.TrimSpace(c.Query("q"))
 	var tags []string
-	var rows *sql.Rows
-	var err error
-	if account != nil && account.Role.IsAdmin() {
-		rows, err = solitudes.System.DB.Raw(`SELECT DISTINCT unnest(tags) as tag FROM articles WHERE array_to_string(tags, ',') ILIKE ? ORDER BY tag LIMIT 20`, "%"+query+"%").Rows()
-	} else {
-		rows, err = solitudes.System.DB.Raw(`SELECT DISTINCT unnest(tags) as tag FROM articles WHERE (is_private = false OR author_id = ?) AND array_to_string(tags, ',') ILIKE ? ORDER BY tag LIMIT 20`, account.ID, "%"+query+"%").Rows()
-	}
+	rows, err := readableArticles(solitudes.System.DB, account).Model(&model.Article{}).
+		Select("DISTINCT unnest(tags) AS tag").Where("array_to_string(tags, ',') ILIKE ?", "%"+query+"%").Order("tag").Limit(20).Rows()
 	if err != nil {
 		return fmt.Errorf("failed to search tags: %w", err)
 	}

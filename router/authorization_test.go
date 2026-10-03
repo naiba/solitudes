@@ -149,3 +149,66 @@ func TestAccountRolesRestrictPublishingAndAdministration(t *testing.T) {
 		}
 	}
 }
+
+// Exercise the actual handlers, both behind the /admin route guard and by
+// themselves. A logged-in member must never gain write access by guessing a
+// URL, supplying another article ID, or sending a malformed request body.
+func TestArticleHandlersRejectMembersAndAnonymousRequests(t *testing.T) {
+	previousLookup := sessionLookup
+	t.Cleanup(func() { sessionLookup = previousLookup })
+	sessionLookup = func(token string) (*model.Account, error) {
+		if token == "member" {
+			return &model.Account{ID: "10000000-0000-4000-8000-000000000001", Role: model.RoleUser}, nil
+		}
+		return nil, errNoAccount
+	}
+	app := fiber.New()
+	app.Use(auth)
+	admin := app.Group("/admin/", loginRequired)
+	admin.Get("/publish", publish)
+	admin.Post("/publish", publishHandler)
+	admin.Get("/articles", manageArticle)
+	admin.Delete("/articles", deleteArticle)
+	admin.Post("/upload", upload)
+	// This second set deliberately omits loginRequired to verify the defense
+	// in depth in the handlers, not only the route-group middleware.
+	app.Get("/direct/publish", publish)
+	app.Post("/direct/publish", publishHandler)
+	app.Get("/direct/articles", manageArticle)
+	app.Delete("/direct/articles", deleteArticle)
+	app.Post("/direct/upload", upload)
+
+	for _, tc := range []struct {
+		method, path string
+	}{
+		{http.MethodGet, "/publish?id=10000000-0000-4000-8000-000000000002"},
+		{http.MethodPost, "/publish"},
+		{http.MethodGet, "/articles?page=invalid"},
+		{http.MethodDelete, "/articles?id=10000000-0000-4000-8000-000000000002"},
+		{http.MethodPost, "/upload"},
+	} {
+		for _, prefix := range []string{"/admin", "/direct"} {
+			for _, token := range []string{"member", ""} {
+				name := tc.method + " " + prefix + tc.path + " token=" + token
+				t.Run(name, func(t *testing.T) {
+					req := httptest.NewRequest(tc.method, prefix+tc.path, nil)
+					if token != "" {
+						req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: token})
+					}
+					resp, err := app.Test(req, -1)
+					if err != nil {
+						t.Fatal(err)
+					}
+					defer resp.Body.Close()
+					want := http.StatusForbidden
+					if token == "" && prefix == "/admin" {
+						want = http.StatusFound
+					}
+					if resp.StatusCode != want {
+						t.Fatalf("status = %d, want %d", resp.StatusCode, want)
+					}
+				})
+			}
+		}
+	}
+}

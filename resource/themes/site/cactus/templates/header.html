@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     {{ $colorScheme := index .Theme "cactus.colorscheme" }}
     <link rel="stylesheet" href="/static/site/cactus/css/theme-{{ $colorScheme }}.css?v2026081501">
-    <link rel="stylesheet" href="/static/site/cactus/css/main.css?v2026092701">
+    <link rel="stylesheet" href="/static/site/cactus/css/main.css?v2026100704">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="preload" as="image" href="/logo.png?20211213">
@@ -32,7 +32,7 @@
     <link rel="alternate" type="application/json" title="{{.Conf.Site.SpaceName}} » Feed"
         href="https://{{.Conf.Site.Domain}}/feed/json">
     {{if not .Noindex}}<link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.Path}}">{{end}}
-    <meta name="author" content="{{.Conf.User.Nickname}}">
+    <meta name="author" content="{{if .Data.article.Author.Nickname}}{{.Data.article.Author.Nickname}}{{else if .Data.profile.Nickname}}{{.Data.profile.Nickname}}{{else}}{{.Conf.Site.SpaceName}}{{end}}">
     <meta property="og:title" content="{{.Title}}">
     <meta property="og:description" content="{{.Desc}}">
     <meta property="og:url" content="https://{{.Conf.Site.Domain}}{{.Path}}">
@@ -43,7 +43,7 @@
     {{if eq .OgType "article"}}
     <meta property="article:published_time" content="{{iso8601 .Data.article.CreatedAt}}">
     <meta property="article:modified_time" content="{{iso8601 .Data.article.UpdatedAt}}">
-    <meta property="article:author" content="{{.Data.article.Author.Nickname}}">
+    {{if .Data.article.Author.ID}}<meta property="article:author" content="https://{{.Conf.Site.Domain}}/users/{{.Data.article.Author.ID}}">{{end}}
     {{range .Data.article.Tags}}<meta property="article:tag" content="{{.}}">
     {{end}}{{end}}
     <meta name="twitter:card" content="summary_large_image">
@@ -51,6 +51,8 @@
     <meta name="twitter:description" content="{{.Desc}}">
     {{if eq .OgType "article"}}<meta name="twitter:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
     {{else}}<meta name="twitter:image" content="https://{{.Conf.Site.Domain}}/logo.png">{{end}}
+    <link rel="stylesheet" href="/static/site/cactus/css/reading.css?v2026100502">
+    <link rel="stylesheet" href="/static/site/cactus/css/layout.css?v2026100602">
 </head>
 
 <body class="max-width mx-auto px3 ltr">

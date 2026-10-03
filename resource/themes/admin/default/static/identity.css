@@ -1,0 +1,51 @@
+/* Identity administration: shared tables, forms, metrics and event lists. */
+.identity-admin { max-width: 76rem; margin: 0 auto; padding: 1.5rem; color: var(--text-primary); overflow-wrap: anywhere; }
+.identity-admin h1 { font-size: 1.7rem; font-weight: 700; margin: .75rem 0 1rem; }
+.identity-admin h2 { font-size: 1.15rem; font-weight: 650; margin: .5rem 0; }
+.identity-admin a { color: var(--accent-primary, var(--accent)); text-decoration: underline; text-underline-offset: .15em; }
+.identity-admin p { margin: .5rem 0; }
+.identity-admin code, .identity-admin small { overflow-wrap: anywhere; }
+.identity-hint { color: var(--text-secondary); font-size: .85rem; line-height: 1.5; }
+.identity-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .75rem; margin: 1rem 0; }
+.identity-stats a { border: 1px solid var(--border-color, var(--glass-border)); background: var(--bg-primary, var(--glass-bg)); padding: 1rem; border-radius: .6rem; text-decoration: none; }
+.identity-stats strong { display: block; font-size: 1.6rem; margin-top: .25rem; }
+.identity-card { padding: 1rem; margin: .8rem 0; border: 1px solid var(--border-color, var(--glass-border)); background: var(--bg-primary, var(--glass-bg)); border-radius: .65rem; min-width: 0; }
+.identity-card-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem 1rem; }
+.identity-card-heading time { margin-left: auto; font-size: .8rem; color: var(--text-secondary); }
+.identity-metrics, .identity-actions, .identity-pagination { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; margin: .8rem 0; font-size: .85rem; }
+.identity-client-list, .identity-audit-list { list-style: none; margin: 0; padding: 0; }
+.identity-client-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.identity-client-list > li { margin: 0; padding: 1rem; list-style: none; }
+.identity-filters { display: flex; align-items: end; flex-wrap: wrap; gap: .75rem; margin: 1rem 0; }
+.identity-filters label { flex: 1 1 12rem; min-width: 0; max-width: 100%; }
+.identity-admin label { display: block; font-size: .85rem; font-weight: 500; }
+.identity-admin input:not([type=checkbox]), .identity-admin textarea, .identity-admin select { display: block; width: 100%; min-width: 0; max-width: 100%; min-height: 40px; padding: .5rem .65rem; border: 1px solid var(--border-color, var(--input-border)); background: var(--bg-primary, var(--input-bg)); color: var(--text-primary); border-radius: .35rem; margin-top: .25rem; font: inherit; }
+.identity-admin button { min-height: 40px; padding: .45rem .8rem; border: 1px solid var(--accent-primary, var(--accent)); background: var(--accent-primary, var(--accent)); color: var(--accent-primary-contrast, var(--accent-contrast)); border-radius: .35rem; font: inherit; cursor: pointer; }
+.identity-admin button.identity-danger { background: transparent; border-color: var(--danger-strong, var(--danger)); color: var(--danger-strong, var(--danger)); }
+.identity-admin :is(a, button, input, textarea, select):focus-visible { outline: 2px solid var(--accent-primary, var(--accent)); outline-offset: 3px; }
+.identity-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .85rem; width: 100%; max-width: none; }
+.identity-form textarea { resize: vertical; }
+.identity-form button { justify-self: start; align-self: end; }
+.identity-form .identity-checkbox { display: flex; align-items: center; gap: .5rem; }
+.identity-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.identity-table th, .identity-table td { text-align: left; padding: .65rem .5rem; vertical-align: top; border-bottom: 1px solid var(--border-color, var(--glass-border)); overflow-wrap: anywhere; }
+.identity-table td form { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.identity-table small { display: block; }
+.identity-table.user-table th:nth-child(1) { width: 18%; }
+.identity-table.user-table th:nth-child(2) { width: 30%; }
+.identity-table.user-table th:nth-child(3) { width: 16%; }
+.identity-table.user-table th:nth-child(4) { width: 12%; }
+.identity-table.user-table th:nth-child(5) { width: 24%; }
+.identity-outcome { border-radius: 999px; padding: .15rem .5rem; font-size: .75rem; background: var(--bg-secondary, var(--glass-bg)); }
+.identity-outcome.outcome-failure, .identity-outcome.outcome-denied { color: var(--danger-strong, var(--danger)); border: 1px solid currentColor; }
+@media (max-width: 700px) {
+ .identity-admin { padding: 1rem; }
+ .identity-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .identity-client-list, .identity-form { grid-template-columns: minmax(0, 1fr); }
+ .identity-table, .identity-table tbody, .identity-table tr, .identity-table td { display: block; width: 100%; }
+ .identity-table thead { display: none; }
+ .identity-table tr { padding: .75rem 0; border-bottom: 1px solid var(--border-color, var(--glass-border)); }
+ .identity-table td { border: 0; padding: .25rem 0; }
+ .identity-table td[data-label]::before { content: attr(data-label); display: block; font-size: .75rem; font-weight: 500; color: var(--text-secondary); margin-bottom: .2rem; }
+ .identity-table td form { display: flex; }
+}

@@ -1,0 +1,9 @@
+{{define "admin/pagination"}}
+{{if or .nav.Previous .nav.Next}}
+<nav class="list-pagination" data-testid="pagination" aria-label="{{.tr.T "page_number" (int2str .nav.Page)}}">
+{{if .nav.Previous}}<a href="{{.nav.Previous}}" rel="prev" data-testid="pagination-previous">{{.tr.T "previous_page"}}</a>{{end}}
+<span aria-current="page">{{.tr.T "page_number" (int2str .nav.Page)}}</span>
+{{if .nav.Next}}<a href="{{.nav.Next}}" rel="next" data-testid="pagination-next">{{.tr.T "next_page"}}</a>{{end}}
+</nav>
+{{end}}
+{{end}}

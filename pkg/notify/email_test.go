@@ -1,7 +1,6 @@
 package notify
 
 import (
-	"strings"
 	"testing"
 )
 
@@ -278,54 +277,6 @@ func TestGetEmailTexts(t *testing.T) {
 			}
 			if tt.notEmpty && value == "" {
 				t.Errorf("getEmailTexts(%q)[%q] is empty", tt.lang, tt.key)
-			}
-		})
-	}
-}
-
-// TestBuildArticleURL tests article URL construction
-func TestBuildArticleURL(t *testing.T) {
-	tests := []struct {
-		name   string
-		slug   string
-		domain string
-	}{
-		{
-			name:   "Simple slug",
-			slug:   "hello-world",
-			domain: "example.com",
-		},
-		{
-			name:   "Slug with numbers",
-			slug:   "post-123",
-			domain: "blog.example.com",
-		},
-		{
-			name:   "Complex slug",
-			slug:   "go-best-practices-2024",
-			domain: "myblog.com",
-		},
-		{
-			name:   "Chinese domain",
-			slug:   "test-article",
-			domain: "博客.com",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			url := buildArticleURL(tt.slug, tt.domain)
-			if url == "" {
-				t.Error("buildArticleURL() returned empty string")
-			}
-			if !strings.Contains(url, tt.slug) {
-				t.Errorf("buildArticleURL(%q, %q) = %q, should contain slug", tt.slug, tt.domain, url)
-			}
-			if !strings.Contains(url, tt.domain) {
-				t.Errorf("buildArticleURL(%q, %q) = %q, should contain domain", tt.slug, tt.domain, url)
-			}
-			if !strings.HasPrefix(url, "https://") {
-				t.Errorf("buildArticleURL(%q, %q) = %q, should start with 'https://'", tt.slug, tt.domain, url)
 			}
 		})
 	}

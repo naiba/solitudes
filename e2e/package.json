@@ -1,12 +1,12 @@
 {
   "name": "e2e",
-  "module": "index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "@types/bun": "latest",
-    "jquery": "3.7.1"
+    "jquery": "3.7.1",
+    "vditor": "4.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"

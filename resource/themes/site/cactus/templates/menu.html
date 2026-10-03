@@ -14,6 +14,8 @@
                 <li><a href="{{.link}}" {{if .black}} target="_blank" rel="noopener noreferrer"{{end}}>{{if .icon}}<i class="{{.icon}}"></i>
                         {{end}}{{.name}}</a></li>
                 {{end}}
+                <li><a href="/readers/" data-testid="site-reader-circle-nav">{{.Tr.T "reader_circle"}}</a></li>
+                <li><a href="{{if .Account}}/account{{else}}/login{{end}}" data-testid="site-account-nav">{{if .Account}}{{.Tr.T "my_account"}}{{else}}{{.Tr.T "sign_in"}}{{end}}</a></li>
             </ul>
         </nav>
     </header>

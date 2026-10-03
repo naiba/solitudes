@@ -72,11 +72,22 @@ func issueLoginSession(c *fiber.Ctx, account *model.Account, remember bool) erro
 	if remember {
 		expires = time.Now().AddDate(0, 3, 0)
 	}
-	if err := solitudes.System.DB.Create(&model.LoginSession{
-		ID: id, AccountID: account.ID, TokenHash: secretHash(token), ExpiresAt: expires,
-	}).Error; err != nil {
+	if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&model.LoginSession{ID: id, AccountID: account.ID, TokenHash: secretHash(token), ExpiresAt: expires}).Error; err != nil {
+			return err
+		}
+		reason := "password"
+		if strings.Contains(c.Path(), "/passkey/") {
+			reason = "passkey"
+		} else if strings.HasPrefix(c.Path(), "/auth/") {
+			reason = "oauth"
+		}
+		return saveAudit(c.UserContext(), tx, model.AuditEvent{Action: "session.login", Outcome: "success", ActorID: account.ID,
+			Method: c.Method(), Route: c.Route().Path, Status: http.StatusOK, Reason: reason})
+	}); err != nil {
 		return fmt.Errorf("create login session: %w", err)
 	}
+	c.Locals("audit_recorded", true)
 	c.Cookie(&fiber.Cookie{
 		Name: solitudes.AuthCookie, Value: token, Path: "/", Expires: expires,
 		HTTPOnly: true, SameSite: fiber.CookieSameSiteLaxMode, Secure: c.Protocol() == "https",
@@ -139,7 +150,10 @@ func requireAdmin(c *fiber.Ctx) error {
 
 func requireAccount(c *fiber.Ctx) error {
 	if currentAccount(c) == nil {
-		return c.Redirect("/admin/login", http.StatusFound)
+		if c.Method() == fiber.MethodGet {
+			return c.Redirect("/login?return_to="+url.QueryEscape(c.OriginalURL()), http.StatusFound)
+		}
+		return c.Redirect("/login", http.StatusFound)
 	}
 	return c.Next()
 }

@@ -10,7 +10,7 @@
         <ul class="search-result-list">
           {{range .Data.results}}
           <li>
-            <a href="https://{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
+            <a href="/{{.Slug}}" class="search-result-title">{{.Title}}</a>
             {{if .Content}}
             <p class="search-result">
               {{.Content|unsafe}}
@@ -25,6 +25,7 @@
       {{end}}
     </section>
   </div>
+{{template "site/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
 </article>
 {{template "site/footer" .}}
 {{end}}

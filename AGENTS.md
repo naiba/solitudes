@@ -16,8 +16,9 @@
 - **运行所有测试**: `go test ./...`
 - **运行 E2E 测试**: 
   ```bash
-  # 需先启动开发服务器
-  go test -v -tags e2e ./router -run TestE2EPages
+  # 设置 SOLITUDES_TEST_POSTGRES_DSN 为专用测试数据库，安装 e2e/ 依赖及 Chromium。
+  # 测试自行启动隔离服务器、SMTP catcher 和临时 schema，无需启动开发服务器。
+  go test -v -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -timeout 20m
   ```
 - **运行特定包的测试**: `go test ./internal/model/...`
 - **运行单个测试函数**: `go test -v -run TestValidateThemeConfig ./internal/model`

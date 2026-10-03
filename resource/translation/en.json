@@ -1,11 +1,17 @@
 [
+    {"locale": "en", "key": "403_title", "trans": "403 Access denied"},
+    {"locale": "en", "key": "403_msg", "trans": "You don't have permission to view this page."},
+    {"locale": "en", "key": "500_title", "trans": "500 Something went wrong"},
+    {"locale": "en", "key": "500_msg", "trans": "Please try again later or contact the site administrator."},
     {"locale": "en", "key": "404_msg", "trans": "Oops... This page may have flown into outer space."},
     {"locale": "en", "key": "404_title", "trans": "404 Page Not Found"},
     {"locale": "en", "key": "articles_in", "trans": "Articles in \"{0}\""},
     {"locale": "en", "key": "books", "trans": "Books"},
     {"locale": "en", "key": "books_all_the_books", "trans": "Explore all books and in-depth series published on this blog. Long-form writings organized into chapters and collections."},
     {"locale": "en", "key": "dashboard", "trans": "Dashboard"},
-    {"locale": "en", "key": "home", "trans": "Home"},
+    {"locale": "en", "key": "create_account", "trans": "Create account"},
+    {"locale": "en", "key": "sign_in", "trans": "Sign in"},
+    {"locale": "en", "key": "login_providers", "trans": "Sign-in providers"},
     {"locale": "en", "key": "manage_articles", "trans": "Manage Articles"},
     {"locale": "en", "key": "manage_comments", "trans": "Manage Comments"},
     {"locale": "en", "key": "manage_media", "trans": "Manage Media"},
@@ -24,5 +30,8 @@
     {"locale": "en", "key": "search_result_title", "trans": "Search Results for \"{0}\""},
     {"locale": "en", "key": "site_settings", "trans": "Settings"},
     {"locale": "en", "key": "tags_all_the_tags", "trans": "Browse all tags and categories used across articles and books. Find content by topic and discover related writings easily."},
-    {"locale": "en", "key": "tags_cloud", "trans": "Tags Cloud"}
+    {"locale": "en", "key": "tags_cloud", "trans": "Tags Cloud"},
+    {"locale": "en", "key": "access_members", "trans": "[Sign in]({0}) or [register]({1}) with a verified email to read this section."},
+    {"locale": "en", "key": "access_editors", "trans": "This section is available to editors and administrators."},
+    {"locale": "en", "key": "access_private", "trans": "This section is available to the author and administrators."}
 ]

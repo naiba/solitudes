@@ -1,0 +1,74 @@
+<div>
+  <span class="text-3xl font-black inline-block mb-2">👋 Hi</span>
+  <span class="text-xl font-black inline-block ml-2">我是</span>
+  <span class="text-xl inline-block" style="color:var(--accent);">奶爸</span>
+</div>
+<div class="text-xl font-black">letshithappen.com</div>
+<div>
+  今年是我工作第
+  <a id="yearsSinceWorking" href="https://lifelonglearn.ing/r/go?url=aHR0cHM6Ly9ob3dsb25nYWdvZ28uY29tL2RhdGUvMjAxNi9hdWcvMQ==" target="_blank" rel="noopener noreferrer">…</a>
+  年，远程工作第
+  <a id="yearsSinceRemoteWorking" href="https://lifelonglearn.ing/r/go?url=aHR0cHM6Ly9ob3dsb25nYWdvZ28uY29tL2RhdGUvMjAyMC9hdWcvMQ==" target="_blank" rel="noopener noreferrer">…</a>
+  年。
+</div>
+<a class="mt-2 inline-block rounded-md px-3 py-1 text-sm font-semibold no-underline homepage-btn"
+   href="https://nai.ba"
+   style="color:var(--accent);border:2px solid var(--accent);">
+  个人主页
+</a>
+<style>
+@keyframes homepage-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--accent-alpha, rgba(180, 83, 9, .4));
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+.homepage-btn {
+  background-image: none !important;
+  animation: homepage-pulse 2s ease-in-out infinite;
+}
+
+.homepage-btn:hover {
+  color: var(--accent-contrast) !important;
+  background-color: var(--accent);
+  background-image: none !important;
+  animation: none;
+}
+</style>
+<script>
+(function () {
+    function calculateAge(startDate) {
+        var birthday = new Date(startDate);
+        var ageDifMs = Date.now() - birthday.getTime();
+        var ageDate = new Date(ageDifMs);
+        return Math.abs(ageDate.getUTCFullYear() - 1970) + 1;
+    }
+
+    var working = document.getElementById('yearsSinceWorking');
+    var remoteWorking = document.getElementById('yearsSinceRemoteWorking');
+    var button = document.querySelector('.homepage-btn');
+
+    if (working) {
+        working.textContent = calculateAge('2016-08-01');
+    }
+
+    if (remoteWorking) {
+        remoteWorking.textContent = calculateAge('2020-08-01');
+    }
+
+    if (button) {
+        var borderColor = getComputedStyle(button).borderColor;
+        var match = borderColor.match(/\d+/g);
+
+        if (match && match.length >= 3) {
+            button.style.setProperty(
+                '--accent-alpha',
+                'rgba(' + match[0] + ',' + match[1] + ',' + match[2] + ',.4)'
+            );
+        }
+    }
+})();
+</script>

@@ -1,0 +1,62 @@
+{{define "site/article_menu"}}
+<div id="header-post">
+    <button id="menu-icon" type="button" aria-label="{{.Tr.T "menu"}}" aria-controls="nav" aria-expanded="false"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i></button>
+    <button id="menu-icon-tablet" type="button" aria-label="{{.Tr.T "menu"}}" aria-controls="nav" aria-expanded="false"><i class="fa-solid fa-bars fa-lg" aria-hidden="true"></i></button>
+    <div id="menu">
+        <nav id="nav">
+            <ul>
+                {{range index .Theme "cactus.headermenus"}}
+                <li><a href="{{.link}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}}>{{if .icon}}<i class="{{.icon}}"></i>
+                        {{end}}{{.name}}</a></li>
+                {{end}}
+                <li><a href="{{if .Account}}/account{{else}}/login{{end}}" data-testid="site-account-nav">{{if .Account}}{{.Tr.T "my_account"}}{{else}}{{.Tr.T "sign_in"}}{{end}}</a></li>
+            </ul>
+        </nav>
+        <div id="actions">
+            <ul>
+                {{if .Data.article.SibilingArticle.Prev.ID}}
+                <li><a class="icon" data-testid="article-previous" href="/{{.Data.article.SibilingArticle.Prev.Slug}}"
+                        title="{{.Data.article.SibilingArticle.Prev.Title}}" aria-label="{{.Tr.T "previous_post"}}: {{.Data.article.SibilingArticle.Prev.Title}}"><i class="fa-solid fa-chevron-left"
+                            aria-hidden="true"></i></a>
+                    <span class="action-hint" aria-hidden="true">{{.Data.article.SibilingArticle.Prev.Title}}</span>
+                </li>
+                {{end}}
+                {{if .Data.article.SibilingArticle.Next.ID}}
+                <li><a class="icon" data-testid="article-next" href="/{{.Data.article.SibilingArticle.Next.Slug}}"
+                        title="{{.Data.article.SibilingArticle.Next.Title}}" aria-label="{{.Tr.T "next_post"}}: {{.Data.article.SibilingArticle.Next.Title}}"><i class="fa-solid fa-chevron-right"
+                            aria-hidden="true"></i></a>
+                    <span class="action-hint" aria-hidden="true">{{.Data.article.SibilingArticle.Next.Title}}</span>
+                </li>
+                {{end}}
+                <li><button class="icon" data-testid="article-back-top" type="button" title="{{.Tr.T "return_top"}}" aria-label="{{.Tr.T "return_top"}}" onclick="scrollToTop(this)"><i class="fa-solid fa-chevron-up" aria-hidden="true"></i></button><span class="action-hint" aria-hidden="true">{{.Tr.T "return_top"}}</span></li>
+                <li><button class="icon" type="button" data-share-open aria-haspopup="dialog" aria-controls="article-share-dialog" aria-label="{{.Tr.T "share"}}"><i class="fa-solid fa-share-nodes" aria-hidden="true"></i></button><span class="action-hint" aria-hidden="true">{{.Tr.T "share"}}</span></li>
+            </ul>
+        </div>
+        {{if .Data.article.Toc}}<div id="toc">{{template "site/reading_toc" .}}</div>{{end}}
+    </div>
+</div>
+{{end}}
+
+{{define "site/article_mobile_menu"}}
+    <div id="footer-post-container">
+        <div id="footer-post">
+            <div id="nav-footer" style="display: none">
+                <ul>
+                    {{range index .Theme "cactus.headermenus"}}
+                    <li><a href="{{.link}}" {{if .black}}target="_blank" rel="noopener noreferrer"{{end}}>{{if .icon}}<i class="{{.icon}}"></i>
+                            {{end}}{{.name}}</a></li>
+                    {{end}}
+                    <li><a href="{{if .Account}}/account{{else}}/login{{end}}" data-testid="site-account-nav-mobile">{{if .Account}}{{.Tr.T "my_account"}}{{else}}{{.Tr.T "sign_in"}}{{end}}</a></li>
+                </ul>
+            </div>
+
+            <div id="actions-footer">
+                <button id="menu-footer" type="button" class="icon" aria-controls="nav-footer" aria-expanded="false" onclick="toggle('#nav-footer');this.setAttribute('aria-expanded', String(document.getElementById('nav-footer').style.display !== 'none'));"><i class="fa-solid fa-bars" aria-hidden="true"></i> {{.Tr.T "menu"}}</button>
+                <button id="share-footer-btn" type="button" class="icon" data-share-open aria-haspopup="dialog" aria-controls="article-share-dialog"><i class="fa-solid fa-share-nodes" aria-hidden="true"></i> {{.Tr.T "share"}}</button>
+                {{if .Data.article.Toc}}<button id="toc-footer-toggle" type="button" class="icon" aria-controls="toc-footer" aria-expanded="false" aria-label="{{.Tr.T "toc"}}"><i class="fa-solid fa-list" aria-hidden="true"></i> {{.Tr.T "toc_short"}}</button>{{end}}
+                <button id="top" style="display:none" type="button" class="icon" onclick="scrollToTop(this)" aria-label="{{.Tr.T "return_top"}}" title="{{.Tr.T "return_top"}}"><i class="fa-solid fa-chevron-up" aria-hidden="true"></i></button>
+            </div>
+            {{if .Data.article.Toc}}<div id="toc-footer" hidden>{{template "site/reading_toc" .}}</div>{{end}}
+        </div>
+    </div>
+{{end}}

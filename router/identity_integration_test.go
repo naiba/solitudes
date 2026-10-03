@@ -34,14 +34,14 @@ func newIdentityTestDB(t *testing.T) *gorm.DB {
 	// PostgreSQL's uuid_generate_v4() default is not supported by SQLite.
 	// Define equivalent tables for portable handler/transaction tests.
 	for _, ddl := range []string{
-		`CREATE TABLE accounts (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, nickname TEXT, password_hash TEXT, role TEXT, email_verified_at datetime, disabled_at datetime, created_at datetime, updated_at datetime)`,
+		`CREATE TABLE accounts (id TEXT PRIMARY KEY, email TEXT UNIQUE NOT NULL, nickname TEXT, bio TEXT, directory_hidden BOOL NOT NULL DEFAULT FALSE, password_hash TEXT, role TEXT, email_verified_at datetime, disabled_at datetime, created_at datetime, updated_at datetime)`,
 		`CREATE TABLE login_sessions (id TEXT PRIMARY KEY, account_id TEXT, token_hash TEXT UNIQUE, expires_at datetime, created_at datetime)`,
 		`CREATE TABLE email_actions (id TEXT PRIMARY KEY, account_id TEXT, token_hash TEXT UNIQUE, purpose TEXT, expires_at datetime, used_at datetime, created_at datetime)`,
 		`CREATE TABLE external_identities (id TEXT PRIMARY KEY, account_id TEXT, provider TEXT, subject TEXT)`,
-		`CREATE TABLE passkeys (id TEXT PRIMARY KEY, account_id TEXT, credential_id BLOB UNIQUE, public_key BLOB, aaguid BLOB, sign_count INTEGER, user_present BOOL, user_verified BOOL, backup_eligible BOOL, backup_state BOOL, attestation_type TEXT, name TEXT, created_at datetime, updated_at datetime)`,
+		`CREATE TABLE passkeys (id TEXT PRIMARY KEY, account_id TEXT, credential_id BLOB UNIQUE, public_key BLOB, aa_guid BLOB, sign_count INTEGER, user_present BOOL, user_verified BOOL, backup_eligible BOOL, backup_state BOOL, attestation_type TEXT, name TEXT, created_at datetime, updated_at datetime)`,
 		`CREATE TABLE passkey_ceremonies (id TEXT PRIMARY KEY, account_id TEXT, cookie_hash TEXT UNIQUE, purpose TEXT, session_json BLOB, expires_at datetime)`,
-		`CREATE TABLE comments (id TEXT PRIMARY KEY, article_id TEXT, is_spam BOOL)`,
-		`CREATE TABLE o_id_c_clients (id TEXT PRIMARY KEY, owner_id TEXT, name TEXT, secret_hash TEXT, public BOOL, redirect_uris_json TEXT, disabled_at datetime, created_at datetime)`,
+		`CREATE TABLE comments (id TEXT PRIMARY KEY, article_id TEXT, account_id TEXT, is_spam BOOL)`,
+		`CREATE TABLE o_id_c_clients (id TEXT PRIMARY KEY, owner_id TEXT, name TEXT, description TEXT, homepage_url TEXT, secret_hash TEXT, public BOOL, redirect_uris_json TEXT, post_logout_uris_json TEXT, disabled_at datetime, created_at datetime)`,
 		`CREATE TABLE o_id_c_auth_requests (id TEXT PRIMARY KEY, client_id TEXT, account_id TEXT, request_json BLOB, code_hash TEXT UNIQUE, code_used_at datetime, approved BOOL, auth_time datetime, expires_at datetime, created_at datetime)`,
 		`CREATE TABLE o_id_c_access_tokens (id TEXT PRIMARY KEY, client_id TEXT, account_id TEXT, scopes TEXT, expires_at datetime, created_at datetime)`,
 		`CREATE TABLE o_id_c_refresh_tokens (id TEXT PRIMARY KEY, token_hash TEXT UNIQUE, client_id TEXT, account_id TEXT, access_id TEXT, scopes TEXT, auth_time datetime, expires_at datetime)`,
@@ -52,11 +52,156 @@ func newIdentityTestDB(t *testing.T) *gorm.DB {
 			t.Fatal(err)
 		}
 	}
+	if err := db.AutoMigrate(&model.AuditEvent{}, &model.LoginSummary{}); err != nil {
+		t.Fatal(err)
+	}
 	return db
 }
 
 func TestIdentityTablesAccessible(t *testing.T) {
 	newIdentityTestDB(t)
+}
+
+func TestAccountSignInMethodsCannotBeCompletelyRemoved(t *testing.T) {
+	db := newIdentityTestDB(t)
+	withIdentityDB(t, db)
+	solitudes.System.Config.Auth.Google.ClientID = "enabled"
+	solitudes.System.Config.Auth.Google.ClientSecret = "enabled"
+	owner := testAccount(t, db, model.RoleUser)
+	owner.PasswordHash = ""
+	if err := db.Model(&owner).Update("password_hash", "").Error; err != nil {
+		t.Fatal(err)
+	}
+	other := model.Account{ID: "20000000-0000-4000-8000-000000000002", Email: "other@example.com", Nickname: "Other", Role: model.RoleUser}
+	if err := db.Create(&other).Error; err != nil {
+		t.Fatal(err)
+	}
+	for _, identity := range []model.ExternalIdentity{
+		{ID: "id1", AccountID: owner.ID, Provider: "github", Subject: "subject1"},
+		{ID: "id2", AccountID: owner.ID, Provider: "google", Subject: "subject2"},
+		{ID: "id3", AccountID: other.ID, Provider: "github", Subject: "subject3"},
+	} {
+		if err := db.Create(&identity).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	app := fiber.New()
+	app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &owner); return c.Next() })
+	app.Post("/account/identities/:provider/unlink", unlinkAccountIdentity)
+	request := func(provider string) int {
+		t.Helper()
+		resp, err := app.Test(httptest.NewRequest(http.MethodPost, "/account/identities/"+provider+"/unlink", nil))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		return resp.StatusCode
+	}
+	if status := request("unknown"); status != http.StatusNotFound {
+		t.Fatalf("unknown provider: %d", status)
+	}
+	solitudes.System.Config.Auth.Google.ClientSecret = ""
+	if status := request("github"); status != http.StatusConflict {
+		t.Fatalf("disabled remaining provider would lock account: %d", status)
+	}
+	solitudes.System.Config.Auth.Google.ClientSecret = "enabled"
+	if status := request("github"); status != http.StatusSeeOther {
+		t.Fatalf("unlink one identity: %d", status)
+	}
+	if status := request("google"); status != http.StatusConflict {
+		t.Fatalf("last sign-in method removed: %d", status)
+	}
+	var count int64
+	if err := db.Model(&model.ExternalIdentity{}).Where("account_id = ?", other.ID).Count(&count).Error; err != nil || count != 1 {
+		t.Fatalf("other account affected: count=%d err=%v", count, err)
+	}
+	if err := db.Model(&owner).Update("password_hash", "set-password").Error; err != nil {
+		t.Fatal(err)
+	}
+	if status := request("google"); status != http.StatusSeeOther {
+		t.Fatalf("password owner cannot unlink: %d", status)
+	}
+	if status := request("github"); status != http.StatusNotFound {
+		t.Fatalf("missing identity: %d", status)
+	}
+	if err := db.Create(&model.Passkey{ID: "key1", AccountID: owner.ID, CredentialID: []byte("key1")}).Error; err != nil {
+		t.Fatal(err)
+	}
+	app.Delete("/account/passkeys/:id", deletePasskey)
+	resp, err := app.Test(httptest.NewRequest(http.MethodDelete, "/account/passkeys/key1", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("password owner cannot delete key: %d", resp.StatusCode)
+	}
+	if err := db.Create(&model.Passkey{ID: "key2", AccountID: owner.ID, CredentialID: []byte("key2")}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Model(&owner).Update("password_hash", "").Error; err != nil {
+		t.Fatal(err)
+	}
+	resp, err = app.Test(httptest.NewRequest(http.MethodDelete, "/account/passkeys/key2", nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusConflict {
+		t.Fatalf("last passkey removed: %d", resp.StatusCode)
+	}
+}
+
+func TestIdentityUnlinkRequiresOwnerSessionAndSameOrigin(t *testing.T) {
+	db := newIdentityTestDB(t)
+	withIdentityDB(t, db)
+	owner := testAccount(t, db, model.RoleUser)
+	if err := db.Create(&model.ExternalIdentity{ID: "protected", AccountID: owner.ID, Provider: "github", Subject: "protected"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	previousLookup := sessionLookup
+	t.Cleanup(func() { sessionLookup = previousLookup })
+	sessionLookup = func(token string) (*model.Account, error) {
+		if token == "owner" {
+			return &owner, nil
+		}
+		return nil, errNoAccount
+	}
+	app := fiber.New()
+	app.Use(auth, csrfGuard)
+	app.Post("/account/identities/:provider/unlink", requireAccount, unlinkAccountIdentity)
+	for _, trial := range []struct {
+		name, token, origin string
+		want                int
+	}{
+		{"anonymous", "", "http://example.com", http.StatusFound},
+		{"cross origin", "owner", "https://attacker.example", http.StatusForbidden},
+		{"missing origin", "owner", "", http.StatusForbidden},
+	} {
+		t.Run(trial.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/account/identities/github/unlink", nil)
+			req.Host = "example.com"
+			req.Header.Set("Host", "example.com")
+			if trial.token != "" {
+				req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: trial.token})
+			}
+			if trial.origin != "" {
+				req.Header.Set("Origin", trial.origin)
+			}
+			resp, err := app.Test(req)
+			if err != nil {
+				t.Fatal(err)
+			}
+			resp.Body.Close()
+			if resp.StatusCode != trial.want {
+				t.Fatalf("status=%d want=%d", resp.StatusCode, trial.want)
+			}
+		})
+	}
+	var count int64
+	if err := db.Model(&model.ExternalIdentity{}).Where("id = ?", "protected").Count(&count).Error; err != nil || count != 1 {
+		t.Fatalf("identity changed without authorization: count=%d err=%v", count, err)
+	}
 }
 
 func TestPublicDomainMustBeHostOnly(t *testing.T) {
@@ -238,7 +383,7 @@ func TestAccountPasswordChangeRevokesOtherSessions(t *testing.T) {
 
 func TestRoleAndArticlePrivacy(t *testing.T) {
 	id := "10000000-0000-4000-8000-000000000001"
-	article := model.Article{ID: "article", AuthorID: &id, IsPrivate: true}
+	article := model.Article{ID: "article", AuthorID: &id, Visibility: model.VisibilityPrivate}
 	admin := &model.Account{ID: "admin", Role: model.RoleAdmin}
 	editor := &model.Account{ID: id, Role: model.RoleEditor}
 	otherEditor := &model.Account{ID: "other", Role: model.RoleEditor}
@@ -246,7 +391,7 @@ func TestRoleAndArticlePrivacy(t *testing.T) {
 	if !canReadArticle(admin, &article) || !canReadArticle(editor, &article) {
 		t.Fatal("owner or admin cannot read private article")
 	}
-	if canReadArticle(otherEditor, &article) || canReadArticle(user, &article) || canReadArticle(nil, &article) {
+	if !canReadArticle(user, &article) || canReadArticle(otherEditor, &article) || canReadArticle(nil, &article) {
 		t.Fatal("private article leaked to non-author")
 	}
 	if !mayEditArticle(admin, &article) || !mayEditArticle(editor, &article) {

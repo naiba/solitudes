@@ -5,43 +5,48 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
+	"net/url"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"github.com/88250/lute/ast"
+	"github.com/88250/lute/parse"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/net/html"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/content"
 	"github.com/naiba/solitudes/pkg/pagination"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
 func manageArticle(c *fiber.Ctx) error {
-	rawPage := c.Query("page")
-	var page int64
-	if rawPage != "" {
-		var err error
-		page, err = strconv.ParseInt(rawPage, 10, 32)
-		if err != nil {
-			return fmt.Errorf("invalid page format: %w", err)
-		}
+	if err := requirePublishRole(c); err != nil {
+		return err
+	}
+	page, err := listPage(c.Query("page"))
+	if err != nil {
+		return err
 	}
 	var as []model.Article
 	db := solitudes.System.DB
 	if account := currentAccount(c); account != nil && !account.Role.IsAdmin() {
 		db = db.Where("author_id = ?", account.ID)
 	}
-	pg := pagination.Paging(&pagination.Param{
+	pg, err := pagination.Paging(&pagination.Param{
 		DB:      db.Preload("Author"),
 		Page:    int(page),
 		Limit:   20,
-		OrderBy: []string{"created_at DESC"},
+		OrderBy: []string{"created_at DESC, id DESC"},
 	}, &as)
-	for i := range as {
-		as[i].RelatedCount(solitudes.System.DB)
+	if err != nil {
+		return err
+	}
+	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), as); err != nil {
+		return err
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("admin/articles", injectSiteData(c, fiber.Map{
@@ -52,6 +57,9 @@ func manageArticle(c *fiber.Ctx) error {
 }
 
 func publish(c *fiber.Ctx) error {
+	if err := requirePublishRole(c); err != nil {
+		return err
+	}
 	id := c.Query("id")
 	var article model.Article
 	if id != "" {
@@ -71,6 +79,9 @@ func publish(c *fiber.Ctx) error {
 }
 
 func deleteArticle(c *fiber.Ctx) error {
+	if err := requirePublishRole(c); err != nil {
+		return err
+	}
 	id := c.Query("id")
 	if len(id) < 10 {
 		return errors.New("invalid article id")
@@ -82,6 +93,7 @@ func deleteArticle(c *fiber.Ctx) error {
 	if !mayEditArticle(currentAccount(c), &a) {
 		return fiber.ErrNotFound
 	}
+	c.Locals("audit_target", a.ID)
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
@@ -114,17 +126,27 @@ func deleteArticle(c *fiber.Ctx) error {
 }
 
 type publishArticle struct {
-	ID             string `form:"id"`
-	Title          string `form:"title"`
-	Slug           string `form:"slug"`
-	Content        string `form:"content"`
-	Template       byte   `form:"template"`
-	Tags           string `form:"tags"`
-	IsBook         bool   `form:"is_book"`
-	IsPrivate      bool   `form:"is_private"`
-	DisableComment bool   `form:"disable_comment"`
-	BookRefer      string `form:"book_refer"`
-	NewVersion     uint   `form:"new_version"`
+	ID             string                  `form:"id"`
+	Title          string                  `form:"title"`
+	Slug           string                  `form:"slug"`
+	Content        string                  `form:"content"`
+	Template       byte                    `form:"template"`
+	Tags           string                  `form:"tags"`
+	IsBook         bool                    `form:"is_book"`
+	Visibility     model.ArticleVisibility `form:"visibility"`
+	DisableComment bool                    `form:"disable_comment"`
+	BookRefer      string                  `form:"book_refer"`
+	NewVersion     uint                    `form:"new_version"`
+}
+
+// Keep write and management handlers protected even if a route is moved out
+// of the authenticated /admin group in the future.
+func requirePublishRole(c *fiber.Ctx) error {
+	account := currentAccount(c)
+	if account == nil || !account.Role.CanPublish() {
+		return fiber.ErrForbidden
+	}
+	return nil
 }
 
 func publishHandler(c *fiber.Ctx) error {
@@ -135,6 +157,15 @@ func publishHandler(c *fiber.Ctx) error {
 	var pa publishArticle
 	if err := c.BodyParser(&pa); err != nil {
 		return fmt.Errorf("failed to parse publish form: %w", err)
+	}
+	if pa.Visibility == "" {
+		pa.Visibility = model.VisibilityPublic
+	}
+	if !pa.Visibility.Valid() {
+		return fiber.NewError(http.StatusBadRequest, "invalid article visibility")
+	}
+	if err := content.Validate(pa.Content); err != nil {
+		return fiber.NewError(http.StatusBadRequest, err.Error())
 	}
 	if err := validator.StructCtx(c.Context(), &pa); err != nil {
 		return fmt.Errorf("validation failed: %w", err)
@@ -153,7 +184,7 @@ func publishHandler(c *fiber.Ctx) error {
 		NewVersion:     pa.NewVersion,
 		TemplateID:     pa.Template,
 		IsBook:         pa.IsBook,
-		IsPrivate:      pa.IsPrivate,
+		Visibility:     pa.Visibility,
 		DisableComment: pa.DisableComment,
 		RawTags:        pa.Tags,
 		BookRefer:      bookRefer,
@@ -186,10 +217,16 @@ func publishHandler(c *fiber.Ctx) error {
 		return fmt.Errorf("failed to fetch original article: %w", err)
 	}
 	if originalArticle.ID != "" {
+		c.Locals("audit_target", originalArticle.ID)
 		if !mayEditArticle(account, &originalArticle) {
+			c.Locals("audit_reason", "article_owner_required")
 			return fiber.ErrForbidden
 		}
 		newArticle.AuthorID = originalArticle.AuthorID
+	}
+	if !account.Role.IsAdmin() && !editorContentAllowed(originalArticle.Content, newArticle.Content) {
+		c.Locals("audit_reason", "privileged_markdown_rejected")
+		return fiber.NewError(http.StatusForbidden, "only administrators may add or change executable Markdown content or raw HTML")
 	}
 
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
@@ -217,12 +254,135 @@ func publishHandler(c *fiber.Ctx) error {
 		return err
 	}
 	// indexing serch engine
+	c.Locals("audit_target", newArticle.ID)
 	numBefore, _ := solitudes.System.Search.DocCount()
 	errIndex := solitudes.IndexArticle(newArticle)
 	numAfter, _ := solitudes.System.Search.DocCount()
 	log.Printf("Doc %s indexed %d --> %d %+v\n", newArticle.GetIndexID(), numBefore, numAfter, errIndex)
 
 	return c.Status(http.StatusOK).JSON(newArticle)
+}
+
+// Editors may update ordinary Markdown, but cannot introduce raw HTML (including
+// scripts, event handlers, SVG and embeds) or executable URL schemes. Keep the
+// raw HTML of existing articles byte-for-byte so an editor can still edit prose
+// around administrator-authored embeds without acquiring script privileges.
+func editorContentAllowed(original, proposed string) bool {
+	// Restricted content is executable Markdown for readers who can access it,
+	// not inert code. Inspect its expanded AST with the same editor policy.
+	allowAll := func(string) bool { return true }
+	var err error
+	original, err = content.Filter(original, allowAll, nil)
+	if err != nil {
+		return false
+	}
+	proposed, err = content.Filter(proposed, allowAll, nil)
+	if err != nil {
+		return false
+	}
+	oldRaw, oldUnsafe := markdownPrivilegedContent(original)
+	newRaw, newUnsafe := markdownPrivilegedContent(proposed)
+	return equalMarkdownTokens(oldRaw, newRaw) && equalMarkdownTokens(oldUnsafe, newUnsafe) &&
+		equalMarkdownTokens(renderedExecutableElements(original), renderedExecutableElements(proposed))
+}
+
+func equalMarkdownTokens(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func markdownPrivilegedContent(content string) (rawHTML, unsafeURLs []string) {
+	tree := parse.Parse("editor-permissions", []byte(content), luteEngine.ParseOptions)
+	ast.Walk(tree.Root, func(n *ast.Node, entering bool) ast.WalkStatus {
+		if !entering {
+			return ast.WalkContinue
+		}
+		switch n.Type {
+		case ast.NodeHTMLBlock, ast.NodeInlineHTML:
+			rawHTML = append(rawHTML, string(n.Tokens))
+		case ast.NodeLinkDest:
+			if !safeEditorMarkdownURL(string(n.Tokens)) {
+				unsafeURLs = append(unsafeURLs, string(n.Tokens))
+			}
+		}
+		return ast.WalkContinue
+	})
+	return rawHTML, unsafeURLs
+}
+
+// Lute's AST stores an inline <script> and </script> as two HTML nodes, while
+// their JavaScript body is a separate text node. Comparing only HTML node
+// tokens therefore misses edits to the executable body. Inspect the HTML Lute
+// actually emits and preserve each active element including its full body.
+// AST checks above still prevent editors from introducing new HTML tags or
+// dangerous Markdown URL schemes.
+func renderedExecutableElements(content string) (elements []string) {
+	tokenizer := html.NewTokenizer(strings.NewReader(mdRender("editor-permissions", content)))
+	var current strings.Builder
+	depth := 0
+	for {
+		typeOfToken := tokenizer.Next()
+		if typeOfToken == html.ErrorToken {
+			break
+		}
+		token := tokenizer.Token()
+		if typeOfToken == html.StartTagToken && executableHTMLElement(token.Data) {
+			if depth == 0 {
+				current.Reset()
+			}
+			depth++
+		}
+		if depth > 0 {
+			current.Write(tokenizer.Raw())
+		}
+		if typeOfToken == html.EndTagToken && executableHTMLElement(token.Data) && depth > 0 {
+			depth--
+			if depth == 0 {
+				elements = append(elements, current.String())
+			}
+		}
+	}
+	if depth > 0 {
+		elements = append(elements, current.String())
+	}
+	return elements
+}
+
+func executableHTMLElement(tag string) bool {
+	switch tag {
+	case "script", "style", "template":
+		return true
+	default:
+		return false
+	}
+}
+
+func safeEditorMarkdownURL(raw string) bool {
+	if strings.TrimSpace(raw) != raw || strings.ContainsAny(raw, "\\\r\n\t") {
+		return false
+	}
+	for _, r := range raw {
+		if r < 0x20 || r == 0x7f {
+			return false
+		}
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil {
+		return false
+	}
+	switch strings.ToLower(parsed.Scheme) {
+	case "", "http", "https", "mailto", "tel":
+		return true
+	default:
+		return false
+	}
 }
 
 func fetchOriginArticle(af *model.Article) (model.Article, error) {

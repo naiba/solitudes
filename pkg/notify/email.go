@@ -158,11 +158,6 @@ func Email(src, dist *model.Comment, article *model.Article, trackingToken strin
 	return sendEmail(m)
 }
 
-// buildArticleURL constructs the article URL with optional tracking pixel
-func buildArticleURL(slug, domain string) string {
-	return "https://" + domain + "/" + slug
-}
-
 // buildTrackingRedirectURL constructs a tracking redirect URL
 // Uses only the secure token to look up comment in database
 func buildTrackingRedirectURL(trackingToken, domain string) string {

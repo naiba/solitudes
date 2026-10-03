@@ -1,0 +1,11 @@
+{{define "site/oidc_application"}}
+{{with .Data.oidc_client}}
+<section class="auth-application" data-testid="oidc-application-info">
+  <p class="auth-eyebrow">{{$.Tr.T "application_info"}}</p>
+  <h2 data-testid="oidc-application-name">{{.Name}}</h2>
+  {{if .Description}}<p data-testid="oidc-application-description">{{.Description}}</p>{{end}}
+  <p>{{$.Tr.T "application_owner"}}: {{if .OwnerID}}<a href="/users/{{.OwnerID}}" target="_blank" rel="noopener noreferrer" data-testid="oidc-application-owner">{{.OwnerName}}&nbsp;↗</a>{{else}}{{$.Tr.T "application_owner_unknown"}}{{end}}</p>
+  {{if .HomepageURL}}<p><a href="{{.HomepageURL}}" target="_blank" rel="noopener noreferrer" data-testid="oidc-application-homepage">{{$.Tr.T "application_homepage"}} ↗</a></p>{{end}}
+</section>
+{{end}}
+{{end}}

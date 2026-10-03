@@ -1,18 +1,18 @@
 {{define "site/comments_entry"}}
 {{range .comments}}
-<div class="comment-item" id="comment-{{.ID}}">
+<div class="comment-item" id="comment-{{.ID}}" data-testid="comment-entry">
     <div class="comment-header">
         <div class="comment-avatar">
-            {{if .Email}}
-            <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g" alt="{{.Nickname}}" loading="lazy">
+            {{if and .Email (not .AccountID)}}
+            <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g" alt="{{.PublicName}}" loading="lazy">
             {{else}}
-            <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" loading="lazy">
+            <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{if .Account}}{{.Account.ID}}{{else}}{{.Nickname}}{{end}}" alt="{{.PublicName}}" loading="lazy">
             {{end}}
         </div>
         <div class="comment-meta-info">
-            <span class="comment-author{{if .IsAdmin}} admin{{end}}">
-                {{if .Website}}<a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener">{{.Nickname}}</a>{{else}}<strong>{{.Nickname}}</strong>{{end}}
-                {{if .IsAdmin}} <i class="fa-solid fa-circle-check" style="color: var(--accent);"></i>{{end}}
+            <span class="comment-author{{if eq .PublicRole "admin"}} admin{{end}}">
+                {{if .Account}}<a href="/users/{{.Account.ID}}" data-testid="comment-author-link">{{.PublicName}}</a>{{else if .Website}}<a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener">{{.PublicName}}</a>{{else}}<strong>{{.PublicName}}</strong>{{end}}
+                <span class="comment-role role-{{.PublicRole}}" data-testid="comment-role">{{if eq .PublicRole "admin"}}{{$.tr.T "role_admin"}}{{else if eq .PublicRole "editor"}}{{$.tr.T "role_editor"}}{{else if eq .PublicRole "user"}}{{$.tr.T "role_user"}}{{else}}{{$.tr.T "role_guest"}}{{end}}</span>
             </span>
             <span class="comment-time">
                 <time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
@@ -30,13 +30,23 @@
     </div>
     <div class="comment-actions">
         {{/* 使用 button 而非 javascript: 链接，确保键盘与读屏语义正确 */}}
-        <button type="button" class="comment-reply-btn" data-testid="comment-reply" data-comment-id="{{.ID}}" data-comment-nickname="{{.Nickname}}" onclick="replyToComment(this)">{{$.tr.T "reply"}}</button>
+        <button type="button" class="comment-reply-btn" data-testid="comment-reply" data-comment-id="{{.ID}}" data-comment-nickname="{{.PublicName}}" onclick="replyToComment(this)">{{$.tr.T "reply"}}</button>
+        {{if and .ReplyCount (ne .ID $.thread)}}<a href="/{{.Article.Slug}}?thread={{.ID}}#comments" class="comment-thread-link" data-testid="comment-thread-link">{{$.tr.T "view_replies" (printf "%d" .ReplyCount)}}</a>{{end}}
     </div>
 </div>
 {{if .ChildComments}}
 <div class="comment-children">
-    {{template "site/comments_entry" (commentsData .ChildComments $.tr)}}
+    {{template "site/comments_entry" (dict "comments" .ChildComments "tr" $.tr "Conf" $.Conf "thread" $.thread)}}
 </div>
 {{end}}
+{{end}}
+{{end}}
+
+{{define "site/comment_navigation"}}
+{{if .Data.thread}}
+<nav class="comment-navigation" aria-label="{{.Tr.T "comments"}}">
+  <a href="?comment_page=1#comments" data-testid="comments-back">{{.Tr.T "all_comments"}}</a>
+  {{with index .Data.article.Comments 0}}{{if .ReplyTo}}<a href="?thread={{.ReplyTo}}#comments" data-testid="comments-parent">{{$.Tr.T "comment_parent"}}</a>{{end}}{{end}}
+</nav>
 {{end}}
 {{end}}

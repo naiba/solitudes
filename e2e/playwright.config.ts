@@ -3,9 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: '.',
   testMatch: '*.spec.ts',
-  // Screenshot scripts and the historical single-theme suite are opt-in; the
-  // default suite uses the same selectors for every configured theme pair.
-  testIgnore: ['shot_*.spec.ts', 'screenshot.spec.ts', 'theme-verify.spec.ts'],
+  // Screenshots are opt-in; the default suite shares selectors across themes.
+  testIgnore: ['visual-audit.spec.ts'],
   fullyParallel: false,
   retries: 0,
   workers: 1,

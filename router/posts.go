@@ -1,12 +1,10 @@
 package router
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 	"unicode"
 	"unicode/utf8"
@@ -35,113 +33,74 @@ func validTagParam(tag string) bool {
 }
 
 func tagsCloud(c *fiber.Ctx) error {
-	var tags []string
-	var counts []int
-	account := currentAccount(c)
-	var rows *sql.Rows
-	var err error
-	if account != nil && account.Role.IsAdmin() {
-		rows, err = solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles group by t order by count desc`).Rows()
-	} else if account != nil && account.Role.CanPublish() {
-		rows, err = solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles where is_private = false or author_id = ? group by t order by count desc`, account.ID).Rows()
-	} else {
-		rows, err = solitudes.System.DB.Raw(`select count(*), unnest(articles.tags) t from articles where is_private = false group by t order by count desc`).Rows()
-	}
+	data, err := pagedTags(c, readableArticles(solitudes.System.DB, currentAccount(c)))
 	if err != nil {
-		return fmt.Errorf("failed to fetch tags cloud: %w", err)
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var line string
-		var count int
-		if err := rows.Scan(&count, &line); err != nil {
-			return fmt.Errorf("failed to scan tag row: %w", err)
-		}
-		tags = append(tags, line)
-		counts = append(counts, count)
+		return err
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("site/tags", injectSiteData(c, fiber.Map{
-		"title":  tr.T("tags_cloud"),
-		"desc":   tr.T("tags_all_the_tags"),
-		"tags":   tags,
-		"counts": counts,
-	}))
+	data["title"], data["desc"] = tr.T("tags_cloud"), tr.T("tags_all_the_tags")
+	return c.Status(http.StatusOK).Render("site/tags", injectSiteData(c, data))
 }
 
 func posts(c *fiber.Ctx) error {
-	pageStr := c.Params("page")
-	var page int64
-	if pageStr != "" {
-		var err error
-		page, err = strconv.ParseInt(pageStr, 10, 64)
-		if err != nil {
-			return fmt.Errorf("invalid page format: %w", err)
-		}
-		if page <= 1 {
-			return c.Redirect("/posts/", http.StatusMovedPermanently)
-		}
+	page, err := listPage(c.Params("page"))
+	if err != nil {
+		return err
 	}
 	var articles []model.Article
-	pg := pagination.Paging(&pagination.Param{
-		DB:      readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author").Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic"),
+	pg, err := pagination.Paging(&pagination.Param{
+		DB:      readableArticles(solitudes.System.DB, currentAccount(c), accessNoticeFor(c)).Preload("Author").Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic"),
 		Page:    int(page),
 		Limit:   20,
-		OrderBy: []string{"created_at DESC"},
+		OrderBy: []string{"created_at DESC, id DESC"},
 	}, &articles)
-	for i := range articles {
-		articles[i].RelatedCount(solitudes.System.DB)
-		// 如果存在 Topic tag，加载前 5 条评论
-		if articles[i].IsTopic() {
-			pagination.Paging(&pagination.Param{
-				DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", articles[i].ID),
-				Limit:   5,
-				OrderBy: []string{"created_at DESC"},
-			}, &articles[i].Comments)
-		}
+	if err != nil {
+		return err
+	}
+	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), articles); err != nil {
+		return err
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
-		"title":    tr.T("posts"),
-		"desc":     tr.T("posts_all_the_posts"),
-		"what":     "posts",
-		"articles": listArticleByYear(articles),
-		"page":     pg,
-		"noindex":  page > 1,
+		"title":        tr.T("posts"),
+		"desc":         tr.T("posts_all_the_posts"),
+		"what":         "posts",
+		"navigation":   archiveNavigation(c, "/posts/", pg),
+		"archive_base": "/posts/",
+		"articles":     listArticleByYear(articles),
+		"page":         pg,
+		"noindex":      page > 1,
 	}))
 }
 
 func book(c *fiber.Ctx) error {
-	pageStr := c.Params("page")
-	var page int64
-	if pageStr != "" {
-		var err error
-		page, err = strconv.ParseInt(pageStr, 10, 64)
-		if err != nil {
-			return fmt.Errorf("invalid page format: %w", err)
-		}
-		if page <= 1 {
-			return c.Redirect("/books/", http.StatusMovedPermanently)
-		}
+	page, err := listPage(c.Params("page"))
+	if err != nil {
+		return err
 	}
 	var articles []model.Article
-	pg := pagination.Paging(&pagination.Param{
-		DB:      readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author").Where("is_book is true"),
+	pg, err := pagination.Paging(&pagination.Param{
+		DB:      readableArticles(solitudes.System.DB, currentAccount(c), accessNoticeFor(c)).Preload("Author").Where("is_book is true"),
 		Page:    int(page),
 		Limit:   20,
-		OrderBy: []string{"created_at DESC"},
+		OrderBy: []string{"created_at DESC, id DESC"},
 	}, &articles)
-	for i := range articles {
-		articles[i].RelatedCount(solitudes.System.DB)
+	if err != nil {
+		return err
+	}
+	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), articles); err != nil {
+		return err
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
-		"title":    tr.T("books"),
-		"desc":     tr.T("books_all_the_books"),
-		"what":     "books",
-		"articles": listArticleByYear(articles),
-		"page":     pg,
-		"noindex":  page > 1,
+		"title":        tr.T("books"),
+		"desc":         tr.T("books_all_the_books"),
+		"what":         "books",
+		"navigation":   archiveNavigation(c, "/books/", pg),
+		"archive_base": "/books/",
+		"articles":     listArticleByYear(articles),
+		"page":         pg,
+		"noindex":      page > 1,
 	}))
 }
 
@@ -232,18 +191,26 @@ func generateFeed(format string) (interface{}, error) {
 		Title:       solitudes.System.Config.Site.SpaceName,
 		Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain},
 		Description: solitudes.System.Config.Site.SpaceDesc,
-		Author:      &feeds.Author{Name: solitudes.System.Config.User.Nickname, Email: solitudes.System.Config.User.Email},
 		Updated:     time.Now(),
 	}
 	var articles []model.Article
-	if err := solitudes.System.DB.Where("is_private = false").Preload("Author").Order("created_at DESC").Limit(20).Find(&articles).Error; err != nil {
+	if err := solitudes.System.DB.Where("visibility = 'public'").Preload("Author").Order("created_at DESC").Limit(20).Find(&articles).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch articles for feed: %w", err)
 	}
 	feed.Items = publicFeedItems(articles)
 
 	switch format {
 	case "atom":
-		body, err := feed.ToAtom()
+		// Atom requires a feed author when there are no entries. The site is
+		// the publisher; individual entries still name their actual authors.
+		feed.Author = &feeds.Author{Name: solitudes.System.Config.Site.SpaceName}
+		atomFeed := (&feeds.Atom{Feed: feed}).AtomFeed()
+		for i := range articles {
+			if articles[i].Author.ID != "" && atomFeed.Entries[i].Author != nil {
+				atomFeed.Entries[i].Author.Uri = "https://" + solitudes.System.Config.Site.Domain + "/users/" + articles[i].Author.ID
+			}
+		}
+		body, err := feeds.ToXML(atomFeed)
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate atom feed: %w", err)
 		}
@@ -257,7 +224,15 @@ func generateFeed(format string) (interface{}, error) {
 		}
 		return &feedOutput{contentType: "application/xml", body: body}, nil
 	case "json":
-		body, err := feed.ToJSON()
+		jsonFeed := (&feeds.JSON{Feed: feed}).JSONFeed()
+		for i := range articles {
+			if articles[i].Author.ID != "" && len(jsonFeed.Items[i].Authors) != 0 {
+				profileURL := "https://" + solitudes.System.Config.Site.Domain + "/users/" + articles[i].Author.ID
+				jsonFeed.Items[i].Authors[0].Url = profileURL
+				jsonFeed.Items[i].Author.Url = profileURL
+			}
+		}
+		body, err := jsonFeed.ToJSON()
 		if err != nil {
 			return nil, fmt.Errorf("failed to generate json feed: %w", err)
 		}
@@ -272,11 +247,16 @@ func publicFeedItems(articles []model.Article) []*feeds.Item {
 	for i := range articles {
 		// The feed has a shared singleflight key: never let an admin request
 		// publish private content to a concurrent anonymous subscriber.
+		articles[i].Content = articles[i].ContentFor(nil, nil)
 		maskPrivateArticleContent(&articles[i], false)
+		authorName := articles[i].Author.Nickname
+		if authorName == "" {
+			authorName = solitudes.System.Config.Site.SpaceName
+		}
 		items = append(items, &feeds.Item{
 			Title:       articles[i].Title,
 			Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug},
-			Author:      &feeds.Author{Name: articles[i].Author.Nickname},
+			Author:      &feeds.Author{Name: authorName},
 			Description: mdExcerpt(articles[i].Content, 200),
 			Content:     luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),
 			Created:     articles[i].CreatedAt,
@@ -292,47 +272,37 @@ func tags(c *fiber.Ctx) error {
 	if err != nil || !validTagParam(tag) {
 		return page404(c)
 	}
-	pageStr := c.Params("page")
-	var page int64
-	if pageStr != "" {
-		page, err = strconv.ParseInt(pageStr, 10, 64)
-		if err != nil {
-			return fmt.Errorf("invalid page format: %w", err)
-		}
-		if page <= 1 {
-			return c.Redirect("/tags/"+url.PathEscape(tag)+"/", http.StatusMovedPermanently)
-		}
+	page, err := listPage(c.Params("page"))
+	if err != nil {
+		return err
 	}
 	var articles []model.Article
-	pg := pagination.Paging(&pagination.Param{
-		DB:      readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author").Where("tags @> ARRAY[?]::varchar[]", tag),
+	pg, err := pagination.Paging(&pagination.Param{
+		DB:      readableArticles(solitudes.System.DB, currentAccount(c), accessNoticeFor(c)).Preload("Author").Where("tags @> ARRAY[?]::varchar[]", tag),
 		Page:    int(page),
 		Limit:   20,
-		OrderBy: []string{"created_at DESC"},
+		OrderBy: []string{"created_at DESC, id DESC"},
 	}, &articles)
+	if err != nil {
+		return err
+	}
 	if pg.TotalRecord == 0 || pg.Page > pg.TotalPage {
 		return page404(c)
 	}
-	for i := range articles {
-		articles[i].RelatedCount(solitudes.System.DB)
-		// 如果存在 Topic tag，加载前 5 条评论
-		if articles[i].IsTopic() {
-			pagination.Paging(&pagination.Param{
-				DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", articles[i].ID),
-				Limit:   5,
-				OrderBy: []string{"created_at DESC"},
-			}, &articles[i].Comments)
-		}
+	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), articles); err != nil {
+		return err
 	}
 	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
 	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
-		"title":    tr.T("articles_in", tag),
-		"desc":     tr.T("posts_with_tag", tag),
-		"what":     "tags",
-		"tag":      tag,
-		"articles": listArticleByYear(articles),
-		"page":     pg,
-		"noindex":  page > 1,
+		"title":        tr.T("articles_in", tag),
+		"desc":         tr.T("posts_with_tag", tag),
+		"what":         "tags",
+		"navigation":   archiveNavigation(c, "/tags/"+url.PathEscape(tag)+"/", pg),
+		"archive_base": "/tags/" + url.PathEscape(tag) + "/",
+		"tag":          tag,
+		"articles":     listArticleByYear(articles),
+		"page":         pg,
+		"noindex":      page > 1,
 	}))
 }
 

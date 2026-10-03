@@ -12,6 +12,6 @@ type OAuthAttempt struct {
 	Nonce     string  `gorm:"not null"`
 	AccountID *string `gorm:"type:uuid"`
 	ReturnTo  string
-	ExpiresAt time.Time `gorm:"not null"`
+	ExpiresAt time.Time `gorm:"not null;index"`
 	CreatedAt time.Time
 }

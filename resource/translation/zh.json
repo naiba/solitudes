@@ -1,11 +1,17 @@
 [
+    {"locale": "zh", "key": "403_title", "trans": "403 无权访问"},
+    {"locale": "zh", "key": "403_msg", "trans": "当前账号没有访问此页面的权限。"},
+    {"locale": "zh", "key": "500_title", "trans": "500 遇到了问题"},
+    {"locale": "zh", "key": "500_msg", "trans": "请稍后重试，或联系站点管理员。"},
     {"locale": "zh", "key": "404_msg", "trans": "哎呀…… 这个页面可能已经飞到了外太空。"},
     {"locale": "zh", "key": "404_title", "trans": "404 页面未找到"},
     {"locale": "zh", "key": "articles_in", "trans": "「{0}」分类下的文章"},
     {"locale": "zh", "key": "books", "trans": "专栏"},
     {"locale": "zh", "key": "books_all_the_books", "trans": "探索本站发布的所有专栏和系列文章。按章节组织的长篇内容，深入探讨各类主题。"},
     {"locale": "zh", "key": "dashboard", "trans": "仪表盘"},
-    {"locale": "zh", "key": "home", "trans": "首页"},
+    {"locale": "zh", "key": "create_account", "trans": "注册账号"},
+    {"locale": "zh", "key": "sign_in", "trans": "登录"},
+    {"locale": "zh", "key": "login_providers", "trans": "登录方式"},
     {"locale": "zh", "key": "manage_articles", "trans": "管理文章"},
     {"locale": "zh", "key": "manage_comments", "trans": "管理评论"},
     {"locale": "zh", "key": "manage_media", "trans": "管理文件"},
@@ -24,5 +30,8 @@
     {"locale": "zh", "key": "search_result_title", "trans": "搜索结果：「{0}」"},
     {"locale": "zh", "key": "site_settings", "trans": "配置"},
     {"locale": "zh", "key": "tags_all_the_tags", "trans": "浏览本站所有标签和分类，按主题快速查找文章和专栏，轻松发现感兴趣的相关内容。"},
-    {"locale": "zh", "key": "tags_cloud", "trans": "标签云"}
+    {"locale": "zh", "key": "tags_cloud", "trans": "标签云"},
+    {"locale": "zh", "key": "access_members", "trans": "[登录]({0})或[注册]({1})并验证邮箱后，可阅读这部分内容。"},
+    {"locale": "zh", "key": "access_editors", "trans": "这部分内容仅限编辑和管理员阅读。"},
+    {"locale": "zh", "key": "access_private", "trans": "这部分内容仅限作者和管理员阅读。"}
 ]

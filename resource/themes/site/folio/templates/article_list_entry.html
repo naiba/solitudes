@@ -1,61 +1,38 @@
 {{define "site/article_list_entry"}}
 <div class="article-card">
-    <div class="article-card-meta">
-        <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
-        {{if .article.Author.Nickname}} · <span>{{.article.Author.Nickname}}</span>{{end}}
-    </div>
     {{if .article.IsTopic}}
-    <div class="topic-card">
-        <div class="topic-meta">
-            <span class="topic-label">
-                <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a>
-            </span>
-            {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}
-            {{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog" title="Private"></i> {{end}}
-            <time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
-        </div>
-        
-        <!-- Topic Content -->
-        <div class="topic-content app-prose">{{(md .article.ID .article.Content)|unsafe}}</div>
-        
-        <!-- Interactive Footer -->
-        <div class="topic-footer">
-            <span class="topic-stats">
-                <i class="fa-regular fa-eye"></i> {{.article.ReadNum}}
-                {{if .article.CommentNum}}&nbsp;&nbsp;·&nbsp;&nbsp;<i class="fa-regular fa-comment-dots"></i> {{.article.CommentNum}}{{end}}
-            </span>
-            <a href="https://{{.Conf.Site.Domain}}/{{.article.Slug}}" class="topic-reply-link">{{.tr.T "leave_a_comment"}} →</a>
-        </div>
-
-        <!-- Topic Comments Preview -->
-        {{if .article.Comments}}
-        <div class="topic-comments-preview">
-            {{range .article.Comments}}
-            <div class="topic-comment-item">
-                <div class="topic-comment-avatar">
-                    {{if .Email}}
-                    <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=40&d=mm&r=g" alt="{{.Nickname}}" loading="lazy">
-                    {{else}}
-                    <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{.Nickname}}" alt="{{.Nickname}}" loading="lazy">
-                    {{end}}
+{{$comments := .Queries.Comments .article.ID 5}}
+    <div class="topic-entry" data-testid="topic-entry" data-topic-slug="{{.article.Slug}}">
+        <div class="topic-card" data-testid="topic-bubble"><div class="topic-content app-prose" data-testid="topic-content">{{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if not .article.Public}}<i class="fa-solid fa-shield-dog"></i> {{end}}{{(md .article.ID .article.Content)|unsafe}}</div>
+        {{if $comments}}
+        <ul class="topic-comments-preview" role="list" data-testid="topic-comments">
+            {{range $comments}}
+            <li class="topic-comment-item" data-testid="topic-comment">
+                <div class="topic-comment-byline">
+                    {{if .Account}}<a href="/users/{{.Account.ID}}" data-testid="comment-author-link">{{.PublicName}}</a>{{else}}<span>{{.PublicName}}</span>{{end}}
+                    <span class="comment-role role-{{.PublicRole}}">{{if eq .PublicRole "admin"}}{{$.tr.T "role_admin"}}{{else if eq .PublicRole "editor"}}{{$.tr.T "role_editor"}}{{else if eq .PublicRole "user"}}{{$.tr.T "role_user"}}{{else}}{{$.tr.T "role_guest"}}{{end}}</span>
                 </div>
-                <div class="topic-comment-body">
-                    <span class="topic-comment-author">
-                        {{.Nickname}}{{if .IsAdmin}} <i class="fa-solid fa-circle-check admin-badge"></i>{{end}}
-                    </span>
-                    <span class="topic-comment-text">{{.Content}}</span>
-                </div>
-            </div>
+                <a class="topic-comment-text" href="/{{$.article.Slug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="topic-comment-link">{{.Content}}</a>
+            </li>
             {{end}}
-        </div>
+        </ul>
         {{end}}
+        </div>
+        {{template "site/article_list_byline" .}}
     </div>
     {{else}}
     <div class="article-card-body">
-        {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if .article.IsPrivate}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a href="https://{{.Conf.Site.Domain}}/{{.article.Slug}}" class="article-card-title">{{.article.Title}}</a>
-        {{if .article.ReadNum}}<small class="article-card-stats"><i class="fa-regular fa-eye"></i> {{.article.ReadNum}}{{if .article.CommentNum}} · <i class="fa-regular fa-comment-dots"></i> {{.article.CommentNum}}{{end}}</small>{{end}}
+        <h3 class="article-card-heading">{{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if not .article.Public}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a href="/{{.article.Slug}}" data-testid="article-list-link" class="article-card-title">{{.article.Title}}</a></h3>
     </div>
-    {{if .article.Content}}<p class="article-card-excerpt">{{mdExcerpt .article.Content 120}}</p>{{end}}
+    {{template "site/article_list_byline" .}}
     {{end}}
+    {{if and (not .article.IsTopic) .article.Content}}<p class="article-card-excerpt">{{mdExcerpt .article.Content 120}}</p>{{end}}
+</div>
+{{end}}
+{{define "site/article_list_byline"}}
+<div class="article-card-meta{{if .article.IsTopic}} topic-byline{{end}}"{{if .article.IsTopic}} data-testid="topic-byline"{{end}}>
+    {{if .article.Author.Nickname}}{{if .article.Author.ID}}<a href="/users/{{.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.article.Author.Nickname}}</a>{{else}}<span>{{.article.Author.Nickname}}</span>{{end}}{{if not .article.IsTopic}}<span aria-hidden="true">·</span>{{end}}{{end}}<time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
+    {{if .article.IsTopic}}<span class="topic-inline-actions">{{if .article.ReadNum}}<span aria-label="{{.tr.T "views"}}"><i class="fa-regular fa-eye" aria-hidden="true"></i> {{.article.ReadNum}}</span>{{end}}{{if .article.CommentNum}}<span aria-label="{{.tr.T "comments"}}"><i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.article.CommentNum}}</span>{{end}}<a href="https://{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a><a href="https://{{.Conf.Site.Domain}}/{{.article.Slug}}" data-testid="topic-reply-link">{{.tr.T "topic_comment_action"}} →</a></span>{{end}}
+    {{if and (not .article.IsTopic) .article.ReadNum}}<small class="article-card-stats"><i class="fa-regular fa-eye" aria-hidden="true"></i> {{.article.ReadNum}}{{if .article.CommentNum}} · <i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.article.CommentNum}}{{end}}</small>{{end}}
 </div>
 {{end}}

@@ -1,19 +1,17 @@
 package router
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/naiba/solitudes/pkg/pagination"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/translator"
 )
 
 type loginForm struct {
@@ -35,14 +33,17 @@ func loginHandler(c *fiber.Ctx) error {
 	}
 	// Verify captcha first
 	if !verifyCaptcha(lf.CaptchaID, lf.Captcha) {
-		return errors.New("invalid captcha")
+		c.Locals("audit_reason", "invalid_captcha")
+		return fiber.NewError(http.StatusBadRequest, "invalid captcha")
 	}
 	var account model.Account
 	if err := solitudes.System.DB.Where("email = ? AND disabled_at IS NULL", strings.ToLower(strings.TrimSpace(lf.Email))).Take(&account).Error; err != nil ||
 		bcrypt.CompareHashAndPassword([]byte(account.PasswordHash), []byte(lf.Password)) != nil {
-		return errors.New("invalid email or password")
+		c.Locals("audit_reason", "invalid_credentials")
+		return fiber.NewError(http.StatusUnauthorized, "invalid email or password")
 	}
 	if account.EmailVerifiedAt == nil {
+		c.Locals("audit_reason", "email_unverified")
 		return fiber.NewError(http.StatusForbidden, "verify your email before signing in")
 	}
 	if err := issueLoginSession(c, &account, lf.Remember == "on"); err != nil {
@@ -51,19 +52,23 @@ func loginHandler(c *fiber.Ctx) error {
 	if ret := safeReturnPath(lf.ReturnTo); ret != "" {
 		return c.Redirect(ret, http.StatusFound)
 	}
-	if account.Role.CanPublish() {
-		if account.Role == model.RoleEditor {
-			return c.Redirect("/admin/articles", http.StatusFound)
-		}
-		return c.Redirect("/admin", http.StatusFound)
-	}
 	return c.Redirect("/account", http.StatusFound)
 }
 
 func login(c *fiber.Ctx) error {
-
-	return c.Status(http.StatusOK).Render("admin/login", injectSiteData(c, fiber.Map{
-		"return_to": safeReturnPath(c.Query("return_to")),
+	c.Set("Cache-Control", "no-store")
+	returnTo := safeReturnPath(c.Query("return_to"))
+	client, err := loginOIDCApplication(c, returnTo)
+	if err != nil {
+		return err
+	}
+	if client != nil {
+		c.Set("Cache-Control", "private, no-store")
+	}
+	return c.Status(http.StatusOK).Render("site/login", injectSiteData(c, fiber.Map{
+		"title":   c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("sign_in"),
+		"noindex": true, "return_to": returnTo, "oidc_client": client,
+		"verified": c.Query("verified") == "1",
 	}))
 }
 
@@ -88,52 +93,7 @@ func logoutHandler(c *fiber.Ctx) error {
 }
 
 func index(c *fiber.Ctx) error {
-	var articles []model.Article
-	var topics []model.Article
-	var mostRead []model.Article
-	// Each query needs a fresh GORM chain: reusing a filtered *gorm.DB
-	// accumulates WHERE clauses (Topic AND NOT Topic makes the home list empty).
-	articlesForViewer := func() *gorm.DB {
-		return readableArticles(solitudes.System.DB, currentAccount(c)).Preload("Author")
-	}
-	if err := articlesForViewer().Where("tags @> ARRAY[?]::varchar[]", "Topic").Order("created_at DESC").Limit(5).Find(&topics).Error; err != nil {
-		return fmt.Errorf("load home topics: %w", err)
-	}
-	for i := range topics {
-		pagination.Paging(&pagination.Param{
-			DB:      visibleComments(solitudes.System.DB).Where("reply_to is null and article_id = ?", topics[i].ID),
-			Limit:   5,
-			OrderBy: []string{"created_at DESC"},
-		}, &topics[i].Comments)
-	}
-
-	// Fetch top 3 most read articles and books
-	if err := articlesForViewer().Where("template_id = ? AND (array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", solitudes.ArticleTemplateID, "Topic").Order("read_num DESC").Limit(3).Find(&mostRead).Error; err != nil {
-		return fmt.Errorf("load popular articles: %w", err)
-	}
-	for i := range mostRead {
-		mostRead[i].RelatedCount(solitudes.System.DB)
-	}
-
-	articleCount := 16 - len(topics)*2
-	if err := articlesForViewer().Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic").Order("created_at DESC").Limit(articleCount).Find(&articles).Error; err != nil {
-		return fmt.Errorf("load home articles: %w", err)
-	}
-	for i := range articles {
-		articles[i].RelatedCount(solitudes.System.DB)
-	}
-	// Only show "Most Read" section if we have at least 3 items
-	var mostReadData interface{}
-	if len(mostRead) >= 3 {
-		mostReadData = mostRead
-	}
-
-	c.Status(http.StatusOK).Render("site/index", injectSiteData(c, fiber.Map{
-		"articles": articles,
-		"topics":   topics,
-		"mostRead": mostReadData,
-	}))
-	return nil
+	return c.Render("site/index", injectSiteData(c, fiber.Map{}))
 }
 
 func count(c *fiber.Ctx) error {
@@ -147,7 +107,7 @@ func count(c *fiber.Ctx) error {
 	// }
 	// solitudes.System.Cache.Set(key, nil, time.Hour*20)
 	var latestArticle model.Article
-	if err := solitudes.System.DB.Select("id").
+	if err := readableArticles(solitudes.System.DB, currentAccount(c)).Select("id").
 		Order("created_at DESC").
 		Take(&latestArticle, "slug = ?", c.Query("slug")).Error; err != nil {
 		return nil

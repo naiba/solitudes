@@ -7,10 +7,10 @@ import (
 
 // ArticleHistory 文章修订历史
 type ArticleHistory struct {
-	ArticleID string  `gorm:"type:uuid;index"`
+	ArticleID string  `gorm:"type:uuid;not null;uniqueIndex:idx_article_history_version,priority:1"`
 	EditorID  *string `gorm:"type:uuid;index"`
 	Article   Article
-	Version   uint   `gorm:"index"`
+	Version   uint   `gorm:"not null;uniqueIndex:idx_article_history_version,priority:2"`
 	Desc      string `gorm:"text"`
 	Content   string `gorm:"text"`
 	CreatedAt time.Time

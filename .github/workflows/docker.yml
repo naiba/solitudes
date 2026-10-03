@@ -39,7 +39,9 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bunx playwright install --with-deps chromium
-      - name: Four-theme Chromium browser matrix
+      - name: Typecheck browser tests
+        run: e2e/node_modules/.bin/tsc --noEmit -p e2e/tsconfig.json
+      - name: Site-theme and default-admin Chromium browser matrix
         run: go test -p 2 -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v -timeout 20m
 
   build:

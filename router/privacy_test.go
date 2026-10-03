@@ -22,18 +22,18 @@ func TestMaskPrivateArticleContent(t *testing.T) {
 		{
 			name: "anonymous private article",
 			article: model.Article{
-				IsPrivate: true,
-				Content:   "secret body",
-				Toc:       []*model.ArticleTOC{{Title: "secret heading"}},
+				Visibility: model.VisibilityPrivate,
+				Content:    "secret body",
+				Toc:        []*model.ArticleTOC{{Title: "secret heading"}},
 			},
 			wantContent: privateArticleContent,
 		},
 		{
 			name: "authorized private article",
 			article: model.Article{
-				IsPrivate: true,
-				Content:   "secret body",
-				Toc:       []*model.ArticleTOC{{Title: "secret heading"}},
+				Visibility: model.VisibilityPrivate,
+				Content:    "secret body",
+				Toc:        []*model.ArticleTOC{{Title: "secret heading"}},
 			},
 			authorized:  true,
 			wantContent: "secret body",
@@ -68,7 +68,7 @@ func TestPublicFeedItemsNeverIncludePrivateBody(t *testing.T) {
 	t.Cleanup(func() { solitudes.System = previous })
 	solitudes.System = &solitudes.SysVariable{Config: &model.Config{}}
 	articles := []model.Article{
-		{ID: "private", Slug: "private", IsPrivate: true, Content: "unique-private-feed-secret"},
+		{ID: "private", Slug: "private", Visibility: model.VisibilityPrivate, Content: "unique-private-feed-secret"},
 		{ID: "public", Slug: "public", Content: "public feed entry"},
 	}
 	items := publicFeedItems(articles)
@@ -189,8 +189,8 @@ func TestBuildSearchResponsesRedactsUsingCurrentDatabaseState(t *testing.T) {
 		},
 	}
 	articles := map[string]model.Article{
-		"private-content": {ID: "private-content", Title: "Private content", Slug: "private-content", Version: 1, IsPrivate: true},
-		"private-title":   {ID: "private-title", Title: "Private title", Slug: "private-title", Version: 2, IsPrivate: true},
+		"private-content": {ID: "private-content", Title: "Private content", Slug: "private-content", Version: 1, Visibility: model.VisibilityPrivate},
+		"private-title":   {ID: "private-title", Title: "Private title", Slug: "private-title", Version: 2, Visibility: model.VisibilityPrivate},
 		"public":          {ID: "public", Title: "Public", Slug: "public", Version: 1},
 	}
 

@@ -1,0 +1,29 @@
+{{define "site/user_profile"}}
+{{template "site/header" .}}
+<main id="main-content" class="public-profile folio-container" data-testid="public-profile">
+  <div class="public-profile-toolbar">
+    <a href="/readers/" class="public-profile-back" data-testid="profile-reader-circle"><span aria-hidden="true">←</span> {{.Tr.T "reader_circle"}}</a>
+    {{if and .Account (eq .Account.ID .Data.profile.ID)}}<a class="public-profile-edit" href="/account" data-testid="profile-edit-link">{{.Tr.T "edit_profile"}}</a>{{end}}
+  </div>
+  <header class="public-profile-header">
+    <div class="public-profile-avatar" aria-hidden="true">{{substr .Data.profile.Nickname 0 1}}</div>
+    <div class="public-profile-intro">
+      <p class="section-label">{{.Tr.T "public_profile"}}</p>
+      <div class="public-profile-name"><h1>{{.Data.profile.Nickname}}</h1><span class="comment-role role-{{.Data.profile.Role}}">{{if eq .Data.profile.Role "admin"}}{{.Tr.T "role_admin"}}{{else if eq .Data.profile.Role "editor"}}{{.Tr.T "role_editor"}}{{else}}{{.Tr.T "role_user"}}{{end}}</span></div>
+      <p class="public-profile-joined">{{.Tr.T "joined_at"}} <time datetime="{{iso8601 .Data.profile.CreatedAt}}">{{tf .Data.profile.CreatedAt (.Tr.T "date_format")}}</time></p>
+    </div>
+    {{if .Data.profile.Bio}}<p class="public-profile-bio" data-testid="public-profile-bio">{{.Data.profile.Bio}}</p>{{end}}
+  </header>
+  <div class="public-profile-activity">
+  <section id="profile-articles" aria-labelledby="profile-articles-title"><h2 id="profile-articles-title">{{.Tr.T "recent_articles"}}</h2>
+    {{if .Data.articles}}<ul class="public-profile-list">{{range .Data.articles}}<li><div class="public-profile-item-heading"><a href="/{{.Slug}}" data-testid="public-profile-article">{{.Title}}</a><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></div></li>{{end}}</ul>{{else}}<p class="public-profile-empty">{{.Tr.T "no_public_articles"}}</p>{{end}}
+    <nav class="public-profile-pagination" aria-label="{{.Tr.T "recent_articles"}}">{{if .Data.articles_previous}}<a data-testid="pagination-previous" href="?articles_page={{add .Data.articles_page -1}}&amp;comments_page={{.Data.comments_page}}">{{.Tr.T "previous_page"}}</a>{{end}}{{if .Data.articles_more}}<a data-testid="pagination-next" href="?articles_page={{add .Data.articles_page 1}}&amp;comments_page={{.Data.comments_page}}">{{.Tr.T "next_page"}}</a>{{end}}</nav>
+  </section>
+  <section id="profile-comments" aria-labelledby="profile-comments-title"><h2 id="profile-comments-title">{{.Tr.T "recent_comments"}}</h2>
+    {{if .Data.comments}}<ul class="public-profile-list">{{range .Data.comments}}<li><div class="public-profile-item-heading"><a href="/{{.Article.Slug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="public-profile-comment-article">{{.Article.Title}}</a><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></div><p data-testid="public-profile-comment">{{.Content}}</p></li>{{end}}</ul>{{else}}<p class="public-profile-empty">{{.Tr.T "no_public_comments"}}</p>{{end}}
+    <nav class="public-profile-pagination" aria-label="{{.Tr.T "recent_comments"}}">{{if .Data.comments_previous}}<a data-testid="pagination-previous" href="?articles_page={{.Data.articles_page}}&amp;comments_page={{add .Data.comments_page -1}}">{{.Tr.T "previous_page"}}</a>{{end}}{{if .Data.comments_more}}<a data-testid="pagination-next" href="?articles_page={{.Data.articles_page}}&amp;comments_page={{add .Data.comments_page 1}}">{{.Tr.T "next_page"}}</a>{{end}}</nav>
+  </section>
+  </div>
+</main>
+{{template "site/footer" .}}
+{{end}}

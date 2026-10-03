@@ -1,0 +1,48 @@
+{{define "site/account_oidc_clients"}}
+{{template "site/header" .}}
+{{template "site/menu" .}}
+<main id="main-content" class="account-center">
+  <p><a href="/account">← {{.Tr.T "my_account"}}</a></p>
+  <h1>{{.Tr.T "provider_external_apps"}}</h1>
+  <p>{{.Tr.T "owned_clients_hint"}}</p>
+  <p>{{.Tr.T "oidc_issuer"}}: <code>{{.Data.issuer}}</code></p>
+  <p><a href="{{.Data.issuer}}/.well-known/openid-configuration">{{.Tr.T "discovery_document"}}</a></p>
+  <div class="account-grid">
+    <section class="account-card"><h2>{{.Tr.T "create_client"}}</h2>
+      <form action="/account/oidc/clients" method="post" data-testid="oidc-client-form">
+        <label for="my-client-name">{{.Tr.T "client_name"}}</label>
+        <input id="my-client-name" name="name" data-testid="oidc-client-name" required maxlength="100">
+        <label for="my-client-description">{{.Tr.T "application_description"}}</label>
+        <textarea id="my-client-description" name="description" data-testid="oidc-client-description" maxlength="300" rows="2"></textarea>
+        <label for="my-client-homepage">{{.Tr.T "application_homepage"}}</label>
+        <input id="my-client-homepage" name="homepage_url" data-testid="oidc-client-homepage" type="url" required maxlength="2048" placeholder="https://example.com">
+        <label for="my-client-redirects">{{.Tr.T "redirect_uris"}}</label>
+        <textarea id="my-client-redirects" name="redirect_uris" data-testid="oidc-client-redirects" rows="3" required></textarea>
+        <label for="my-client-logout">{{.Tr.T "post_logout_uris"}}</label>
+        <textarea id="my-client-logout" name="post_logout_uris" data-testid="oidc-client-logout-uris" rows="2"></textarea>
+        <label><input type="checkbox" name="public" data-testid="oidc-client-public"> {{.Tr.T "public_client"}}</label>
+        <p>{{.Tr.T "pkce_hint"}}</p>
+        <button type="submit" data-testid="oidc-client-submit">{{.Tr.T "create_client"}}</button>
+      </form>
+    </section>
+    <section class="account-card" id="clients"><h2>{{.Tr.T "manage_clients"}}</h2>
+      <ul>{{range .Data.clients}}<li data-testid="account-client-row"><strong>{{.Name}}</strong> · <code>{{.ID}}</code>{{if .HomepageURL}} · <a href="{{.HomepageURL}}" target="_blank" rel="noopener noreferrer">{{$.Tr.T "application_homepage"}}</a>{{end}}
+        {{if .DisabledAt}}({{$.Tr.T "disabled"}}){{else}}
+        <details><summary>{{$.Tr.T "edit_client"}}</summary>
+          <form method="post" action="/account/oidc/clients/{{.ID}}/metadata" data-testid="oidc-client-edit-form">
+            <label for="name-{{.ID}}">{{$.Tr.T "client_name"}}</label><input id="name-{{.ID}}" name="name" value="{{.Name}}" required maxlength="100">
+            <label for="description-{{.ID}}">{{$.Tr.T "application_description"}}</label><textarea id="description-{{.ID}}" name="description" maxlength="300" rows="2">{{.Description}}</textarea>
+            <label for="homepage-{{.ID}}">{{$.Tr.T "application_homepage"}}</label><input id="homepage-{{.ID}}" name="homepage_url" type="url" value="{{.HomepageURL}}" required maxlength="2048">
+            <label for="redirects-{{.ID}}">{{$.Tr.T "redirect_uris"}}</label><textarea id="redirects-{{.ID}}" name="redirect_uris" rows="3" required>{{.RedirectURIs}}</textarea>
+            <label for="logout-{{.ID}}">{{$.Tr.T "post_logout_uris"}}</label><textarea id="logout-{{.ID}}" name="post_logout_uris" rows="2">{{.LogoutURIs}}</textarea>
+            <button type="submit" data-testid="oidc-client-edit-save">{{$.Tr.T "save_client"}}</button>
+          </form>
+        </details>
+        <form method="post" action="/account/oidc/clients/{{.ID}}/disable"><button type="submit" data-testid="oidc-client-disable">{{$.Tr.T "disable"}}</button></form>{{end}}
+      </li>{{end}}</ul>
+{{template "site/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
+    </section>
+  </div>
+</main>
+{{template "site/footer" .}}
+{{end}}

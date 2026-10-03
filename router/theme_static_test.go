@@ -173,3 +173,47 @@ func TestThemePreviewRejectsTraversalAndSymlink(t *testing.T) {
 		t.Fatalf("symlink preview status = %d, want 404", resp.StatusCode)
 	}
 }
+
+func TestThemePreviewUsesSameRootResourceForBothKinds(t *testing.T) {
+	t.Chdir(t.TempDir())
+	app := fiber.New()
+	app.Get("/preview/:kind/:name", themePreview)
+	writeThemeStaticTestFile(t, "data/conf.yml", "private configuration")
+	for _, kind := range []string{"site", "admin"} {
+		t.Run(kind, func(t *testing.T) {
+			root := filepath.Join("resource", "themes", kind, "sample")
+			writeThemeStaticTestFile(t, filepath.Join(root, "screenshot.png"), kind+" preview")
+			for _, name := range []string{"sample", "missing", "%2e%2e", "%2e%2e%2fsample"} {
+				response, err := app.Test(httptest.NewRequest(http.MethodGet, "/preview/"+kind+"/"+name, nil), -1)
+				if err != nil {
+					t.Fatal(err)
+				}
+				body, _ := io.ReadAll(response.Body)
+				response.Body.Close()
+				if name == "sample" {
+					if response.StatusCode != 200 || string(body) != kind+" preview" || !strings.Contains(response.Header.Get("Content-Type"), "image/png") {
+						t.Fatalf("invalid %s preview: %d %s", kind, response.StatusCode, body)
+					}
+				} else if response.StatusCode != 404 {
+					t.Fatalf("invalid preview allowed: %s", name)
+				}
+			}
+			file := filepath.Join(root, "screenshot.png")
+			if err := os.Remove(file); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Symlink(filepath.Join("..", "..", "..", "..", "data", "conf.yml"), file); err != nil {
+				t.Fatal(err)
+			}
+			response, err := app.Test(httptest.NewRequest(http.MethodGet, "/preview/"+kind+"/sample", nil), -1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			body, _ := io.ReadAll(response.Body)
+			response.Body.Close()
+			if response.StatusCode != 404 || strings.Contains(string(body), "private configuration") {
+				t.Fatal("preview symlink leaked external content")
+			}
+		})
+	}
+}

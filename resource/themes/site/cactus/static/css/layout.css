@@ -1,0 +1,39 @@
+/* One width per purpose. The body owns the only horizontal page gutter. */
+:root { --site-width: 72rem; --auth-width: 36rem; --site-gutter: clamp(1rem, 2.5vw, 2rem); }
+html { scrollbar-gutter: stable; background: var(--color-bg); }
+body.max-width { box-sizing: border-box; width: 100%; max-width: var(--site-width); padding-inline: var(--site-gutter); }
+/* Collapse before staff-only links force the navigation onto another line. */
+@media (min-width: 769px) and (max-width: 1100px) {
+  #header #title { display: table; margin-right: 5rem; min-height: 50px; }
+  #header #title .h1 { display: table-cell; vertical-align: middle; }
+  #header #nav ul li { display: none; border-right: 0; }
+  #header #nav ul li.icon { position: absolute; top: 4rem; right: 0; display: inline-block; }
+  #header #nav ul.responsive li { display: block; }
+  #header #nav li:not(:first-child) { padding-top: 1rem; padding-left: 70px; font-size: 1rem; }
+  #header #nav ul.responsive a { display: flex; align-items: center; min-height: 44px; }
+}
+.account-center, .reader-circle, .public-profile { box-sizing: border-box; width: 100%; max-width: none; padding-inline: 0; }
+.auth-shell { width: 100%; max-width: var(--auth-width); padding-inline: 0; }
+/* The centered site shell is also the reading shell, including comments.
+   Do not reserve an empty sidebar by narrowing or shifting the article. */
+#header-post + .content.index.py4 { box-sizing: border-box; width: 100%; max-width: none; margin-inline: 0; }
+#header-post { right: max(var(--site-gutter), calc((100% - var(--site-width)) / 2 + var(--site-gutter))); max-width: calc(100% - 2 * var(--site-gutter)); }
+@media (min-width: 1280px) {
+  /* Keep the fixed toggle off the text even after the reader scrolls. */
+  #header-post { right: max(var(--site-gutter), calc((100% - var(--site-width)) / 2 + var(--site-gutter) - 44px - 2rem)); }
+}
+/* Only place a persistent TOC outside the shell when both can fit. At normal
+   laptop widths the original menu is an explicit, dismissible overlay. */
+@media (min-width: 1800px) {
+  #header-post { right: max(var(--site-gutter), calc((100% - var(--site-width)) / 2 + var(--site-gutter) - 14rem - 2rem)); }
+}
+/* The site header owns the gap; pages must not add another top inset. */
+#main-content { display: flow-root; margin-top: 0; padding-top: 0; }
+#main-content > :first-child, #main-content #posts > h2:first-of-type,
+#main-content .home-search-section #search > h2, #main-content > .content > #search > h2 { margin-top: 0; }
+#main-content .home-grid-layout { margin-top: 0; }
+.home-top-content { display: flow-root; margin-bottom: 1.5rem; }
+.home-top-content > :first-child { margin-top: 0; }
+.comment-navigation { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: .75rem 0 1rem; }
+.comment-navigation a, .comment-thread-link { display: inline-flex; align-items: center; min-height: 36px; font-size: .85rem; }
+@media (max-width: 500px) { #reply-list .child-node { margin-left: 1rem; border-left: 1px solid var(--color-muted); padding-left: .5rem; } }

@@ -1,0 +1,19 @@
+{{define "admin/client_detail"}}{{template "admin/header" .}}
+<div class="identity-admin" data-testid="admin-client-profile"><a href="/admin/oidc/clients">← {{.Tr.T "oidc_clients"}}</a><h1>{{.Data.client.Name}}</h1>
+<code>{{.Data.client.ID}}</code><p>{{.Data.client.Description}}</p>
+<p>{{.Tr.T "application_owner"}}: {{if and .Data.client.OwnerID .Data.client.OwnerName}}<a href="/admin/users/{{.Data.client.OwnerID}}" data-testid="admin-client-owner">{{.Data.client.OwnerName}}</a>{{else}}{{.Tr.T "application_owner_unknown"}}{{end}}</p>
+<div class="identity-metrics identity-card"><span>{{.Tr.T "identity_app_logins"}}: <b data-testid="client-login-count">{{.Data.client.LoginCount}}</b></span><span>{{.Tr.T "identity_login_users"}}: <b data-testid="client-login-users">{{.Data.client.LoginUsers}}</b></span><span>{{.Tr.T "identity_last_login"}}: {{if .Data.client.LastLoginAt}}{{tf .Data.client.LastLoginAt "2006-01-02 15:04"}}{{else}}—{{end}}</span></div>
+<p class="identity-hint">{{.Tr.T "identity_stats_hint"}}</p>
+<div class="identity-actions"><a href="/admin/audit?client_id={{.Data.client.ID}}" data-testid="client-audit-link">{{.Tr.T "security_audit"}}</a>{{if .Data.client.HomepageURL}}<a href="{{.Data.client.HomepageURL}}" target="_blank" rel="noopener noreferrer">{{.Tr.T "application_homepage"}}</a>{{end}}</div>
+<section class="identity-card"><h2 id="login-users">{{.Tr.T "identity_login_users"}}</h2><p>{{.Tr.T "identity_recent_25"}}</p><table class="identity-table"><thead><tr><th>{{.Tr.T "nickname"}}</th><th>{{.Tr.T "identity_app_logins"}}</th><th>{{.Tr.T "identity_last_login"}}</th></tr></thead><tbody>
+{{range .Data.login_users}}<tr><td data-label="{{$.Tr.T "nickname"}}"><a href="/admin/users/{{.ID}}">{{if .Nickname}}{{.Nickname}}{{else}}{{.ID}}{{end}}</a></td><td data-label="{{$.Tr.T "identity_app_logins"}}">{{.LoginCount}}</td><td data-label="{{$.Tr.T "identity_last_login"}}">{{tf .LastLoginAt "2006-01-02 15:04"}}</td></tr>{{else}}<tr><td colspan="3">{{.Tr.T "identity_empty"}}</td></tr>{{end}}</tbody></table>{{template "admin/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}</section>
+<section class="identity-card"><h2>{{.Tr.T "edit_client"}}</h2>{{if .Data.client.DisabledAt}}<p>{{.Tr.T "disabled"}}</p>{{else}}
+<form method="post" action="/admin/oidc/clients/{{.Data.client.ID}}/metadata" data-testid="oidc-client-edit-form" class="identity-form">
+<label>{{.Tr.T "client_name"}}<input name="name" value="{{.Data.client.Name}}" required maxlength="100"></label>
+<label>{{.Tr.T "application_description"}}<textarea name="description" maxlength="300" rows="2">{{.Data.client.Description}}</textarea></label>
+<label>{{.Tr.T "application_homepage"}}<input name="homepage_url" type="url" value="{{.Data.client.HomepageURL}}" required maxlength="2048"></label>
+<label>{{.Tr.T "redirect_uris"}}<textarea name="redirect_uris" rows="3" required>{{.Data.client.RedirectURIs}}</textarea></label>
+<label>{{.Tr.T "post_logout_uris"}}<textarea name="post_logout_uris" rows="2">{{.Data.client.LogoutURIs}}</textarea></label>
+<button type="submit" data-testid="oidc-client-edit-save">{{.Tr.T "save_client"}}</button></form>
+<form method="post" action="/admin/oidc/clients/{{.Data.client.ID}}/disable"><button class="identity-danger" type="submit" data-testid="oidc-client-disable">{{.Tr.T "disable"}}</button></form>{{end}}</section>
+</div>{{template "admin/footer" .}}{{end}}

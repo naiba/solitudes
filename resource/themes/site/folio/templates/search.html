@@ -2,9 +2,9 @@
 {{template "site/header" .}}
 
 <main id="main-content">
-    <header class="page-header folio-container" style="text-align: center;">
-        <span class="section-label">{{.Tr.T "search_desc"}}</span>
+    <header class="page-header folio-container">
         <h1 class="page-title">{{.Tr.T "search"}}</h1>
+        <p class="page-description">{{.Tr.T "search_desc"}}</p>
     </header>
 
     <section class="search-section folio-container">
@@ -21,7 +21,7 @@
             <ul class="search-result-list">
                 {{range .Data.results}}
                 <li class="search-result-item">
-                    <a href="https://{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="search-result-title">{{.Title}}</a>
+                    <a href="/{{.Slug}}" class="search-result-title">{{.Title}}</a>
                     {{if .Content}}
                     <p class="search-result-excerpt">{{.Content|unsafe}}</p>
                     {{end}}
@@ -33,6 +33,7 @@
         <p class="folio-muted" style="text-align: center; margin-top: 3rem;">{{.Tr.T "no_search_results"}}</p>
         {{end}}
     </section>
+{{template "site/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
 </main>
 
 <script>

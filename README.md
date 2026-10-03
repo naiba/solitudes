@@ -20,7 +20,7 @@ A blog engine built with **Go** and **Fiber**, featuring full-text search, artic
 - **Microblogging (Topics)** — Twitter/Weibo-style short posts with comments
   - Add the `Topic` tag when publishing — title and slug auto-fill if left empty
 - **RSS Auto-discovery** — Paste any blog URL into an RSS reader to discover feeds automatically
-- **Theme System** — Independent frontend and backend themes, hot-swappable from admin UI
+- **Theme System** — Independent frontend and administration themes; one modern admin theme bundled
 - **i18n** — Multi-language support with theme-level translation overrides
 
 ## Quick Start
@@ -74,7 +74,9 @@ Password: `123456`
 
 ## Accounts and OIDC
 
-Existing installations seed the first administrator from `user.email`, `user.nickname`, and the existing bcrypt `user.password` in `data/conf.yml`. Replace the sample/default password before exposing a new installation to the Internet. Keep these values until the first successful migration. After that, login sessions and accounts live in PostgreSQL; the old config token is not accepted. Sign in at `/admin/login`, register at `/admin/register`, and manage your identity/passkeys at `/account`. New email/password accounts must confirm their email (one-hour link) before login; registration requires SMTP. Administrators assign roles at `/admin/users`: editors can publish and manage their own articles, while ordinary users cannot access publishing routes. Existing articles are assigned to the seeded administrator.
+Existing installations seed the first administrator from `user.email`, `user.nickname`, and the existing bcrypt `user.password` in `data/conf.yml`. Replace the sample/default password before exposing a new installation to the Internet. Keep these values until the first successful migration. After that, login sessions and accounts live in PostgreSQL; the old config token is not accepted. Sign in at `/login`, register at `/register`, and manage your identity/passkeys at `/account`. New email/password accounts must confirm their email (one-hour link) before login; registration requires SMTP. Administrators assign roles at `/admin/users`: editors can publish and manage their own articles, while ordinary users cannot access publishing routes. Existing articles are assigned to the seeded administrator.
+
+The front-site `/readers/` reader circle lists all verified, enabled accounts by default, including existing accounts; anyone can leave or rejoin in their public-profile settings at `/account`. The homepage highlights the four newest members and up to five recent public comments (including guest comments). The directory shows a recent activity feed and ranks active members using public posts and non-spam comments from the last 30 days; emails, private posts, and spam never appear. RSS, Atom, and JSON Feed credit each public post's actual author, not the configured administrator; feed metadata never exposes the administrator's email. Editors and administrators can reach article management directly from the front-site Writing workspace navigation, with a compose shortcut in their account center.
 
 Set `site.domain` to the exact public host (include the port if necessary), and serve production traffic over HTTPS. Configure SMTP with `email.host`, `email.port`, `email.user`, `email.pass`, and `email.ssl`. Administrators can configure GitHub, Google, and upstream OIDC sign-in under `/admin/auth/providers` (secrets are never displayed again). The equivalent configuration in `data/conf.yml` is:
 
@@ -88,21 +90,44 @@ auth:
 
 Register the callback `https://<site.domain>/auth/{github,google,oidc}/callback` at each enabled upstream provider. A verified upstream email is required; if that email already exists locally, sign in first and explicitly link the provider from `/account`. Passkeys require a secure origin and matching RP ID (localhost is supported for development). Unconfigured providers are disabled.
 
-Solitudes also acts as an OIDC provider: **every verified blog account**, including ordinary users and editors, can sign in to registered external applications. Users can register and manage their own downstream clients under `/account/oidc/clients`; administrators can manage every client under `/admin/oidc/clients`. External applications use `https://<site.domain>/.well-known/openid-configuration`. This is separate from the upstream sign-in providers above. Use authorization code with PKCE S256 and an exact registered callback URI; a public client has no secret, while a confidential client's secret is displayed only on creation. Users must consent to each authorization. Disabling a client revokes its access and refresh tokens; already issued ID tokens remain cryptographically valid until expiry. Signing-key rotation keeps old public keys available for that interval. The PostgreSQL backup includes OIDC signing keys and client credentials: protect it accordingly. The issuer is unavailable until `site.domain` and the database are configured; restart after changing the domain.
+Solitudes also acts as an OAuth 2.1-style authorization server and OIDC provider: **every verified blog account**, including ordinary users and editors, can sign in to registered external applications. The front-site navigation links to `/account`, where users can change their password, add passkeys, link/unlink upstream sign-in providers, and create or disable their own downstream clients under `/account/oidc/clients`; administrators can manage every client under `/admin/oidc/clients`. External applications can use `https://<site.domain>/.well-known/openid-configuration` (OIDC) or `https://<site.domain>/.well-known/oauth-authorization-server` (OAuth metadata). This is separate from the upstream sign-in providers above. Supported grants are authorization code (mandatory PKCE S256) and rotating refresh tokens; implicit/password grants are not supported. Register an exact HTTPS callback URI (localhost HTTP is allowed). Public clients authenticate without a secret; confidential clients use `client_secret_basic`, and their secret is displayed only on creation. Request `openid` for an ID token; pure OAuth access tokens can be requested without it. Users must consent to each authorization. Disabling a client revokes its access and refresh tokens; already issued ID tokens remain cryptographically valid until expiry. Signing-key rotation keeps old public keys available for that interval. The PostgreSQL backup includes OIDC signing keys and client credentials: protect it accordingly. The issuer is unavailable until `site.domain` and the database are configured; restart after changing the domain.
+
+New clients must provide an application name, optional description, an HTTPS homepage (localhost HTTP is allowed for development), and exact redirect URIs; post-logout redirect URIs are optional and must also be registered explicitly. RP-initiated logout revokes the application's tokens, but does not sign the user out of their blog account. Owners and administrators can edit client details and redirect URIs later. During an external authorization, both the sign-in and consent screens show the registered application details, a link to its website, and a link to its creator's public blog profile. Legacy clients without a homepage or owner continue to work and can be updated; no unvalidated legacy URL is rendered as a link.
+
+### Administration statistics and security audit
+
+Administrators can search users by name/email and role at `/admin/users`, inspect their application counts, and navigate from a user to their registered clients. `/admin/oidc/clients` supports name, owner and status filters, login counts, distinct login users and last-login times. Client details show recent login users. The default administration workspace provides paginated views (25 records per page).
+
+`/admin/audit` is an administrator-only, read-only event log, filterable by action, outcome, user, client, IP, request ID and UTC dates. It records site sign-ins, application authorization/token issuance, client and role changes, account-security operations, administrative writes and rejected/failed requests. OAuth errors retain only standardized error codes. Passwords, secrets, tokens, cookies, bodies and query strings are not recorded. Source IPs follow the configured trusted-proxy policy; never blindly trust forwarded headers.
+
+Statistics begin when auditing is first enabled; unverifiable historical logins are not backfilled. One authorization-code token issuance counts as one application login. Consent visits, refreshes and failures do not count, and revocation/logout/client disable do not remove history. Client changes, role changes and credential issuance commit atomically with their audit events; audit failure rolls them back. Other audit-write failures emit a secret-free `audit_write_failed` server log, correlated with the response's `X-Request-ID`. There is no automatic audit retention purge: monitor database growth and back it up. The website offers no audit editing/deletion, but the ledger is not tamper-proof against database administrators; important deployments should also archive to a protected external logging system.
 
 ## Theme System
 
-Solitudes supports independent frontend and backend themes.
+Solitudes supports independently switchable frontend and administration themes. Only the modern default administration theme is bundled; additional trusted themes can be installed without changing this architecture.
 
 ### Theme Directory Layout
 
 ```
 resource/themes/
 ├── site/<theme_name>/    # Frontend themes
-└── admin/<theme_name>/   # Backend themes
+└── admin/<theme_name>/   # Admin themes (default is bundled)
 ```
 
-Each theme requires a `metadata.json`:
+Both kinds use the same resource layout:
+
+```text
+<theme_name>/
+├── metadata.json
+├── screenshot.png       # Actual preview image, preferably 16:10
+├── templates/
+├── static/
+└── translations/
+    ├── en.json
+    └── zh.json
+```
+
+Both kinds share the same `metadata.json` schema; `id` must match the directory name:
 
 ```json
 {
@@ -112,15 +137,19 @@ Each theme requires a `metadata.json`:
   "version": "1.0",
   "description": "Theme Description",
   "link": "https://link.to.theme",
-  "preview": "/static/images/preview.png"
+  "config": {}
 }
 ```
 
-Switch themes from **Admin > System Settings**.
+Select both kinds using the same screenshot cards in **Admin > System Settings**, then save to apply them independently. Previews come from `screenshot.png` in each theme root, not a `preview` metadata field. Missing screenshots show a local placeholder, without third-party image requests. Installed administration themes follow the same layout and are discovered automatically. Theme files are trusted server-side code: only install themes you trust.
+
+All frontend themes use the same [model queries and template primitives](docs/theme-data.md) (Chinese), composing ordering, limits and random sampling themselves. Queries never branch on theme names; [article and partial-content access](docs/content-access.md) is enforced server-side.
 
 ## Development
 
 **Prerequisites**: Go 1.26+, PostgreSQL
+
+See [database design and maintenance](docs/database.md) (Chinese) for schema, indexes, connection pool limits and audit retention.
 
 ```bash
 git clone https://github.com/naiba/solitudes.git
@@ -143,9 +172,9 @@ SOLITUDES_TEST_POSTGRES_DSN='postgres://postgres@127.0.0.1:5432/solitudes_test?s
 # Browser matrix: install dependencies in e2e/ (`bun install`), install
 # Playwright Chromium (`bunx playwright install chromium`), then run against
 # a dedicated PostgreSQL test database. This starts an isolated HTTP server
-# and local SMTP catcher, testing cactus/folio × default/glacie.
+# and local SMTP catcher, testing cactus/folio × default.
 SOLITUDES_TEST_POSTGRES_DSN='postgres://postgres@127.0.0.1:5432/solitudes_test?sslmode=disable' \
-  go test -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v
+  go test -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v -timeout 20m
 
 # Build
 go build -o solitudes cmd/web/main.go
@@ -157,8 +186,15 @@ OIDC client management and ownership, external OIDC login for users/editors/admi
 provider configuration and Folio's theme toggle). Pull requests and pushes to
 `master` run the PostgreSQL and Chromium matrix in CI before Docker images are
 published. It is not exhaustive coverage
-of every feature: external OAuth providers, WebAuthn authenticator ceremonies,
-uploads, every settings page and error path still need dedicated E2E tests.
+of every feature: WebAuthn registration/removal uses Chromium's virtual authenticator;
+real external OAuth providers and physical authenticators are not exercised.
+Uploads and every settings/error path still need dedicated browser coverage.
+
+For opt-in screenshots, set `SOLITUDES_VISUAL_AUDIT=1` and
+`SOLITUDES_VISUAL_DIR` to a temporary directory with the same browser-matrix
+command (use `-timeout 20m`). The isolated visual suite replaces the old
+localhost screenshot scripts; it never overwrites theme preview images or seeds
+a running blog. Review and remove generated screenshots afterward.
 
 ## Credits
 

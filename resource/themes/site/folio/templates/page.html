@@ -13,7 +13,7 @@
   "author": {
     "@type": "Person",
     "name": "{{jsonEscape .Data.article.Author.Nickname}}",
-    "url": "https://{{.Conf.Site.Domain}}/"
+    "url": "https://{{.Conf.Site.Domain}}/{{if .Data.article.Author.ID}}users/{{.Data.article.Author.ID}}{{end}}"
   },
   "publisher": {
     "@type": "Organization",
@@ -36,24 +36,24 @@
     <article class="folio-article" data-testid="site-article">
         <header class="article-header folio-narrow">
             <h1 class="article-title">{{.Data.article.Title}}</h1>
-            {{if .Login}}
-            <a href="/admin/publish?id={{.Data.article.ID}}" class="edit-link">{{.Tr.T "edit_post"}}</a>
-            {{end}}
+            <div class="article-byline" data-testid="article-byline">
+            <div class="article-meta" data-testid="article-meta">
+                {{if .Data.article.Author.ID}}<span>{{.Tr.T "written_by"}} <a href="/users/{{.Data.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.Data.article.Author.Nickname}}</a></span>{{end}}
+                <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
+                {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
+                <span>{{.Tr.T "updated_at"}} <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time></span>
+                {{end}}
+                {{if and .Login (or .Account.Role.IsAdmin (eq .Account.ID .Data.article.Author.ID))}}<a href="/admin/publish?id={{.Data.article.ID}}" class="edit-link" data-testid="article-edit-link">{{.Tr.T "edit_post"}}</a>{{end}}
+            </div>
+            {{template "site/share_button" .}}
+            </div>
+            <hr class="article-divider" aria-hidden="true">
         </header>
 
-        <hr>
-
-        <div class="app-prose folio-narrow">
-            {{(md (.Data.article|articleIdx) .Data.article.Content)|unsafe}}
+        <div class="app-prose folio-narrow reading-content" data-reading-content>
+            {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
         </div>
 
-        <div class="folio-narrow article-meta" style="margin-top: 2rem;">
-            {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
-            {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
-            <span class="meta-separator">·</span>
-            {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
-            {{end}}
-        </div>
     </article>
 
     <!-- Comments section -->
@@ -62,19 +62,15 @@
         <hr>
         <h2 class="comments-heading">{{.Tr.T "comments"}}</h2>
 
-        {{template "site/comments_entry" (commentsData .Data.article.Comments .Tr)}}
+{{template "site/comment_navigation" .}}
+{{template "site/comments_entry" (dict "comments" .Data.article.Comments "tr" .Tr "Conf" $.Conf "thread" .Data.thread)}}
 
-        {{if .Data.article.Comments}}
-        <div class="pagination">
-            {{if gt .Data.comment_page.Page 1}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.PrevPage}}" rel="prev" aria-label="{{.Tr.T "previous_page"}}"><i class="fa-solid fa-angle-left"></i></a>{{end}}
-            <span>{{.Tr.T "pagination" (int2str .Data.comment_page.Page) (int2str .Data.comment_page.TotalPage) (int2str .Data.comment_page.TotalRecord) (.Tr.T "comments")}}</span>
-            {{if and (gt .Data.comment_page.NextPage 1) (lt .Data.comment_page.Page .Data.comment_page.TotalPage)}}<a href="/{{.Data.article.Slug}}?comment_page={{.Data.comment_page.NextPage}}" rel="next" aria-label="{{.Tr.T "next_page"}}"><i class="fa-solid fa-angle-right"></i></a>{{end}}
-        </div>
-        {{end}}
+        {{template "site/pagination" (dict "nav" .Data.comment_navigation "tr" .Tr)}}
 
         {{if not .Data.article.DisableComment}}
         <form class="comment-form" id="reply" data-testid="comment-form" novalidate>
             <h3>{{.Tr.T "leave_a_comment"}}</h3>
+{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
             <p class="comment-form-hint">{{.Tr.T "may_not_reply_if_email_not_exist"}}</p>
             <p class="comment-form-status" id="comment_form_status" role="status" aria-live="polite"></p>
             <div class="comment-reply-target" id="comment_reply_target" hidden>
@@ -84,7 +80,7 @@
             <label for="id_content">{{.Tr.T "comment_content"}}</label>
             <textarea id="id_content" name="content" data-testid="comment-content" rows="6" placeholder="{{.Tr.T "comment_content"}}" aria-describedby="comment_content_error" aria-invalid="false"></textarea>
             <p class="comment-form-error" id="comment_content_error" role="alert"></p>
-            {{if .Login}}
+            {{if .Account}}
             <input type="hidden" maxlength="64" id="id_nickname" name="nickname" autocomplete="nickname">
             {{else}}
             <div class="comment-form-fields">
@@ -115,8 +111,8 @@
 <script>
     (function () {
         fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" });
-        {{if .Login}}
-        document.querySelector("#id_nickname").value = '{{.Conf.User.Nickname}}';
+        {{if .Account}}
+        if (document.querySelector("#id_nickname")) document.querySelector("#id_nickname").value = '{{.Account.Nickname}}';
         {{else}}
         if (document.querySelector("#id_nickname")) document.querySelector("#id_nickname").value = localStorage.getItem("solitudes_cm_nickname") || '';
         if (document.querySelector("#id_email")) document.querySelector("#id_email").value = localStorage.getItem("solitudes_cm_email") || '';
@@ -200,9 +196,11 @@
         var cm_nickname = nicknameValue;
         var cm_email = document.querySelector('#id_email') ? document.querySelector('#id_email').value : "";
         var cm_website = document.querySelector('#id_website') ? document.querySelector('#id_website').value : "";
+        {{if not .Account}}
         localStorage.setItem("solitudes_cm_nickname", cm_nickname);
         localStorage.setItem("solitudes_cm_email", cm_email);
         localStorage.setItem("solitudes_cm_website", cm_website);
+        {{end}}
         var data = {
             nickname: cm_nickname,
             email: cm_email,
@@ -219,7 +217,11 @@
             headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         }).then(function(resp) {
-            if (resp.status === 200) { window.location.reload(); return; }
+            if (resp.status === 200) { return resp.json().then(function(result) {
+                        window.location.href = result.id
+                            ? location.pathname + '?thread=' + encodeURIComponent(result.id) + '#comment-' + encodeURIComponent(result.id)
+                            : location.pathname + '?comment_page=1#comments';
+                    }); }
             resp.text().then(function(str) { setFormStatus('{{.Tr.T "submit_failed"}} ' + str); });
         }).catch(function(e) {
             setFormStatus('{{.Tr.T "submit_failed"}} ' + e);

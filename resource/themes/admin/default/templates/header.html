@@ -3,124 +3,61 @@
 <html lang="{{.Tr.Locale}}">
 <head>
     {{template "admin/css"}}
-    <style>
-        .vditor--fullscreen {
-            z-index: 9999 !important;
-        }
-    </style>
     <title>{{.Title}}</title>
 </head>
-<body class="bg-gray-50">
+<body class="admin-shell">
     <a href="#admin-main-content" class="admin-skip-link">{{.Tr.T "skip_to_content"}}</a>
-    <!-- Top Navigation -->
-    <nav class="admin-topnav">
-        <div class="admin-topnav-inner">
-            <a href="{{if .Account.Role.IsAdmin}}/admin{{else}}/admin/articles{{end}}" class="admin-logo">
-                <i class="fa-solid fa-pen-to-square"></i>
-                <span>Solitudes</span>
+    <aside class="admin-sidebar" id="admin-sidebar" aria-label="{{.Tr.T "menu"}}" data-testid="admin-sidebar">
+        <div class="sidebar-brand">
+            <a href="{{if .Account.Role.IsAdmin}}/admin{{else if .Account.Role.CanPublish}}/admin/articles{{else}}/account{{end}}" class="admin-logo">
+                <span class="brand-mark" aria-hidden="true"><i class="fa-solid fa-feather-pointed"></i></span>
+                <span>Solitudes<small>{{.Tr.T "admin_workspace"}}</small></span>
             </a>
-            
-            <button type="button" class="admin-mobile-toggle" aria-label="{{.Tr.T "menu"}}" aria-controls="admin-navigation" aria-expanded="false">
-                <i class="fa-solid fa-bars" aria-hidden="true"></i>
-            </button>
-
-            <ul class="admin-nav-links" id="admin-navigation">
-                {{if .Account.Role.IsAdmin}}<li><a href="/admin" class="{{if eq .Path "/admin"}}active{{end}}">
-                    <i class="fa-solid fa-gauge"></i>
-                    <span>{{.Tr.T "dashboard"}}</span>
-                </a></li>{{end}}
-                <li><a href="/admin/publish" data-testid="admin-nav-publish" class="{{if hasPrefix .Path "/admin/publish"}}active{{end}}">
-                    <i class="fa-solid fa-plus"></i>
-                    <span>{{.Tr.T "compose"}}</span>
-                </a></li>
-                <li><a href="/admin/articles" class="{{if hasPrefix .Path "/admin/articles"}}active{{end}}">
-                    <i class="fa-solid fa-list"></i>
-                    <span>{{.Tr.T "articles"}}</span>
-                </a></li>
-                {{if .Account.Role.IsAdmin}}<li class="admin-nav-group"><details data-testid="admin-nav-content-menu"><summary class="{{if or (hasPrefix .Path "/admin/comments") (hasPrefix .Path "/admin/media") (hasPrefix .Path "/admin/tags")}}active{{end}}"><i class="fa-solid fa-folder-open"></i> {{.Tr.T "content_management"}} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary><ul class="admin-nav-submenu"><li><a href="/admin/comments" class="{{if hasPrefix .Path "/admin/comments"}}active{{end}}">
-                    <i class="fa-regular fa-comments"></i>
-                    <span>{{.Tr.T "comments"}}</span>
-                </a></li>
-                <li><a href="/admin/media" class="{{if hasPrefix .Path "/admin/media"}}active{{end}}">
-                    <i class="fa-regular fa-file-image"></i>
-                    <span>{{.Tr.T "media"}}</span>
-                </a></li>
-                <li><a href="/admin/tags" class="{{if hasPrefix .Path "/admin/tags"}}active{{end}}">
-                    <i class="fa-solid fa-tags"></i>
-                    <span>{{.Tr.T "tags"}}</span>
-                </a></li>
-                </ul></details></li>
-                <li class="admin-nav-group"><details data-testid="admin-nav-identity-menu"><summary class="{{if or (hasPrefix .Path "/admin/users") (hasPrefix .Path "/admin/oidc") (hasPrefix .Path "/admin/auth")}}active{{end}}"><i class="fa-solid fa-shield-halved"></i> {{.Tr.T "identity_management"}} <i class="fa-solid fa-chevron-down" aria-hidden="true"></i></summary><ul class="admin-nav-submenu"><li><a href="/admin/users" class="{{if hasPrefix .Path "/admin/users"}}active{{end}}"><i class="fa-solid fa-users"></i><span>{{.Tr.T "users"}}</span></a></li>
-                <li><a href="/admin/auth/providers" data-testid="admin-nav-providers" class="{{if hasPrefix .Path "/admin/auth"}}active{{end}}"><i class="fa-solid fa-right-to-bracket"></i><span>{{.Tr.T "login_providers"}}</span></a></li>
-                <li><a href="/admin/oidc/clients" class="{{if hasPrefix .Path "/admin/oidc"}}active{{end}}"><i class="fa-solid fa-key"></i><span>{{.Tr.T "provider_external_apps"}}</span></a></li></ul></details></li>
-                <li><a href="/admin/settings" class="{{if hasPrefix .Path "/admin/settings"}}active{{end}}">
-                    <i class="fa-solid fa-gear"></i>
-                    <span>{{.Tr.T "site_settings"}}</span>
-                </a></li>{{end}}
-            </ul>
-            
-            <div class="admin-user-menu">
-                <a href="/account" class="text-gray-600 hover:text-gray-900 transition" title="{{.Tr.T "my_account"}}">{{.Tr.T "my_account"}}</a>
-                <a href="/" target="_blank" rel="noopener noreferrer" class="text-gray-600 hover:text-gray-900 transition" title="{{.Tr.T "view_site"}}">
-                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
-                    <span class="hidden sm:inline ml-1">{{.Tr.T "view_site"}}</span>
-                </a>
-                <div class="admin-user-info">
-                    <div class="admin-user-avatar">{{substr .Account.Nickname 0 1}}</div>
-                    <span class="hidden sm:inline text-sm text-gray-700">{{.Account.Nickname}}</span>
-                </div>
-                <form method="POST" action="/logout" style="display: inline;">
-                    <button type="submit" class="text-gray-600 hover:text-red-600 transition" title="{{.Tr.T "logout"}}" aria-label="{{.Tr.T "logout"}}">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                    </button>
-                </form>
+            <button type="button" class="admin-icon-button sidebar-close" aria-label="{{.Tr.T "close_menu"}}" data-testid="admin-nav-close"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+        </div>
+        <nav id="admin-navigation" class="admin-navigation" aria-label="{{.Tr.T "menu"}}">
+            {{if .Account.Role.CanPublish}}
+            <a href="/admin/publish" class="admin-button primary sidebar-compose" data-testid="admin-nav-publish" {{if hasPrefix .Path "/admin/publish"}}aria-current="page"{{end}}><i class="fa-solid fa-plus" aria-hidden="true"></i>{{.Tr.T "compose"}}</a>
+            {{if .Account.Role.IsAdmin}}<a href="/admin" class="sidebar-link {{if eq .Path "/admin"}}active{{end}}" {{if eq .Path "/admin"}}aria-current="page"{{end}}><i class="fa-solid fa-gauge" aria-hidden="true"></i>{{.Tr.T "dashboard"}}</a>{{end}}
+            <section class="sidebar-group" data-testid="admin-nav-content-menu">
+                <h2>{{.Tr.T "content_management"}}</h2>
+                <a href="/admin/articles" class="sidebar-link {{if hasPrefix .Path "/admin/articles"}}active{{end}}" {{if hasPrefix .Path "/admin/articles"}}aria-current="page"{{end}}><i class="fa-regular fa-file-lines" aria-hidden="true"></i>{{.Tr.T "articles"}}</a>
+                {{if .Account.Role.IsAdmin}}
+                <a href="/admin/comments" class="sidebar-link {{if hasPrefix .Path "/admin/comments"}}active{{end}}" {{if hasPrefix .Path "/admin/comments"}}aria-current="page"{{end}}><i class="fa-regular fa-comments" aria-hidden="true"></i>{{.Tr.T "comments"}}</a>
+                <a href="/admin/media" class="sidebar-link {{if hasPrefix .Path "/admin/media"}}active{{end}}" {{if hasPrefix .Path "/admin/media"}}aria-current="page"{{end}}><i class="fa-regular fa-image" aria-hidden="true"></i>{{.Tr.T "media"}}</a>
+                <a href="/admin/tags" class="sidebar-link {{if hasPrefix .Path "/admin/tags"}}active{{end}}" {{if hasPrefix .Path "/admin/tags"}}aria-current="page"{{end}}><i class="fa-solid fa-tags" aria-hidden="true"></i>{{.Tr.T "tags"}}</a>
+                {{end}}
+            </section>
+            {{if .Account.Role.IsAdmin}}
+            <section class="sidebar-group" data-testid="admin-nav-identity-menu">
+                <h2>{{.Tr.T "identity_management"}}</h2>
+                <a href="/admin/users" class="sidebar-link {{if hasPrefix .Path "/admin/users"}}active{{end}}" {{if hasPrefix .Path "/admin/users"}}aria-current="page"{{end}}><i class="fa-solid fa-users" aria-hidden="true"></i>{{.Tr.T "users"}}</a>
+                <a href="/admin/oidc/clients" class="sidebar-link {{if hasPrefix .Path "/admin/oidc"}}active{{end}}" {{if hasPrefix .Path "/admin/oidc"}}aria-current="page"{{end}}><i class="fa-solid fa-shapes" aria-hidden="true"></i>{{.Tr.T "provider_external_apps"}}</a>
+                <a href="/admin/auth/providers" data-testid="admin-nav-providers" class="sidebar-link {{if hasPrefix .Path "/admin/auth"}}active{{end}}" {{if hasPrefix .Path "/admin/auth"}}aria-current="page"{{end}}><i class="fa-solid fa-key" aria-hidden="true"></i>{{.Tr.T "login_providers"}}</a>
+                <a href="/admin/audit" data-testid="admin-nav-audit" class="sidebar-link {{if eq .Path "/admin/audit"}}active{{end}}" {{if eq .Path "/admin/audit"}}aria-current="page"{{end}}><i class="fa-solid fa-shield-halved" aria-hidden="true"></i>{{.Tr.T "security_audit"}}</a>
+            </section>
+            <section class="sidebar-group"><h2>{{.Tr.T "admin_system"}}</h2><a href="/admin/settings" class="sidebar-link {{if hasPrefix .Path "/admin/settings"}}active{{end}}" {{if hasPrefix .Path "/admin/settings"}}aria-current="page"{{end}}><i class="fa-solid fa-gear" aria-hidden="true"></i>{{.Tr.T "site_settings"}}</a></section>
+            {{end}}
+            {{end}}
+        </nav>
+        <div class="sidebar-account">
+            <a href="/account" data-testid="admin-account-nav" aria-label="{{.Tr.T "my_account"}}">
+                <span class="admin-user-avatar">{{substr .Account.Nickname 0 1}}</span>
+                <span class="sidebar-account-name">{{.Account.Nickname}}<small>{{if .Account.Role.IsAdmin}}{{.Tr.T "role_admin"}}{{else if .Account.Role.CanPublish}}{{.Tr.T "role_editor"}}{{else}}{{.Tr.T "role_user"}}{{end}}</small></span>
+            </a>
+            <form method="POST" action="/logout"><button type="submit" class="admin-icon-button" title="{{.Tr.T "logout"}}" aria-label="{{.Tr.T "logout"}}"><i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i></button></form>
+        </div>
+    </aside>
+    <div class="sidebar-backdrop" hidden></div>
+    <div class="admin-workspace" id="admin-workspace">
+        <header class="admin-topbar">
+            <button type="button" class="admin-icon-button admin-mobile-toggle" data-testid="admin-nav-toggle" aria-label="{{.Tr.T "menu"}}" aria-controls="admin-sidebar" aria-expanded="false"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+            <nav class="admin-breadcrumb" aria-label="{{.Tr.T "admin_breadcrumb"}}"><span>{{.Tr.T "admin_workspace"}}</span><span aria-hidden="true">/</span><span id="admin-current-page">{{.Title}}</span></nav>
+            <div class="admin-topbar-actions">
+                <button class="admin-icon-button" type="button" data-testid="admin-theme-toggle" aria-label="{{.Tr.T "toggle_color_scheme"}}" title="{{.Tr.T "toggle_color_scheme"}}" aria-pressed="false"><i class="fa-regular fa-moon" aria-hidden="true"></i></button>
+                <a href="/" class="admin-button compact" data-testid="admin-view-site">{{.Tr.T "view_site"}}<i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a>
             </div>
-        </div>
-    </nav>
-    
-    <!-- Main Content -->
-    <main class="admin-main" id="admin-main-content" tabindex="-1">
-        <!-- Loading overlay -->
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="loading-spinner"></div>
-        </div>
-    <script>
-        (function () {
-            const toggle = document.querySelector('.admin-mobile-toggle');
-            const navigation = document.getElementById('admin-navigation');
-            if (!toggle || !navigation) return;
-
-            const closeNavigation = () => {
-                navigation.classList.remove('mobile-open');
-                toggle.setAttribute('aria-expanded', 'false');
-                toggle.querySelector('i').className = 'fa-solid fa-bars';
-            };
-
-            toggle.addEventListener('click', () => {
-                const isOpen = navigation.classList.toggle('mobile-open');
-                toggle.setAttribute('aria-expanded', String(isOpen));
-                toggle.querySelector('i').className = isOpen ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
-            });
-            navigation.addEventListener('click', event => {
-                if (event.target.closest('a')) closeNavigation();
-            });
-            document.addEventListener('keydown', event => {
-                if (event.key === 'Escape') {
-                    closeNavigation();
-                    toggle.focus();
-                }
-            });
-            navigation.querySelectorAll('details').forEach(group => group.addEventListener('toggle', () => {
-                if (group.open) navigation.querySelectorAll('details').forEach(other => {
-                    if (other !== group) other.open = false;
-                });
-            }));
-            document.addEventListener('click', event => {
-                if (!navigation.contains(event.target)) navigation.querySelectorAll('details').forEach(group => group.open = false);
-            });
-            window.addEventListener('resize', () => {
-                if (window.innerWidth > 1150) closeNavigation();
-            });
-        })();
-    </script>
+        </header>
+        <main class="admin-main" id="admin-main-content" tabindex="-1">
+            <div class="loading-overlay" id="loadingOverlay" aria-hidden="true"><div class="loading-spinner"></div></div>
 {{end}}

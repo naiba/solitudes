@@ -1,5 +1,9 @@
 {{define "site/index"}}
 {{template "site/header" .}}
+{{$articles := .Queries.Articles "newest" 16 "without_tag" "Topic"}}
+{{$readers := .Queries.Users "newest" 4}}
+{{$comments := .Queries.RecentComments 5}}
+{{$topics := .Queries.Articles "newest" 5 "tag" "Topic"}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -19,82 +23,85 @@
       }
     },
     {
-      "@type": "Person",
-      "name": "{{jsonEscape .Conf.User.Nickname}}",
+      "@type": "Organization",
+      "name": "{{jsonEscape .Conf.Site.SpaceName}}",
       "url": "https://{{.Conf.Site.Domain}}/"
     }
   ]
 }
 </script>
 {{template "site/menu" .}}
+<main id="main-content">
+  <h1 class="sr-only">{{.Conf.Site.SpaceName}}</h1>
 {{ $top := index .Theme "cactus.hometopcontent" }}
 {{if $top}}
-<section>
+<section class="home-top-content" data-testid="home-top-content">
   {{(md "home-top" (printf "%s" $top))|unsafe}}
 </section>
 {{end}}
-<main id="main-content">
-  <h1 class="sr-only">{{.Conf.Site.SpaceName}}</h1>
-  <!-- Two-row, Two-column Grid Layout for Desktop -->
+  <!-- Independent columns avoid stretching short widgets to article height. -->
   <div class="home-grid-layout">
-    <!-- Row 1, Column 1: Search -->
+    <div class="home-column home-primary">
     <div class="home-search-section">
       {{template "site/search_form" .}}
     </div>
     
-    <!-- Row 1, Column 2: Most Read -->
-    {{if .Data.mostRead}}
-    <div class="home-most-read-section">
-      <div class="h1 sl-menu">
-        <span>{{.Tr.T "most_read"}}</span>
-      </div>
-      <ul class="post-list">
-        {{range .Data.mostRead}}
-        {{template "site/article_list_entry" (articleData . $.Tr)}}
-        {{end}}
-      </ul>
-    </div>
-    {{else}}
-    <div class="home-most-read-section"></div>
-    {{end}}
-    
-    <!-- Row 2, Column 1: Writing/Articles -->
     <div class="home-articles-section">
       <div class="h1 sl-menu">
         <a href="https://{{.Conf.Site.Domain}}/posts/">{{.Tr.T "writing"}}</a>
-        <a href="https://{{.Conf.Site.Domain}}/posts/">{{.Tr.T "view_more"}}➤</a>
+        <a href="https://{{.Conf.Site.Domain}}/posts/">{{.Tr.T "view_more"}} <span aria-hidden="true">➤</span></a>
       </div>
       <ul class="post-list">
-        {{if not .Data.articles}}
+        {{if not $articles}}
         <li class="post-item">
           <span>
             <small>{{.Tr.T "no_article"}}</small>
           </span>
         </li>
         {{else}}
-        {{range .Data.articles}}
-        {{template "site/article_list_entry" (articleData . $.Tr)}}
-        {{end}}
+        {{$articleLimit := 16}}{{range $topics}}{{$articleLimit = add $articleLimit -2}}{{end}}
+        {{range $i, $article := $articles}}{{if lt $i $articleLimit}}
+        {{template "site/article_list_entry" (dict "article" $article "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}
+        {{end}}{{end}}
         {{end}}
       </ul>
     </div>
-    
-    <!-- Row 2, Column 2: Topics -->
-    {{if .Data.topics}}
+    {{if $topics}}
     <div class="home-topics-section">
       <div class="h1 sl-menu">
         <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "topic"}}</a>
-        <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "view_more"}}➤</a>
+        <a href="https://{{.Conf.Site.Domain}}/tags/Topic/">{{.Tr.T "view_more"}} <span aria-hidden="true">➤</span></a>
       </div>
       <ul class="post-list">
-        {{range .Data.topics}}
-        {{template "site/article_list_entry" (articleData . $.Tr)}}
+        {{range $topics}}
+        {{template "site/article_list_entry" (dict "article" . "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}
         {{end}}
       </ul>
     </div>
-    {{else}}
-    <div class="home-topics-section"></div>
     {{end}}
+    </div>
+    <aside class="home-column home-secondary">
+    {{$mostRead := .Queries.Articles "reads" 3 "without_tag" "Topic" "template" "1"}}
+    {{if ge (len $mostRead) 3}}
+    <section class="home-most-read-section">
+      <h2 class="h1">{{.Tr.T "most_read"}}</h2>
+      <ul class="post-list">{{range $mostRead}}{{template "site/article_list_entry" (dict "article" . "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}{{end}}</ul>
+    </section>
+    {{end}}
+    {{if $comments}}<section class="home-comments" data-testid="home-recent-comments">
+      <h2 class="h1">{{.Tr.T "recent_comments"}}</h2>
+      <ul class="home-comments-list" role="list">{{range $comments}}<li data-testid="home-recent-comment">
+        <div class="home-comment-byline">{{if .AccountID}}<a href="/users/{{.AccountID}}" data-testid="home-comment-author">{{.Nickname}}</a>{{else}}<span>{{.Nickname}}</span>{{end}}<span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else if eq .Role "user"}}{{$.Tr.T "role_user"}}{{else}}{{$.Tr.T "role_guest"}}{{end}}</span><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></div>
+        <a class="home-comment-excerpt" href="/{{.ArticleSlug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="home-comment-link">{{substr .Content 0 160}}</a>
+        <span class="home-comment-context">{{$.Tr.T "comment_on"}} {{.ArticleTitle}}</span>
+      </li>{{end}}</ul>
+    </section>{{end}}
+    <section class="reader-circle-home" data-testid="reader-circle-home">
+      <div class="h1 sl-menu home-community-heading"><a href="/readers/">{{.Tr.T "reader_circle"}}</a><a class="home-widget-more" href="/readers/" data-testid="reader-circle-more">{{.Tr.T "view_more"}} <span aria-hidden="true">➤</span></a></div>
+      <p>{{.Tr.T "reader_circle_home_intro"}}</p>
+      {{if $readers}}<ul class="reader-home-list">{{range $readers}}<li><a href="/users/{{.ID}}" data-testid="reader-circle-member" title="{{.Nickname}}">{{.Nickname}}</a><span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else}}{{$.Tr.T "role_user"}}{{end}}</span></li>{{end}}</ul>{{else}}<p>{{.Tr.T "reader_circle_empty"}}</p>{{end}}
+    </section>
+    </aside>
   </div>
 </main>
 {{ $bottom := index .Theme "cactus.homebottomcontent" }}

@@ -1,7 +1,7 @@
 {{define "admin/oidc_client_created"}}
-{{template "admin/header" .}}<div class="admin-container"><div class="wf-card p-4">
-  <h1>{{.Tr.T "client_created"}}</h1><p>{{.Tr.T "copy_secret_once"}}</p>
+{{template "admin/header" .}}<div class="identity-admin"><div class="identity-card">
+  <h1>{{.Tr.T "client_created"}}</h1>{{if .Data.secret}}<p class="identity-hint">{{.Tr.T "copy_secret_once"}}</p>{{end}}
   <p>{{.Tr.T "client_id"}}: <code data-testid="oidc-created-id">{{.Data.client_id}}</code></p>
-  {{if .Data.secret}}<p>{{.Tr.T "client_secret"}}: <code>{{.Data.secret}}</code></p>{{end}}
-  <a href="/admin/oidc/clients" data-testid="oidc-created-back">{{.Tr.T "oidc_clients"}}</a>
+  {{if .Data.secret}}<p>{{.Tr.T "client_secret"}}: <code data-testid="oidc-created-secret">{{.Data.secret}}</code></p>{{end}}
+  <div class="identity-actions"><a class="admin-button" href="/admin/oidc/clients" data-testid="oidc-created-back">{{.Tr.T "oidc_clients"}}</a></div>
 </div></div>{{template "admin/footer" .}}{{end}}

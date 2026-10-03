@@ -24,22 +24,7 @@ function randomColor() {
     return `hsl(${h},${s}%,${l}%)`;
 }
 
-function matches(el, selector) {
-    return (el.matches || el.matchesSelector || el.msMatchesSelector || el.mozMatchesSelector || el.webkitMatchesSelector || el.oMatchesSelector).call(el, selector);
-};
-
 ready(function () {
-    /**
-     * 首页哔哔区域高度限制（仅桌面端）
-     */
-    if (window.matchMedia('(min-width: 769px)').matches) {
-        const articles = document.querySelector('.home-articles-section');
-        const topics = document.querySelector('.home-topics-section');
-        if (articles && topics && articles.offsetHeight > 0) {
-            topics.style.maxHeight = articles.offsetHeight + 'px';
-        }
-    }
-
     /**
      * 标签云
      */
@@ -84,59 +69,44 @@ ready(function () {
      * Controls the different versions of  the menu in blog post articles 
      * for Desktop, tablet and mobile.
      */
-    if (document.querySelectorAll(".post").length) {
+    if (document.querySelector("#header-post #menu")) {
         var menu = document.querySelector("#menu");
-        var nav = document.querySelector("#menu > #nav");
         var menuIcons = document.querySelectorAll("#menu-icon, #menu-icon-tablet");
+
+        function setPostMenuOpen(open) {
+            menu.style.visibility = open ? 'visible' : 'hidden';
+            menuIcons.forEach(function(icon) {
+                icon.classList.toggle('active', open);
+                icon.setAttribute('aria-expanded', String(open));
+            });
+        }
 
         /**
          * Display the menu on hi-res laptops and desktops.
          */
-        const screenWidth = parseFloat(getComputedStyle(document.documentElement, null).width.replace("px", ""));
-        if (screenWidth >= 1440) {
-            menu.style.visibility = "visible";
-            menuIcons.forEach(function(icon) { icon.classList.add("active"); });
-        }
+        const desktopMenu = window.matchMedia('(min-width: 1800px)');
+        setPostMenuOpen(desktopMenu.matches);
+        desktopMenu.addEventListener('change', event => setPostMenuOpen(event.matches));
 
         /**
          * Display the menu if the menu icon is clicked.
          */
         menuIcons.forEach(function(menuIcon) {
             menuIcon.addEventListener('click', function () {
-                var isOpen = menu.style.visibility === "visible";
-                menu.style.visibility = isOpen ? "hidden" : "visible";
-                menuIcons.forEach(function(icon) { icon.classList.toggle("active", !isOpen); });
+                setPostMenuOpen(menu.style.visibility !== "visible");
                 return false;
             });
         });
 
-        /**
-         * Add a scroll listener to the menu to hide/show the navigation links.
-         */
-        if (document.querySelectorAll("#menu").length) {
-            window.addEventListener('scroll', function () {
-                const topDistance = document.documentElement.scrollTop || document.body.scrollTop;
-                const navIsVisible = window.getComputedStyle(nav).display !== 'none';
-
-                // hide only the navigation links on desktop
-                if (!navIsVisible && topDistance < 50) {
-                    nav.style.display = '';
-                } else if (navIsVisible && topDistance > 100) {
-                    nav.style.display = 'none';
-                }
-
-                // on tablet, hide the navigation icon as well and show a "scroll to top
-                // icon" instead
-                const menuIconVisible = matches(document.querySelector("#menu-icon"), ":visible");
-                if (!menuIconVisible && topDistance < 50) {
-                    document.querySelector("#menu-icon-tablet").style.display = '';
-                    document.querySelector("#top-icon-tablet").style.display = 'none';
-                } else if (!menuIconVisible && topDistance > 100) {
-                    document.querySelector("#top-icon-tablet").style.display = '';
-                    document.querySelector("#menu-icon-tablet").style.display = 'none';
-                }
-            });
-        }
+        // Keep navigation available while reading; Escape returns focus to the
+        // visible toggle instead of a hidden desktop/tablet counterpart.
+        document.addEventListener('keydown', function (event) {
+            if (document.querySelector('dialog[open]')) return;
+            if (event.key !== 'Escape' || menu.style.visibility !== 'visible') return;
+            setPostMenuOpen(false);
+            const visibleToggle = Array.from(menuIcons).find(icon => icon.getClientRects().length);
+            if (visibleToggle) visibleToggle.focus();
+        });
 
         /**
          * Show mobile navigation menu after scrolling upwards,
@@ -147,7 +117,9 @@ ready(function () {
             window.addEventListener('scroll', function () {
                 var topDistance = document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
 
-                if (topDistance > lastScrollTop) {
+                if (document.querySelector('#toc-footer:not([hidden])')) {
+                    document.querySelector("#footer-post").style.display = '';
+                } else if (topDistance > lastScrollTop) {
                     // downscroll -> show menu
                     document.querySelector("#footer-post").style.display = 'none';
                 } else {
@@ -158,8 +130,7 @@ ready(function () {
 
                 // close all submenu"s on scroll
                 document.querySelector("#nav-footer").style.display = 'none';
-                document.querySelector("#toc-footer").style.display = 'none';
-                document.querySelector("#share-footer").style.display = 'none';
+                document.querySelectorAll('#actions-footer button[aria-expanded]').forEach(button => button.setAttribute('aria-expanded', 'false'));
 
                 // show a "navigation" icon when close to the top of the page, 
                 // otherwise show a "scroll to the top" icon

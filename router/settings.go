@@ -1,16 +1,13 @@
 package router
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
-	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v3"
-	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -47,10 +44,6 @@ type settingsRequest struct {
 	SiteDomain   string `json:"site_domain,omitempty" form:"site_domain"`
 	SiteKeywords string `json:"site_keywords,omitempty" form:"site_keywords"`
 	SiteTheme    string `json:"site_theme,omitempty" form:"site_theme"`
-	Email        string `json:"email,omitempty" form:"email" validate:"email"`
-	Nickname     string `json:"nickname,omitempty" form:"nickname" validate:"trim"`
-	OldPassword  string `json:"old_password,omitempty" form:"old_password" validate:"trim"`
-	NewPassword  string `json:"new_password,omitempty" form:"new_password" validate:"trim"`
 	AdminTheme   string `json:"admin_theme,omitempty" form:"admin_theme"`
 	ThemeConfig  string `json:"theme_config,omitempty" form:"theme_config"`
 }
@@ -114,8 +107,6 @@ func settingsHandler(c *fiber.Ctx) error {
 	candidate.Akismet = sr.Akismet
 	candidate.Site.Domain = sr.SiteDomain
 	candidate.Site.SpaceKeywords = sr.SiteKeywords
-	candidate.User.Nickname = sr.Nickname
-	candidate.User.Email = sr.Email
 
 	var newConfig map[string]interface{}
 	if sr.ThemeConfig != "" {
@@ -153,26 +144,6 @@ func settingsHandler(c *fiber.Ctx) error {
 		return fiber.NewError(http.StatusBadRequest, "Theme config validation failed: "+err.Error())
 	}
 
-	if sr.NewPassword != "" && sr.OldPassword == "" {
-		return fiber.NewError(http.StatusBadRequest, "old password required")
-	}
-	var changedPassword string
-	if len(sr.OldPassword) > 0 && len(sr.NewPassword) > 0 {
-		passwordHash := previous.User.Password
-		if account := currentAccount(c); account != nil {
-			passwordHash = account.PasswordHash
-		}
-		if bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(sr.OldPassword)) != nil {
-			return errors.New("invalid email or password")
-		}
-		b, err := bcrypt.GenerateFromPassword([]byte(sr.NewPassword), bcrypt.DefaultCost)
-		if err != nil {
-			return err
-		}
-		candidate.User.Password = string(b)
-		changedPassword = string(b)
-	}
-
 	for _, fileInput := range []struct {
 		field, destination string
 		limit              int64
@@ -198,23 +169,6 @@ func settingsHandler(c *fiber.Ctx) error {
 	if err := candidate.Save(); err != nil {
 		*solitudes.System.Config = previous
 		return fmt.Errorf("save settings: %w", err)
-	}
-	if changedPassword != "" {
-		if account := currentAccount(c); account != nil {
-			if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
-				if err := tx.Model(&model.Account{}).Where("id = ?", account.ID).Update("password_hash", changedPassword).Error; err != nil {
-					return err
-				}
-				for _, entry := range []interface{}{&model.LoginSession{}, &model.OIDCRefreshToken{}, &model.OIDCAccessToken{}} {
-					if err := tx.Where("account_id = ?", account.ID).Delete(entry).Error; err != nil {
-						return err
-					}
-				}
-				return nil
-			}); err != nil {
-				return fmt.Errorf("update administrator password and revoke sessions: %w", err)
-			}
-		}
 	}
 	if candidate.Site.Theme != previous.Site.Theme || candidate.Admin.Theme != previous.Admin.Theme {
 		if err := ReloadTemplates(); err != nil {

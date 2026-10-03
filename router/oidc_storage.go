@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -184,7 +185,15 @@ func oidcClientID(request op.TokenRequest) string {
 }
 
 func (s *oidcStorage) CreateAccessToken(ctx context.Context, request op.TokenRequest) (string, time.Time, error) {
-	row, err := newOIDCAccess(ctx, s.db, request, oidcClientID(request))
+	var row *model.OIDCAccessToken
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var err error
+		row, err = newOIDCAccess(ctx, tx, request, oidcClientID(request))
+		if err != nil {
+			return err
+		}
+		return recordOIDCLogin(ctx, tx, request)
+	})
 	if err != nil {
 		return "", time.Time{}, err
 	}
@@ -223,14 +232,36 @@ func (s *oidcStorage) CreateAccessAndRefreshTokens(ctx context.Context, request 
 		if r, ok := request.(interface{ GetAuthTime() time.Time }); ok {
 			authTime = r.GetAuthTime()
 		}
-		return tx.Create(&model.OIDCRefreshToken{ID: refreshID, TokenHash: secretHash(raw), ClientID: clientID,
+		if err := tx.Create(&model.OIDCRefreshToken{ID: refreshID, TokenHash: secretHash(raw), ClientID: clientID,
 			AccountID: request.GetSubject(), AccessID: access.ID, Scopes: strings.Join(request.GetScopes(), " "),
-			AuthTime: authTime, ExpiresAt: time.Now().Add(refreshTokenLifetime)}).Error
+			AuthTime: authTime, ExpiresAt: time.Now().Add(refreshTokenLifetime)}).Error; err != nil {
+			return err
+		}
+		if current != "" {
+			return nil
+		}
+		return recordOIDCLogin(ctx, tx, request)
 	})
 	if err != nil {
 		return "", "", time.Time{}, err
 	}
 	return access.ID, raw, access.ExpiresAt, nil
+}
+
+// Refresh grants and consent visits are not logins. One durable event per
+// authorization request survives token rotation, logout and application disable.
+func recordOIDCLogin(ctx context.Context, tx *gorm.DB, request op.TokenRequest) error {
+	auth, ok := request.(*oidcAuthRequest)
+	if !ok {
+		return nil
+	}
+	var requestID *string
+	if auth.ID != "" {
+		requestID = &auth.ID
+	}
+	return saveAudit(ctx, tx, model.AuditEvent{Action: "oidc.login", Outcome: "success",
+		ActorID: request.GetSubject(), ClientID: auth.ClientID, AuthRequestID: requestID,
+		Method: http.MethodPost, Route: "/oauth/token", Status: http.StatusOK, Reason: "authorization_code_issued"})
 }
 
 func (s *oidcStorage) TerminateSession(ctx context.Context, subject, clientID string) error {
@@ -261,7 +292,9 @@ func (s *oidcStorage) RevokeToken(ctx context.Context, tokenOrID, subject, clien
 			return oidc.ErrServerError()
 		}
 		if token.ClientID != clientID {
-			return oidc.ErrInvalidClient()
+			// RFC 7009 requires the same response for an unknown token. Never
+			// disclose whether another client's token exists.
+			return nil
 		}
 		if err := s.db.WithContext(ctx).Delete(&token).Error; err != nil {
 			return oidc.ErrServerError()
@@ -277,7 +310,7 @@ func (s *oidcStorage) RevokeToken(ctx context.Context, tokenOrID, subject, clien
 		return oidc.ErrServerError()
 	}
 	if token.ClientID != clientID {
-		return oidc.ErrInvalidClient()
+		return nil
 	}
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Delete(&token).Error; err != nil {
@@ -476,9 +509,19 @@ type oidcClient struct {
 	redirects []string
 }
 
-func (c *oidcClient) GetID() string                    { return c.ID }
-func (c *oidcClient) RedirectURIs() []string           { return c.redirects }
-func (c *oidcClient) PostLogoutRedirectURIs() []string { return nil }
+func (c *oidcClient) GetID() string          { return c.ID }
+func (c *oidcClient) RedirectURIs() []string { return c.redirects }
+func (c *oidcClient) PostLogoutRedirectURIs() []string {
+	var redirects []string
+	_ = json.Unmarshal([]byte(c.PostLogoutURIsJSON), &redirects)
+	valid := make([]string, 0, len(redirects))
+	for _, redirect := range redirects {
+		if validClientRedirect(redirect) {
+			valid = append(valid, redirect)
+		}
+	}
+	return valid
+}
 func (c *oidcClient) ApplicationType() op.ApplicationType {
 	if c.Public {
 		return op.ApplicationTypeNative
@@ -516,16 +559,28 @@ func (s *oidcStorage) GetClientByClientID(ctx context.Context, id string) (op.Cl
 	if err := s.db.WithContext(ctx).Where("id = ? AND disabled_at IS NULL", id).Take(&row).Error; err != nil {
 		return nil, err
 	}
+	if request, ok := ctx.Value(auditContextKey{}).(*auditRequest); ok {
+		request.ClientID = row.ID
+	}
 	var redirects []string
 	if err := json.Unmarshal([]byte(row.RedirectURIsJSON), &redirects); err != nil {
 		return nil, err
 	}
-	return &oidcClient{OIDCClient: row, redirects: redirects}, nil
+	valid := make([]string, 0, len(redirects))
+	for _, redirect := range redirects {
+		if validClientRedirect(redirect) {
+			valid = append(valid, redirect)
+		}
+	}
+	return &oidcClient{OIDCClient: row, redirects: valid}, nil
 }
 func (s *oidcStorage) AuthorizeClientIDSecret(ctx context.Context, id, secret string) error {
 	var client model.OIDCClient
 	if err := s.db.WithContext(ctx).Where("id = ? AND disabled_at IS NULL AND public = false", id).Take(&client).Error; err != nil {
 		return err
+	}
+	if request, ok := ctx.Value(auditContextKey{}).(*auditRequest); ok {
+		request.ClientID = client.ID
 	}
 	if bcrypt.CompareHashAndPassword([]byte(client.SecretHash), []byte(secret)) != nil {
 		return errors.New("invalid client credentials")
