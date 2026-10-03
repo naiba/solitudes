@@ -1,6 +1,6 @@
 {{define "site/comments_entry"}}
 {{range .comments}}
-<div class="row" id="comment-{{.ID}}" data-testid="comment-entry">
+<div class="row comment-entry" id="comment-{{.ID}}" data-testid="comment-entry">
     <div class="gravatar">
         {{if and .Email (not .AccountID)}}
         <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g" alt="{{.PublicName}}" loading="lazy">
@@ -19,10 +19,12 @@
             {{else if ptrStrEq .EmailReadStatus "unread"}}
             <i class="fa-solid fa-eye-slash" style="color: #999; font-size: 0.9em;" title="{{$.tr.T "email_unread"}}"></i>
             {{end}}
-            <button type="button" class="comment-reply-btn" data-testid="comment-reply" data-comment-id="{{.ID}}" data-comment-nickname="{{.PublicName}}" onclick="reply_to(this.dataset.commentId, this.dataset.commentNickname)">{{$.tr.T "reply"}}</button>
         </p>
         <p class="comment-meta">{{.Content}}</p>
+        <div class="comment-actions">
+        <button type="button" class="comment-reply-btn" data-testid="comment-reply" data-comment-id="{{.ID}}" data-comment-nickname="{{.PublicName}}" onclick="reply_to(this.dataset.commentId, this.dataset.commentNickname)">{{$.tr.T "reply"}}</button>
         {{if and .ReplyCount (ne .ID $.thread)}}<a href="/{{.Article.Slug}}?thread={{.ID}}#comments" class="comment-thread-link" data-testid="comment-thread-link">{{$.tr.T "view_replies" (printf "%d" .ReplyCount)}}</a>{{end}}
+        </div>
     </div>
 </div>
 <div class="child-node">

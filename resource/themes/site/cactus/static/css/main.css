@@ -597,9 +597,9 @@ body {
 
 /* A long custom menu remains one scrollable row instead of covering the title.
    Native focus scrolling and touch panning keep every link reachable. */
-#header-post #nav ul { display: flex; flex-wrap: nowrap; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: .25rem 0; line-height: 1.4; }
+#header-post #nav ul { display: flex; flex-wrap: nowrap; flex: 0 0 auto; align-items: center; justify-content: flex-end; gap: .25rem 0; line-height: 15px; }
 #header-post #nav ul li { flex: 0 0 auto; }
-#header-post #nav ul a { display: inline-flex; align-items: center; min-height: 32px; }
+#header-post #nav ul a { display: inline-flex; align-items: center; min-height: 0; line-height: 15px; padding-block: 0; }
 
 #header-post #nav ul a {
   margin-right: 15px;
@@ -607,13 +607,14 @@ body {
 }
 
 #header-post #nav ul a:hover {
-  background-image: linear-gradient(transparent, transparent 5px, var(--color-accent) 5px, var(--color-accent));
-  background-position: bottom;
-  background-size: 100% 6px;
-  background-repeat: repeat-x;
+  background-image: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
 }
 
-#header-post #nav ul li { border-right: 1px dotted var(--color-accent); }
+#header-post #nav ul li { position: relative; border-right: 0; }
+#header-post #nav ul li:not(:last-child)::after { content: ""; position: absolute; right: 0; top: 50%; height: 15px; transform: translateY(-50%); border-right: 1px dotted var(--color-accent); pointer-events: none; }
 
 #header-post #nav ul li:last-child {
   margin-right: 0;

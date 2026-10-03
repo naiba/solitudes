@@ -27,18 +27,19 @@ test.describe('reading tools review', () => {
       await capture(page, 'guest', String(width), 'reading-toc', '/visual-long-article');
       if (site === 'cactus') {
         if (width <= 500) await page.locator('#toc-footer-toggle').click();
-        else if (width < 1800) await page.locator('#menu-icon, #menu-icon-tablet').filter({visible:true}).click();
+        else if (width < 900) await page.locator('#menu-icon, #menu-icon-tablet').filter({visible:true}).click();
       } else if (width < 1440) await page.getByTestId('article-toc').locator('summary').click();
       await capture(page, 'guest', String(width), 'reading-toc-open');
       await page.keyboard.press('Escape');
-      await page.getByTestId('article-share').click();
+      if (site === 'cactus' && width >= 900) await page.locator('#menu-icon').click();
+      await page.getByTestId(site === 'cactus' && width >= 900 ? 'article-share-menu' : 'article-share').click();
       await capture(page, 'guest', String(width), 'reading-share');
       await page.keyboard.press('Escape');
     }
     await page.emulateMedia({ colorScheme: 'dark' });
     await page.setViewportSize({ width: 1440, height: 900 });
     await capture(page, 'guest', '1440-dark', 'reading-toc', '/visual-long-article');
-    await page.getByTestId('article-share').click();
+    await page.getByTestId(site === 'cactus' ? 'article-share-menu' : 'article-share').click();
     await capture(page, 'guest', '1440-dark', 'reading-share');
   });
 });
@@ -288,8 +289,8 @@ test('expanded article menus and topic conversations', async ({ page }) => {
       }
       await capture(page, role + '-site', String(width), 'article-menu-open');
       if (site === 'cactus' && width >= 900) {
-        await page.getByTestId('article-share').hover();
-        await page.getByTestId('article-share').click();
+        await page.getByTestId('article-share-menu').hover();
+        await page.getByTestId('article-share-menu').click();
         await capture(page, role + '-site', String(width), 'article-share-open');
       }
       await capture(page, role + '-site', String(width), 'topic-conversations', '/tags/Topic/');

@@ -82,11 +82,18 @@ ready(function () {
         }
 
         /**
-         * Display the menu on hi-res laptops and desktops.
+         * Desktop navigation starts expanded; tablet/mobile stay opt-in.
          */
-        const desktopMenu = window.matchMedia('(min-width: 1800px)');
+        const desktopMenu = window.matchMedia('(min-width: 900px)');
         setPostMenuOpen(desktopMenu.matches);
         desktopMenu.addEventListener('change', event => setPostMenuOpen(event.matches));
+
+        // Native focus scrolling can leave a partially visible link clipped.
+        // Keep keyboard navigation usable when a custom menu overflows its row.
+        document.querySelector('#header-post #nav').addEventListener('focusin', function (event) {
+            const link = event.target.closest('a');
+            if (link) link.scrollIntoView({block: 'nearest', inline: 'nearest', behavior: 'instant'});
+        });
 
         /**
          * Display the menu if the menu icon is clicked.

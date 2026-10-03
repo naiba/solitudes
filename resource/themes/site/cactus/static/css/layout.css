@@ -17,16 +17,7 @@ body.max-width { box-sizing: border-box; width: 100%; max-width: var(--site-widt
 /* The centered site shell is also the reading shell, including comments.
    Do not reserve an empty sidebar by narrowing or shifting the article. */
 #header-post + .content.index.py4 { box-sizing: border-box; width: 100%; max-width: none; margin-inline: 0; }
-#header-post { right: max(var(--site-gutter), calc((100% - var(--site-width)) / 2 + var(--site-gutter))); max-width: calc(100% - 2 * var(--site-gutter)); }
-@media (min-width: 1280px) {
-  /* Keep the fixed toggle off the text even after the reader scrolls. */
-  #header-post { right: max(var(--site-gutter), calc((100% - var(--site-width)) / 2 + var(--site-gutter) - 44px - 2rem)); }
-}
-/* Only place a persistent TOC outside the shell when both can fit. At normal
-   laptop widths the original menu is an explicit, dismissible overlay. */
-@media (min-width: 1800px) {
-  #header-post { right: max(var(--site-gutter), calc((100% - var(--site-width)) / 2 + var(--site-gutter) - 14rem - 2rem)); }
-}
+#header-post { right: 2rem; max-width: calc(100% - 4rem); }
 /* The site header owns the gap; pages must not add another top inset. */
 #main-content { display: flow-root; margin-top: 0; padding-top: 0; }
 #main-content > :first-child, #main-content #posts > h2:first-of-type,
@@ -35,5 +26,13 @@ body.max-width { box-sizing: border-box; width: 100%; max-width: var(--site-widt
 .home-top-content { display: flow-root; margin-bottom: 1.5rem; }
 .home-top-content > :first-child { margin-top: 0; }
 .comment-navigation { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: .75rem 0 1rem; }
-.comment-navigation a, .comment-thread-link { display: inline-flex; align-items: center; min-height: 36px; font-size: .85rem; }
+.comment-navigation a { display: inline-flex; align-items: center; min-height: 32px; font-size: .8rem; }
+#reply-list .comment-entry { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px; }
+#reply-list .comment-entry .gravatar { float: none; margin-right: 0; }
+#reply-list .comment-entry .gravatar img { aspect-ratio: 1; }
+.comment-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; margin-top: .25rem; }
+.comment-actions :is(.comment-reply-btn, .comment-thread-link) { display: inline-flex; align-items: center; min-height: 28px; margin: 0; padding: 0; border: 0; background: none; color: var(--color-text); font: inherit; font-size: .8rem; line-height: 1.5; text-decoration: none; }
+.comment-actions :is(.comment-reply-btn, .comment-thread-link):hover { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+.comment-actions :is(.comment-reply-btn, .comment-thread-link):focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+@media (pointer: coarse), (max-width: 500px) { .comment-actions :is(.comment-reply-btn, .comment-thread-link) { min-height: 44px; } }
 @media (max-width: 500px) { #reply-list .child-node { margin-left: 1rem; border-left: 1px solid var(--color-muted); padding-left: .5rem; } }

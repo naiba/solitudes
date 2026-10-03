@@ -459,6 +459,10 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
+function articleShareTrigger(page: Page) {
+  return page.getByTestId(siteTheme === 'cactus' && page.viewportSize()!.width >= 900 ? 'article-share-menu' : 'article-share');
+}
+
 async function signIn(page: Page, email = adminEmail!, password = adminPassword!, destination = /\/account(?:\/|\?|$)/) {
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
   await page.addStyleTag({ content: '*, *::before, *::after { animation: none !important; transition: none !important; }' });
@@ -1392,12 +1396,17 @@ test('book reading contract covers nested chapters, roles, navigation and empty 
   }
 });
 
-test('sharing stays beside article metadata for every role on desktop and phone', async ({ page }) => {
+test('sharing uses the desktop Cactus menu and inline metadata elsewhere for every role', async ({ page }) => {
   test.skip(!articleSlug || !readerEmail || !editorEmail || !adminEmail, 'Requires isolated roles.');
   test.setTimeout(90000);
   const assertInlineShare = async () => {
     const byline = page.getByTestId('article-byline');
     const share = byline.getByTestId('article-share');
+    if (siteTheme === 'cactus' && page.viewportSize()!.width >= 900) {
+      await expect(share).not.toBeVisible();
+      await expect(articleShareTrigger(page)).toBeVisible();
+      return;
+    }
     await expect(share).toBeVisible();
     const button = (await share.boundingBox())!;
     const meta = (await byline.getByTestId('article-meta').boundingBox())!;
@@ -1443,8 +1452,8 @@ test('readers can share articles and pages with a working copy fallback', async 
   });
   for (const slug of [articleSlug!, 'visual-page']) {
     await page.goto('/' + slug, { waitUntil: 'domcontentloaded' });
-    expect((await page.getByTestId('article-share').boundingBox())!.height).toBeGreaterThanOrEqual(44);
-    await page.getByTestId('article-share').click();
+    expect((await articleShareTrigger(page).boundingBox())!.height).toBeGreaterThanOrEqual(siteTheme === 'cactus' ? 32 : 44);
+    await articleShareTrigger(page).click();
     await page.getByTestId('article-share-copy').click();
     await expect(page.getByTestId('article-share-status')).toHaveText('Link copied');
     expect(await page.evaluate(() => (window as any).__sharedURL)).toBe(await page.getByTestId('article-share').getAttribute('data-url'));
@@ -1455,7 +1464,7 @@ test('readers can share articles and pages with a working copy fallback', async 
     } });
   });
   await page.goto('/' + articleSlug, { waitUntil: 'domcontentloaded' });
-  await page.getByTestId('article-share').click();
+  await articleShareTrigger(page).click();
     await page.getByTestId('article-share-copy').click();
   await expect(page.getByTestId('article-share-status')).toHaveText('Select and copy this link');
   await expect(page.getByTestId('article-share-fallback')).toBeVisible();
@@ -1594,6 +1603,77 @@ test('Folio magazine typography keeps centered headers and safe opening drop cap
   }
 });
 
+test('Cactus desktop menu opens at the viewport corner with compact links and separators', async ({page}) => {
+  test.skip(siteTheme !== 'cactus');
+  for (const width of [390,768,899,900,1024,1280,1440,1920]) {
+    await page.setViewportSize({width,height:900});
+    for (const slug of ['visual-long-article','visual-page']) {
+      await page.goto('/'+slug);
+      const inlineShare = page.getByTestId('article-byline').getByTestId('article-share');
+      if (width < 900) {
+        await expect(inlineShare).toBeVisible();
+        await expect(page.locator('#header-post #nav')).not.toBeVisible();
+        continue;
+      }
+      const toggle = page.locator('#menu-icon');
+      await expect(toggle).toHaveClass(/active/);
+      await expect(toggle).toHaveAttribute('aria-expanded','true');
+      await expect(inlineShare).not.toBeVisible();
+      await expect(page.getByTestId('article-share-menu')).toBeVisible();
+      const box = (await toggle.boundingBox())!;
+      const clientWidth = await page.evaluate(()=>document.documentElement.getBoundingClientRect().width);
+      expect(Math.abs(clientWidth-box.x-box.width-32)).toBeLessThan(1);
+      expect(box.y).toBe(32);
+      const links = page.locator('#header-post #nav a');
+      for (const link of await links.all()) expect((await link.boundingBox())!.height).toBe(15);
+      for (const item of await page.locator('#header-post #nav li:not(:last-child)').all()) {
+        expect(await item.evaluate(node=>getComputedStyle(node,'::after').height)).toBe('15px');
+        expect(await item.evaluate(node=>getComputedStyle(node).borderRightWidth)).toBe('0px');
+      }
+      await links.first().hover();
+      await expect(links.first()).toHaveCSS('text-underline-offset','3px');
+      await expect(links.first()).toHaveCSS('background-image','none');
+      await toggle.click();
+      await expect(toggle).toHaveAttribute('aria-expanded','false');
+      await expect(page.locator('#header-post #nav')).not.toBeVisible();
+      await toggle.click();
+      await expect(page.getByTestId('article-share-menu')).toBeVisible();
+    }
+  }
+  await page.setViewportSize({width:899,height:900});
+  await expect(page.locator('#menu-icon-tablet')).toHaveAttribute('aria-expanded','false');
+  await page.setViewportSize({width:900,height:900});
+  await expect(page.locator('#menu-icon')).toHaveAttribute('aria-expanded','true');
+});
+
+test('comment reply and thread links share a compact content-aligned action row', async ({page}) => {
+  for (const width of [390,1280]) {
+    await page.setViewportSize({width,height:900});
+    await page.goto('/deep-chapter-3-1#comments');
+    const entry=page.getByTestId('comment-entry').filter({has:page.getByTestId('comment-thread-link')}).first();
+    const actions=entry.locator('.comment-actions').first();
+    const reply=actions.getByTestId('comment-reply');
+    const thread=actions.getByTestId('comment-thread-link');
+    await expect(reply).toBeVisible();
+    await expect(thread).toBeVisible();
+    const a=(await reply.boundingBox())!, b=(await thread.boundingBox())!;
+    if (siteTheme==='cactus') {
+      expect(Math.abs((a.y+a.height/2)-(b.y+b.height/2))).toBeLessThan(1);
+      const content=(await entry.locator('p.comment-meta').last().boundingBox())!;
+      expect(Math.abs(a.x-content.x)).toBeLessThan(1);
+      expect(a.y).toBeGreaterThanOrEqual(content.y+content.height);
+      expect(a.height).toBe(width<500 ? 44 : 28);
+    }
+    await thread.click();
+    await expect(page).toHaveURL(/\?thread=.+#comments$/);
+    await expect(page.getByTestId('comments-back')).toBeVisible();
+    await page.getByTestId('comments-back').click();
+    await expect(page).toHaveURL(/\?comment_page=1#comments$/);
+    await page.getByTestId('comment-reply').first().click();
+    await expect(page.getByTestId('comment-content')).toBeFocused();
+  }
+});
+
 test('Cactus original TOC lives in the article menu and mobile footer', async ({page}) => {
   test.skip(siteTheme !== 'cactus');
   await page.emulateMedia({reducedMotion:'reduce'});
@@ -1605,7 +1685,7 @@ test('Cactus original TOC lives in the article menu and mobile footer', async ({
     const mobile = width <= 500;
     const toc = page.locator(mobile ? '#toc-footer' : '#toc');
     const toggle = mobile ? page.locator('#toc-footer-toggle') : page.locator('#menu-icon, #menu-icon-tablet').filter({visible:true});
-    if (width < 1800) {
+    if (width < 900) {
       await expect(toc).not.toBeVisible();
       await toggle.click();
     }
@@ -1627,6 +1707,9 @@ test('Cactus original TOC lives in the article menu and mobile footer', async ({
       await page.evaluate(() => window.scrollTo(0,0));
       await toggle.click();
       await expect(toc).toBeVisible();
+    } else {
+      await expect(toc).toBeVisible();
+      await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     }
     await page.keyboard.press('Escape');
     await expect(toc).not.toBeVisible();
@@ -1665,7 +1748,7 @@ test('Cactus reading pages use the full centered site width without title jumps'
       const toc = (await page.locator('#toc').boundingBox())!;
       expect(toc.x-body.x-body.width,'TOC has a real gutter').toBeGreaterThanOrEqual(31);
       expect(toc.x+toc.width,'TOC stays inside viewport').toBeLessThanOrEqual(width-16);
-    } else if (width > 500) {
+    } else if (width > 500 && width < 900) {
       await expect(page.locator('#toc')).not.toBeVisible();
     }
     if (width >= 1280) {
@@ -1909,7 +1992,7 @@ test('Cactus article menu stays aligned and usable through resize and scroll', a
   page.on('pageerror', error => errors.push(error.message));
   for (const width of [768, 900, 1200, 1440]) {
     await page.setViewportSize({ width, height: 700 });
-    await page.goto('/visual-editor-post', { waitUntil: 'domcontentloaded' });
+    await page.goto('/visual-long-article', { waitUntil: 'domcontentloaded' });
     const toggle = page.locator(width < 900 ? '#menu-icon-tablet' : '#menu-icon');
     await expect(toggle).toBeVisible();
     if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
@@ -1918,10 +2001,12 @@ test('Cactus article menu stays aligned and usable through resize and scroll', a
     const buttonBox = (await toggle.boundingBox())!;
     const linkBox = (await link.boundingBox())!;
     expect(buttonBox.height, 'desktop menu stays compact').toBe(32);
-    expect(linkBox.height, 'desktop menu links stay compact').toBe(32);
+    expect(linkBox.height, 'desktop links keep the original text-height hit area').toBe(15);
     expect(Math.abs(buttonBox.y + buttonBox.height / 2 - linkBox.y - linkBox.height / 2), `menu alignment at ${width}px`).toBeLessThan(2);
     await page.evaluate(() => window.scrollTo(0, 200));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(64);
     await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await expect(link).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
@@ -2036,7 +2121,7 @@ test('Cactus action buttons do not move under the pointer and share works on the
       const toggle = touchPage.locator('#menu-icon');
       if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.tap();
       expect((await toggle.boundingBox())!.height).toBe(44);
-      await touchPage.getByTestId('article-share').tap();
+      await touchPage.getByTestId('article-share-menu').tap();
       const panel = (await touchPage.getByTestId('article-share-dialog').boundingBox())!;
       expect(panel.x).toBeGreaterThanOrEqual(0);
       expect(panel.x + panel.width).toBeLessThanOrEqual(width);

@@ -29,7 +29,7 @@
                 </li>
                 {{end}}
                 <li><button class="icon" data-testid="article-back-top" type="button" title="{{.Tr.T "return_top"}}" aria-label="{{.Tr.T "return_top"}}" onclick="scrollToTop(this)"><i class="fa-solid fa-chevron-up" aria-hidden="true"></i></button><span class="action-hint" aria-hidden="true">{{.Tr.T "return_top"}}</span></li>
-                <li><button class="icon" type="button" data-share-open aria-haspopup="dialog" aria-controls="article-share-dialog" aria-label="{{.Tr.T "share"}}"><i class="fa-solid fa-share-nodes" aria-hidden="true"></i></button><span class="action-hint" aria-hidden="true">{{.Tr.T "share"}}</span></li>
+                <li><button class="icon" type="button" data-share-open data-testid="article-share-menu" data-url="https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}" aria-haspopup="dialog" aria-controls="article-share-dialog" aria-label="{{.Tr.T "share"}}"><i class="fa-solid fa-share-nodes" aria-hidden="true"></i></button><span class="action-hint" aria-hidden="true">{{.Tr.T "share"}}</span></li>
             </ul>
         </div>
         {{if .Data.article.Toc}}<div id="toc">{{template "site/reading_toc" .}}</div>{{end}}
