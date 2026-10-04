@@ -26,6 +26,7 @@ body.max-width { box-sizing: border-box; width: 100%; max-width: var(--site-widt
 .home-top-content { display: flow-root; margin-bottom: 1.5rem; }
 .home-top-content > :first-child { margin-top: 0; }
 .comment-navigation { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: .75rem 0 1rem; }
+#reply-list > h2 { margin: 2rem 0 1rem; font-size: 1.5rem; line-height: 1.4; font-weight: 700; color: var(--color-accent); }
 .comment-navigation a { display: inline-flex; align-items: center; min-height: 32px; font-size: .8rem; }
 #reply-list .comment-entry { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px; }
 #reply-list .comment-entry .gravatar { float: none; margin-right: 0; }

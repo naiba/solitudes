@@ -1098,8 +1098,8 @@ test('account identity separates name, email and translated role on narrow scree
   }
 });
 
-test('home reader names truncate without wrapping role badges', async ({ browser }) => {
-  const names = ['这是一位昵称很长很长的读者也喜欢读书交流', 'AnExtremelyLongUnbrokenReaderNickname', 'A reader with a very long display name 🌱'];
+test('home reader names flow at natural widths and truncate without wrapping role badges', async ({ browser }) => {
+  const names = ['这是一位昵称很长很长的读者也喜欢读书交流', 'AnExtremelyLongUnbrokenReaderNickname', 'A reader with a very long display name 🌱'].map(name=>name.repeat(4));
   for (const language of ['zh-CN', 'en']) {
     const context = await browser.newContext({locale:language,baseURL:process.env.E2E_BASE_URL || 'http://localhost:8080'});
     const page = await context.newPage();
@@ -1133,6 +1133,31 @@ test('home reader names truncate without wrapping role badges', async ({ browser
         expect(row.shrink).toBe('0');
       }
       expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+1);
+      // Short names and their badges form compact units, not stretched columns.
+      for (let i=0;i<await links.count();i++) {
+        const name=['叶','Ada','认真读书也喜欢交流的朋友',names[0]!][i%4]!;
+        await links.nth(i).evaluate((element,value)=>{element.textContent=value; element.setAttribute('title',value);},name);
+      }
+      const list=page.locator('.reader-home-list');
+      await expect(list).toHaveCSS('display','flex');
+      await expect(list).toHaveCSS('flex-wrap','wrap');
+      const compact=await list.locator('li').evaluateAll(elements=>elements.slice(0,2).map(row=>{
+        const link=row.querySelector('a')!, badge=row.querySelector('.comment-role')!;
+        const range=document.createRange(); range.selectNodeContents(link);
+        const text=range.getBoundingClientRect(), a=link.getBoundingClientRect(), b=badge.getBoundingClientRect(), r=row.getBoundingClientRect();
+        return {textWidth:text.width,nameWidth:a.width,badgeGap:b.x-a.right,rightGap:r.right-b.right,x:r.x,y:r.y,width:r.width};
+      }));
+      for (const item of compact) {
+        expect(Math.abs(item.nameWidth-item.textWidth),'short name is not stretched').toBeLessThan(1);
+        expect(item.badgeGap).toBeGreaterThan(0);
+        expect(item.badgeGap).toBeLessThanOrEqual(8);
+        expect(Math.abs(item.rightGap),'no trailing empty column').toBeLessThan(1);
+      }
+      const listWidth=(await list.boundingBox())!.width;
+      if (compact.length===2 && compact[0]!.width+compact[1]!.width+16<=listWidth) {
+        expect(compact[0]!.y,'short entries pack into the same row when they fit').toBe(compact[1]!.y);
+      }
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+1);
       if (process.env.SOLITUDES_READER_SCREENSHOTS && language==='zh-CN' && [390,1280].includes(width)) {
         await page.getByTestId('reader-circle-home').screenshot({path:path.join(process.env.SOLITUDES_READER_SCREENSHOTS,`${siteTheme}-${width}.png`),animations:'disabled'});
       }
@@ -1156,7 +1181,7 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   const homeTitle = await homeHeading.locator('a').first().boundingBox();
   const homeMore = await page.getByTestId('reader-circle-more').boundingBox();
   expect(homeTitle && homeMore && homeMore.x - homeTitle.x - homeTitle.width).toBeGreaterThan(8);
-  expect((await page.locator('.reader-home-list').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
+  await expect(page.locator('.reader-home-list')).toHaveCSS('flex-wrap','wrap');
   if (siteTheme === 'cactus') {
     const search = await page.locator('.home-search-section').boundingBox();
     const writing = await page.locator('.home-articles-section').boundingBox();
@@ -1600,6 +1625,46 @@ test('Folio magazine typography keeps centered headers and safe opening drop cap
   ]) {
     await content.evaluate((node,html)=>{node.innerHTML=html;},markup);
     expect(await content.locator('p').evaluate(node=>getComputedStyle(node,'::first-letter').cssFloat)).toBe('none');
+  }
+});
+
+test('Cactus links underline only on hover and preserve explicit Markdown formatting', async ({page}) => {
+  test.skip(siteTheme !== 'cactus');
+  for (const width of [390,1280]) {
+    await page.setViewportSize({width,height:900});
+    for (const route of ['/', '/posts/', '/visual-long-article', '/deep-chapter-3-1', '/visual-page']) {
+      await page.goto(route);
+      await page.mouse.move(0,0);
+      for (const link of await page.locator('a').all()) {
+        if (!(await link.isVisible())) continue;
+        expect(await link.evaluate(node=>getComputedStyle(node).textDecorationLine), `${route}: ${await link.textContent()}`).toBe('none');
+        // The site logo is intentionally drawn as a background image.
+        if (await link.getAttribute('id') !== 'logo') await expect(link).toHaveCSS('background-image','none');
+      }
+      if (route === '/visual-long-article') {
+        const content=page.locator('[data-reading-content]');
+        const link=content.getByRole('link',{name:'Ordinary reading link',exact:true});
+        await expect(link).toHaveAttribute('href','/visual-page');
+        await link.hover();
+        await expect(link).toHaveCSS('text-decoration-line','underline');
+        await expect(link).toHaveCSS('text-underline-offset','3px');
+        await page.mouse.move(0,0);
+        await expect(link).toHaveCSS('text-decoration-line','none');
+        await link.focus();
+        await expect(link).toHaveCSS('outline-style','solid');
+        await expect(link).toHaveCSS('outline-width','2px');
+        for (const underline of await content.locator('u').all()) await expect(underline).toHaveCSS('text-decoration-line','underline');
+        await expect(content.locator('u')).toHaveCount(3);
+        await expect(content.locator('del')).toHaveCSS('text-decoration-line','line-through');
+        await expect(content.locator('h3')).toHaveCSS('text-decoration-line','none');
+      }
+      if (route === '/deep-chapter-3-1' || route === '/visual-page') {
+        const heading=page.locator('#reply-list > h2');
+        await expect(heading).toHaveCSS('font-size','24px');
+        await expect(heading).toHaveCSS('font-weight','700');
+        await expect(heading).toHaveCSS('margin-bottom','16px');
+      }
+    }
   }
 });
 

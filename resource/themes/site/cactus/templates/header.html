@@ -13,7 +13,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     {{ $colorScheme := index .Theme "cactus.colorscheme" }}
     <link rel="stylesheet" href="/static/site/cactus/css/theme-{{ $colorScheme }}.css?v2026081501">
-    <link rel="stylesheet" href="/static/site/cactus/css/main.css?v2026100803">
+    <link rel="stylesheet" href="/static/site/cactus/css/main.css?v2026100903">
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="preload" as="image" href="/logo.png?20211213">
@@ -51,8 +51,8 @@
     <meta name="twitter:description" content="{{.Desc}}">
     {{if eq .OgType "article"}}<meta name="twitter:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
     {{else}}<meta name="twitter:image" content="https://{{.Conf.Site.Domain}}/logo.png">{{end}}
-    <link rel="stylesheet" href="/static/site/cactus/css/reading.css?v2026100803">
-    <link rel="stylesheet" href="/static/site/cactus/css/layout.css?v2026100803">
+    <link rel="stylesheet" href="/static/site/cactus/css/reading.css?v2026100901">
+    <link rel="stylesheet" href="/static/site/cactus/css/layout.css?v2026100901">
 </head>
 
 <body class="max-width mx-auto px3 ltr">

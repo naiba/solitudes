@@ -33,4 +33,4 @@
 }
 .access-notice { margin:1rem 0; padding:.85rem 1rem; border:1px solid currentColor; border-color:color-mix(in srgb,currentColor 18%,transparent); border-radius:6px; background:color-mix(in srgb,currentColor 3%,transparent); font-size:.9rem; font-style:normal; font-weight:400; line-height:1.6; }
 .access-notice p { margin:0 !important; font-size:inherit; }
-.access-notice a { font-weight:600; text-decoration:underline; text-underline-offset:3px; }
+.access-notice a { font-weight:600; color:var(--reader-accent); }

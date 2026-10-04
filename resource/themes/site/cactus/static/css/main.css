@@ -175,7 +175,6 @@ body .h2 {
 
 body h3 {
   color: var(--color-text);
-  text-decoration: underline;
   font-weight: bold;
   font-size: 0.9rem;
 }
@@ -334,21 +333,29 @@ body {
   -webkit-hyphens: manual;
 }
 
+a {
+  text-decoration: none;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }
+
 .content a {
   color: var(--color-text);
   text-decoration: none;
-  background-image: linear-gradient(transparent, transparent 5px, var(--color-text) 5px, var(--color-text));
-  background-position: bottom;
-  background-size: 100% 6px;
-  background-repeat: repeat-x;
 }
 
 .content a:hover {
-  background-image: linear-gradient(transparent, transparent 4px, var(--color-link-hover) 4px, var(--color-link-hover));
+  text-decoration: underline;
 }
 
 .content a.icon { background: none; }
-.content a.icon:hover { color: var(--color-link-hover); }
+.content a.icon:hover { color: var(--color-link-hover); text-decoration: none; }
+
+/* Inline reading links remain identifiable without a permanent underline. */
+[data-reading-content] :is(p, li, td, blockquote) a { color: color-mix(in srgb, var(--color-accent) 50%, var(--color-text)); }
 
 .content h1 a,
 .content .h1 a,
@@ -369,23 +376,7 @@ body {
 .content h4 a:hover,
 .content h5 a:hover,
 .content h6 a:hover {
-  background-image: linear-gradient(transparent, transparent 6px, var(--color-link-hover) 6px, var(--color-link-hover));
-  background-position: bottom;
-  background-size: 100% 6px;
-  background-repeat: repeat-x;
-}
-
-.content h6 a {
-  background: none;
-  color: inherit;
-  text-decoration: none;
-}
-
-.content h6 a:hover {
-  background-image: linear-gradient(transparent, transparent 6px, var(--color-link-hover) 6px, var(--color-link-hover));
-  background-position: bottom;
-  background-size: 100% 6px;
-  background-repeat: repeat-x;
+  text-decoration: underline;
 }
 
 @media (min-width: 540px) {
@@ -1029,12 +1020,11 @@ article .content blockquote footer {
 }
 
 article .content blockquote footer a {
-  background-image: linear-gradient(transparent, transparent 5px, #666 5px, #666);
   color: #666;
 }
 
 article .content blockquote footer a:hover {
-  background-image: linear-gradient(transparent, transparent 4px, #858585 4px, #858585);
+  text-decoration: underline;
   color: #858585;
 }
 
@@ -1056,13 +1046,6 @@ article .content .caption {
   text-transform: none;
   font-size: 1.5em;
   line-height: 1.25;
-}
-
-.article-tag .tag-link {
-  background-image: linear-gradient(transparent, transparent 10px, var(--color-link-hover) 10px, var(--color-link-hover));
-  background-position: bottom;
-  background-size: 100% 6px;
-  background-repeat: repeat-x;
 }
 
 .article-tag .tag-link:before { content: "#"; }
@@ -1134,11 +1117,11 @@ article .content .caption {
 
 #footer a {
   color: #666;
-  text-decoration: underline;
+  text-decoration: none;
   background-image: none;
 }
 
-#footer a:hover { color: #858585; }
+#footer a:hover { color: #858585; text-decoration: underline; }
 
 #footer .footer-left {
   height: 20px;
@@ -1924,9 +1907,9 @@ ul:has(li.vditor-task) {
 @media (max-width: 650px) { .circle-feed-list { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 650px) { .reader-circle-layout { grid-template-columns: minmax(0, 1fr); gap: 0; } }
 .reader-circle-members .circle-section-heading { display: block; }
-.reader-home-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem; list-style: none; padding: 0; }
-.reader-home-list li { display: flex; align-items: center; flex-wrap: nowrap; gap: .3rem .4rem; min-width: 0; }
-.reader-home-list a { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reader-home-list { display: flex; flex-wrap: wrap; gap: .7rem 1rem; list-style: none; padding: 0; }
+.reader-home-list li { display: flex; flex: 0 1 auto; align-items: center; flex-wrap: nowrap; gap: .3rem .4rem; min-width: 0; max-width: 100%; }
+.reader-home-list a { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .reader-home-list .comment-role { flex: 0 0 auto; }
 .reader-circle-home .home-community-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: .35rem .85rem; }
 .home-community-heading .home-widget-more { font-size: .85rem; white-space: nowrap; }

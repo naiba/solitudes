@@ -170,6 +170,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 		Content: "# A long-form article\n\nThis story checks the reading column, headings, and comments.\n\n## In detail\n\n- A first idea\n- A second idea\n\n```go\nfunc main() { println(\"hello\") }\n```\n\n### Looking ahead\n\nA nested section to verify the collapsible table of contents.",
 		RawTags: "design,engineering", TemplateID: solitudes.ArticleTemplateID, Version: 1}
 	longArticle.Content = strings.ReplaceAll(longArticle.Content, "\n\n##", strings.Repeat("\n\nA reading layout should let you follow an argument without losing your place. Clear headings, comfortable line length and a stable contents panel help readers move between sections on different screens.", 8)+"\n\n##")
+	longArticle.Content += "\n\n[Ordinary reading link](/visual-page). <u>Explicit underline</u>. <u><a href=\"/visual-page\">Underlined link wrapper</a></u>. <a href=\"/visual-page\"><u>Underlined link text</u></a>. ~~Deleted text~~."
 	if err := db.Create(&longArticle).Error; err != nil {
 		t.Fatal(err)
 	}
