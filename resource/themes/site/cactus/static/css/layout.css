@@ -25,6 +25,18 @@ body.max-width { box-sizing: border-box; width: 100%; max-width: var(--site-widt
 #main-content .home-grid-layout { margin-top: 0; }
 .home-top-content { display: flow-root; margin-bottom: 1.5rem; }
 .home-top-content > :first-child { margin-top: 0; }
+/* Series structure is navigation, not part of the Markdown prose. */
+.book-section, .book-navigation { margin-block: 2rem; padding-top: 1rem; border-top: 1px dotted color-mix(in srgb, var(--color-text) 25%, transparent); }
+.book-section > h2 { margin: 0 0 .5rem; font-size: 1rem; line-height: 1.5; color: var(--color-accent); }
+.book-section > .book-chapter-list { margin-block: 0; }
+.book-navigation .book-context { flex: 0 0 auto; font-size: .8rem; color: var(--color-accent); }
+.book-navigation > h2 { display: flex; align-items: baseline; flex-wrap: wrap; gap: .25rem .75rem; margin: 0; font-size: 1rem; line-height: 1.5; }
+.book-navigation > h2 a { min-width: 0; overflow-wrap: anywhere; }
+.book-navigation .book-neighbors { display: block; margin: .5rem 0 0; padding: 0; list-style: none; }
+.book-neighbors > li { min-width: 0; list-style: none; }
+.book-neighbors a { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: baseline; align-content: center; min-height: 32px; gap: .6rem; overflow-wrap: anywhere; font-size: .9rem; line-height: 1.5; }
+.book-neighbors .book-direction { font-size: .8rem; color: var(--color-muted); white-space: nowrap; }
+@media (pointer: coarse), (max-width: 500px) { .book-neighbors a { min-height: 44px; } }
 .comment-navigation { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin: .75rem 0 1rem; }
 #reply-list > h2 { margin: 2rem 0 1rem; font-size: 1.5rem; line-height: 1.4; font-weight: 700; color: var(--color-accent); }
 .comment-navigation a { display: inline-flex; align-items: center; min-height: 32px; font-size: .8rem; }

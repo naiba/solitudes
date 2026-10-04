@@ -82,25 +82,30 @@
 
             {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
 
-            {{if .Data.article.IsBook}}
-            <h4>{{.Tr.T "chapters"}}</h4>
-            {{template "site/article_chapters" (dict "article" .Data.article "tr" .Tr "Conf" $.Conf "Queries" $.Queries)}}
-            {{end}}
         </div>
+
+        {{if .Data.article.IsBook}}
+        <section class="book-section folio-narrow" data-testid="book-section" aria-labelledby="book-chapters-title">
+            <h2 id="book-chapters-title">{{.Tr.T "chapters"}}</h2>
+            {{template "site/article_chapters" (dict "article" .Data.article "tr" .Tr "Conf" $.Conf "Queries" $.Queries)}}
+        </section>
+        {{end}}
 
         <!-- Book navigation (if article belongs to a book) -->
         {{if .Data.article.Book}}
-        <nav class="book-nav folio-narrow" aria-label="{{.Tr.T "chapters"}}" data-testid="book-navigation">
-            <a href="/{{.Data.article.Book.Slug}}" data-testid="book-parent">{{.Tr.T "back_to_book"}} · {{.Data.article.Book.Title}}</a>
-            <ul class="book-chapter-list">
-                {{if .Data.article.SibilingArticle.Prev.ID}}
-                <li>{{.Tr.T "prev_chapter"}}: <a href="/{{.Data.article.SibilingArticle.Prev.Slug}}" data-testid="book-previous">{{.Data.article.SibilingArticle.Prev.Title}}</a></li>
-                {{end}}
-                <li class="current-chapter" aria-current="page">{{.Data.article.Title}}</li>
+        <nav class="book-nav folio-narrow" aria-labelledby="book-parent-title" data-testid="book-navigation">
+            <p class="section-label book-context">{{.Tr.T "book_context"}}</p>
+            <h2 id="book-parent-title"><a href="/{{.Data.article.Book.Slug}}" data-testid="book-parent" aria-label="{{.Tr.T "back_to_book"}}: {{.Data.article.Book.Title}}">{{.Data.article.Book.Title}}</a></h2>
+            {{if or .Data.article.SibilingArticle.Prev.ID .Data.article.SibilingArticle.Next.ID}}
+            <div class="book-neighbors">
                 {{if .Data.article.SibilingArticle.Next.ID}}
-                <li>{{.Tr.T "next_chapter"}}: <a href="/{{.Data.article.SibilingArticle.Next.Slug}}" data-testid="book-next">{{.Data.article.SibilingArticle.Next.Title}}</a></li>
+                <a class="book-continue" href="/{{.Data.article.SibilingArticle.Next.Slug}}" data-testid="book-next"><span class="section-label">{{.Tr.T "book_continue"}} · {{.Tr.T "next_chapter"}}</span><span class="continue-arrow" aria-hidden="true">→</span><span class="sibling-title">{{.Data.article.SibilingArticle.Next.Title}}</span></a>
                 {{end}}
-            </ul>
+                {{if .Data.article.SibilingArticle.Prev.ID}}
+                <a class="book-previous" href="/{{.Data.article.SibilingArticle.Prev.Slug}}" data-testid="book-previous"><span class="section-label">{{.Tr.T "prev_chapter"}}</span><span class="sibling-title">{{.Data.article.SibilingArticle.Prev.Title}}</span></a>
+                {{end}}
+            </div>
+            {{end}}
         </nav>
         {{end}}
 

@@ -718,11 +718,21 @@ blockquote.pullquote {
   opacity: 0.85;
 }
 
-.book-chapter-list { padding-left: 1.4rem; }
-.book-chapter-list > li { margin: .35rem 0; overflow-wrap: anywhere; }
-.book-chapter-list small { color: var(--muted); font-size: .8em; white-space: nowrap; }
-.book-chapter-list .book-chapter-list { margin: .25rem 0; }
-.book-chapter-list .book-empty { margin: .25rem 0; color: var(--muted); font-size: .8em; }
+.book-chapter-list { list-style: none; padding: 0; counter-reset: folio-chapter; }
+.book-chapter-list > li { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); column-gap: 1rem; row-gap: .35rem; padding: 1rem 0; border-top: 1px solid var(--border); counter-increment: folio-chapter; overflow-wrap: anywhere; }
+.book-chapter-list > li::before { content: counter(folio-chapter, decimal-leading-zero); grid-column: 1; grid-row: 1 / 3; font: 500 1.75rem/1.2 var(--font-heading); color: var(--accent); }
+.book-chapter-list .chapter-title { grid-column: 2; font: 500 1.35rem/1.35 var(--font-heading); color: var(--text); }
+.book-chapter-list .chapter-title i { font-size: .65em; color: var(--muted); }
+.book-chapter-list small { grid-column: 2; color: var(--muted); font-size: .75rem; }
+.book-chapter-list .book-chapter-list { grid-column: 2; margin: .65rem 0 0; }
+.book-chapter-list .book-chapter-list > li { grid-template-columns: 1.75rem minmax(0, 1fr); column-gap: .65rem; }
+.book-chapter-list .book-chapter-list .chapter-title { font-size: 1.1rem; }
+.book-chapter-list .book-chapter-list > li::before { font-size: 1.25rem; }
+.book-chapter-list .book-empty { grid-column: 2; margin: .25rem 0; color: var(--muted); font-size: .8em; }
+@media (max-width: 500px) {
+  .book-chapter-list > li { grid-template-columns: 1.75rem minmax(0, 1fr); column-gap: .6rem; }
+  .book-chapter-list .book-chapter-list { grid-column: 1 / -1; margin-left: .75rem; }
+}
 
 /* Timestamp — small, muted, monospaced */
 .comment-time {
@@ -1159,12 +1169,24 @@ body.mobile-menu-open {
    23. Book Navigation
    ========================================================================== */
 
-.book-nav {
-  background: var(--surface);
-  border-radius: 8px;
-  padding: 1.5rem 2rem;
+.book-section, .book-nav {
+  border-top: 1px solid var(--border);
+  padding-top: 1.25rem;
   margin-top: 2rem;
 }
+
+.book-section > h2, .book-nav > h2 { margin: 0 0 1rem; font: 500 1.5rem/1.35 var(--font-heading); color: var(--text); overflow-wrap: anywhere; scroll-margin-top: 10rem; }
+.book-section > h2 { font-size: 1.75rem; }
+.book-section > .book-chapter-list { margin-block: 0; }
+.book-nav .book-context { margin: 0 0 .5rem; }
+.book-nav > h2 a { color: inherit; }
+.book-neighbors { margin-top: 1.5rem; }
+.book-neighbors > a { min-width: 0; min-height: 44px; overflow-wrap: anywhere; line-height: 1.5; }
+.book-continue { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .6rem 1rem; padding: 1.25rem 0; border-block: 1px solid var(--border); }
+.book-continue .section-label, .book-continue .sibling-title { grid-column: 1; }
+.book-continue .sibling-title { font: 500 clamp(1.4rem, 3vw, 1.75rem)/1.35 var(--font-heading); color: var(--text); }
+.book-continue .continue-arrow { grid-column: 2; grid-row: 1 / 3; align-self: center; font-size: 1.75rem; }
+.book-neighbors .book-previous { display: flex; flex-wrap: wrap; align-items: baseline; align-content: center; gap: .25rem .75rem; margin-top: .75rem; font-size: .85rem; }
 
 /* ==========================================================================
    24. Sibling Navigation (Prev/Next)
@@ -1223,7 +1245,6 @@ body.mobile-menu-open {
 .folio-nav,
 .article-card,
 .comment-item,
-.book-nav,
 .version-notice,
 .hero-featured {
   transition: background-color 0.3s ease, color 0.3s ease;

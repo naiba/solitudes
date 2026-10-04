@@ -4,6 +4,8 @@
     {"locale":"zh","key":"books_all_the_books","trans":"探索本站发布的所有专栏和系列文章。按章节组织的长篇内容，深入探讨各类主题。"},
     {"locale":"zh","key":"book_empty","trans":"暂无可阅读章节。"},
     {"locale":"zh","key":"back_to_book","trans":"返回专栏"},
+    {"locale":"zh","key":"book_context","trans":"系列阅读"},
+    {"locale":"zh","key":"book_continue","trans":"继续阅读"},
     {"locale": "zh", "key": "share", "trans": "分享"},
     {"locale":"zh","key":"page_number","trans":"第 {0} 页"},
     {"locale":"zh","key":"view_replies","trans":"查看回复（{0}）"},

@@ -1366,6 +1366,79 @@ test('featured story gives readers a linked author before its date', async ({ pa
   })).toBe(true);
 });
 
+test('series structure and chapter navigation stay distinct from prose in each theme', async ({page}) => {
+  await page.emulateMedia({reducedMotion:'reduce'});
+  for (const width of [320,390,650,768,1280]) {
+    await page.setViewportSize({width,height:900});
+    for (const route of ['/visual-book','/visual-empty-book','/visual-book-part','/visual-chapter-two','/visual-nested-chapter']) {
+      await page.goto(route);
+      const content=page.locator('[data-reading-content]');
+      await expect(content.getByTestId('book-chapters')).toHaveCount(0);
+      await expect(content.getByTestId('book-navigation')).toHaveCount(0);
+      for (const list of await page.getByTestId('book-chapters').all()) {
+        await expect(list).toHaveCSS('list-style-type',siteTheme==='cactus' ? 'disc' : 'none');
+        expect(await list.evaluate(n=>n.tagName)).toBe(siteTheme==='cactus' ? 'UL' : 'OL');
+        if (siteTheme==='folio') {
+          await expect(list.locator(':scope > li').first()).toHaveCSS('counter-increment','folio-chapter 1');
+          expect(await list.locator(':scope > li').first().evaluate(n=>getComputedStyle(n,'::before').content)).toContain('folio-chapter');
+        }
+      }
+      const body=(await content.boundingBox())!;
+      for (const section of await page.locator('[data-testid="book-section"], [data-testid="book-navigation"]').all()) {
+        const box=(await section.boundingBox())!;
+        expect(box.y-body.y-body.height,'series region has space above prose').toBeGreaterThanOrEqual(24);
+        expect(Math.abs(box.x-body.x)).toBeLessThan(1);
+        expect(Math.abs(box.width-body.width)).toBeLessThan(1);
+        await expect(section).toHaveCSS('border-top-width','1px');
+        await expect(section).toHaveCSS('border-top-style',siteTheme==='cactus' ? 'dotted' : 'solid');
+        await expect(section).toHaveCSS('border-bottom-width','0px');
+        await expect(section).toHaveCSS('background-color','rgba(0, 0, 0, 0)');
+        await expect(section).toHaveCSS('box-shadow','none');
+        await expect(section).toHaveCSS('border-radius','0px');
+        await expect(section.locator(':scope > h2')).toBeVisible();
+        await expect(section.locator(':scope > h2')).toHaveCSS('font-size',siteTheme==='cactus' ? '16px' : await section.getAttribute('data-testid')==='book-section' ? '28px' : '24px');
+        if (siteTheme==='folio') {
+          expect(await section.locator(':scope > h2').evaluate(n=>getComputedStyle(n).fontFamily)).toBe(await page.locator('.article-title').evaluate(n=>getComputedStyle(n).fontFamily));
+        }
+      }
+      if (await page.getByTestId('book-navigation').count()) {
+        await expect(page.locator('.book-context')).toHaveText('In this series');
+        await expect(page.getByTestId('book-parent')).toHaveAccessibleName(/^Back to series:/);
+      }
+      if (process.env.SOLITUDES_SERIES_SCREENSHOTS && [390,1280].includes(width) && ['/visual-book','/visual-chapter-two'].includes(route)) {
+        const section=page.getByTestId(route==='/visual-book' ? 'book-section' : 'book-navigation');
+        await section.evaluate(n=>scrollTo({top:n.getBoundingClientRect().top+scrollY-140,behavior:'instant'}));
+        await page.screenshot({path:path.join(process.env.SOLITUDES_SERIES_SCREENSHOTS,`${siteTheme}-${route.slice(1)}-${width}.png`),animations:'disabled'});
+      }
+      if (route==='/visual-chapter-two') {
+        const previous=page.getByTestId('book-previous'), next=page.getByTestId('book-next');
+        await expect(previous).toHaveAttribute('href','/visual-chapter');
+        await expect(next).toHaveAttribute('href','/visual-book-part');
+        for (const link of [previous,next]) {
+          await link.locator('span').last().evaluate(n=>{n.textContent='一篇很长的章节标题，关于写作与阅读 / ALongUnbrokenChapterTitleForResponsiveNavigation'.repeat(3);});
+          expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(siteTheme==='cactus' && width>500 ? 32 : 44);
+        }
+        const a=(await previous.boundingBox())!, b=(await next.boundingBox())!;
+        if (siteTheme==='cactus') {
+          expect(b.y).toBeGreaterThanOrEqual(a.y+a.height);
+          await expect(previous).toHaveCSS('grid-template-columns',/px /);
+          const label=(await previous.locator('.book-direction').boundingBox())!;
+          const title=(await previous.locator('span').last().boundingBox())!;
+          expect(title.x).toBeGreaterThan(label.x+label.width);
+        } else {
+          expect(a.y,'previous chapter is secondary to the continue-reading feature').toBeGreaterThanOrEqual(b.y+b.height);
+          await expect(next.locator('.section-label')).toHaveText('Continue reading · Next Chapter');
+          const title=next.locator('.sibling-title');
+          expect(await title.evaluate(n=>parseFloat(getComputedStyle(n).fontSize))).toBeGreaterThan(22);
+        }
+      }
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    }
+    await page.goto('/visual-long-article');
+    await expect(page.locator('[data-testid="book-section"], [data-testid="book-navigation"]')).toHaveCount(0);
+  }
+});
+
 test('book reading contract covers nested chapters, roles, navigation and empty series', async ({ page }) => {
   test.skip(!adminEmail || !readerEmail || !editorEmail || !!process.env.E2E_PAGING_THREAD, 'Requires the normal isolated book fixtures.');
   test.setTimeout(90000);

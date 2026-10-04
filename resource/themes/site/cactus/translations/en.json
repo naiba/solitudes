@@ -5,6 +5,7 @@
     {"locale":"en","key":"books_all_the_books","trans":"Explore all books and in-depth series published on this blog. Long-form writings organized into chapters and collections."},
     {"locale":"en","key":"book_empty","trans":"No chapters are available to read yet."},
     {"locale":"en","key":"back_to_book","trans":"Back to series"},
+    {"locale":"en","key":"book_context","trans":"In this series"},
     {"locale":"en","key":"page_number","trans":"Page {0}"},
     {"locale":"en","key":"view_replies","trans":"View replies ({0})"},
     {"locale":"en","key":"all_comments","trans":"Back to all comments"},

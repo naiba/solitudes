@@ -1,16 +1,15 @@
 {{define "site/article_chapters"}}
 {{if .article.Chapters}}
-<ul class="book-chapter-list" data-testid="book-chapters">
+<ol class="book-chapter-list" data-testid="book-chapters" role="list">
     {{range .article.Chapters}}
     <li>
-        {{if .IsBook}}<i class="fa-solid fa-book" aria-hidden="true"></i> {{end}}{{if not .Public}}<i class="fa-solid fa-lock" aria-hidden="true"></i> {{end}}
-        <a href="/{{.Slug}}" data-testid="book-chapter-link">{{.Title}}</a>
-        <small>(<time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.tr.T "date_format")}}</time>{{if .ReadNum}} · <i class="fa-regular fa-eye" aria-hidden="true"></i> {{.ReadNum}}{{end}}{{if .CommentNum}} · <i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.CommentNum}}{{end}})</small>
+        <a class="chapter-title" href="/{{.Slug}}" data-testid="book-chapter-link">{{if .IsBook}}<i class="fa-solid fa-book" aria-hidden="true"></i> {{end}}{{if not .Public}}<i class="fa-solid fa-lock" aria-hidden="true"></i> {{end}}{{.Title}}</a>
+        <small><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.tr.T "date_format")}}</time>{{if .ReadNum}} · <i class="fa-regular fa-eye" aria-hidden="true"></i> {{.ReadNum}}{{end}}{{if .CommentNum}} · <i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.CommentNum}}{{end}}</small>
     {{if .IsBook}}
     {{template "site/article_chapters" (dict "article" . "tr" $.tr "Conf" $.Conf "Queries" $.Queries)}}
     {{end}}
     </li>
     {{end}}
-</ul>
+</ol>
 {{else}}<p class="book-empty" data-testid="book-empty">{{.tr.T "book_empty"}}</p>{{end}}
 {{end}}
