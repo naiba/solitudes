@@ -35,8 +35,8 @@
     </section>
     <section class="account-card" id="passkeys"><h2>{{.Tr.T "passkeys"}}</h2>
       <p>{{.Tr.T "passkey_hint"}}</p>
-      <button id="add-passkey" type="button" data-testid="account-passkey-add" data-unsupported-webauthn="{{.Tr.T "unsupported_webauthn"}}">{{.Tr.T "register_passkey"}}</button>
-      <ul>{{range .Data.passkeys}}<li data-testid="account-passkey-row">{{.Name}} · {{.CreatedAt}} <button type="button" data-passkey-id="{{.ID}}" data-confirm-delete="{{$.Tr.T "confirm_delete_passkey"}}" data-testid="account-passkey-delete">{{$.Tr.T "delete"}}</button></li>{{end}}</ul>
+      <button id="add-passkey" type="button" disabled data-testid="account-passkey-add" data-unsupported-webauthn="{{.Tr.T "unsupported_webauthn"}}">{{.Tr.T "register_passkey"}}</button>
+      <ul>{{range .Data.passkeys}}<li data-testid="account-passkey-row">{{.Name}} · {{.CreatedAt}} <button type="button" disabled data-passkey-id="{{.ID}}" data-confirm-delete="{{$.Tr.T "confirm_delete_passkey"}}" data-testid="account-passkey-delete">{{$.Tr.T "delete"}}</button></li>{{end}}</ul>
 {{template "site/pagination" (dict "nav" .Data.passkeys_navigation "tr" .Tr)}}
     </section>
     <section class="account-card"><h2>{{.Tr.T "connected_accounts"}}</h2>
@@ -49,6 +49,6 @@
     </div>
   </div>
 </main>
-<script src="/static/site/folio/js/account.js?v2026101001" defer></script>
+<script src="/static/site/folio/js/account.js?v2026101002"></script>
 {{template "site/footer" .}}
 {{end}}

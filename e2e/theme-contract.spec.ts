@@ -2854,7 +2854,16 @@ test('public profiles show only public activity and comments distinguish every i
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new RegExp(`/users/${adminID}$`));
   await expect(page.locator('.public-profile-header a[href^="#"]')).toHaveCount(0);
   await expect(page.getByTestId('profile-reader-circle')).toHaveAttribute('href', '/readers/');
-  await expect(page.getByTestId('public-profile-article').filter({ hasText: articleTitle! })).toHaveAttribute('href', '/' + articleSlug);
+  const profileArticle = page.getByTestId('public-profile-article').filter({ hasText: articleTitle! });
+  // Earlier publishing tests can move this shared article off the first page.
+  // Follow the actual pagination UI rather than assuming it is always recent.
+  for (let n = 0; n < 20 && await profileArticle.count() === 0; n++) {
+    await expect(page.locator('body')).not.toContainText('Private profile draft');
+    const next = page.locator('#profile-articles').getByTestId('pagination-next');
+    await expect(next).toBeVisible();
+    await next.click();
+  }
+  await expect(profileArticle).toHaveAttribute('href', '/' + articleSlug);
   await expect(page.locator('body')).not.toContainText(adminEmail!);
   await expect(page.locator('body')).not.toContainText('Private profile draft');
   await expect(page.locator('body')).not.toContainText('Private comment content');
@@ -3097,9 +3106,28 @@ test('reader can register and remove a WebAuthn passkey from the front site', as
   const session = await page.context().newCDPSession(page);
   await session.send('WebAuthn.enable');
   await session.send('WebAuthn.addVirtualAuthenticator', {
-    options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true },
+    options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true },
   });
-  await page.getByTestId('account-passkey-add').click();
+  // Account actions must initialize without waiting for optional CDN scripts
+  // in the footer, and must not accept clicks before their handlers are ready.
+  let releaseAccount!: () => void;
+  let releaseFooter!: () => void;
+  const accountReady = new Promise<void>(resolve => { releaseAccount = resolve; });
+  const footerReady = new Promise<void>(resolve => { releaseFooter = resolve; });
+  await page.route('**/js/account.js?*', async route => { await accountReady; await route.continue(); });
+  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/method.min.js', async route => { await footerReady; await route.abort(); });
+  try {
+    await page.goto('/account', {waitUntil:'commit'});
+    await expect(page.getByTestId('account-passkey-add')).toBeDisabled();
+    releaseAccount();
+    await expect(page.getByTestId('account-passkey-add')).toBeEnabled();
+    const registered = page.waitForResponse(response => new URL(response.url()).pathname === '/account/passkeys/finish');
+    await page.getByTestId('account-passkey-add').click({noWaitAfter:true});
+    expect((await registered).status()).toBe(201);
+  } finally {
+    releaseAccount();
+    releaseFooter();
+  }
   await expect(page.getByTestId('account-passkey-delete')).toBeVisible();
   await page.getByTestId('account-logout').click();
   await page.goto('/login', { waitUntil: 'domcontentloaded' });
