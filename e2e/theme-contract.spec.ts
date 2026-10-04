@@ -2854,14 +2854,16 @@ test('public profiles show only public activity and comments distinguish every i
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new RegExp(`/users/${adminID}$`));
   await expect(page.locator('.public-profile-header a[href^="#"]')).toHaveCount(0);
   await expect(page.getByTestId('profile-reader-circle')).toHaveAttribute('href', '/readers/');
+  await page.waitForLoadState('domcontentloaded');
   const profileArticle = page.getByTestId('public-profile-article').filter({ hasText: articleTitle! });
   // Earlier publishing tests can move this shared article off the first page.
   // Follow the actual pagination UI rather than assuming it is always recent.
   for (let n = 0; n < 20 && await profileArticle.count() === 0; n++) {
     await expect(page.locator('body')).not.toContainText('Private profile draft');
     const next = page.locator('#profile-articles').getByTestId('pagination-next');
-    await expect(next).toBeVisible();
+    await expect(next, `Missing ${articleSlug} at ${page.url()}; articles: ${await page.getByTestId('public-profile-article').allTextContents()}`).toBeVisible();
     await next.click();
+    await page.waitForLoadState('domcontentloaded');
   }
   await expect(profileArticle).toHaveAttribute('href', '/' + articleSlug);
   await expect(page.locator('body')).not.toContainText(adminEmail!);
