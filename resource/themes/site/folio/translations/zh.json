@@ -127,7 +127,7 @@
     {"locale": "zh", "key": "email_unread", "trans": "未读"},
     {"locale": "zh", "key": "go_to_page", "trans": "跳转"},
     {"locale": "zh", "key": "has_new_version", "trans": "您正在查看 v{0} 版本，该文章已更新至 <a href=\"/{1}/v{2}\">v{3}</a> 版本。"},
-    {"locale": "zh", "key": "article_history", "trans": "历史版本（仅作者和管理员可见）"},
+    {"locale": "zh", "key": "article_history", "trans": "历史版本"},
     {"locale": "zh", "key": "home", "trans": "首页"},
     {"locale": "zh", "key": "leave_a_comment", "trans": "发表评论"},
     {"locale": "zh", "key": "may_not_reply_if_email_not_exist", "trans": "如果不填写邮箱，我可能无法回复您的评论。优先填入邮箱或昵称会自动加载其他信息。"},

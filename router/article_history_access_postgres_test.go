@@ -76,9 +76,12 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 				return c.Next()
 			})
 			app.Get("/:slug/:version?", article)
+			language := "en"
 			request := func(t *testing.T, suffix string, status int) (string, http.Header) {
 				t.Helper()
-				resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/"+a.Slug+suffix, nil), -1)
+				req := httptest.NewRequest(http.MethodGet, "/"+a.Slug+suffix, nil)
+				req.Header.Set("Accept-Language", language)
+				resp, err := app.Test(req, -1)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -152,6 +155,26 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 						})
 					}
 				}
+			}
+			// The public history entry must not claim author/admin-only access
+			// in either theme's supported languages.
+			viewer = nil
+			if err := db.Model(&a).Updates(map[string]interface{}{"visibility": model.VisibilityPublic, "template_id": solitudes.ArticleTemplateID}).Error; err != nil {
+				t.Fatal(err)
+			}
+			for _, locale := range []struct{ language, label string }{{"en", "Revision history"}, {"zh", "历史版本"}} {
+				t.Run("history-label/"+locale.language, func(t *testing.T) {
+					language = locale.language
+					body, _ := request(t, "", http.StatusOK)
+					if !strings.Contains(body, locale.label+":") || !strings.Contains(body, `href="/revision-access/v1"`) {
+						t.Fatalf("missing unrestricted %s history entry", locale.language)
+					}
+					for _, obsolete := range []string{"仅作者和管理员可见", "author and administrators only"} {
+						if strings.Contains(body, obsolete) {
+							t.Fatalf("obsolete history restriction rendered: %s", obsolete)
+						}
+					}
+				})
 			}
 		})
 	}

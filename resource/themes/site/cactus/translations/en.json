@@ -122,7 +122,7 @@
     {"locale": "en", "key": "email_unread", "trans": "Unread"},
     {"locale": "en", "key": "go_to_page", "trans": "Go"},
     {"locale": "en", "key": "has_new_version", "trans": "You are viewing version v{0} of this article, which has been updated to version <a href=\"/{1}/v{2}\">v{3}</a>."},
-    {"locale": "en", "key": "article_history", "trans": "Revision history (author and administrators only)"},
+    {"locale": "en", "key": "article_history", "trans": "Revision history"},
     {"locale": "en", "key": "home", "trans": "Home"},
     {"locale": "en", "key": "may_not_reply_if_email_not_exist", "trans": "If you don't fill in your email, I may not be able to reply to your comment. Enter email or nickname first to auto-load other information."},
     {"locale": "en", "key": "menu", "trans": "Menu"},
