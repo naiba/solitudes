@@ -1494,6 +1494,51 @@ test('book reading contract covers nested chapters, roles, navigation and empty 
   }
 });
 
+test('Cactus publication dates wrap as complete labelled facts beside sharing', async ({browser}) => {
+  test.skip(siteTheme !== 'cactus');
+  test.setTimeout(90000);
+  for (const locale of ['zh-CN','en']) {
+    const context=await browser.newContext({locale,baseURL:process.env.E2E_BASE_URL,reducedMotion:'reduce'});
+    try {
+      const page=await context.newPage();
+      for (const width of [320,375,390,428,768,1280]) {
+        await page.setViewportSize({width,height:900});
+        for (const route of ['/visual-editor-post','/visual-page','/visual-long-article']) {
+          await page.goto(route);
+          const meta=page.getByTestId('article-meta');
+          const times=meta.locator('time');
+          await expect(times).toHaveCount(route==='/visual-long-article' ? 1 : 2);
+          for (const time of await times.all()) {
+            await expect(time).toHaveAttribute('datetime',/^\d{4}-\d{2}-\d{2}T/);
+            const group=time.locator('..');
+            await expect(group).toHaveClass('postdate-item');
+            await expect(group).toHaveCSS('white-space','nowrap');
+            const lines=await time.evaluate(n=>{const r=document.createRange();r.selectNodeContents(n);return Array.from(r.getClientRects()).filter(b=>b.width>0).map(b=>b.y);});
+            expect(new Set(lines).size,'date never breaks between year, month and day').toBe(1);
+            const rect=(await group.boundingBox())!, bounds=(await meta.boundingBox())!;
+            expect(rect.x).toBeGreaterThanOrEqual(bounds.x-1);
+            expect(rect.x+rect.width).toBeLessThanOrEqual(bounds.x+bounds.width+1);
+            expect(rect.height,'label and date stay on one line').toBeLessThanOrEqual(await group.evaluate(n=>parseFloat(getComputedStyle(n).lineHeight))+1);
+          }
+          const share=page.getByTestId('article-byline').getByTestId('article-share');
+          if (width<900) {
+            await expect(share).toBeVisible();
+            const a=(await meta.boundingBox())!, b=(await share.boundingBox())!;
+            expect(a.x+a.width).toBeLessThanOrEqual(b.x);
+            expect(b.height).toBeGreaterThanOrEqual(44);
+          } else await expect(share).toBeHidden();
+          if (process.env.SOLITUDES_DATE_SCREENSHOTS && width===390) {
+            await page.getByTestId('article-author-link').evaluate((n,name)=>{n.textContent=name;},locale==='zh-CN' ? '奶爸' : 'Author');
+            await page.screenshot({path:path.join(process.env.SOLITUDES_DATE_SCREENSHOTS,`${locale}-${route.slice(1)}.png`),animations:'disabled'});
+          }
+          await page.getByTestId('article-author-link').evaluate(n=>{n.textContent='AnUnbrokenAuthorName'.repeat(8);});
+          expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+        }
+      }
+    } finally {await context.close();}
+  }
+});
+
 test('sharing uses the desktop Cactus menu and inline metadata elsewhere for every role', async ({ page }) => {
   test.skip(!articleSlug || !readerEmail || !editorEmail || !adminEmail, 'Requires isolated roles.');
   test.setTimeout(90000);

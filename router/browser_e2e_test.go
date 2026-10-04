@@ -90,11 +90,13 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	}
 	editorArticle := model.Article{AuthorID: &editor.ID, Slug: "visual-editor-post",
 		Title: "An editor's field notes", Content: "A short article published by an editor so the author view has real data.",
+		CreatedAt:  now.Add(-72 * time.Hour),
 		TemplateID: solitudes.ArticleTemplateID, Version: 1}
 	if err := db.Create(&editorArticle).Error; err != nil {
 		t.Fatal(err)
 	}
 	publicPage := model.Article{AuthorID: &admin.ID, Slug: "visual-page", Title: "About this publication",
+		CreatedAt:  now.Add(-72 * time.Hour),
 		Content:    "## A publication for curious readers\n\nThis page presents the site and its editorial approach.\n\n- Read thoughtfully\n- Write clearly\n- Share generously\n\n1. Choose a story\n2. Join the conversation",
 		TemplateID: solitudes.PageTemplateID, Version: 1}
 	if err := db.Create(&publicPage).Error; err != nil {

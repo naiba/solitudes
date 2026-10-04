@@ -46,17 +46,18 @@
                     {{if .Data.article.Author.ID}}<a href="/users/{{.Data.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.Data.article.Author.Nickname}}</a>{{else}}<span>{{.Data.article.Author.Nickname}}</span>{{end}}
                 </span>
                 <div class="postdate">
-                    {{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt
-                        (.Tr.T "date_format")}}</time>
+                    <span class="postdate-item">{{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt
+                        (.Tr.T "date_format")}}</time></span>
                     {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
-                     · {{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time>
+                    <span class="postdate-item">{{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time></span>
                     {{end}}
-                    <small>·v{{.Data.article.Version}}</small>
+                    <span class="postdate-item"><small>v{{.Data.article.Version}}</small>
                     {{if .Data.article.ReadNum}}
-                    |
+                    ·
                     <span><i class="fa-regular fa-eye"></i>{{.Data.article.ReadNum}}{{if
                         .Data.article.CommentNum}},<i class="fa-regular fa-comment-dots"></i>{{.Data.article.CommentNum}}{{end}}</span>
                     {{end}}
+                    </span>
                 </div>
                 {{if .Data.article.RawTags}}
                 <div class="article-tag">
