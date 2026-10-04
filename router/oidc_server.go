@@ -256,14 +256,22 @@ func consentHandler(c *fiber.Ctx) error {
 		_ = activeOIDCProvider.Storage().DeleteAuthRequest(c.UserContext(), id)
 		return c.Redirect(target.String(), http.StatusFound)
 	}
-	result := solitudes.System.DB.Model(&model.OIDCAuthRequest{}).
-		Where("id = ? AND approved = false AND expires_at > ?", id, time.Now()).
-		Updates(map[string]interface{}{"approved": true, "account_id": account.ID, "auth_time": time.Now()})
-	if result.Error != nil {
-		return result.Error
-	}
-	if result.RowsAffected != 1 {
-		return fiber.ErrBadRequest
+	if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		if _, err := lockOIDCClient(tx, request.GetClientID(), true); err != nil {
+			return err
+		}
+		result := tx.Model(&model.OIDCAuthRequest{}).
+			Where("id = ? AND client_id = ? AND approved = false AND expires_at > ?", id, request.GetClientID(), time.Now()).
+			Updates(map[string]interface{}{"approved": true, "account_id": account.ID, "auth_time": time.Now()})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected != 1 {
+			return fiber.ErrBadRequest
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
 	return c.Redirect("/authorize/callback?id="+url.QueryEscape(id), http.StatusFound)
 }
@@ -482,21 +490,20 @@ func disableOIDCClient(c *fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
-		client := tx.Model(&model.OIDCClient{}).Where("id = ? AND disabled_at IS NULL", id)
-		if !account.Role.IsAdmin() {
-			client = client.Where("owner_id = ?", account.ID)
-		}
-		result := client.Update("disabled_at", time.Now())
-		if result.Error != nil {
-			return result.Error
-		}
-		if result.RowsAffected != 1 {
+		client, err := lockOIDCClient(tx, id, true)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return fiber.ErrNotFound
 		}
-		if err := tx.Where("client_id = ?", id).Delete(&model.OIDCRefreshToken{}).Error; err != nil {
+		if err != nil {
 			return err
 		}
-		if err := tx.Where("client_id = ?", id).Delete(&model.OIDCAccessToken{}).Error; err != nil {
+		if !account.Role.IsAdmin() && (client.OwnerID == nil || *client.OwnerID != account.ID) {
+			return fiber.ErrNotFound
+		}
+		if err := tx.Model(client).Update("disabled_at", time.Now()).Error; err != nil {
+			return err
+		}
+		if err := deleteOIDCCredentials(tx, id, ""); err != nil {
 			return err
 		}
 		return auditMutation(c, tx, "client.disable", id, id, "")

@@ -427,6 +427,9 @@ func TestOIDCAuthorizationCodeSingleUseAndPKCE(t *testing.T) {
 		ClientID: "test-client", RedirectURI: "https://app.example/callback",
 		ResponseType: oidc.ResponseTypeCode, Scopes: oidc.SpaceDelimitedArray{"openid", "email"},
 	}
+	if err := db.Create(&model.OIDCClient{ID: request.ClientID, Name: "Test", RedirectURIsJSON: "[]"}).Error; err != nil {
+		t.Fatal(err)
+	}
 	if _, err := storage.CreateAuthRequest(t.Context(), request, ""); err == nil {
 		t.Fatal("accepted authorization without PKCE")
 	}
@@ -457,6 +460,9 @@ func TestOIDCRefreshTokenRotation(t *testing.T) {
 	withIdentityDB(t, db)
 	account := testAccount(t, db, model.RoleUser)
 	storage := &oidcStorage{db: db}
+	if err := db.Create(&model.OIDCClient{ID: "client", Name: "Test", RedirectURIsJSON: "[]"}).Error; err != nil {
+		t.Fatal(err)
+	}
 	request := &oidcRefreshRequest{token: model.OIDCRefreshToken{AccountID: account.ID, ClientID: "client", AuthTime: time.Now()}, scopes: []string{"openid", "email"}}
 	_, raw, _, err := storage.CreateAccessAndRefreshTokens(t.Context(), request, "")
 	if err != nil {

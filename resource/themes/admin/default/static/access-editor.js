@@ -9,11 +9,11 @@ window.SolitudesAccessEditor = (() => {
         const marker = '`'.repeat(Math.max(3, ...runs.map(run => run.length + 1)));
         return '\n\n' + marker + 'access:' + level + '\n' + content.trim() + '\n' + marker + '\n\n';
     }
-    function open(vditor) {
+    function open(vditor, rootID) {
         editor = vditor;
         savedRange = null;
         savedTextSelection = null;
-        const root = document.getElementById('editSection');
+        const root = document.getElementById(rootID);
         const selection = window.getSelection();
         if (selection.rangeCount && root.contains(selection.getRangeAt(0).startContainer)) {
             savedRange = selection.getRangeAt(0).cloneRange();
@@ -44,5 +44,12 @@ window.SolitudesAccessEditor = (() => {
             editor.insertMD(fence(content, level));
         });
     });
-    return {open, fence};
+    function tool(getEditor, rootID, tip) {
+        return {
+            name: 'restricted-content', tip,
+            icon: '<svg viewBox="0 0 24 24"><path d="M6 10V6a6 6 0 0 1 12 0v4h2v14H4V10zm2 0h8V6a4 4 0 0 0-8 0z"/></svg>',
+            click() { open(getEditor(), rootID); }
+        };
+    }
+    return {open, fence, tool};
 })();

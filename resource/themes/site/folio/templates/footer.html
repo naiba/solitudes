@@ -69,7 +69,7 @@
         })();
     </script>
     {{ $code := index .Theme "folio.customcode" }}{{ if $code }}{{ printf "%s" $code | unsafe }}{{ end }}
-{{if .Data.article}}{{template "site/share_dialog" .}}{{end}}
+{{if eq .OgType "article"}}{{template "site/share_dialog" .}}{{end}}
 <script defer src="/static/site/folio/js/reading.js?v2026100702"></script>
 </body>
 

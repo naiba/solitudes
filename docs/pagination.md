@@ -12,6 +12,7 @@
 | 顶层评论 | `comment_page` | 20 |
 | 评论线程的直接回复 | `thread`、`replies_page` | 20 |
 | 个人应用 | `page` | 20 |
+| 个人已授权的第三方应用 | `page` | 20 |
 | 个人 Passkey | `passkeys_page` | 10 |
 | 后台文章／评论 | `page` | 20 |
 | 后台用户／应用／审计／应用登录用户 | `page` | 25 |

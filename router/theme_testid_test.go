@@ -13,6 +13,8 @@ import (
 func TestThemeInteractionSelectors(t *testing.T) {
 	contracts := map[string]map[string][]string{
 		"admin": {
+			"index.html":               {"topic-publish-content", "topic-publish-submit"},
+			"access_editor.html":       {"access-dialog", "access-level", "access-content", "access-insert"},
 			"header.html":              {"admin-nav-publish", "admin-nav-content-menu", "admin-nav-identity-menu", "admin-nav-providers"},
 			"login_providers.html":     {"provider-settings-form", "provider-github-id", "provider-github-secret", "provider-google-id", "provider-google-secret", "provider-oidc-issuer", "provider-oidc-id", "provider-oidc-secret", "provider-settings-save"},
 			"publish.html":             {"publish-title", "publish-slug", "publish-tags", "publish-template", "publish-content", "publish-visibility", "publish-submit"},
@@ -24,6 +26,7 @@ func TestThemeInteractionSelectors(t *testing.T) {
 			"articles.html":            {"article-edit", "article-delete"},
 		},
 		"site": {
+			"account_authorizations.html":      {"authorization-row", "authorization-revoke", "authorization-revoked", "authorizations-empty"},
 			"index.html":                       {"reader-circle-home", "reader-circle-more", "home-recent-comments", "home-recent-comment", "home-comment-link"},
 			"login.html":                       {"site-auth-page", "auth-login-form", "auth-email", "auth-password", "auth-captcha", "auth-submit", "auth-register-link"},
 			"register.html":                    {"site-auth-page", "register-form", "register-email", "register-nickname", "register-password", "register-captcha", "register-submit", "resend-form", "resend-email", "resend-captcha", "resend-submit"},
@@ -34,7 +37,7 @@ func TestThemeInteractionSelectors(t *testing.T) {
 			"account_oidc_client_created.html": {"oidc-created-id", "oidc-created-back"},
 			"search.html":                      {"site-search-input", "site-search-submit"},
 			"article.html":                     {"site-article", "article-author-link", "article-edit-link", "comment-form", "comment-content", "comment-nickname", "comment-email", "comment-submit"},
-			"page.html":                        {"site-article", "article-author-link", "article-edit-link", "comment-form", "comment-content", "comment-nickname", "comment-email", "comment-submit"},
+			"page.html":                        {"site-page", "page-edit-link", "page-dates", "page-created-at", "page-updated-at", "comment-form", "comment-content", "comment-nickname", "comment-email", "comment-submit"},
 			"article_list_entry.html":          {"article-author-link", "comment-author-link", "topic-entry", "topic-bubble", "topic-content", "topic-byline", "topic-comments", "topic-comment", "topic-comment-link"},
 			"comments_entry.html":              {"comment-reply", "comment-author-link", "comment-role"},
 			"user_profile.html":                {"public-profile", "public-profile-bio", "public-profile-article", "public-profile-comment", "public-profile-comment-article", "profile-reader-circle", "profile-edit-link"},

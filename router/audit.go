@@ -36,7 +36,7 @@ func auditIdentifier(value string) string {
 // Group authorization can reject a request before Fiber matches its leaf
 // route. Recover only known route shapes, never the raw URL or query string.
 func auditResource(path string) (route, target, client string) {
-	for _, prefix := range []string{"/admin/users/", "/admin/oidc/clients/", "/account/oidc/clients/", "/account/passkeys/"} {
+	for _, prefix := range []string{"/admin/users/", "/admin/oidc/clients/", "/account/oidc/clients/", "/account/oidc/authorizations/", "/account/passkeys/"} {
 		if !strings.HasPrefix(path, prefix) {
 			continue
 		}
@@ -47,14 +47,14 @@ func auditResource(path string) (route, target, client string) {
 		route = prefix + ":id"
 		if len(parts) == 2 {
 			switch parts[1] {
-			case "role", "metadata", "disable":
+			case "role", "metadata", "disable", "delete", "revoke":
 				route += "/" + parts[1]
 			default:
 				return "", "", ""
 			}
 		}
 		target = auditIdentifier(parts[0])
-		if strings.Contains(prefix, "/oidc/clients/") {
+		if strings.Contains(prefix, "/oidc/") {
 			client = target
 		}
 		return route, target, client
@@ -141,6 +141,9 @@ func auditAction(method, path string) string {
 		return "session.login"
 	}
 	if strings.Contains(path, "/oidc/clients") {
+		if strings.HasSuffix(path, "/delete") {
+			return "client.delete"
+		}
 		if strings.HasSuffix(path, "/disable") {
 			return "client.disable"
 		}
@@ -148,6 +151,9 @@ func auditAction(method, path string) string {
 			return "client.update"
 		}
 		return "client.create"
+	}
+	if strings.HasPrefix(path, "/account/oidc/authorizations/") && strings.HasSuffix(path, "/revoke") {
+		return "grant.revoke"
 	}
 	if strings.HasPrefix(path, "/admin/users/") && strings.HasSuffix(path, "/role") {
 		return "user.role.update"

@@ -51,7 +51,7 @@
     {{if eq .OgType "article"}}<meta name="twitter:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
     {{else}}<meta name="twitter:image" content="https://{{.Conf.Site.Domain}}/logo.png">{{end}}
     <link rel="stylesheet" href="/static/site/cactus/css/reading.css?v2026100913">
-    <link rel="stylesheet" href="/static/site/cactus/css/layout.css?v2026100909">
+    <link rel="stylesheet" href="/static/site/cactus/css/layout.css?v2026101001">
 </head>
 
 <body class="max-width mx-auto px3 ltr">
@@ -69,16 +69,16 @@
           "position": 1,
           "name": "{{.Tr.T "home"}}",
           "item": "https://{{.Conf.Site.Domain}}/"
-        },
+        }{{if eq .OgType "article"}},
         {
           "@type": "ListItem",
           "position": 2,
           "name": "{{.Tr.T "posts"}}",
           "item": "https://{{.Conf.Site.Domain}}/posts/"
-        },
+        }{{end}},
         {
           "@type": "ListItem",
-          "position": 3,
+          "position": {{if eq .OgType "article"}}3{{else}}2{{end}},
           "name": "{{jsonEscape .Data.article.Title}}",
           "item": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
         }

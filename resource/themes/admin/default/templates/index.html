@@ -17,7 +17,7 @@
     <div class="dashboard-grid">
         <div class="wf-card">
             <div class="wf-card-header">{{.Tr.T "quick_topic_publish"}}</div>
-            <div class="wf-card-body"><div class="flex flex-col gap-2"><div id="topicContent"></div><button type="button" onclick="publishTopic(this)" class="admin-button primary self-end"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i>{{.Tr.T "publish_now"}}</button></div></div>
+            <div class="wf-card-body"><div class="flex flex-col gap-2"><div id="topicContent" data-testid="topic-publish-content"></div><button type="button" onclick="publishTopic(this)" data-testid="topic-publish-submit" class="admin-button primary self-end"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i>{{.Tr.T "publish_now"}}</button></div></div>
         </div>
         <div class="dashboard-side">
             <div class="wf-card"><div class="wf-card-header">{{.Tr.T "system_stats"}}</div><div class="wf-card-body space-y-3">
@@ -34,6 +34,7 @@
     </div>
 </div>
 
+{{template "admin/access_editor" .}}
 <script>
     function rebuildFullTextSearch() {
         if (confirm('{{.Tr.T "confirm_rebuild_search"}}')) {
@@ -85,6 +86,7 @@
     const isDarkMode = document.documentElement.dataset.theme === 'dark';
     const vditor = new Vditor('topicContent', {
         theme: isDarkMode ? 'dark' : 'classic',
+        toolbar: ['emoji', 'bold', 'italic', 'strike', '|', 'list', 'quote', 'code', 'upload', 'link', SolitudesAccessEditor.tool(() => vditor, 'topicContent', '{{.Tr.T "access_insert"}}'), '|', 'undo', 'redo', 'edit-mode', 'preview', 'fullscreen'],
         height: 200,
         placeholder: '{{.Tr.T "topic_content_placeholder"}}',
         toolbarConfig: {

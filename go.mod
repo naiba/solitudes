@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	github.com/88250/lute v1.7.8
+	github.com/PuerkitoBio/goquery v1.12.0
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047
 	github.com/blevesearch/bleve/v2 v2.6.1
 	github.com/go-jose/go-jose/v4 v4.1.5
@@ -44,7 +45,6 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
-	github.com/PuerkitoBio/goquery v1.12.0 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.18.0 // indirect
 	github.com/adamzy/cedar-go v0.0.0-20170805034717-80a9c64b256d // indirect
 	github.com/alecthomas/chroma/v2 v2.27.0 // indirect

@@ -1,4 +1,8 @@
 [
+{"locale":"en","key":"delete_client","trans":"Delete application"},
+{"locale":"en","key":"confirm_delete_client","trans":"Permanently delete this application and all its authorizations, tokens and pending requests? Security audit history will be retained."},
+{"locale":"en","key":"client.delete","trans":"Application deleted"},
+{"locale":"en","key":"grant.revoke","trans":"Application authorization revoked"},
     {"locale": "en", "key": "account.initialized", "trans": "Administrator initialized"},
     {"locale": "en", "key": "audit_actor", "trans": "Actor"},
     {"locale": "en", "key": "audit.enabled", "trans": "Auditing enabled"},

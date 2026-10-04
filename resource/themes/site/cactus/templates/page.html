@@ -31,30 +31,19 @@
 }
 </script>
 {{end}}
-{{template "site/article_menu" .}}
-<div class="content index py4">
-<article class="post" id="main-content" data-testid="site-article" tabindex="-1">
-  <header>
-  <h1 class="posttitle">{{.Data.article.Title}}</h1>
-  <div class="article-byline" data-testid="article-byline">
-  <div class="meta" data-testid="article-meta">
-    {{if .Data.article.Author.ID}}<span>{{.Tr.T "written_by"}} <a href="/users/{{.Data.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.Data.article.Author.Nickname}}</a></span>{{end}}
-    <span class="postdate">
-    <span class="postdate-item">{{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time></span>
-    {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
-    <span class="postdate-item">{{.Tr.T "updated_at"}}: <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time></span>
-    {{end}}
-    </span>
-    {{if and .Login (or .Account.Role.IsAdmin (eq .Account.ID .Data.article.Author.ID))}}<a href="/admin/publish?id={{.Data.article.ID}}" data-testid="article-edit-link">{{.Tr.T "edit_article"}}</a>{{end}}
-  </div>
-  {{template "site/share_button" .}}
-  </div>
-  </header>
+{{template "site/menu" .}}
+<main class="post standalone-page" id="main-content" data-testid="site-page" aria-label="{{.Data.article.Title}}" tabindex="-1">
   <div class="content" data-reading-content>
     {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
   </div>
-</article>
-{{template "site/article_mobile_menu" .}}
+  <p class="page-dates" data-testid="page-dates">
+    <span>{{.Tr.T "page_created_at"}} <time datetime="{{iso8601 .Data.article.CreatedAt}}" data-testid="page-created-at">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}} {{tf .Data.article.CreatedAt "15:04"}}</time></span>
+    {{if and (.Data.article.UpdatedAt.After .Data.article.CreatedAt) (ne (tf .Data.article.CreatedAt "2006-01-02 15:04") (tf .Data.article.UpdatedAt "2006-01-02 15:04"))}}
+    <span>{{.Tr.T "updated_at"}} <time datetime="{{iso8601 .Data.article.UpdatedAt}}" data-testid="page-updated-at">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}} {{tf .Data.article.UpdatedAt "15:04"}}</time></span>
+    {{end}}
+    {{if and .Login (or .Account.Role.IsAdmin (and .Account.Role.CanPublish (eq .Account.ID .Data.article.Author.ID)))}}<a class="page-edit-link" href="/admin/publish?id={{.Data.article.ID}}" data-testid="page-edit-link">{{.Tr.T "edit_page"}}</a>{{end}}
+  </p>
+</main>
 
 {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
 <span id="comments"></span><div id="reply-list">
@@ -65,7 +54,7 @@
 {{template "site/pagination" (dict "nav" .Data.comment_navigation "tr" .Tr)}}
 {{if not .Data.article.DisableComment}}
 <div id="reply" data-testid="comment-form">
-{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<p class="comment-identity">{{.Tr.T "guest_comment_hint"}} <a href="/login?return_to=%2F{{.Data.article.Slug}}%23reply">{{.Tr.T "sign_in"}}</a> · <a href="/register?return_to=%2F{{.Data.article.Slug}}%23reply">{{.Tr.T "create_account"}}</a></p>{{end}}
+{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
     <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
     <textarea cols="40" rows="6" id="id_content" data-testid="comment-content"
         placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>

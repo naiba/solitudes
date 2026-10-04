@@ -93,7 +93,12 @@ func (s *oidcStorage) CreateAuthRequest(ctx context.Context, request *oidc.AuthR
 	}
 	row := model.OIDCAuthRequest{ID: id, ClientID: request.ClientID, RequestJSON: data,
 		ExpiresAt: time.Now().Add(10 * time.Minute)}
-	if err := s.db.WithContext(ctx).Create(&row).Error; err != nil {
+	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if _, err := lockOIDCClient(tx, request.ClientID, true); err != nil {
+			return err
+		}
+		return tx.Create(&row).Error
+	}); err != nil {
 		return nil, err
 	}
 	return oidcRequestFromRow(row)
@@ -187,6 +192,9 @@ func oidcClientID(request op.TokenRequest) string {
 func (s *oidcStorage) CreateAccessToken(ctx context.Context, request op.TokenRequest) (string, time.Time, error) {
 	var row *model.OIDCAccessToken
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOIDCTokenRequest(ctx, tx, request, oidcClientID(request)); err != nil {
+			return err
+		}
 		var err error
 		row, err = newOIDCAccess(ctx, tx, request, oidcClientID(request))
 		if err != nil {
@@ -212,9 +220,12 @@ func (s *oidcStorage) CreateAccessAndRefreshTokens(ctx context.Context, request 
 	}
 	var access *model.OIDCAccessToken
 	err = s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := lockOIDCTokenRequest(ctx, tx, request, clientID); err != nil {
+			return err
+		}
 		if current != "" {
 			var old model.OIDCRefreshToken
-			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("token_hash = ? AND client_id = ? AND expires_at > ?", secretHash(current), clientID, time.Now()).Take(&old).Error; err != nil {
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("token_hash = ? AND client_id = ? AND account_id = ? AND expires_at > ?", secretHash(current), clientID, request.GetSubject(), time.Now()).Take(&old).Error; err != nil {
 				return op.ErrInvalidRefreshToken
 			}
 			if err := tx.Delete(&old).Error; err != nil {

@@ -32,33 +32,23 @@
 </script>
 {{end}}
 
-<main id="main-content">
-    <article class="folio-article" data-testid="site-article">
-        <header class="article-header folio-narrow">
-            <h1 class="article-title">{{.Data.article.Title}}</h1>
-            <div class="article-byline" data-testid="article-byline">
-            <div class="article-meta" data-testid="article-meta">
-                {{if .Data.article.Author.ID}}<span>{{.Tr.T "written_by"}} <a href="/users/{{.Data.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.Data.article.Author.Nickname}}</a></span>{{end}}
-                <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}}</time>
-                {{if ne (tf .Data.article.CreatedAt "2006-01-02") (tf .Data.article.UpdatedAt "2006-01-02")}}
-                <span>{{.Tr.T "updated_at"}} <time datetime="{{iso8601 .Data.article.UpdatedAt}}">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}}</time></span>
-                {{end}}
-                {{if and .Login (or .Account.Role.IsAdmin (eq .Account.ID .Data.article.Author.ID))}}<a href="/admin/publish?id={{.Data.article.ID}}" class="edit-link" data-testid="article-edit-link">{{.Tr.T "edit_post"}}</a>{{end}}
-            </div>
-            {{template "site/share_button" .}}
-            </div>
-            <hr class="article-divider" aria-hidden="true">
-        </header>
+<main id="main-content" class="standalone-page" data-testid="site-page" aria-label="{{.Data.article.Title}}">
 
-        <div class="app-prose folio-narrow reading-content" data-reading-content>
-            {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
-        </div>
+    <div class="app-prose page-content" data-reading-content>
+        {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
+    </div>
 
-    </article>
+  <p class="page-dates" data-testid="page-dates">
+    <span>{{.Tr.T "page_created_at"}} <time datetime="{{iso8601 .Data.article.CreatedAt}}" data-testid="page-created-at">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}} {{tf .Data.article.CreatedAt "15:04"}}</time></span>
+    {{if and (.Data.article.UpdatedAt.After .Data.article.CreatedAt) (ne (tf .Data.article.CreatedAt "2006-01-02 15:04") (tf .Data.article.UpdatedAt "2006-01-02 15:04"))}}
+    <span>{{.Tr.T "updated_at"}} <time datetime="{{iso8601 .Data.article.UpdatedAt}}" data-testid="page-updated-at">{{tf .Data.article.UpdatedAt (.Tr.T "date_format")}} {{tf .Data.article.UpdatedAt "15:04"}}</time></span>
+    {{end}}
+    {{if and .Login (or .Account.Role.IsAdmin (and .Account.Role.CanPublish (eq .Account.ID .Data.article.Author.ID)))}}<a class="page-edit-link" href="/admin/publish?id={{.Data.article.ID}}" data-testid="page-edit-link">{{.Tr.T "edit_page"}}</a>{{end}}
+  </p>
 
     <!-- Comments section -->
     {{if or (not .Data.article.DisableComment) (gt .Data.article.CommentNum 0)}}
-    <section class="comments-section folio-narrow" id="comments">
+    <section class="comments-section" id="comments">
         <hr>
         <h2 class="comments-heading">{{.Tr.T "comments"}}</h2>
 

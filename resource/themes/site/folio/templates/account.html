@@ -1,14 +1,13 @@
 {{define "site/account"}}
 {{template "site/header" .}}
-<main id="main-content" class="account-center folio-container">
-  <p><a href="/">← {{.Tr.T "home"}}</a></p>
-  <h1>{{.Tr.T "my_account"}}</h1>
+<main id="main-content" class="account-center account-settings folio-container">
+  <header class="account-heading"><h1>{{.Tr.T "my_account"}}</h1><div class="account-heading-actions"><a href="/users/{{.Account.ID}}" data-testid="account-public-profile">{{.Tr.T "view_public_profile"}} →</a><form action="/logout" method="post"><button type="submit" data-testid="account-logout">{{.Tr.T "logout"}}</button></form></div></header>
   <p class="account-summary" data-testid="account-summary"><span>{{.Account.Nickname}}</span><span class="account-summary-email">{{.Account.Email}}</span><span class="account-summary-role" data-testid="account-role">{{if .Account.Role.IsAdmin}}{{.Tr.T "role_admin"}}{{else if .Account.Role.CanPublish}}{{.Tr.T "role_editor"}}{{else}}{{.Tr.T "role_user"}}{{end}}</span></p>
-  <p><a href="/users/{{.Account.ID}}" data-testid="account-public-profile">{{.Tr.T "view_public_profile"}}</a></p>
   {{if .Account.Role.CanPublish}}<nav class="account-workspace" aria-label="{{.Tr.T "manage_content"}}" data-testid="account-workspace"><strong>{{.Tr.T "manage_content"}}</strong><div><a href="/admin/articles" data-testid="account-manage-articles">{{.Tr.T "manage_articles"}}</a><a href="/admin/publish" data-testid="account-compose">{{.Tr.T "compose_article"}}</a>{{if .Account.Role.IsAdmin}}<a href="/admin/" data-testid="account-admin-dashboard">{{.Tr.T "admin_dashboard"}}</a>{{end}}</div></nav>{{end}}
   {{if .Data.password_changed}}<p role="status">{{.Tr.T "password_updated"}}</p>{{end}}
   {{if .Data.profile_updated}}<p role="status">{{.Tr.T "profile_updated"}}</p>{{end}}
-  <div class="account-grid">
+  <div class="account-columns" data-testid="account-columns">
+    <div class="account-column" data-testid="account-profile-column">
     <section class="account-card"><h2>{{.Tr.T "public_profile"}}</h2>
       <p>{{.Tr.T "profile_privacy_hint"}}</p>
       <form action="/account/profile" method="post" data-testid="account-profile-form">
@@ -19,6 +18,12 @@
         <button type="submit" data-testid="account-profile-save">{{.Tr.T "save_profile"}}</button>
       </form>
     </section>
+    <section class="account-card"><h2>{{.Tr.T "applications_and_authorizations"}}</h2><nav class="account-application-links">
+      <a href="/account/oidc/authorizations" data-testid="account-authorizations"><strong>{{.Tr.T "authorized_applications"}} →</strong><span>{{.Tr.T "authorized_apps_hint"}}</span></a>
+      <a href="/account/oidc/clients" data-testid="account-oidc-clients"><strong>{{.Tr.T "manage_clients"}} →</strong><span>{{.Tr.T "owned_clients_hint"}}</span></a>
+    </nav></section>
+    </div>
+    <div class="account-column" data-testid="account-security-column">
     <section class="account-card"><h2>{{.Tr.T "security"}}</h2>
       {{if .Account.PasswordHash}}
       <form action="/account/password" method="post" data-testid="account-password-form">
@@ -41,13 +46,9 @@
       {{if and .Conf.Auth.OIDC.Issuer .Conf.Auth.OIDC.ClientID (not .Data.linked_oidc)}}<form method="post" action="/auth/oidc/link"><button type="submit" data-testid="account-link-oidc">{{.Tr.T "link_sso"}}</button></form>{{end}}
       {{if not .Data.identities}}<p>{{.Tr.T "no_connected_accounts"}}</p>{{end}}
     </section>
-    <section class="account-card"><h2>{{.Tr.T "provider_external_apps"}}</h2>
-      <p>{{.Tr.T "owned_clients_hint"}}</p>
-      <a href="/account/oidc/clients" data-testid="account-oidc-clients">{{.Tr.T "manage_clients"}} →</a>
-    </section>
+    </div>
   </div>
-  <form action="/logout" method="post"><button type="submit" data-testid="account-logout">{{.Tr.T "logout"}}</button></form>
 </main>
-<script src="/static/site/folio/js/account.js" defer></script>
+<script src="/static/site/folio/js/account.js?v2026101001" defer></script>
 {{template "site/footer" .}}
 {{end}}

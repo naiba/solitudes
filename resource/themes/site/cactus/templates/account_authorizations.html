@@ -1,0 +1,29 @@
+{{define "site/account_authorizations"}}
+{{template "site/header" .}}
+{{template "site/menu" .}}
+<main id="main-content" class="account-center ">
+  <p><a href="/account">← {{.Tr.T "my_account"}}</a></p>
+  <h1>{{.Tr.T "authorized_applications"}}</h1>
+  <p>{{.Tr.T "authorized_apps_hint"}}</p>
+  <p class="authorization-hint">{{.Tr.T "revoke_application_hint"}}</p>
+  {{if .Data.revoked}}<p role="status" data-testid="authorization-revoked">{{.Tr.T "authorization_revoked"}}</p>{{end}}
+  <ul class="account-authorization-list">
+  {{range .Data.authorizations}}
+    <li class="account-card" data-testid="authorization-row" data-client-id="{{.ClientID}}">
+      <div class="authorization-heading"><h2>{{.Name}}</h2>{{if .HomepageURL}}<a href="{{.HomepageURL}}" target="_blank" rel="noopener noreferrer">{{$.Tr.T "application_homepage"}} ↗</a>{{end}}</div>
+      {{if .Description}}<p>{{.Description}}</p>{{end}}
+      {{if .OwnerID}}<p>{{$.Tr.T "application_owner"}}: <a href="/users/{{.OwnerID}}">{{.OwnerName}}</a></p>{{end}}
+      <ul class="authorization-scopes">{{range .ScopeList}}<li>{{if eq . "openid"}}{{$.Tr.T "scope_identity"}}{{else if eq . "email"}}{{$.Tr.T "scope_email"}}{{else if eq . "profile"}}{{$.Tr.T "scope_profile"}}{{else if eq . "offline_access"}}{{$.Tr.T "scope_offline"}}{{else}}{{.}}{{end}}</li>{{end}}</ul>
+      <div class="authorization-actions"><p>{{$.Tr.T "credential_expires"}} <time datetime="{{iso8601 .ExpiresAt}}">{{tf .ExpiresAt ($.Tr.T "date_format")}} {{tf .ExpiresAt "15:04"}}</time></p>
+        <form method="post" action="/account/oidc/authorizations/{{.ClientID}}/revoke" data-confirm="{{$.Tr.T "confirm_revoke_application"}}">
+          <button type="submit" data-testid="authorization-revoke">{{$.Tr.T "revoke_application"}}</button>
+        </form>
+      </div>
+    </li>
+  {{else}}<li class="authorization-empty" data-testid="authorizations-empty">{{.Tr.T "no_authorized_applications"}}</li>{{end}}
+  </ul>
+  {{template "site/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
+</main>
+<script src="/static/site/cactus/js/account.js?v2026101001" defer></script>
+{{template "site/footer" .}}
+{{end}}

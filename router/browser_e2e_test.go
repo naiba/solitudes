@@ -110,7 +110,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	}
 	publicPage := model.Article{AuthorID: &admin.ID, Slug: "visual-page", Title: "About this publication",
 		CreatedAt:  now.Add(-72 * time.Hour),
-		Content:    "## A publication for curious readers\n\nThis page presents the site and its editorial approach.\n\n- Read thoughtfully\n- Write clearly\n- Share generously\n\n1. Choose a story\n2. Join the conversation",
+		Content:    "This page presents the site and its editorial approach.\n\n## A publication for curious readers\n\n- Read thoughtfully\n- Write clearly\n- Share generously\n\n1. Choose a story\n2. Join the conversation",
 		TemplateID: solitudes.PageTemplateID, Version: 1}
 	if err := db.Create(&publicPage).Error; err != nil {
 		t.Fatal(err)

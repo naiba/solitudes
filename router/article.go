@@ -71,7 +71,7 @@ func article(c *fiber.Ctx) error {
 		c.Set(fiber.HeaderCacheControl, "private, no-store")
 	}
 
-	// 移除过度并发，改用顺序加载（对于单次请求，DB 查询的顺序执行通常比 5 个 goroutine 的调度开销更低且更可控）
+	// Keep model data available to custom templates; each theme chooses its UI.
 	if err := a.LoadChapters(readableArticles(solitudes.System.DB, currentAccount(c))); err != nil {
 		return err
 	}
@@ -86,11 +86,15 @@ func article(c *fiber.Ctx) error {
 
 	desc := mdExcerpt(a.Content, 150)
 	isOldVersion := c.Params("version") != ""
+	ogType := "article"
+	if a.TemplateID == solitudes.PageTemplateID {
+		ogType = "website"
+	}
 
 	return c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
 		"title":              title,
 		"desc":               desc,
-		"og_type":            "article",
+		"og_type":            ogType,
 		"keywords":           a.RawTags,
 		"article":            &a,
 		"can_read_history":   true, // The latest article's audience was checked above.
@@ -103,12 +107,13 @@ func article(c *fiber.Ctx) error {
 
 func relatedSiblingArticle(p *model.Article, account *model.Account) (prev model.Article, next model.Article) {
 	var sb model.SibilingArticle
+	articles := readableArticles(solitudes.System.DB, account).Where("template_id <> ?", solitudes.PageTemplateID)
 	if p.BookRefer == nil {
-		readableArticles(solitudes.System.DB, account).Select("id,title,slug").Order("created_at ASC, id ASC").Take(&sb.Next, "book_refer is null and (created_at, id) > (?, ?)", p.CreatedAt, p.ID)
-		readableArticles(solitudes.System.DB, account).Select("id,title,slug").Order("created_at DESC, id DESC").Take(&sb.Prev, "book_refer is null and (created_at, id) < (?, ?)", p.CreatedAt, p.ID)
+		articles.Session(&gorm.Session{}).Select("id,title,slug").Order("created_at ASC, id ASC").Take(&sb.Next, "book_refer is null and (created_at, id) > (?, ?)", p.CreatedAt, p.ID)
+		articles.Session(&gorm.Session{}).Select("id,title,slug").Order("created_at DESC, id DESC").Take(&sb.Prev, "book_refer is null and (created_at, id) < (?, ?)", p.CreatedAt, p.ID)
 	} else {
-		readableArticles(solitudes.System.DB, account).Select("id,title,slug").Order("created_at ASC, id ASC").Take(&sb.Next, "book_refer = ? and (created_at, id) > (?, ?)", p.BookRefer, p.CreatedAt, p.ID)
-		readableArticles(solitudes.System.DB, account).Select("id,title,slug").Order("created_at DESC, id DESC").Take(&sb.Prev, "book_refer = ? and (created_at, id) < (?, ?)", p.BookRefer, p.CreatedAt, p.ID)
+		articles.Session(&gorm.Session{}).Select("id,title,slug").Order("created_at ASC, id ASC").Take(&sb.Next, "book_refer = ? and (created_at, id) > (?, ?)", p.BookRefer, p.CreatedAt, p.ID)
+		articles.Session(&gorm.Session{}).Select("id,title,slug").Order("created_at DESC, id DESC").Take(&sb.Prev, "book_refer = ? and (created_at, id) < (?, ?)", p.BookRefer, p.CreatedAt, p.ID)
 	}
 	p.SibilingArticle = &sb
 	return

@@ -91,7 +91,7 @@
         };
     </script>
     <link rel="stylesheet" href="/static/site/folio/css/reading.css?v2026100702">
-    <link rel="stylesheet" href="/static/site/folio/css/layout.css?v2026100702">
+    <link rel="stylesheet" href="/static/site/folio/css/layout.css?v2026101001">
 </head>
 
 <body class="folio-page">
@@ -110,16 +110,16 @@
           "position": 1,
           "name": "{{.Tr.T "home"}}",
           "item": "https://{{.Conf.Site.Domain}}/"
-        },
+        }{{if eq .OgType "article"}},
         {
           "@type": "ListItem",
           "position": 2,
           "name": "{{.Tr.T "posts"}}",
           "item": "https://{{.Conf.Site.Domain}}/posts/"
-        },
+        }{{end}},
         {
           "@type": "ListItem",
-          "position": 3,
+          "position": {{if eq .OgType "article"}}3{{else}}2{{end}},
           "name": "{{jsonEscape .Data.article.Title}}",
           "item": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
         }

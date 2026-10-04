@@ -1,4 +1,8 @@
 [
+{"locale":"zh","key":"delete_client","trans":"删除应用"},
+{"locale":"zh","key":"confirm_delete_client","trans":"确定永久删除此应用及其所有授权、令牌和登录请求吗？安全审计记录将保留。"},
+{"locale":"zh","key":"client.delete","trans":"删除应用"},
+{"locale":"zh","key":"grant.revoke","trans":"撤销应用授权"},
     {"locale": "zh", "key": "account.initialized", "trans": "初始化管理员"},
     {"locale": "zh", "key": "audit_actor", "trans": "操作者"},
     {"locale": "zh", "key": "audit.enabled", "trans": "审计已启用"},

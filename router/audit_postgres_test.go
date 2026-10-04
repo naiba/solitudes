@@ -27,7 +27,7 @@ import (
 func auditTestDB(t *testing.T) (*gorm.DB, model.Account, model.Account) {
 	t.Helper()
 	db := newPostgresIdentityTestDB(t)
-	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
+	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
 		t.Fatal(err)
 	}
 	previous := solitudes.System
@@ -59,7 +59,11 @@ func TestPostgresAuditStatisticsSurviveRefreshAndRevocation(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		return &oidcAuthRequest{OIDCAuthRequest: model.OIDCAuthRequest{ID: id, ClientID: client.ID, AccountID: &accountID, Approved: true}}
+		row := model.OIDCAuthRequest{ID: id, ClientID: client.ID, AccountID: &accountID, Approved: true, RequestJSON: []byte(`{}`), ExpiresAt: time.Now().Add(time.Hour)}
+		if err := db.Create(&row).Error; err != nil {
+			t.Fatal(err)
+		}
+		return &oidcAuthRequest{OIDCAuthRequest: row}
 	}
 	request := newRequest(reader.ID)
 	if _, _, err := storage.CreateAccessToken(ctx, request); err != nil {
@@ -404,7 +408,14 @@ func TestPostgresAuditFailureRollsBackNewSessionsAndTokens(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Callback().Create().Remove("fail_audit") })
 	storage := &oidcStorage{db: db}
-	request := &oidcAuthRequest{OIDCAuthRequest: model.OIDCAuthRequest{ID: "auth-request", ClientID: "app", AccountID: &reader.ID, Approved: true}}
+	if err := db.Create(&model.OIDCClient{ID: "app", Name: "Test", RedirectURIsJSON: "[]"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	row := model.OIDCAuthRequest{ClientID: "app", AccountID: &reader.ID, Approved: true, RequestJSON: []byte(`{}`), ExpiresAt: time.Now().Add(time.Hour)}
+	if err := db.Create(&row).Error; err != nil {
+		t.Fatal(err)
+	}
+	request := &oidcAuthRequest{OIDCAuthRequest: row}
 	if _, _, err := storage.CreateAccessToken(t.Context(), request); err == nil {
 		t.Fatal("token issued without audit")
 	}

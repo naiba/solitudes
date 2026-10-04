@@ -533,6 +533,9 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	app.Post("/account/oidc/clients", requireAccount, createOIDCClient)
 	app.Post("/account/oidc/clients/:id/metadata", requireAccount, updateOIDCClient)
 	app.Post("/account/oidc/clients/:id/disable", requireAccount, disableOIDCClient)
+	app.Post("/account/oidc/clients/:id/delete", requireAccount, deleteOIDCClient)
+	app.Get("/account/oidc/authorizations", requireAccount, authorizedApplicationsPage)
+	app.Post("/account/oidc/authorizations/:id/revoke", requireAccount, revokeApplicationGrant)
 	// Removed authentication URLs must not fall through to the /admin/
 	// authentication middleware, which would redirect instead of returning 404.
 	app.Use("/admin/", func(c *fiber.Ctx) error {
@@ -566,6 +569,7 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	admin.Post("/oidc/clients", requireAdmin, createOIDCClient)
 	admin.Post("/oidc/clients/:id/metadata", requireAdmin, updateOIDCClient)
 	admin.Post("/oidc/clients/:id/disable", requireAdmin, disableOIDCClient)
+	admin.Post("/oidc/clients/:id/delete", requireAdmin, deleteOIDCClient)
 	admin.Post("/oidc/keys/rotate", requireAdmin, rotateOIDCKeys)
 	admin.Get("/publish", publish)
 	admin.Post("/publish", publishHandler)

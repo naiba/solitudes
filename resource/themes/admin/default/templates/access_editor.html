@@ -1,0 +1,21 @@
+{{define "admin/access_editor"}}
+<dialog id="accessDialog" class="access-dialog" aria-labelledby="accessDialogTitle" data-testid="access-dialog">
+    <form method="dialog">
+        <h2 id="accessDialogTitle">{{.Tr.T "access_insert"}}</h2>
+        <label for="accessLevel">{{.Tr.T "article_visibility"}}</label>
+        <select id="accessLevel" data-testid="access-level">
+            <option value="members">{{.Tr.T "visibility_members"}}</option>
+            <option value="editors">{{.Tr.T "visibility_editors"}}</option>
+            <option value="private">{{.Tr.T "visibility_private"}}</option>
+        </select>
+        <label for="accessContent">Markdown</label>
+        <textarea id="accessContent" rows="7" data-testid="access-content"></textarea>
+        <p>{{.Tr.T "access_help"}}</p>
+        <div class="access-dialog-actions">
+            <button value="cancel" class="admin-button">{{.Tr.T "cancel"}}</button>
+            <button type="button" id="insertAccess" data-testid="access-insert" class="admin-button primary">{{.Tr.T "access_insert"}}</button>
+        </div>
+    </form>
+</dialog>
+<script src="/static/admin/default/access-editor.js?v2026101001"></script>
+{{end}}

@@ -114,24 +114,7 @@
         <!-- Editor -->
         <div id="editSection" data-testid="publish-content" style="min-height: 400px;"></div>
         <p class="text-sm text-gray-500 mt-2">{{.Tr.T "access_help"}}</p>
-        <dialog id="accessDialog" class="access-dialog" aria-labelledby="accessDialogTitle" data-testid="access-dialog">
-            <form method="dialog">
-                <h2 id="accessDialogTitle">{{.Tr.T "access_insert"}}</h2>
-                <label for="accessLevel">{{.Tr.T "article_visibility"}}</label>
-                <select id="accessLevel" data-testid="access-level">
-                    <option value="members">{{.Tr.T "visibility_members"}}</option>
-                    <option value="editors">{{.Tr.T "visibility_editors"}}</option>
-                    <option value="private">{{.Tr.T "visibility_private"}}</option>
-                </select>
-                <label for="accessContent">Markdown</label>
-                <textarea id="accessContent" rows="7" data-testid="access-content"></textarea>
-                <p>{{.Tr.T "access_help"}}</p>
-                <div class="access-dialog-actions">
-                    <button value="cancel" class="admin-button">{{.Tr.T "cancel"}}</button>
-                    <button type="button" id="insertAccess" data-testid="access-insert" class="admin-button primary">{{.Tr.T "access_insert"}}</button>
-                </div>
-            </form>
-        </dialog>
+        {{template "admin/access_editor" .}}
 
         <!-- Publish Button -->
         <div class="settings-save-bar publish-save-bar mt-6">
@@ -146,16 +129,11 @@
 <script src="/static/admin/default/publish-guard.js?v2026100401"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/index.css" crossorigin="anonymous">
 <script src="https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/index.min.js" crossorigin="anonymous"></script>
-<script src="/static/admin/default/access-editor.js?v2026100403"></script>
 <script>
     const isDarkMode = document.documentElement.dataset.theme === 'dark';
     const vditor = new Vditor('editSection', {
         theme: isDarkMode ? 'dark' : 'classic',
-        toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike', '|', 'list', 'ordered-list', 'check', 'quote', 'line', 'code', 'inline-code', 'insert-before', 'insert-after', '|', 'upload', 'link', 'table', {
-            name: 'restricted-content', tip: '{{.Tr.T "access_insert"}}',
-            icon: '<svg viewBox="0 0 24 24"><path d="M6 10V6a6 6 0 0 1 12 0v4h2v14H4V10zm2 0h8V6a4 4 0 0 0-8 0z"/></svg>',
-            click() { SolitudesAccessEditor.open(vditor); }
-        }, '|', 'undo', 'redo', '|', 'edit-mode', 'content-theme', 'export', 'outline', 'preview', 'fullscreen'],
+        toolbar: ['emoji', 'headings', 'bold', 'italic', 'strike', '|', 'list', 'ordered-list', 'check', 'quote', 'line', 'code', 'inline-code', 'insert-before', 'insert-after', '|', 'upload', 'link', 'table', SolitudesAccessEditor.tool(() => vditor, 'editSection', '{{.Tr.T "access_insert"}}'), '|', 'undo', 'redo', '|', 'edit-mode', 'content-theme', 'export', 'outline', 'preview', 'fullscreen'],
         after() {
             vditor.setValue('{{.Data.article.Content}}')
             SolitudesPublishGuard.attach(vditor);

@@ -15,5 +15,6 @@
 <label>{{.Tr.T "redirect_uris"}}<textarea name="redirect_uris" rows="3" required>{{.Data.client.RedirectURIs}}</textarea></label>
 <label>{{.Tr.T "post_logout_uris"}}<textarea name="post_logout_uris" rows="2">{{.Data.client.LogoutURIs}}</textarea></label>
 <button type="submit" data-testid="oidc-client-edit-save">{{.Tr.T "save_client"}}</button></form>
-<form method="post" action="/admin/oidc/clients/{{.Data.client.ID}}/disable"><button class="identity-danger" type="submit" data-testid="oidc-client-disable">{{.Tr.T "disable"}}</button></form>{{end}}</section>
+<form method="post" action="/admin/oidc/clients/{{.Data.client.ID}}/disable"><button class="identity-danger" type="submit" data-testid="oidc-client-disable">{{.Tr.T "disable"}}</button></form>{{end}}
+<form method="post" action="/admin/oidc/clients/{{.Data.client.ID}}/delete" onsubmit="return confirm('{{.Tr.T "confirm_delete_client"}}')"><button class="identity-danger" type="submit" data-testid="oidc-client-delete">{{.Tr.T "delete_client"}}</button></form></section>
 </div>{{template "admin/footer" .}}{{end}}

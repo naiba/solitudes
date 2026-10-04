@@ -421,7 +421,7 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 
 func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
 	db := newPostgresIdentityTestDB(t)
-	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
+	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
 		t.Fatal(err)
 	}
 	previous := solitudes.System

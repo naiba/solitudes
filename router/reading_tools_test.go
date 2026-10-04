@@ -17,6 +17,14 @@ func TestArticleSharingDoesNotHaveAStandaloneActionRow(t *testing.T) {
 				t.Fatal(err)
 			}
 			body := string(raw)
+			if name == "page.html" {
+				for _, marker := range []string{`data-testid="site-article"`, `article-byline`, `site/share_button`, `site/article_menu`, `site/article_mobile_menu`, `reading-content"`} {
+					if strings.Contains(body, marker) {
+						t.Errorf("%s contains article-specific UI: %s", file, marker)
+					}
+				}
+				continue
+			}
 			for _, marker := range []string{`data-testid="article-byline"`, `data-testid="article-meta"`, `{{template "site/share_button" .}}`} {
 				if strings.Count(body, marker) != 1 {
 					t.Errorf("%s must contain one %s", file, marker)

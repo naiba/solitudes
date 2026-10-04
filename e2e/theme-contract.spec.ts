@@ -556,6 +556,145 @@ test('real Vditor inserts and publishes restricted Markdown', async ({page, brow
   await guest.close();
 });
 
+test('quick Topic real Vditor protects fragments across roles and public surfaces', async ({page, browser}) => {
+  test.skip(!adminEmail || !readerEmail || !editorEmail);
+  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/**', route => {
+    const relative = new URL(route.request().url()).pathname.split('/dist/')[1]!;
+    return route.fulfill({path:path.resolve('node_modules/vditor/dist',relative)});
+  });
+  await signIn(page);
+  await page.goto('/admin/');
+  const tool = page.locator('[data-type="restricted-content"]');
+  await expect(tool).toBeVisible({timeout:30000});
+  await page.evaluate(() => eval('vditor.setValue("Quick public topic\\n\\nselected-topic-secret")'));
+  await page.locator('[data-type="edit-mode"]').click();
+  await page.locator('[data-mode="sv"]').click();
+  await page.locator('#topicContent textarea.vditor-sv').evaluate((el: HTMLTextAreaElement) => {
+    el.focus(); el.setSelectionRange(el.value.indexOf('selected-topic-secret'), el.value.length);
+  });
+  await tool.click();
+  await expect(page.getByTestId('access-content')).toHaveValue(/selected-topic-secret/);
+  await page.getByTestId('access-level').selectOption('members');
+  await page.getByTestId('access-content').fill('topic-member-secret\n\n```access:editors\ntopic-editor-secret\n```\n\n```access:private\ntopic-private-secret\n```');
+  await page.getByTestId('access-insert').click();
+  expect(await page.evaluate(() => eval('vditor.getValue()'))).toContain('````access:members');
+  page.once('dialog', dialog => dialog.accept());
+  await page.getByTestId('topic-publish-submit').click();
+  await expect(page.getByTestId('site-article')).toContainText('topic-private-secret');
+  const slug = new URL(page.url()).pathname;
+  const baseURL = new URL(page.url()).origin;
+  for (const [role, email, password, visible] of [
+    ['guest', '', '', 0], ['member', readerEmail!, readerPassword!, 1],
+    ['editor', editorEmail!, readerPassword!, 2], ['admin', adminEmail!, adminPassword!, 3]
+  ] as const) {
+    const context = await browser.newContext({baseURL});
+    const visitor = await context.newPage();
+    if (email) await signIn(visitor, email, password);
+    for (const route of ['/', '/tags/Topic/', slug, '/feed/rss', '/feed/atom', '/feed/json']) {
+      const response = await context.request.get(route);
+      expect(response.status(), `${role} ${route}`).toBe(200);
+      const body = await response.text();
+      expect(body, `${role} ${route}`).toContain('Quick public topic');
+      for (const [i, marker] of ['topic-member-secret','topic-editor-secret','topic-private-secret'].entries()) {
+        // Feeds are always public, even with a signed-in browser cookie.
+        if (!route.startsWith('/feed') && i < visible) expect(body, `${role} ${route}`).toContain(marker);
+        else expect(body, `${role} ${route}`).not.toContain(marker);
+      }
+    }
+    await context.close();
+  }
+});
+
+test('account columns remain compact across roles and screen widths', async ({page}) => {
+  test.skip(!adminEmail || !readerEmail || !editorEmail);
+  for (const [role, email, password] of [
+    ['member',readerEmail!,readerPassword!],['editor',editorEmail!,readerPassword!],['admin',adminEmail!,adminPassword!]
+  ]) {
+    await signIn(page, email, password);
+    await expect(page.getByTestId('account-authorizations')).toBeVisible();
+    for (const width of [1440,390]) {
+      await page.setViewportSize({width,height:1000});
+      const left = await page.getByTestId('account-profile-column').boundingBox();
+      const right = await page.getByTestId('account-security-column').boundingBox();
+      expect(left).not.toBeNull(); expect(right).not.toBeNull();
+      if (width > 767) {
+        expect(Math.abs(left!.y-right!.y)).toBeLessThan(2);
+        expect(right!.x).toBeGreaterThan(left!.x+left!.width);
+      } else expect(right!.y).toBeGreaterThanOrEqual(left!.y+left!.height);
+      for (const column of ['account-profile-column','account-security-column']) {
+        const cards = await page.getByTestId(column).locator('.account-card').all();
+        for (let i=1;i<cards.length;i++) {
+          const previous = await cards[i-1]!.boundingBox(); const next = await cards[i]!.boundingBox();
+          expect(next!.y-previous!.y-previous!.height).toBeLessThan(25);
+        }
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      if (process.env.SOLITUDES_ACCOUNT_SCREENSHOTS) await page.screenshot({path:path.join(process.env.SOLITUDES_ACCOUNT_SCREENSHOTS,`${siteTheme}-${role}-${width}.png`),fullPage:true,animations:'disabled'});
+    }
+    await page.getByTestId('account-logout').click();
+  }
+});
+
+test('member app authorization can be revoked and owner deletion invalidates credentials', async ({page}) => {
+  test.skip(!readerEmail || !editorEmail || !oidcRedirectURI);
+  await signIn(page, readerEmail!, readerPassword!);
+  await page.getByTestId('account-oidc-clients').click();
+  await page.getByTestId('oidc-client-name').fill('Revocable application');
+  await page.getByTestId('oidc-client-homepage').fill('https://external.example.test/');
+  await page.getByTestId('oidc-client-redirects').fill(oidcRedirectURI!);
+  await page.getByTestId('oidc-client-public').check();
+  await page.getByTestId('oidc-client-submit').click();
+  const clientID = (await page.getByTestId('oidc-created-id').innerText()).trim();
+  await page.goto('/account'); await page.getByTestId('account-logout').click();
+  await signIn(page, editorEmail!, readerPassword!);
+  const verifier = 'g'.repeat(64);
+  const authorize = async () => {
+    await page.goto('/authorize?'+new URLSearchParams({client_id:clientID,redirect_uri:oidcRedirectURI!,response_type:'code',scope:'openid email profile offline_access',
+      code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'}));
+    await page.getByTestId('oidc-consent-allow').click();
+    await expect(page).toHaveURL(/callback\?code=/);
+    return new URL(page.url()).searchParams.get('code')!;
+  };
+  const exchange = (code: string) => page.request.post('/oauth/token',{form:{grant_type:'authorization_code',client_id:clientID,redirect_uri:oidcRedirectURI!,code,code_verifier:verifier}});
+  const tokensResponse = await exchange(await authorize());
+  expect(tokensResponse.status()).toBe(200);
+  const tokens = await tokensResponse.json();
+  expect(tokens.refresh_token).toBeTruthy();
+  const pendingCode = await authorize();
+  await page.goto('/account'); await page.getByTestId('account-authorizations').click();
+  const row = page.locator(`[data-testid="authorization-row"][data-client-id="${clientID}"]`);
+  await expect(row).toContainText('Revocable application');
+  await expect(row.locator(`a[href="/users/${process.env.E2E_READER_ID}"]`)).toBeVisible();
+  await expect(row).toContainText('email');
+  for (const width of [1440,390]) {
+    await page.setViewportSize({width,height:900});
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    if (process.env.SOLITUDES_ACCOUNT_SCREENSHOTS) await page.screenshot({path:path.join(process.env.SOLITUDES_ACCOUNT_SCREENSHOTS,`${siteTheme}-authorizations-${width}.png`),fullPage:true,animations:'disabled'});
+  }
+  page.once('dialog', dialog => dialog.dismiss());
+  await row.getByTestId('authorization-revoke').click();
+  await expect(row).toBeVisible();
+  page.once('dialog', dialog => dialog.accept());
+  await row.getByTestId('authorization-revoke').click();
+  await expect(page.getByTestId('authorization-revoked')).toBeVisible();
+  await expect(row).toHaveCount(0);
+  expect((await exchange(pendingCode)).status()).toBe(400);
+  expect((await page.request.get('/userinfo',{headers:{Authorization:'Bearer '+tokens.access_token}})).status()).toBe(403);
+  expect((await page.request.post('/oauth/token',{form:{grant_type:'refresh_token',client_id:clientID,refresh_token:tokens.refresh_token}})).status()).toBe(400);
+  const freshResponse = await exchange(await authorize());
+  expect(freshResponse.status()).toBe(200);
+  const fresh = await freshResponse.json();
+  expect((await page.request.get('/userinfo',{headers:{Authorization:'Bearer '+fresh.access_token}})).status()).toBe(200);
+  await page.goto('/account'); await page.getByTestId('account-logout').click();
+  await signIn(page, readerEmail!, readerPassword!);
+  await page.getByTestId('account-oidc-clients').click();
+  const owned = page.getByTestId('account-client-row').filter({hasText:'Revocable application'});
+  page.once('dialog', dialog => dialog.accept());
+  await owned.getByTestId('oidc-client-delete').click();
+  await expect(owned).toHaveCount(0);
+  expect((await page.request.get('/userinfo',{headers:{Authorization:'Bearer '+fresh.access_token}})).status()).toBe(403);
+});
+
 const siteTheme = process.env.E2E_SITE_THEME || 'cactus';
 const adminTheme = process.env.E2E_ADMIN_THEME || 'default';
 const adminEmail = process.env.E2E_ADMIN_EMAIL;
@@ -1167,7 +1306,7 @@ test('restricted pages explain access and return each role to a reachable destin
 test('article and page editing affordances match the server authorization for all roles', async ({ page }) => {
   test.skip(!articleSlug || !editorEmail || !readerEmail || !readerPassword || !adminEmail,
     'Requires isolated admin, editor, and reader fixtures.');
-  const edit = page.getByTestId('article-edit-link');
+  const edit = page.locator('[data-testid="article-edit-link"], [data-testid="page-edit-link"]');
   for (const slug of [articleSlug!, 'visual-editor-post', 'visual-page']) {
     await page.goto('/' + slug, { waitUntil: 'domcontentloaded' });
     await expect(edit).toHaveCount(0);
@@ -1620,7 +1759,7 @@ test('Cactus publication dates wrap as complete labelled facts beside sharing', 
       const page=await context.newPage();
       for (const width of [320,375,390,428,768,1280]) {
         await page.setViewportSize({width,height:900});
-        for (const route of ['/visual-editor-post','/visual-page','/visual-long-article']) {
+        for (const route of ['/visual-editor-post','/visual-long-article']) {
           await page.goto(route);
           const meta=page.getByTestId('article-meta');
           const times=meta.locator('time');
@@ -1686,7 +1825,7 @@ test('sharing uses the desktop Cactus menu and inline metadata elsewhere for eve
     }
     for (const width of [360, 1280]) {
       await page.setViewportSize({width, height: 900});
-      for (const slug of [role === 'editor' ? 'visual-editor-post' : articleSlug!, 'visual-page']) {
+      for (const slug of [role === 'editor' ? 'visual-editor-post' : articleSlug!, 'visual-book']) {
         await page.goto('/' + slug, {waitUntil: 'domcontentloaded'});
         await assertInlineShare();
         await expect(page.getByTestId('article-edit-link')).toHaveCount(role === 'admin' || (role === 'editor' && slug === 'visual-editor-post') ? 1 : 0);
@@ -1702,7 +1841,7 @@ test('sharing uses the desktop Cactus menu and inline metadata elsewhere for eve
   await assertInlineShare();
 });
 
-test('readers can share articles and pages with a working copy fallback', async ({ page }) => {
+test('readers can share articles and books with a working copy fallback', async ({ page }) => {
   test.skip(!articleSlug, 'Sharing requires an isolated article.');
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'share', { configurable: true, value: undefined });
@@ -1710,7 +1849,7 @@ test('readers can share articles and pages with a working copy fallback', async 
       writeText: async (value: string) => { (window as any).__sharedURL = value; },
     } });
   });
-  for (const slug of [articleSlug!, 'visual-page']) {
+  for (const slug of [articleSlug!, 'visual-book']) {
     await page.goto('/' + slug, { waitUntil: 'domcontentloaded' });
     expect((await articleShareTrigger(page).boundingBox())!.height).toBeGreaterThanOrEqual(siteTheme === 'cactus' ? 32 : 44);
     await articleShareTrigger(page).click();
@@ -1828,7 +1967,7 @@ test('Folio magazine typography keeps centered headers and safe opening drop cap
   await page.emulateMedia({reducedMotion:'reduce'});
   for (const width of [320,390,768,1280,1440,1920]) {
     await page.setViewportSize({width,height:900});
-    for (const slug of [articleSlug!, 'visual-page','visual-book']) {
+    for (const slug of [articleSlug!, 'visual-book']) {
       await page.goto('/'+slug);
       await expect(page.locator('.article-header')).toHaveCSS('text-align','center');
       await expect(page.locator('.article-title')).toHaveCSS('text-align','center');
@@ -1837,11 +1976,8 @@ test('Folio magazine typography keeps centered headers and safe opening drop cap
       const content=page.locator('[data-reading-content]');
       const paragraph=content.locator('p').first();
       const firstLetter=await paragraph.evaluate(node=>({float:getComputedStyle(node,'::first-letter').cssFloat,size:parseFloat(getComputedStyle(node,'::first-letter').fontSize),body:parseFloat(getComputedStyle(node).fontSize)}));
-      if(slug==='visual-page') expect(firstLetter.float,'heading-led page must not acquire a stray drop cap').toBe('none');
-      else {
-        expect(firstLetter.float).toBe('left');
-        expect(firstLetter.size).toBeGreaterThan(firstLetter.body*2);
-      }
+      expect(firstLetter.float).toBe('left');
+      expect(firstLetter.size).toBeGreaterThan(firstLetter.body*2);
       expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     }
     await page.locator('.article-title').evaluate(node=>{node.textContent='一篇很长的专栏标题：关于写作、读者与共同成长 / A long editorial headline across different screens';});
@@ -1907,7 +2043,7 @@ test('Cactus desktop menu opens at the viewport corner with compact links and se
   test.skip(siteTheme !== 'cactus');
   for (const width of [390,768,899,900,1024,1280,1440,1920]) {
     await page.setViewportSize({width,height:900});
-    for (const slug of ['visual-long-article','visual-page']) {
+    for (const slug of ['visual-long-article','visual-book']) {
       await page.goto('/'+slug);
       const inlineShare = page.getByTestId('article-byline').getByTestId('article-share');
       if (width < 900) {
@@ -2018,6 +2154,97 @@ test('Cactus original TOC lives in the article menu and mobile footer', async ({
   }
 });
 
+test('standalone pages have their own layout, metadata and working comments', async ({page}) => {
+  test.setTimeout(90000);
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.emulateMedia({reducedMotion:'reduce'});
+  for (const width of [320,390,768,1440]) {
+    await page.setViewportSize({width,height:900});
+    await page.goto('/visual-page');
+    const content = page.getByTestId('site-page');
+    await expect(content).toBeVisible();
+    await expect(content).toHaveAttribute('aria-label','About this publication');
+    await expect(page).toHaveTitle(/About this publication/);
+    await expect(content.locator('h1, .standalone-page-header')).toHaveCount(0);
+    const dates = page.getByTestId('page-dates');
+    await expect(dates.locator('time')).toHaveCount(2);
+    const bodyBox = (await page.locator('[data-reading-content]').boundingBox())!;
+    const datesBox = (await dates.boundingBox())!;
+    expect(datesBox.y).toBeGreaterThanOrEqual(bodyBox.y+bodyBox.height);
+    expect(datesBox.y+datesBox.height).toBeLessThanOrEqual((await page.locator(siteTheme === 'cactus' ? '#reply-list' : '#comments').boundingBox())!.y);
+    for (const time of await dates.locator('time').all()) {
+      await expect(time).toHaveAttribute('datetime',/^\d{4}-\d{2}-\d{2}T/);
+      await expect(time).toContainText(/\d{2}:\d{2}$/);
+      const box = (await time.locator('..').boundingBox())!;
+      expect(box.x).toBeGreaterThanOrEqual(datesBox.x);
+      expect(box.x+box.width).toBeLessThanOrEqual(datesBox.x+datesBox.width+1);
+    }
+    for (const id of ['site-article','article-byline','article-share','article-toc','article-previous','article-next','page-edit-link']) {
+      await expect(page.getByTestId(id)).toHaveCount(0);
+    }
+    await expect(page.locator('#header-post, #footer-post, #article-share-dialog, .reading-content')).toHaveCount(0);
+    await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content','website');
+    await expect(page.locator('meta[property^="article:"]')).toHaveCount(0);
+    const schemas = await page.locator('script[type="application/ld+json"]').evaluateAll(nodes => nodes.map(node=>JSON.parse(node.textContent!)));
+    expect(schemas.some(schema=>schema['@type']==='WebPage')).toBe(true);
+    expect(schemas.some(schema=>schema['@type']==='Article')).toBe(false);
+    const crumbs = schemas.find(schema=>schema['@type']==='BreadcrumbList').itemListElement;
+    expect(crumbs.map((item:{position:number})=>item.position)).toEqual([1,2]);
+    expect(crumbs[1].name).toBe('About this publication');
+    await expect(page.getByTestId('comment-sign-in')).toBeVisible();
+    await expect(page.getByTestId('comment-register')).toBeVisible();
+    if (siteTheme === 'folio') {
+      expect(await page.locator('[data-reading-content] > p').first().evaluate(node=>getComputedStyle(node,'::first-letter').float)).toBe('none');
+    } else {
+      await expect(page.locator('#header')).toBeVisible();
+    }
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if (process.env.SOLITUDES_LAYOUT_SCREENSHOTS && [390,1440].includes(width)) {
+      await page.screenshot({path:path.join(process.env.SOLITUDES_LAYOUT_SCREENSHOTS,`${siteTheme}-standalone-page-${width}.png`),fullPage:true,animations:'disabled'});
+    }
+    if (width <= 768) {
+      if (siteTheme === 'cactus') {
+        await page.locator('#header #nav button').click();
+        await expect(page.getByTestId('site-account-nav')).toBeVisible();
+        await page.locator('#header #nav button').click();
+      } else {
+        await page.locator('#folio-menu-toggle').click();
+        await expect(page.getByTestId('site-account-nav-mobile')).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#folio-mobile-menu')).not.toBeVisible();
+      }
+    }
+  }
+  await page.goto('/visual-closed-2');
+  await expect(page.getByTestId('page-created-at')).toBeVisible();
+  await expect(page.getByTestId('page-updated-at')).toHaveCount(0);
+  await page.goto('/visual-page');
+  const message = `Standalone guest comment ${siteTheme} ${Date.now()}`;
+  await page.getByTestId('comment-nickname').fill('Page visitor');
+  await page.getByTestId('comment-content').fill(message);
+  await page.getByTestId('comment-submit').click();
+  await expect(page.locator('[id^="comment-"]').filter({hasText:message}).first()).toBeVisible();
+  for (const [role,email,password] of [['reader',readerEmail,readerPassword],['editor',editorEmail,readerPassword],['admin',adminEmail,adminPassword]]) {
+    await page.context().clearCookies();
+    await signIn(page,email!,password!);
+    await page.goto('/visual-page');
+    await expect(page.getByTestId('page-edit-link')).toHaveCount(role === 'admin' ? 1 : 0);
+    if (role === 'reader') {
+      await expect(page.getByTestId('comment-nickname')).toHaveCount(0);
+      const memberMessage = `Standalone member comment ${siteTheme} ${Date.now()}`;
+      await page.getByTestId('comment-content').fill(memberMessage);
+      await page.getByTestId('comment-submit').click();
+      await expect(page.locator('[id^="comment-"]').filter({hasText:memberMessage}).first().getByTestId('comment-role')).toContainText('Member');
+    }
+    if (role === 'admin') {
+      await page.getByTestId('page-edit-link').click();
+      await expect(page.getByTestId('publish-title')).toHaveValue('About this publication');
+    }
+  }
+  expect(errors).toEqual([]);
+});
+
 test('Cactus reading pages use the full centered site width without title jumps', async ({page,browser}) => {
   test.skip(siteTheme !== 'cactus');
   test.setTimeout(90000);
@@ -2122,7 +2349,7 @@ test('page width and start height contract stays consistent within each theme an
     }
     let reading: {x:number;width:number}|undefined;
     let titleY: number|undefined;
-    for (const slug of [articleSlug!, 'visual-page', 'visual-book', 'visual-long-article']) {
+    for (const slug of [articleSlug!, 'visual-book', 'visual-long-article']) {
       await page.goto('/'+slug);
       const box = await bounds('[data-reading-content]');
       const heading = await bounds('[data-testid="site-article"] h1');
@@ -2134,6 +2361,13 @@ test('page width and start height contract stays consistent within each theme an
       if (siteTheme === 'cactus' || width <= 768) sameWidth(box,wide,slug+' site width');
       await capture(slug,width);
     }
+    await page.goto('/visual-page');
+    for (const selector of ['#main-content','[data-reading-content]','[data-testid="page-dates"]',siteTheme === 'folio' ? '#comments' : '#reply-list']) {
+      sameWidth(await bounds(selector),wide,'standalone page '+selector+' follows site width');
+    }
+    expect(Math.abs((await bounds('#main-content')).y-wide.y),'standalone page follows site navigation').toBeLessThan(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    await capture('visual-page',width);
     await page.goto('/login');
     const auth = await bounds('[data-testid="site-auth-page"]');
     await capture('login',width);
@@ -2151,6 +2385,11 @@ test('page width and start height contract stays consistent within each theme an
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
         if (email === readerEmail) await capture(route.replaceAll('/','-'),width);
       }
+      await page.goto('/visual-page');
+      sameWidth(await bounds('#main-content'),wide,'standalone page for '+email);
+      expect(Math.abs((await bounds('#main-content')).y-wide.y),'standalone page start for '+email).toBeLessThan(1);
+      sameWidth(await bounds('[data-reading-content]'),wide,'standalone page body for '+email);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     }
   }
 });
@@ -2494,7 +2733,7 @@ test('comment previews are unnumbered without removing Markdown list numbers or 
       }
     }
     await page.goto('/visual-page', { waitUntil: 'load' });
-    const ordered = page.getByTestId('site-article').locator('ol').filter({ hasText: 'Choose a story' });
+    const ordered = page.getByTestId('site-page').locator('ol').filter({ hasText: 'Choose a story' });
     await expect(ordered).toBeVisible();
     await expect(ordered).toHaveCSS('list-style-type', 'decimal');
   }
