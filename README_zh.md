@@ -1,205 +1,131 @@
 # Solitudes
 
-![构建状态](https://github.com/naiba/solitudes/workflows/Build%20Docker%20Image/badge.svg)
+![构建状态](https://github.com/naiba/solitudes/actions/workflows/docker.yml/badge.svg)
 
-📖 [English](README.md)
+[English](README.md)
 
-基于 **Go** 和 **Fiber** 构建的博客引擎，支持全文搜索、文章版本管理、哔哔（微博客）以及可换肤的前后台主题。
+基于 Go 和 Fiber 的多用户博客，支持全文搜索、多级专栏、文章历史、哔哔、评论、读者圈、RSS 和可切换主题，也可作为 OIDC 服务端供其他应用登录。
 
-## 特色功能
+## 安装
 
-- **全文搜索** — 不分「简体/繁体」中文，「大写/小写」英文，都能搜索到
-- **专栏 / 写书** — 将文章组织为专栏，支持嵌套章节
-  - 发布文章时勾选「这是专栏」，该文章将作为专栏封面
-  - 填入封面文章的 UUID 到「专栏 ID」，文章即归入该专栏
-  - 支持套娃式多级章节结构
-- **修订历史** — 所有修改记录均可浏览和搜索
-  - 编辑时勾选「大更新」可升级版本号
-  - 在链接后加 `/v*` 浏览历史版本（如 `/my-article/v1`）
-  - 搜索仅返回当前文章，历史版本正文不索引
-- **哔哔（Topics）** — 类微博短内容，支持评论
-  - 发布时添加 `Topic` 标签即可，标题和链接可留空自动补全
-- **RSS 自动发现** — 将博客任意链接粘贴到 RSS 阅读器即可自动订阅
-- **主题系统** — 前后台主题可独立热切换；后台仅内置一个现代默认主题
-- **多语言** — 支持多语言，主题级翻译可独立覆盖
-
-## 快速开始
-
-### Docker（推荐）
+将以下内容保存为 `compose.yml`，替换示例数据库密码：
 
 ```yaml
 services:
   db:
     image: postgres:16-alpine
-    volumes:
-      - ./postgres-data:/var/lib/postgresql/data
     restart: always
     environment:
-      POSTGRES_PASSWORD: thisispassword
       POSTGRES_USER: solitudes
+      POSTGRES_PASSWORD: change-this-password
       POSTGRES_DB: solitudes
-
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
   solitudes:
+    image: ghcr.io/naiba/solitudes:latest
+    restart: always
     depends_on:
       - db
-    image: ghcr.io/naiba/solitudes:latest
     ports:
       - "8080:8080"
-    restart: always
     volumes:
       - ./blog-data:/solitudes/data
 ```
 
+参考 [配置示例](data/conf.yml.example) 创建 `blog-data/conf.yml`：数据库主机填 `db`，用户名、密码和库名与上面一致；`site.domain` 填对外域名，不带协议。生产环境通过反向代理启用 HTTPS。
+
 ```bash
 docker compose up -d db
-# 等待 PostgreSQL 就绪，并先配置 blog-data/conf.yml。
+# 确认数据库就绪后，再初始化管理员
+docker compose exec db pg_isready -U solitudes -d solitudes
 docker compose run --rm solitudes /solitudes/solitudes init-admin --email you@example.com --nickname 管理员
-# 妥善保存仅展示一次的随机密码，不要将输出重定向到共享日志。
 docker compose up -d solitudes
 ```
 
-### 目录结构
+打开 `http://localhost:8080/login` 登录。没有默认账号或密码；初始化仅适用于空账户库，随机密码只显示一次，请妥善保存并在个人中心修改。
 
-```
-blog-data/
-├── conf.yml    # 配置文件（参考 data/conf.yml.example）
-├── bleve/      # 全文搜索索引
-├── upload/     # 上传的文件
-└── logo.png    # 自定义 logo（可选）
-```
+`blog-data/` 保存配置、上传文件和搜索索引；账号、密码及文章保存在 PostgreSQL。请同时备份目录和数据库，并保护其中的凭据与签名密钥。
 
-### 管理员初始化
+旧单用户／旧权限数据不自动迁移，升级前须备份并核验数据。配置拒绝未知字段：删除旧的顶层 `user`、`configfilepath`，保留 SMTP 的 `email.user`。
 
-不再提供默认账号或默认密码。本机安装时，在项目目录运行 `./solitudes init-admin --email you@example.com --nickname 管理员`，然后启动服务器。命令创建数据库结构及已验证的首位管理员，仅展示一次安全随机生成的密码，数据库只保存 bcrypt 哈希。仅账户表为空时允许初始化；重复或并发执行不会覆盖已有密码，也不会提升已注册用户的权限。请在私人终端执行，不要把输出保存到共享日志。
+## 使用
 
-## 用户与 OIDC
+### 账户与写作
 
-账号、密码、会话、角色只保存在 PostgreSQL。通过 `/login` 登录，在 `/account` 修改初始密码；改密码不回写配置文件，重启不会覆盖。普通用户可在 `/register` 注册，邮件验证链接一小时内有效，未验证不能登录；注册需配置 SMTP。管理员在 `/admin/users` 分配管理员、编辑、普通用户角色；编辑可以直接发布并管理自己的文章，普通用户不能进入写作后台。请备份数据库以保留身份和凭据；覆盖部署旧安装前先阅读[配置与兼容策略](docs/configuration.md)。
+- `/register` 注册，验证邮箱后登录；需配置 SMTP：`email.host`、`email.port`、`email.user`、`email.pass`、`email.ssl`。
+- `/account` 修改资料、密码、绑定登录方式及管理应用。密码保存在数据库，不回写配置。
+- 管理员管理全站；编辑可直接发布和管理自己的文章；普通会员不能发布或编辑。写作入口在个人中心。
+- 勾选“这是专栏”创建专栏，其他文章填写其 UUID 即可加入；专栏可以嵌套。
+- 添加 `Topic` 标签即可发哔哔，标题和链接可自动生成；后台首页也提供快速发布。
+- 编辑时勾选“大更新”保留新版本，历史地址如 `/my-article/v1`；搜索只返回当前版本。
+- 读者圈默认展示已验证用户，可在个人中心退出；邮箱不会公开。
 
-前台 `/readers/`「读者圈」默认展示所有已验证且未停用的用户，包括现有账号；用户可在 `/account` 的公开资料中退出或重新加入。首页展示最新加入的四位成员和最多五条公开最新评论（包括游客评论）；读者圈页面展示近期公开动态，并根据最近 30 天的公开文章和非垃圾评论统计活跃度。邮箱、私密文章和垃圾评论不会进入目录或榜单。RSS、Atom、JSON Feed 为每篇公开文章标注真实作者，订阅源元数据不会暴露用户邮箱。编辑及管理员从个人中心进入文章管理和写作。
+### 内容权限
 
-请在 `data/conf.yml` 中设置 `site.domain` 为对外域名（必要时含端口），生产环境使用 HTTPS，并配置 `email.host`、`email.port`、`email.user`、`email.pass`、`email.ssl`。管理员可在 `/admin/auth/providers` 页面配置 GitHub、Google 和上游 OIDC 登录（保存后密钥不再回显）；对应的配置文件写法是：
+整篇可见性支持公开、会员、编辑、仅作者与管理员。Vditor 的“受限内容”工具可插入 `access:members`、`access:editors`、`access:private` Markdown 围栏，在服务端过滤片段。编辑不能新增或修改可执行代码。
 
-```yaml
-auth:
-  github: {client_id: "", client_secret: ""}
-  google: {client_id: "", client_secret: ""}
-  oidc: {issuer: "https://identity.example.com", client_id: "", client_secret: ""}
-  webauthn: {rp_id: "blog.example.com", origin: "https://blog.example.com"}
-```
+历史版本沿用最新文章的整体权限，片段沿用当时的规则：后来遮蔽的内容可能仍在旧版本中可见。上传文件始终公开，遮蔽链接不会限制下载；不要上传敏感附件或公开受限 Markdown 原文。
 
-各上游平台的回调地址为 `https://<site.domain>/auth/{github,google,oidc}/callback`。上游必须返回已验证邮箱；若本地已有相同邮箱账号，先登录，再在 `/account` 主动绑定。通行密钥需要 HTTPS 且 RP ID 与 Origin 的主机相同（本地 localhost 开发例外）。未配置的登录方式不会启用。
+### 第三方登录博客
 
-Solitudes 同时作为 OAuth 2.1 风格的授权服务端和 OIDC 服务端：**所有已验证的博客账户**（包括普通用户和编辑）都能登录自己接入的外部应用。前台导航栏的 `/account` 个人中心可修改密码、添加通行密钥、绑定或解绑上游登录提供方，并在 `/account/oidc/clients` 创建及停用自己的客户端；管理员仍可在 `/admin/oidc/clients` 管理全站客户端。外部应用可通过 `https://<site.domain>/.well-known/openid-configuration`（OIDC）或 `https://<site.domain>/.well-known/oauth-authorization-server`（OAuth 元数据）发现端点。这与上方“外部提供方登录博客”是两个独立方向。支持授权码（必须使用 PKCE S256）和轮换刷新令牌，不支持隐式或密码授权；回调 URI 必须精确匹配且使用 HTTPS（localhost 可用 HTTP）。公开客户端无密钥；机密客户端通过 `client_secret_basic` 认证，密钥仅创建时显示一次。申请 `openid` 范围以获取 ID Token；纯 OAuth 客户端无需申请。用户每次授权需同意。禁用客户端会撤销 Access Token 和 Refresh Token；已签发的 ID Token 在过期前仍可通过签名验证，密钥轮换时会保留旧公钥。数据库备份包含 OIDC 签名私钥和客户端凭据，务必妥善保护；未设置 `site.domain` 或数据库不可用时，OIDC 服务不可用。变更域名后需重启服务。
+在 `/admin/auth/providers` 配置 GitHub、Google 或上游 OIDC，回调地址为 `https://<域名>/auth/{github,google,oidc}/callback`。已有同邮箱账户时，先登录，再从个人中心绑定。
 
-新客户端需填写应用名称、可选简介、应用主页（须为 HTTPS，开发环境 localhost 可使用 HTTP）和精确匹配的回调地址；退出后的回跳地址可选，但也必须预先注册。RP 发起的退出会撤销对应应用的令牌，不会退出博客本身。创建者与管理员可修改应用资料及回调地址。外部应用发起授权时，登录页和同意页都会展示应用信息、应用主页以及创建者的站内公开主页；缺少创建者、应用主页缺失或不合法的客户端不能发起授权或认证；展示时仍会验证数据库中的网址。
+通行密钥需 HTTPS；配置 `auth.webauthn.rp_id` 为站点域名、`auth.webauthn.origin` 为完整 HTTPS 地址。
 
-个人中心的 `/account/oidc/authorizations` 直接从当前用户的有效访问令牌、刷新令牌及已批准的待兑换请求汇总应用，展示创建者、有效权限和凭据最晚到期时间，可逐个撤销。不额外保存长期授权关系；凭据全部过期后应用不再展示，单独剩余有效刷新令牌时仍会展示。撤销会使该用户的应用令牌和未完成授权失效，但不能删除应用已保存的数据、撤回已签发 ID Token 的离线签名效力或退出应用自己的会话。应用拥有者及管理员可永久删除客户端，联动清理所有用户的请求和令牌；安全审计和累计登录统计保留。禁用客户端也会清理令牌及未完成请求。
+### 用博客账户登录其他应用
 
-### 后台统计与安全审计
+所有已验证用户均可在 `/account/oidc/clients` 创建客户端，填写应用名称、主页和精确回调地址。生产环境使用 HTTPS；localhost 开发可用 HTTP。
 
-管理员在 `/admin/users` 查看用户总数、按昵称/邮箱和角色筛选，并从用户详情进入其注册应用列表。`/admin/oidc/clients` 支持按应用名称、创建者和状态筛选，展示登录次数、独立登录用户及最近登录时间；应用详情可查看近期登录用户。默认后台工作台提供分页列表，每页 25 条。
+- OIDC 发现地址：`https://<域名>/.well-known/openid-configuration`。
+- OAuth 元数据：`https://<域名>/.well-known/oauth-authorization-server`。
+- 使用授权码 + PKCE S256，支持轮换刷新令牌，不支持隐式或密码授权。请求 `openid` 才会获得 ID Token。
+- 公开客户端无需密钥；机密客户端使用 `client_secret_basic`，密钥只在创建时显示。
+- `/account/oidc/authorizations` 查看并撤销当前有效授权；凭据全部失效后不再展示。
 
-`/admin/audit` 是仅管理员可访问的只读审计页，可按事件、结果、用户、应用、IP、请求 ID 和 UTC 日期筛选。记录站内登录、应用授权与令牌签发、应用变更、角色调整、账户安全操作、后台写操作及失败/拒绝请求；OAuth 错误保留标准错误码，不保留错误描述。审计不记录密码、客户端密钥、令牌、Cookie、请求正文或查询字符串。IP 使用站点配置的可信代理规则，请勿无条件信任外部转发头。
+禁用或删除应用会清理相关令牌与待处理请求，但保留审计。撤销不能收回应用已保存的数据、退出其自身会话或使 ID Token 的离线签名立即失效。修改站点域名后需重启服务。
 
-统计从首次启用审计开始，不回填无法验证的历史登录。一次授权码签发令牌计一次应用登录，授权页访问、刷新及失败请求不计；注销、撤销或停用应用不删除历史记录。应用变更、角色变更和凭据签发与审计在同一数据库事务中，审计写入失败时回滚；其他请求记录失败时输出不含敏感内容的 `audit_write_failed` 服务端日志，可通过响应中的 `X-Request-ID` 关联故障。审计表不自动清理，应纳入数据库容量监控和备份；网站没有修改/删除审计记录的入口，但这不等于防止数据库管理员篡改，重要部署应另行归档至受保护的外部日志系统。
+### 后台管理
 
-## 主题系统
+管理员可在 `/admin/users` 管理用户、在 `/admin/oidc/clients` 查看应用及登录统计、在 `/admin/audit` 查询安全事件。
 
-Solitudes 支持独立切换前台和后台主题。目前仅内置一个现代默认后台主题，但保留安装其他可信主题和切换的能力。
+`audit_retention_days: 0` 默认永久保留审计。设为正整数后会永久删除超期详情，只保留累计登录统计；重要部署请另行备份或归档。
 
-### 主题目录结构
+## 主题
 
-```
-resource/themes/
-├── site/<theme_name>/    # 前台主题
-└── admin/<theme_name>/   # 后台主题（内置 default）
-```
+内置 Cactus、Folio 前台主题和一个默认后台主题，可在“后台 → 系统设置”独立切换。
 
-前后台主题使用完全相同的目录约定：
+自定义主题放在 `resource/themes/{site,admin}/<主题名>/`，包含 `metadata.json`、`screenshot.png`、`templates/`、`static/` 和 `translations/`。`metadata.json` 的 `id` 必须与目录名一致，格式参考 [Cactus](resource/themes/site/cactus/metadata.json)。
 
-```text
-<theme_name>/
-├── metadata.json
-├── screenshot.png       # 设置页的真实预览图，推荐 16:10
-├── templates/
-├── static/
-└── translations/
-    ├── en.json
-    └── zh.json
-```
+所有前台主题共用权限过滤后的 `.Queries` 数据接口，用法参考 [查询接口](router/template_queries.go) 和内置模板。只安装可信主题；不要绕过正文权限过滤，或对用户输入使用 `unsafe`。
 
-两类主题共用 `metadata.json` 格式；`id` 必须与目录名一致：
+## 开发与测试
 
-```json
-{
-  "id": "theme_id",
-  "name": "Theme Name",
-  "author": "Author",
-  "version": "1.0",
-  "description": "Theme Description",
-  "link": "https://link.to.theme",
-  "config": {}
-}
-```
-
-在 **管理后台 > 系统设置** 中，前后台均通过相同的截图卡片选择，保存后独立生效。截图统一读取主题根目录的 `screenshot.png`，没有 `preview` metadata 字段；缺图时显示本地占位提示，不请求第三方图片服务。其他后台主题遵循上面的相同结构即可自动发现。主题属于可信的服务端代码，只应安装可信来源的主题。
-
-所有前台主题使用同一套[模型查询与模板基础接口](docs/theme-data.md)，自行组合排序、数量和随机抽样；后端不根据主题名切换查询策略。[文章与局部内容权限](docs/content-access.md)由服务端统一处理。
-
-## 开发
-
-**前置依赖**：Go 1.26+、PostgreSQL
-
-数据库结构、索引、连接池和审计清理配置见[数据库设计与维护](docs/database.md)。
+需要 Go 1.26+、C/C++ 编译器和 PostgreSQL。配置 `data/conf.yml` 后：
 
 ```bash
-git clone https://github.com/naiba/solitudes.git
-cd solitudes
-
-# 安装依赖
-go mod tidy
-
-# 启动开发服务器
-go run cmd/web/main.go
-
-# 运行测试
-go test ./...
-
-# 集成测试：使用专用 PostgreSQL 测试数据库；每次仅创建、清理自身的临时 schema，
-# 邮件由测试内的本地 SMTP catcher 接收，不会向外发送。
-SOLITUDES_TEST_POSTGRES_DSN='postgres://postgres@127.0.0.1:5432/solitudes_test?sslmode=disable' \
-  go test -tags postgres_test ./...
-
-# 浏览器双主题矩阵：先在 e2e/ 内运行 `bun install` 和
-# `bunx playwright install chromium`，使用专用 PostgreSQL 测试数据库。
-# 测试启动隔离的 HTTP 服务及本地 SMTP catcher。
-SOLITUDES_TEST_POSTGRES_DSN='postgres://postgres@127.0.0.1:5432/solitudes_test?sslmode=disable' \
-  go test -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v -timeout 20m
-
-# 构建
 go build -o solitudes cmd/web/main.go
+./solitudes init-admin --email you@example.com --nickname 管理员  # 仅首次安装
+./solitudes
 ```
 
-浏览器矩阵覆盖 cactus/folio × default 的注册与邮件验证、登录、搜索、评论、发布、
-角色修改、账户改密、OIDC 客户端归属与管理、所有账户角色登录外部 OIDC 应用、登录 Provider 配置
-及 Folio 主题切换等核心流程。PR 和 `master` 推送会在 CI 中运行 PostgreSQL 与 Chromium 矩阵，
-通过后才构建镜像；不代表所有功能均有 E2E。
-WebAuthn 注册/删除使用 Chromium 虚拟认证器；真实上游 OAuth 和物理认证器不在自动测试范围内。
-上传、所有设置页面及错误分支仍需补专项浏览器测试。
+集成及浏览器测试使用专用数据库，会自行启动隔离服务、SMTP catcher 和临时 schema：
 
-需要截图时，在同一浏览器矩阵命令中设置 `SOLITUDES_VISUAL_AUDIT=1`，
-并把 `SOLITUDES_VISUAL_DIR` 指向临时目录，添加 `-timeout 20m`。
-隔离的视觉测试已取代旧 localhost 截图脚本，不会覆盖主题预览图或向正在运行的博客灌数据。
-检查后删除生成的截图。
+```bash
+go test ./...
+export SOLITUDES_TEST_POSTGRES_DSN='postgres://postgres@127.0.0.1:5432/solitudes_test?sslmode=disable'
+go test -tags postgres_test ./...
 
-## 鸣谢
+cd e2e
+bun install --frozen-lockfile
+bunx playwright install chromium
+cd ..
+go test -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v -timeout 20m
+```
 
-- 全文搜索引擎 — [blevesearch/bleve](https://github.com/blevesearch/bleve)
-- Markdown 引擎 — [88250/lute](https://github.com/88250/lute)
-- Markdown 编辑器 — [Vanessa219/Vditor](https://github.com/Vanessa219/vditor)
-- Cactus 主题 — [probberechts/hexo-theme-cactus](https://github.com/probberechts/hexo-theme-cactus)
+CI 通过测试后构建镜像。E2E 覆盖两主题的核心流程，不代表全部功能；WebAuthn 使用虚拟认证器，真实上游 OAuth 和物理认证器需另测。
 
-## 许可证
+## 鸣谢与许可
+
+[Bleve](https://github.com/blevesearch/bleve) · [Lute](https://github.com/88250/lute) · [Vditor](https://github.com/Vanessa219/Vditor) · [Cactus](https://github.com/probberechts/hexo-theme-cactus)
 
 [AGPL-3.0](LICENSE)
