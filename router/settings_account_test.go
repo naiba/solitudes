@@ -41,7 +41,6 @@ func settingsAccountFixture(t *testing.T) (*fiber.App, *model.Config, *model.Acc
 	}
 	cfg := &model.Config{ConfigFilePath: "settings.yml"}
 	cfg.Site.Theme, cfg.Admin.Theme = "cactus", "default"
-	cfg.User = model.User{Email: "bootstrap@example.test", Nickname: "Bootstrap administrator", Password: string(hash)}
 	account := &model.Account{Email: "actual-admin@example.test", Nickname: "Actual administrator", PasswordHash: string(hash), Role: model.RoleAdmin}
 	solitudes.System = &solitudes.SysVariable{Config: cfg}
 	app := fiber.New()
@@ -103,13 +102,13 @@ func submitSettingsWithAccountFields(t *testing.T, app *fiber.App, encoding stri
 	}
 }
 
-func TestSettingsCannotModifyBootstrapOrCurrentAccount(t *testing.T) {
+func TestSettingsCannotModifyCurrentAccount(t *testing.T) {
 	app, cfg, account := settingsAccountFixture(t)
-	bootstrap, originalAccount := cfg.User, *account
+	originalAccount := *account
 	for _, encoding := range []string{"json", "form", "multipart", "without-account-fields"} {
 		t.Run(encoding, func(t *testing.T) {
 			submitSettingsWithAccountFields(t, app, encoding)
-			if cfg.User != bootstrap || account.Email != originalAccount.Email || account.Nickname != originalAccount.Nickname || account.PasswordHash != originalAccount.PasswordHash {
+			if account.Email != originalAccount.Email || account.Nickname != originalAccount.Nickname || account.PasswordHash != originalAccount.PasswordHash {
 				t.Fatal("site settings modified account data")
 			}
 			data, err := os.ReadFile(cfg.ConfigFilePath)
@@ -120,8 +119,8 @@ func TestSettingsCannotModifyBootstrapOrCurrentAccount(t *testing.T) {
 			if err := yaml.Unmarshal(data, &saved); err != nil {
 				t.Fatal(err)
 			}
-			if saved.User != bootstrap || saved.Site.SpaceName != "Saved site settings" {
-				t.Fatal("saved configuration did not preserve bootstrap data and apply site settings")
+			if strings.Contains(string(data), "\nuser:") || strings.Contains(string(data), "configfilepath:") || saved.Site.SpaceName != "Saved site settings" {
+				t.Fatal("saved configuration contains account/runtime data or failed to apply site settings")
 			}
 		})
 	}

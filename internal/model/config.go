@@ -73,8 +73,7 @@ type Config struct {
 		Theme string
 	}
 
-	User           User
-	ConfigFilePath string
+	ConfigFilePath string `yaml:"-"`
 }
 
 // Save ..

@@ -17,7 +17,6 @@ type Comment struct {
 	Account   *Account `gorm:"foreignKey:AccountID" form:"-"`
 	IP        string   `gorm:"inet"`
 	UserAgent string
-	IsAdmin   bool
 	IsSpam    bool `gorm:"not null;default:false;index"`
 	// EmailReadStatus tracks email notification read status: nil (not sent/not applicable), "unread", "read"
 	EmailReadStatus *string `gorm:"type:varchar(20);default:NULL"`
@@ -42,16 +41,13 @@ func (c Comment) CountsTowardArticle() bool {
 }
 
 // PublicRole is derived from an authenticated account, never from a visitor's
-// nickname or email. Legacy staff comments without an account retain their badge.
+// nickname or email.
 func (c Comment) PublicRole() string {
 	if c.AccountID != nil && c.Account != nil {
 		switch c.Account.Role {
 		case RoleAdmin, RoleEditor, RoleUser:
 			return string(c.Account.Role)
 		}
-	}
-	if c.IsAdmin {
-		return string(RoleAdmin)
 	}
 	return "guest"
 }

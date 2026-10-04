@@ -1,4 +1,5 @@
 [
+    {"locale": "zh", "key": "account.initialized", "trans": "初始化管理员"},
     {"locale": "zh", "key": "audit_actor", "trans": "操作者"},
     {"locale": "zh", "key": "audit.enabled", "trans": "审计已启用"},
     {"locale": "zh", "key": "audit_started", "trans": "统计起点"},

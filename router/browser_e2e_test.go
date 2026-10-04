@@ -78,15 +78,28 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	if err := db.Create(&client).Error; err != nil {
 		t.Fatal(err)
 	}
-	legacyClient := model.OIDCClient{ID: "browser-legacy-client", Name: "Legacy Browser App", Public: true,
+	invalidClient := model.OIDCClient{ID: "browser-invalid-client", Name: "Invalid Browser App", Public: true,
 		HomepageURL: "javascript:alert(1)", RedirectURIsJSON: fmt.Sprintf("[%q]", redirectURI)}
-	if err := db.Create(&legacyClient).Error; err != nil {
+	if err := db.Create(&invalidClient).Error; err != nil {
 		t.Fatal(err)
 	}
 	article := model.Article{AuthorID: &admin.ID, Slug: "e2e-theme-article", Title: "E2E Theme Article",
 		Content: "A browser-visible article used to test search and comments.", TemplateID: solitudes.ArticleTemplateID, Version: 1}
 	if err := db.Create(&article).Error; err != nil {
 		t.Fatal(err)
+	}
+	revisions := model.Article{AuthorID: &admin.ID, Slug: "visual-revisions", Title: "在修订中，留下思考的轨迹",
+		Content:    "写作并非一次完成。新的观察让文字更准确，而历史版本记录了想法逐渐清晰的过程。\n\n## 让阅读回到内容本身\n\n版本信息属于阅读工具，不应该伪装成作者写下的正文。需要时可以回看，不需要时安静地留在一旁。",
+		TemplateID: solitudes.ArticleTemplateID, Version: 51}
+	if err := db.Create(&revisions).Error; err != nil {
+		t.Fatal(err)
+	}
+	for version := uint(1); version < revisions.Version; version++ {
+		history := model.ArticleHistory{ArticleID: revisions.ID, Version: version,
+			Content: "这是较早的一次记录。有些判断会随着经历改变，保留旧稿，是为了看见思考的来路。\n\n## 当时的想法\n\n阅读旧稿时，应当知道它不是最新内容，也能够方便地回到当前版本。"}
+		if err := db.Create(&history).Error; err != nil {
+			t.Fatal(err)
+		}
 	}
 	editorArticle := model.Article{AuthorID: &editor.ID, Slug: "visual-editor-post",
 		Title: "An editor's field notes", Content: "A short article published by an editor so the author view has real data.",
@@ -203,8 +216,6 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	config := &model.Config{}
 	config.Site.SpaceName = "Solitudes Browser Test"
 	config.Site.SpaceDesc = "Browser E2E test site"
-	config.User.Nickname = admin.Nickname
-	config.User.Email = admin.Email
 	config.ConfigFilePath = filepath.Join(t.TempDir(), "conf.yml")
 	smtpPort, mailMessages := startMailCatcher(t)
 	config.Email.Host = "127.0.0.1"
@@ -367,7 +378,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 					"E2E_READER_PASSWORD=test-browser-password",
 					"E2E_EDITOR_EMAIL="+editor.Email,
 					"E2E_OIDC_CLIENT_ID="+client.ID,
-					"E2E_LEGACY_OIDC_CLIENT_ID="+legacyClient.ID,
+					"E2E_INVALID_OIDC_CLIENT_ID="+invalidClient.ID,
 					"E2E_OIDC_REDIRECT_URI="+redirectURI,
 					"E2E_ADMIN_ID="+admin.ID,
 					"E2E_READER_ID="+reader.ID,

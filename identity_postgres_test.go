@@ -1,14 +1,20 @@
 package solitudes
 
 import (
+	"bytes"
+	"errors"
+	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/hashicorp/go-uuid"
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/yaml.v3"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -17,7 +23,8 @@ import (
 
 // SOLITUDES_TEST_POSTGRES_DSN must point to a dedicated test database. Each
 // run creates and drops only its own uniquely named schema.
-func TestPostgresLegacyArticlesMigrateToAdministrator(t *testing.T) {
+func administratorTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
 	dsn := os.Getenv("SOLITUDES_TEST_POSTGRES_DSN")
 	if dsn == "" {
 		t.Skip("set SOLITUDES_TEST_POSTGRES_DSN to a dedicated PostgreSQL test database")
@@ -62,75 +69,175 @@ func TestPostgresLegacyArticlesMigrateToAdministrator(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for _, ddl := range []string{
-		`CREATE TABLE articles (id uuid PRIMARY KEY, slug text CONSTRAINT uni_articles_slug UNIQUE, title text, content text, template_id smallint, version bigint, created_at timestamptz, updated_at timestamptz)`,
-		`CREATE TABLE article_histories (article_id uuid, version bigint, content text, created_at timestamptz)`,
-	} {
-		if err := db.Exec(ddl).Error; err != nil {
-			t.Fatal(err)
-		}
-	}
-	articleID := "38d33a80-3fda-4597-a357-ef1c67e34b0e"
-	if err := db.Exec(`INSERT INTO articles (id, slug, title, content, template_id, version, created_at, updated_at)
-		VALUES (?, 'legacy-post', 'Old article', 'Keep the original content', 1, 2, ?, ?)`, articleID, time.Now(), time.Now()).Error; err != nil {
+	return db
+}
+
+func TestPostgresAdministratorInitialization(t *testing.T) {
+	db := administratorTestDB(t)
+	if err := initializeDatabase(db); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Exec(`INSERT INTO article_histories (article_id, version, content, created_at)
-		VALUES (?, 1, 'First version', ?)`, articleID, time.Now()).Error; err != nil {
-		t.Fatal(err)
+	if err := requireAdministrator(db); err == nil {
+		t.Fatal("uninitialized server must not start")
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte("legacy-password"), bcrypt.MinCost)
+	password, err := createInitialAdministrator(db, " ADMIN@example.test ", "Administrator")
 	if err != nil {
 		t.Fatal(err)
 	}
-	config := &model.Config{}
-	config.User.Email = "existing-admin@example.com"
-	config.User.Nickname = "Existing Admin"
-	config.User.Password = string(hash)
-	previous := System
-	System = &SysVariable{DB: db, Config: config}
-	t.Cleanup(func() { System = previous })
-	if err := migrate(); err != nil {
-		t.Fatal(err)
-	}
 	var admin model.Account
-	if err := db.Where("email = ?", config.User.Email).Take(&admin).Error; err != nil || admin.Role != model.RoleAdmin || admin.EmailVerifiedAt == nil {
-		t.Fatalf("administrator bootstrap: %+v %v", admin, err)
-	}
-	if bcrypt.CompareHashAndPassword([]byte(admin.PasswordHash), []byte("legacy-password")) != nil {
-		t.Fatal("previous administrator password was not preserved")
-	}
-	var article model.Article
-	if err := db.Preload("Author").Take(&article, "id = ?", articleID).Error; err != nil {
+	if err := db.Where("email = ?", "admin@example.test").Take(&admin).Error; err != nil {
 		t.Fatal(err)
 	}
-	if article.AuthorID == nil || *article.AuthorID != admin.ID || article.Author.Nickname != "Existing Admin" ||
-		article.Slug != "legacy-post" || article.Version != 2 || article.Content != "Keep the original content" {
-		t.Fatalf("legacy article changed unexpectedly: %+v", article)
+	if admin.Role != model.RoleAdmin || admin.EmailVerifiedAt == nil || len(password) < 32 ||
+		bcrypt.CompareHashAndPassword([]byte(admin.PasswordHash), []byte(password)) != nil {
+		t.Fatal("invalid initialized administrator")
 	}
-	var history model.ArticleHistory
-	if err := db.Take(&history, "article_id = ?", articleID).Error; err != nil || history.Content != "First version" || history.EditorID != nil {
-		t.Fatalf("legacy revision changed unexpectedly: %+v %v", history, err)
+	if err := requireAdministrator(db); err != nil {
+		t.Fatal(err)
 	}
-	if err := migrate(); err != nil {
-		t.Fatalf("repeat migration: %v", err)
+	var event model.AuditEvent
+	if err := db.Where("action = ?", "account.initialized").Take(&event).Error; err != nil || event.ID == "" || event.ActorID != admin.ID || event.Details != "" {
+		t.Fatal("missing or unsafe initialization audit", err)
 	}
-	if !db.Migrator().HasColumn(&model.Account{}, "directory_hidden") {
-		t.Fatal("reader circle opt-out column is missing")
+	if err := initializeDatabase(db); err != nil {
+		t.Fatal(err)
 	}
-	var directoryColumns []string
-	if err := db.Raw(`SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='accounts' AND column_name LIKE 'directory_%'`).Scan(&directoryColumns).Error; err != nil || len(directoryColumns) != 1 || directoryColumns[0] != "directory_hidden" {
-		t.Fatalf("expected one reader circle preference: %v %v", directoryColumns, err)
+	if secret, err := createInitialAdministrator(db, "another@example.test", "Other"); !errors.Is(err, errAdministratorInitialized) || secret != "" {
+		t.Fatal("repeat setup accepted", err)
 	}
-	if err := db.Take(&admin, "id = ?", admin.ID).Error; err != nil || admin.DirectoryHidden {
-		t.Fatalf("existing verified member should be visible: %+v err=%v", admin, err)
+	var persisted model.Account
+	if err := db.First(&persisted, "id = ?", admin.ID).Error; err != nil || persisted.PasswordHash != admin.PasswordHash {
+		t.Fatal("setup changed existing credentials", err)
 	}
 	var count int64
 	if err := db.Model(&model.Account{}).Count(&count).Error; err != nil || count != 1 {
-		t.Fatalf("repeated migration created extra accounts: %d %v", count, err)
+		t.Fatal("extra accounts", err)
 	}
-	if err := db.Raw(`SELECT count(*) FROM pg_indexes WHERE schemaname=current_schema() AND tablename='articles' AND indexdef LIKE '%UNIQUE%' AND indexdef LIKE '%(slug)%'`).Scan(&count).Error; err != nil || count != 1 {
-		t.Fatalf("migration retained duplicate/missing slug indexes: %d %v", count, err)
+	if db.Migrator().HasColumn(&model.Comment{}, "is_admin") || db.Migrator().HasColumn(&model.Article{}, "is_private") {
+		t.Fatal("obsolete permission columns created")
+	}
+	// There is exactly one persisted reader-circle preference.
+	var columns []string
+	if err := db.Raw("SELECT column_name FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='accounts' AND column_name LIKE 'directory_%'").Scan(&columns).Error; err != nil || len(columns) != 1 || columns[0] != "directory_hidden" {
+		t.Fatal("redundant directory state", columns, err)
+	}
+	now := time.Now()
+	if err := db.Model(&admin).Update("disabled_at", &now).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := requireAdministrator(db); err == nil {
+		t.Fatal("disabled administrator accepted")
+	}
+}
+
+func TestPostgresAdministratorSetupNeverPromotesRegisteredUsers(t *testing.T) {
+	db := administratorTestDB(t)
+	if err := initializeDatabase(db); err != nil {
+		t.Fatal(err)
+	}
+	user := model.Account{Email: "reader@example.test", Nickname: "Reader", Role: model.RoleUser}
+	if err := db.Create(&user).Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, err := createInitialAdministrator(db, user.Email, "Admin"); !errors.Is(err, errAdministratorInitialized) {
+		t.Fatal("registered user could become administrator", err)
+	}
+	if err := db.First(&user, "id = ?", user.ID).Error; err != nil || user.Role != model.RoleUser {
+		t.Fatal("changed registered user", err)
+	}
+}
+
+func TestPostgresConcurrentAdministratorSetup(t *testing.T) {
+	db := administratorTestDB(t)
+	if err := initializeDatabase(db); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	results := make(chan error, 2)
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := createInitialAdministrator(db, "admin@example.test", "Admin")
+			results <- err
+		}()
+	}
+	wg.Wait()
+	close(results)
+	successes, rejections := 0, 0
+	for err := range results {
+		if err == nil {
+			successes++
+		} else if errors.Is(err, errAdministratorInitialized) {
+			rejections++
+		} else {
+			t.Fatal(err)
+		}
+	}
+	if successes != 1 || rejections != 1 {
+		t.Fatal("non-atomic setup", successes, rejections)
+	}
+}
+
+func TestPostgresAdministratorSetupRollsBackWhenAuditFails(t *testing.T) {
+	db := administratorTestDB(t)
+	if err := initializeDatabase(db); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Exec("ALTER TABLE audit_events ADD CONSTRAINT reject_setup CHECK (action <> 'account.initialized')").Error; err != nil {
+		t.Fatal(err)
+	}
+	if password, err := createInitialAdministrator(db, "admin@example.test", "Admin"); err == nil || password != "" {
+		t.Fatal("setup accepted audit failure or returned a credential")
+	}
+	var count int64
+	if err := db.Model(&model.Account{}).Count(&count).Error; err != nil || count != 0 {
+		t.Fatal("failed setup left an administrator", err)
+	}
+}
+
+func TestPostgresAdministratorSetupUsesConfigWithoutSavingCredentials(t *testing.T) {
+	db := administratorTestDB(t)
+	var schema string
+	if err := db.Raw("SELECT current_schema()").Scan(&schema).Error; err != nil {
+		t.Fatal(err)
+	}
+	dsn := os.Getenv("SOLITUDES_TEST_POSTGRES_DSN")
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+		u, err := url.Parse(dsn)
+		if err != nil {
+			t.Fatal(err)
+		}
+		q := u.Query()
+		q.Set("search_path", schema+",public")
+		u.RawQuery = q.Encode()
+		dsn = u.String()
+	} else {
+		dsn += " search_path=" + schema + ",public"
+	}
+	t.Chdir(t.TempDir())
+	if err := os.Mkdir("data", 0700); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join("data", "conf.yml")
+	config, err := yaml.Marshal(&model.Config{Database: dsn})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, config, 0600); err != nil {
+		t.Fatal(err)
+	}
+	password, err := CreateInitialAdministrator("admin@example.test", "Admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var account model.Account
+	if err := db.Where("email = ?", "admin@example.test").Take(&account).Error; err != nil || bcrypt.CompareHashAndPassword([]byte(account.PasswordHash), []byte(password)) != nil {
+		t.Fatal("setup did not persist credentials in configured database", err)
+	}
+	saved, err := os.ReadFile(path)
+	if err != nil || !bytes.Equal(saved, config) || bytes.Contains(saved, []byte(password)) {
+		t.Fatal("setup modified configuration or persisted its plaintext password", err)
 	}
 }
 

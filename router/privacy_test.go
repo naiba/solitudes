@@ -137,8 +137,8 @@ func TestBuildSearchQueryLimitsPrivateDocumentsToTitle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to search legacy public body: %v", err)
 	}
-	if legacyPublicResult.Total != 1 || legacyPublicResult.Hits[0].ID != "legacy-public.1" {
-		t.Fatalf("legacy public body result = %+v, want legacy-public.1", legacyPublicResult.Hits)
+	if legacyPublicResult.Total != 0 {
+		t.Fatalf("legacy public body result = %+v, want no results for a document without an access policy", legacyPublicResult.Hits)
 	}
 }
 

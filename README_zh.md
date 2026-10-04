@@ -16,7 +16,7 @@
 - **修订历史** — 所有修改记录均可浏览和搜索
   - 编辑时勾选「大更新」可升级版本号
   - 在链接后加 `/v*` 浏览历史版本（如 `/my-article/v1`）
-  - 新旧版本均出现在搜索结果中
+  - 搜索仅返回当前文章，历史版本正文不索引
 - **哔哔（Topics）** — 类微博短内容，支持评论
   - 发布时添加 `Topic` 标签即可，标题和链接可留空自动补全
 - **RSS 自动发现** — 将博客任意链接粘贴到 RSS 阅读器即可自动订阅
@@ -28,11 +28,9 @@
 ### Docker（推荐）
 
 ```yaml
-version: '3.3'
-
 services:
   db:
-    image: postgres:13-alpine
+    image: postgres:16-alpine
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     restart: always
@@ -53,7 +51,11 @@ services:
 ```
 
 ```bash
-docker-compose up -d
+docker compose up -d db
+# 等待 PostgreSQL 就绪，并先配置 blog-data/conf.yml。
+docker compose run --rm solitudes /solitudes/solitudes init-admin --email you@example.com --nickname 管理员
+# 妥善保存仅展示一次的随机密码，不要将输出重定向到共享日志。
+docker compose up -d solitudes
 ```
 
 ### 目录结构
@@ -66,17 +68,15 @@ blog-data/
 └── logo.png    # 自定义 logo（可选）
 ```
 
-### 默认账户
+### 管理员初始化
 
-管理后台：`/admin`
-邮箱：`hi@example.com`
-密码：`123456`
+不再提供默认账号或默认密码。本机安装时，在项目目录运行 `./solitudes init-admin --email you@example.com --nickname 管理员`，然后启动服务器。命令创建数据库结构及已验证的首位管理员，仅展示一次安全随机生成的密码，数据库只保存 bcrypt 哈希。仅账户表为空时允许初始化；重复或并发执行不会覆盖已有密码，也不会提升已注册用户的权限。请在私人终端执行，不要把输出保存到共享日志。
 
 ## 用户与 OIDC
 
-已有站点升级时，会从 `data/conf.yml` 的 `user.email`、`user.nickname`、`user.password`（bcrypt 哈希）创建首位管理员，并把旧文章归其所有。新站点对外开放前务必替换示例配置中的默认密码。首次迁移完成前请保留这些配置；旧的配置文件登录令牌不再有效。普通用户可在 `/register` 注册，邮件验证链接一小时内有效，未验证不能登录；注册需配置 SMTP。`/account` 可管理身份和通行密钥。管理员在 `/admin/users` 分配管理员、编辑、普通用户角色；编辑可以直接发布并管理自己的文章，普通用户不能进入写作后台。
+账号、密码、会话、角色只保存在 PostgreSQL。通过 `/login` 登录，在 `/account` 修改初始密码；改密码不回写配置文件，重启不会覆盖。普通用户可在 `/register` 注册，邮件验证链接一小时内有效，未验证不能登录；注册需配置 SMTP。管理员在 `/admin/users` 分配管理员、编辑、普通用户角色；编辑可以直接发布并管理自己的文章，普通用户不能进入写作后台。请备份数据库以保留身份和凭据；覆盖部署旧安装前先阅读[配置与兼容策略](docs/configuration.md)。
 
-前台 `/readers/`「读者圈」默认展示所有已验证且未停用的用户，包括现有账号；用户可在 `/account` 的公开资料中退出或重新加入。首页展示最新加入的四位成员和最多五条公开最新评论（包括游客评论）；读者圈页面展示近期公开动态，并根据最近 30 天的公开文章和非垃圾评论统计活跃度。邮箱、私密文章和垃圾评论不会进入目录或榜单。RSS、Atom、JSON Feed 为每篇公开文章标注真实作者，订阅源元数据不再暴露配置文件中的管理员邮箱。编辑及管理员可从前台导航的「创作工作台」直接进入文章管理，个人中心另提供写文章入口。
+前台 `/readers/`「读者圈」默认展示所有已验证且未停用的用户，包括现有账号；用户可在 `/account` 的公开资料中退出或重新加入。首页展示最新加入的四位成员和最多五条公开最新评论（包括游客评论）；读者圈页面展示近期公开动态，并根据最近 30 天的公开文章和非垃圾评论统计活跃度。邮箱、私密文章和垃圾评论不会进入目录或榜单。RSS、Atom、JSON Feed 为每篇公开文章标注真实作者，订阅源元数据不会暴露用户邮箱。编辑及管理员从个人中心进入文章管理和写作。
 
 请在 `data/conf.yml` 中设置 `site.domain` 为对外域名（必要时含端口），生产环境使用 HTTPS，并配置 `email.host`、`email.port`、`email.user`、`email.pass`、`email.ssl`。管理员可在 `/admin/auth/providers` 页面配置 GitHub、Google 和上游 OIDC 登录（保存后密钥不再回显）；对应的配置文件写法是：
 
@@ -92,7 +92,7 @@ auth:
 
 Solitudes 同时作为 OAuth 2.1 风格的授权服务端和 OIDC 服务端：**所有已验证的博客账户**（包括普通用户和编辑）都能登录自己接入的外部应用。前台导航栏的 `/account` 个人中心可修改密码、添加通行密钥、绑定或解绑上游登录提供方，并在 `/account/oidc/clients` 创建及停用自己的客户端；管理员仍可在 `/admin/oidc/clients` 管理全站客户端。外部应用可通过 `https://<site.domain>/.well-known/openid-configuration`（OIDC）或 `https://<site.domain>/.well-known/oauth-authorization-server`（OAuth 元数据）发现端点。这与上方“外部提供方登录博客”是两个独立方向。支持授权码（必须使用 PKCE S256）和轮换刷新令牌，不支持隐式或密码授权；回调 URI 必须精确匹配且使用 HTTPS（localhost 可用 HTTP）。公开客户端无密钥；机密客户端通过 `client_secret_basic` 认证，密钥仅创建时显示一次。申请 `openid` 范围以获取 ID Token；纯 OAuth 客户端无需申请。用户每次授权需同意。禁用客户端会撤销 Access Token 和 Refresh Token；已签发的 ID Token 在过期前仍可通过签名验证，密钥轮换时会保留旧公钥。数据库备份包含 OIDC 签名私钥和客户端凭据，务必妥善保护；未设置 `site.domain` 或数据库不可用时，OIDC 服务不可用。变更域名后需重启服务。
 
-新客户端需填写应用名称、可选简介、应用主页（须为 HTTPS，开发环境 localhost 可使用 HTTP）和精确匹配的回调地址；退出后的回跳地址可选，但也必须预先注册。RP 发起的退出会撤销对应应用的令牌，不会退出博客本身。创建者与管理员可修改应用资料及回调地址。外部应用发起授权时，登录页和同意页都会展示应用信息、应用主页以及创建者的站内公开主页；没有这些元数据的旧客户端仍可使用并可补填资料，不会渲染未验证的网址。
+新客户端需填写应用名称、可选简介、应用主页（须为 HTTPS，开发环境 localhost 可使用 HTTP）和精确匹配的回调地址；退出后的回跳地址可选，但也必须预先注册。RP 发起的退出会撤销对应应用的令牌，不会退出博客本身。创建者与管理员可修改应用资料及回调地址。外部应用发起授权时，登录页和同意页都会展示应用信息、应用主页以及创建者的站内公开主页；缺少创建者、应用主页缺失或不合法的客户端不能发起授权或认证；展示时仍会验证数据库中的网址。
 
 ### 后台统计与安全审计
 

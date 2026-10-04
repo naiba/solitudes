@@ -25,7 +25,7 @@ func recentPublicComments(db *gorm.DB, limit int) ([]publicComment, error) {
 		SELECT c.id, COALESCE(a.id::text, '') AS account_id,
 		       COALESCE(NULLIF(a.nickname, ''), c.nickname) AS nickname,
 		       CASE WHEN a.id IS NOT NULL THEN a.role::text
-		            WHEN c.is_admin THEN 'admin' ELSE 'guest' END AS role,
+		            ELSE 'guest' END AS role,
 		       c.content,
 		       article.slug AS article_slug, article.title AS article_title,
 		       c.created_at

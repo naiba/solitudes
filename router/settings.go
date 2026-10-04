@@ -188,7 +188,6 @@ func sendTelegramTestMessage() {
 		Nickname: "System",
 		Email:    "system@test.com",
 		Content:  "🎉 Telegram notification has been configured successfully! Your bot is now ready to send notifications.",
-		IsAdmin:  false, // 设置为 false 确保消息会被发送
 	}
 
 	testArticle := &model.Article{

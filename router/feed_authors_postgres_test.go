@@ -20,8 +20,6 @@ func TestPostgresFeedsCreditEachAuthorWithoutPublishingAdminEmail(t *testing.T) 
 	config := &model.Config{}
 	config.Site.Domain = "localhost:8080"
 	config.Site.SpaceName = "A many-author publication"
-	config.User.Nickname = "Old configured administrator"
-	config.User.Email = "private-admin@example.test"
 	solitudes.System = &solitudes.SysVariable{DB: db, Config: config}
 	now := time.Now()
 	admin := model.Account{Nickname: "Publisher Alice", Email: "alice@example.test", Role: model.RoleAdmin, EmailVerifiedAt: &now}
@@ -47,7 +45,7 @@ func TestPostgresFeedsCreditEachAuthorWithoutPublishingAdminEmail(t *testing.T) 
 				t.Fatal(err)
 			}
 			body := output.(*feedOutput).body
-			if strings.Contains(body, config.User.Email) || strings.Contains(body, config.User.Nickname) ||
+			if strings.Contains(body, admin.Email) || strings.Contains(body, editor.Email) ||
 				strings.Contains(body, "secret-feed-text") || !strings.Contains(body, "Publisher Alice") || !strings.Contains(body, "Editor Bob") {
 				t.Fatalf("wrong author or leaked private content in %s: %s", format, body)
 			}

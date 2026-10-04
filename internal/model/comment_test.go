@@ -32,7 +32,6 @@ func TestCommentPublicRoleUsesAccountNotClaimedIdentity(t *testing.T) {
 		want string
 	}{
 		{"visitor", Comment{Nickname: "Administrator", Email: "admin@example.com"}, "guest"},
-		{"legacy staff", Comment{IsAdmin: true}, "admin"},
 		{"authenticated member", Comment{AccountID: &id, Account: &Account{Role: RoleUser}}, "user"},
 		{"authenticated editor", Comment{AccountID: &id, Account: &Account{Role: RoleEditor}}, "editor"},
 		{"authenticated administrator", Comment{AccountID: &id, Account: &Account{Role: RoleAdmin}}, "admin"},

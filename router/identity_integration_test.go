@@ -481,7 +481,7 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 	db := newIdentityTestDB(t)
 	withIdentityDB(t, db)
 	account := testAccount(t, db, model.RoleUser)
-	client := model.OIDCClient{ID: "test-client", Name: "Test", Public: true,
+	client := model.OIDCClient{ID: "test-client", OwnerID: &account.ID, Name: "Test", HomepageURL: "http://localhost:9090/", Public: true,
 		RedirectURIsJSON: `["http://localhost:9090/callback"]`}
 	if err := db.Create(&client).Error; err != nil {
 		t.Fatal(err)

@@ -8,12 +8,12 @@ import (
 )
 
 // MigrateDatabasePolicy is an explicit, repeatable PostgreSQL migration run
-// after AutoMigrate and legacy data backfills. Never deduplicate or discard
+// after AutoMigrate. Never deduplicate or discard
 // conflicting user data to make a constraint succeed: abort startup instead.
 func MigrateDatabasePolicy(db *gorm.DB) error {
 	return db.Transaction(func(tx *gorm.DB) error {
 		// DDL must never fall through search_path into another schema when a
-		// legacy index is absent locally (including repeat migrations/tests).
+		// table or index is absent locally (including repeat migrations/tests).
 		schema, err := currentDatabaseSchema(tx)
 		if err != nil {
 			return err
@@ -54,8 +54,6 @@ func MigrateDatabasePolicy(db *gorm.DB) error {
 			}
 		}
 		for _, ddl := range []string{
-			// The model's unique slug index supersedes this old constraint.
-			`ALTER TABLE articles DROP CONSTRAINT IF EXISTS uni_articles_slug`,
 			`CREATE INDEX IF NOT EXISTS idx_articles_author_page ON articles (author_id, created_at DESC, id DESC)`,
 			`CREATE INDEX IF NOT EXISTS idx_articles_page ON articles (created_at DESC, id DESC)`,
 			`CREATE INDEX IF NOT EXISTS idx_comments_thread_page ON comments (article_id, reply_to, created_at DESC, id DESC) WHERE is_spam = false`,
@@ -68,13 +66,6 @@ func MigrateDatabasePolicy(db *gorm.DB) error {
 			`CREATE INDEX IF NOT EXISTS idx_login_summary_actor ON login_summaries (action, actor_id)`,
 			`CREATE INDEX IF NOT EXISTS idx_ceremony_account ON passkey_ceremonies (account_id)`,
 			`CREATE INDEX IF NOT EXISTS idx_oauth_attempt_account ON o_auth_attempts (account_id)`,
-			// Replace indexes from shipped schemas, not development-only states.
-			`DROP INDEX IF EXISTS idx_articles_tags`,
-			`DROP INDEX IF EXISTS idx_article_histories_article_id`,
-			`DROP INDEX IF EXISTS idx_article_histories_version`,
-			`DROP INDEX IF EXISTS idx_nickname`,
-			`DROP INDEX IF EXISTS idx_articles_author_id`,
-			`DROP INDEX IF EXISTS idx_o_id_c_clients_owner_id`,
 		} {
 			if err := tx.Exec(ddl).Error; err != nil {
 				return fmt.Errorf("database index migration: %w", err)

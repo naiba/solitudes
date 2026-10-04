@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -34,8 +33,6 @@ func TestMediaDeleteRequiresLoginAndSameOrigin(t *testing.T) {
 		return nil, errNoAccount
 	}
 	cfg := &model.Config{}
-	cfg.User.Token = "valid-token"
-	cfg.User.TokenExpires = time.Now().Add(time.Hour).Unix()
 	solitudes.System = &solitudes.SysVariable{Config: cfg}
 	app := fiber.New()
 	app.Use(auth, csrfGuard)
@@ -85,8 +82,6 @@ func TestExpiredAdminTokenCannotDeleteMedia(t *testing.T) {
 	t.Cleanup(func() { sessionLookup = previousLookup })
 	sessionLookup = func(token string) (*model.Account, error) { return nil, errNoAccount }
 	cfg := &model.Config{}
-	cfg.User.Token = "expired"
-	cfg.User.TokenExpires = time.Now().Add(-time.Minute).Unix()
 	solitudes.System = &solitudes.SysVariable{Config: cfg}
 	app := fiber.New()
 	app.Use(auth)

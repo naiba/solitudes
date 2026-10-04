@@ -95,17 +95,3 @@ func (a *Article) redactForQuery(tx *gorm.DB) {
 		a.Content = a.ContentFor(viewer.account, viewer.notice)
 	}
 }
-
-// MigrateArticleVisibility preserves previously private articles, then removes
-// the obsolete flag. There is only one persisted access policy.
-func MigrateArticleVisibility(db *gorm.DB) error {
-	if !db.Migrator().HasColumn(&Article{}, "is_private") {
-		return nil
-	}
-	return db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec("UPDATE articles SET visibility = 'private' WHERE is_private = true").Error; err != nil {
-			return err
-		}
-		return tx.Migrator().DropColumn(&Article{}, "is_private")
-	})
-}

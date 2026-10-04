@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -92,39 +91,5 @@ func TestPostgresArticleVisibilityAndQueryRedaction(t *testing.T) {
 	}
 	if got, err := q.Articles("newest", 0); err != nil || len(got) != 0 {
 		t.Fatal(got, err)
-	}
-}
-
-func TestPostgresArticleVisibilityMigration(t *testing.T) {
-	db := newPostgresIdentityTestDB(t)
-	if err := db.AutoMigrate(&model.Article{}); err != nil {
-		t.Fatal(err)
-	}
-	if err := db.Exec("ALTER TABLE articles ADD COLUMN is_private boolean DEFAULT false").Error; err != nil {
-		t.Fatal(err)
-	}
-	for i := 0; i < 2; i++ {
-		a := model.Article{Title: "Legacy", Slug: fmt.Sprint(i)}
-		if err := db.Create(&a).Error; err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := db.Exec("UPDATE articles SET is_private = true WHERE slug = '1'").Error; err != nil {
-		t.Fatal(err)
-	}
-	for i := 0; i < 2; i++ {
-		if err := model.MigrateArticleVisibility(db); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if db.Migrator().HasColumn(&model.Article{}, "is_private") {
-		t.Fatal("redundant flag retained")
-	}
-	var rows []model.Article
-	if err := db.Order("slug").Find(&rows).Error; err != nil {
-		t.Fatal(err)
-	}
-	if !rows[0].Public() || rows[1].Visibility != model.VisibilityPrivate {
-		t.Fatal("legacy access changed", rows)
 	}
 }

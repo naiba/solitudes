@@ -1,12 +1,11 @@
 package solitudes
 
 import (
+	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
@@ -28,20 +27,12 @@ import (
 
 // Constants
 const (
-	// CtxAuthorized 用户已认证
-	CtxAuthorized = "cazed"
 	// CtxAccount is the authenticated database account, if one exists.
 	CtxAccount = "account"
 	// CtxTranslator 翻译
 	CtxTranslator = "ct"
 	// AuthCookie 用户认证使用的Cookie名
 	AuthCookie = "i_like_solitude"
-	// CacheKeyPrefixRelatedChapters 缓存键前缀：章节
-	CacheKeyPrefixRelatedChapters = "ckprc"
-	// CacheKeyPrefixRelatedArticle 缓存键前缀：文章
-	CacheKeyPrefixRelatedArticle = "ckpra"
-	// CacheKeyPrefixRelatedSiblingArticle 缓存键前缀：相邻文章
-	CacheKeyPrefixRelatedSiblingArticle = "ckprsa"
 )
 
 // SysVariable 全局变量
@@ -128,28 +119,6 @@ func indexArticle(index bleve.Index, article *model.Article) error {
 	return indexArticleVersion(index, article, article.Version, article.Content)
 }
 
-// Rewrite persisted pre-access-control indexes once. A crash retries the scrub
-// on the next start; the marker is written only after every batch succeeds.
-func upgradeArticleAccessIndex() error {
-	const key = "article-access-schema-v1"
-	marker, err := System.Search.GetInternal([]byte(key))
-	if err != nil || len(marker) > 0 {
-		return err
-	}
-	var articles []model.Article
-	if err := System.DB.FindInBatches(&articles, 100, func(tx *gorm.DB, batch int) error {
-		for i := range articles {
-			if err := indexArticle(System.Search, &articles[i]); err != nil {
-				return err
-			}
-		}
-		return nil
-	}).Error; err != nil {
-		return err
-	}
-	return System.Search.SetInternal([]byte(key), []byte("1"))
-}
-
 // IndexArticle updates the full-text search document for an article. Private
 // articles remain discoverable by title, but their body is never persisted in
 // the search index.
@@ -228,7 +197,9 @@ func newConfig() (*model.Config, error) {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
 	var c model.Config
-	err = yaml.Unmarshal(content, &c)
+	decoder := yaml.NewDecoder(bytes.NewReader(content))
+	decoder.KnownFields(true)
+	err = decoder.Decode(&c)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
@@ -280,59 +251,25 @@ func newSystem(c *model.Config, d *gorm.DB, h *cache.Cache,
 }
 
 func migrate() error {
-	if err := System.DB.AutoMigrate(&model.AuditEvent{}, &model.LoginSummary{}); err != nil {
+	return initializeDatabase(System.DB)
+}
+
+func initializeDatabase(db *gorm.DB) error {
+	if err := db.AutoMigrate(&model.AuditEvent{}, &model.LoginSummary{}); err != nil {
 		return fmt.Errorf("migrate security audit: %w", err)
 	}
-	if err := System.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&model.AuditEvent{
+	if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&model.AuditEvent{
 		ID: "audit-initialized", Action: "audit.enabled", Outcome: "success", CreatedAt: time.Now().UTC(),
 	}).Error; err != nil {
 		return fmt.Errorf("initialize security audit: %w", err)
 	}
-	if err := System.DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
 		return fmt.Errorf("failed to create uuid-ossp extension: %w", err)
 	}
-	if err := System.DB.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.ExternalIdentity{}, &model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}, &model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.FeedVisit{}); err != nil {
+	if err := db.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.ExternalIdentity{}, &model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}, &model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.FeedVisit{}); err != nil {
 		return fmt.Errorf("failed to auto migrate models: %w", err)
 	}
-	if err := model.MigrateArticleVisibility(System.DB); err != nil {
-		return fmt.Errorf("migrate article visibility: %w", err)
-	}
-	// A pre-existing installation owns its administrator identity in conf.yml.
-	// Seed exactly that account, never promote the first public registrant.
-	adminEmail := strings.ToLower(strings.TrimSpace(System.Config.User.Email))
-	var admin model.Account
-	err := System.DB.Where("role = ?", model.RoleAdmin).Order("created_at ASC").Take(&admin).Error
-	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("load administrator account: %w", err)
-	}
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		var accountCount int64
-		if err := System.DB.Model(&model.Account{}).Count(&accountCount).Error; err != nil {
-			return err
-		}
-		if accountCount == 0 && adminEmail != "" && System.Config.User.Password != "" {
-			now := time.Now()
-			nickname := strings.TrimSpace(System.Config.User.Nickname)
-			if nickname == "" {
-				nickname = "Administrator"
-			}
-			admin = model.Account{
-				Email: adminEmail, Nickname: nickname,
-				PasswordHash: System.Config.User.Password, Role: model.RoleAdmin,
-				EmailVerifiedAt: &now,
-			}
-			if err := System.DB.Create(&admin).Error; err != nil {
-				return fmt.Errorf("seed administrator: %w", err)
-			}
-		} else {
-			return errors.New("no administrator account; configure the legacy user to bootstrap an empty database")
-		}
-	}
-	// Existing articles keep their original owner through a repeatable backfill.
-	if err := System.DB.Model(&model.Article{}).Where("author_id IS NULL").Update("author_id", admin.ID).Error; err != nil {
-		return fmt.Errorf("backfill article authors: %w", err)
-	}
-	return model.MigrateDatabasePolicy(System.DB)
+	return model.MigrateDatabasePolicy(db)
 }
 
 func maintainDatabase() {
@@ -419,8 +356,8 @@ func Init() {
 		if err := migrate(); err != nil {
 			log.Fatalf("Database migration failed: %v", err)
 		}
-		if err := upgradeArticleAccessIndex(); err != nil {
-			log.Fatalf("Article index access upgrade failed: %v", err)
+		if err := requireAdministrator(System.DB); err != nil {
+			log.Fatal(err)
 		}
 	}
 

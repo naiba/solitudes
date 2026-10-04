@@ -93,7 +93,7 @@ func Email(src, dist *model.Comment, article *model.Article, trackingToken strin
 	if dist.Email == src.Email {
 		return errors.New("cannot notify: same email address")
 	}
-	if dist.IsAdmin {
+	if dist.PublicRole() == string(model.RoleAdmin) {
 		return errors.New("skip notification for admin replies")
 	}
 

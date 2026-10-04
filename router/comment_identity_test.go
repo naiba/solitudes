@@ -32,10 +32,10 @@ func TestFillCommentEntryTrustsAuthenticatedAccount(t *testing.T) {
 				}
 				cm := &model.Comment{}
 				form := &commentForm{Nickname: "Visitor", Email: "visitor@example.test", Website: "https://example.test", Content: "Hello", Version: 1}
-				if err := fillCommentEntry(c, tt.wantAdmin, cm, form, &model.Article{ID: "article-id"}); err != nil {
+				if err := fillCommentEntry(c, cm, form, &model.Article{ID: "article-id"}); err != nil {
 					return err
 				}
-				if (cm.AccountID != nil) != tt.wantID || cm.Nickname != tt.wantName || cm.Email != tt.wantEmail || cm.Website != tt.wantWebsite || cm.IsAdmin != tt.wantAdmin {
+				if (cm.AccountID != nil) != tt.wantID || cm.Nickname != tt.wantName || cm.Email != tt.wantEmail || cm.Website != tt.wantWebsite || (cm.PublicRole() == string(model.RoleAdmin)) != tt.wantAdmin {
 					t.Errorf("stored comment identity: %+v", cm)
 				}
 				if cm.AccountID != nil && *cm.AccountID != tt.account.ID {

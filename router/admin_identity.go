@@ -302,7 +302,7 @@ func adminClientDetail(c *fiber.Ctx) error {
 }
 
 // Shared with the translation contract: audit actions are translated dynamically.
-var auditActionNames = []string{"oidc.login", "session.login", "session.attempt", "session.logout", "account.register", "account.verify", "account.verification.send", "identity.callback", "oidc.authorize", "oidc.consent", "oidc.logout", "oidc.request", "client.create", "client.update", "client.disable", "user.role.update", "account.password.update", "account.profile.update", "account.operation", "passkey.operation", "provider.update", "settings.update", "oidc.keys.rotate", "article.save", "article.delete", "comment.create", "admin.operation", "access.denied", "request.error", "audit.view", "audit.enabled"}
+var auditActionNames = []string{"oidc.login", "session.login", "session.attempt", "session.logout", "account.register", "account.verify", "account.verification.send", "identity.callback", "oidc.authorize", "oidc.consent", "oidc.logout", "oidc.request", "client.create", "client.update", "client.disable", "user.role.update", "account.password.update", "account.profile.update", "account.operation", "passkey.operation", "provider.update", "settings.update", "oidc.keys.rotate", "article.save", "article.delete", "comment.create", "admin.operation", "access.denied", "request.error", "audit.view", "audit.enabled", "account.initialized"}
 
 func auditPage(c *fiber.Ctx) error {
 	page, err := identityPage(c)

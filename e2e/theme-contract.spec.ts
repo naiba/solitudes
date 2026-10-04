@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import path from 'node:path';
 import { createHash, createPublicKey, verify } from 'node:crypto';
 
@@ -167,6 +167,101 @@ test('pagination contract account applications, passkeys and administrative list
   await expect(page.getByTestId('account-client-row')).toHaveCount(0);
 });
 
+for (const locale of ['zh-CN','en']) test.describe(`revision language ${locale}`, () => {
+  test.use({locale});
+  test('revision controls are separate from prose and accessible across layouts', async ({page}) => {
+    test.skip(!process.env.E2E_ADMIN_EMAIL, 'Requires isolated fixtures.');
+    test.setTimeout(60000);
+    const capture = async (name: string) => {
+      if (process.env.SOLITUDES_REVISION_SCREENSHOTS) await page.screenshot({path:path.join(process.env.SOLITUDES_REVISION_SCREENSHOTS, `${siteTheme}-${name}.png`),animations:'disabled'});
+    };
+    const checkRevisionUnderline = async (link: Locator, name: string) => {
+      if (siteTheme !== 'folio') return;
+      await page.mouse.move(0, 0);
+      await expect(link).toHaveCSS('background-image', 'none');
+      await expect(link).toHaveCSS('text-decoration-line', 'none');
+      await link.hover();
+      await expect(link).toHaveCSS('text-decoration-line', 'underline');
+      await expect(link).toHaveCSS('background-image', 'none');
+      if (locale === 'zh-CN') await capture(name);
+      await page.mouse.move(0, 0);
+    };
+    for (const [width, scheme] of [[1440,'light'],[390,'light'],[320,'dark']] as const) {
+      await page.setViewportSize({width,height:900});
+      await page.emulateMedia({colorScheme:scheme});
+      await page.goto('/visual-revisions', {waitUntil:'domcontentloaded'});
+      const history = page.getByTestId('article-history');
+      await expect(history.locator('summary')).toHaveText(locale === 'zh-CN' ? '历史版本 · 50' : 'Revision history · 50');
+      await expect(history).not.toHaveAttribute('open');
+      await expect(page.locator('[data-reading-content] [data-testid="article-history"]')).toHaveCount(0);
+      const prefix = `${locale}-${width}-${scheme}`;
+      if (locale === 'zh-CN') await capture(prefix+'-collapsed');
+      const summary = history.locator('summary');
+      const summaryBox = (await summary.boundingBox())!;
+      const historyBox = (await history.boundingBox())!;
+      expect(Math.abs(summaryBox.x + summaryBox.width - historyBox.x - historyBox.width)).toBeLessThanOrEqual(2);
+      expect(summaryBox.width).toBeGreaterThanOrEqual(historyBox.width - 2);
+      expect(summaryBox.height).toBeGreaterThanOrEqual(44);
+      const closedArrow = await summary.evaluate(el => getComputedStyle(el, '::after').transform);
+      // The whitespace in the middle and the far-right end are both targets,
+      // not just the label or the disclosure arrow.
+      await summary.hover({position:{x:summaryBox.width / 2,y:summaryBox.height / 2}});
+      await expect(summary).toHaveCSS('cursor', 'pointer');
+      expect(await summary.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
+      if (locale === 'zh-CN') await capture(prefix+'-summary-hover');
+      await summary.click({position:{x:summaryBox.width / 2,y:summaryBox.height / 2}});
+      await expect(history).toHaveAttribute('open', '');
+      expect(await summary.evaluate(el => getComputedStyle(el, '::after').transform)).not.toBe(closedArrow);
+      await summary.click({position:{x:summaryBox.width - 4,y:summaryBox.height / 2}});
+      await expect(history).not.toHaveAttribute('open');
+      await summary.focus();
+      await page.keyboard.press('Enter');
+      await expect(history).toHaveAttribute('open', '');
+      await expect(history.locator('nav a')).toHaveCount(50);
+      await expect(history.locator('nav a').first()).toBeVisible();
+      await expect(history.locator('nav a').first()).toHaveText('v50');
+      const list = history.locator('nav');
+      const listSize = await list.evaluate(el => ({height:el.clientHeight, fullHeight:el.scrollHeight, width:el.clientWidth, fullWidth:el.scrollWidth}));
+      expect(listSize.height).toBeLessThanOrEqual(152);
+      expect(listSize.fullWidth).toBeLessThanOrEqual(listSize.width);
+      if (width <= 390) expect(listSize.fullHeight).toBeGreaterThan(listSize.height);
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+1);
+      if (locale === 'zh-CN') await capture(prefix+'-expanded');
+      await checkRevisionUnderline(history.locator('nav a').first(), prefix+'-history-hover');
+      // Tab to an off-screen revision: native focus must scroll the list,
+      // without increasing the space reserved above the article body.
+      const bodyTop = (await page.locator('[data-reading-content]').boundingBox())!.y;
+      await history.locator('a[href="/visual-revisions/v2"]').focus();
+      await page.keyboard.press('Tab');
+      await expect(history.locator('a[href="/visual-revisions/v1"]')).toBeFocused();
+      await expect(history.locator('nav a').last()).toHaveCSS('outline-style', 'solid');
+      await expect(history.locator('nav a').last()).toHaveCSS('outline-width', '2px');
+      if (width <= 390) expect(await list.evaluate(el => el.scrollTop)).toBeGreaterThan(0);
+      const lastLink = await history.locator('nav a').last().boundingBox();
+      const listBox = await list.boundingBox();
+      expect(lastLink!.y).toBeGreaterThanOrEqual(listBox!.y);
+      expect(lastLink!.y + lastLink!.height).toBeLessThanOrEqual(listBox!.y + listBox!.height + 1);
+      expect((await page.locator('[data-reading-content]').boundingBox())!.y).toBeCloseTo(bodyTop, 0);
+      if (locale === 'zh-CN') await capture(prefix+'-scrolled');
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(/\/visual-revisions\/v1$/);
+      const notice = page.getByTestId('article-revision-notice');
+      await expect(notice).toBeVisible();
+      await expect(notice).toContainText(locale === 'zh-CN' ? '正在阅读历史版本 v1' : 'You’re reading an earlier version, v1');
+      await expect(page.locator('[data-reading-content] [data-testid="article-revision-notice"]')).toHaveCount(0);
+      expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width+1);
+      if (locale === 'zh-CN') await capture(prefix+'-old');
+      await checkRevisionUnderline(page.getByTestId('article-latest-version'), prefix+'-latest-hover');
+      await page.getByTestId('article-latest-version').click();
+      await expect(page).toHaveURL(/\/visual-revisions$/);
+      await expect(page.getByTestId('article-revision-notice')).toHaveCount(0);
+    }
+    await page.goto('/e2e-theme-article');
+    await expect(page.getByTestId('article-history')).toHaveCount(0);
+    await expect(page.getByTestId('article-revision-notice')).toHaveCount(0);
+  });
+});
+
 for (const role of ['guest', 'member', 'editor', 'admin'] as const) {
   test(`article access boundaries for ${role}`, async ({page, context}) => {
     test.skip(!process.env.E2E_ADMIN_EMAIL, 'Requires isolated fixtures.');
@@ -181,7 +276,12 @@ for (const role of ['guest', 'member', 'editor', 'admin'] as const) {
       }
       expect(html.includes('hidden-attachment.example')).toBe(canRead && allowed.private);
       if (role !== 'guest') expect(response!.headers()['cache-control']).toContain('no-store');
-      if (canRead) await expect(page.locator(`a[href="/access-${level}/v1"]`)).toBeVisible();
+      if (canRead) {
+        const historyEntry = page.getByTestId('article-history');
+        await expect(historyEntry).not.toHaveAttribute('open');
+        await historyEntry.locator('summary').click();
+        await expect(historyEntry.locator(`a[href="/access-${level}/v1"]`)).toBeVisible();
+      }
       const history = await page.request.get('/access-' + level + '/v1');
       expect(history.status()).toBe(canRead ? 200 : 404);
       const historicalHTML = await history.text();
@@ -2144,27 +2244,15 @@ test('server failures hide internal details in both HTML and plain-text response
   expect(plain.headers()['cache-control']).toContain('no-store');
 });
 
-test('legacy clients remain usable without exposing an unsafe homepage or inventing an owner', async ({ page }) => {
-  const clientID = process.env.E2E_LEGACY_OIDC_CLIENT_ID;
-  test.skip(!clientID || !oidcRedirectURI || !readerEmail || !readerPassword, 'Requires an isolated legacy client.');
-  const verifier = 'v'.repeat(64);
-  const query = new URLSearchParams({ client_id: clientID!, redirect_uri: oidcRedirectURI!,
-    response_type: 'code', scope: 'openid', state: 'legacy',
-    code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256' });
-  await page.goto('/authorize?' + query);
-  await expect(page).toHaveURL(/\/login\?return_to=/);
-  await page.addStyleTag({ content: '*, *::before, *::after { animation: none !important; transition: none !important; }' });
-  await expect(page.getByTestId('oidc-application-name')).toHaveText('Legacy Browser App');
-  await expect(page.getByTestId('oidc-application-owner')).toHaveCount(0);
-  await expect(page.getByTestId('oidc-application-homepage')).toHaveCount(0);
-  await page.getByTestId('auth-email').fill(readerEmail!);
-  await page.getByTestId('auth-password').fill(readerPassword!);
-  await page.getByTestId('auth-captcha').fill('0');
-  await expect(page.locator('input[name="captchaId"]')).not.toHaveValue('');
-  await page.getByTestId('auth-submit').click();
-  await expect(page).toHaveURL(/\/oidc\/consent\?/);
-  await expect(page.getByTestId('oidc-application-owner')).toHaveCount(0);
-  await expect(page.getByTestId('oidc-application-homepage')).toHaveCount(0);
+test('invalid application metadata cannot initiate authorization', async ({ page }) => {
+  const clientID = process.env.E2E_INVALID_OIDC_CLIENT_ID;
+  test.skip(!clientID || !oidcRedirectURI, 'Requires an isolated invalid client.');
+  const query = new URLSearchParams({client_id:clientID!, redirect_uri:oidcRedirectURI!, response_type:'code', scope:'openid',
+    code_challenge:createHash('sha256').update('v'.repeat(64)).digest('base64url'), code_challenge_method:'S256'});
+  const response = await page.request.get('/authorize?'+query, {maxRedirects:0});
+  expect(response.status()).toBe(400);
+  expect(response.headers()['location']).toBeUndefined();
+  expect(await response.text()).not.toContain('javascript:');
 });
 
 test('article comment submission and reply use shared site selectors', async ({ page }) => {

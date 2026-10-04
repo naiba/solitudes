@@ -419,30 +419,6 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 	}
 }
 
-func TestPostgresOIDCLegacyClientMetadataMigration(t *testing.T) {
-	db := newPostgresIdentityTestDB(t)
-	if err := db.Exec(`CREATE TABLE o_id_c_clients (
-		id text PRIMARY KEY, owner_id uuid, name text NOT NULL, secret_hash text,
-		public boolean, redirect_uris_json text NOT NULL, disabled_at timestamptz, created_at timestamptz
-	)`).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := db.Exec(`INSERT INTO o_id_c_clients (id, name, public, redirect_uris_json)
-		VALUES ('legacy-client', 'Existing application', true, '["https://app.example.test/callback"]')`).Error; err != nil {
-		t.Fatal(err)
-	}
-	if err := db.AutoMigrate(&model.OIDCClient{}); err != nil {
-		t.Fatalf("migrate existing OAuth clients: %v", err)
-	}
-	var legacy model.OIDCClient
-	if err := db.Take(&legacy, "id = ?", "legacy-client").Error; err != nil {
-		t.Fatal(err)
-	}
-	if legacy.Name != "Existing application" || legacy.Description != "" || legacy.HomepageURL != "" {
-		t.Fatalf("metadata migration changed existing app: %+v", legacy)
-	}
-}
-
 func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
 	db := newPostgresIdentityTestDB(t)
 	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
@@ -470,7 +446,7 @@ func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
 	clients := []model.OIDCClient{
 		{ID: "owned-app", OwnerID: &accounts[0].ID, Name: "Own", Public: true, RedirectURIsJSON: `["https://own.example.com/callback"]`},
 		{ID: "another-app", OwnerID: &accounts[1].ID, Name: "Other", Public: true, RedirectURIsJSON: `["https://other.example.com/callback"]`},
-		{ID: "legacy-app", Name: "Legacy", Public: true, RedirectURIsJSON: `["https://legacy.example.com/callback"]`},
+		{ID: "admin-owned-app", OwnerID: &accounts[2].ID, Name: "Admin app", Public: true, RedirectURIsJSON: `["https://admin.example.com/callback"]`},
 	}
 	for i := range clients {
 		if err := db.Create(&clients[i]).Error; err != nil {
@@ -523,7 +499,7 @@ func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
 		t.Fatalf("revocation crossed ownership boundary: own=%d other=%d", ownTokens, otherTokens)
 	}
 	if status := call(accounts[2].Email, clients[2].ID); status != http.StatusSeeOther {
-		t.Fatalf("administrator cannot disable legacy client: %d", status)
+		t.Fatalf("administrator cannot disable own client: %d", status)
 	}
 }
 
@@ -553,7 +529,7 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 	if err := db.Create(&account).Error; err != nil {
 		t.Fatal(err)
 	}
-	client := model.OIDCClient{ID: "downstream-app", Name: "App", Public: true,
+	client := model.OIDCClient{ID: "downstream-app", OwnerID: &account.ID, Name: "App", HomepageURL: "http://localhost:9999/", Public: true,
 		RedirectURIsJSON:   `["http://localhost:9999/callback"]`,
 		PostLogoutURIsJSON: `["http://localhost:9999/signed-out"]`}
 	if err := db.Create(&client).Error; err != nil {
@@ -750,7 +726,7 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	confidential := model.OIDCClient{ID: "confidential-app", Name: "Private app", SecretHash: string(secretHashBytes),
+	confidential := model.OIDCClient{ID: "confidential-app", OwnerID: &account.ID, Name: "Private app", HomepageURL: "http://localhost:9999/", SecretHash: string(secretHashBytes),
 		RedirectURIsJSON: `["http://localhost:9999/callback"]`}
 	if err := db.Create(&confidential).Error; err != nil {
 		t.Fatal(err)

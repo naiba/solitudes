@@ -14,7 +14,7 @@
 
 ## 索引和查询
 
-模型负责唯一约束、基础索引与标签 GIN；`MigrateDatabasePolicy` 显式管理联合／部分索引及冗余旧索引的移除。
+模型负责唯一约束、基础索引与标签 GIN；`MigrateDatabasePolicy` 显式创建当前模型所需的联合／部分索引和约束，不再删除旧版本索引或回填旧业务数据。
 
 | 查询 | 索引／策略 |
 |---|---|
@@ -84,3 +84,7 @@ PostgreSQL 测试使用随机独立 schema，结束后仅删除自身 fixture。
 SOLITUDES_TEST_POSTGRES_DSN='postgres://postgres@127.0.0.1:5432/solitudes_test?sslmode=disable' \
   go test -tags postgres_test ./... -count=1
 ```
+
+## 身份与初始化
+
+账户和密码只持久化到 `accounts`；配置文件不存储用户、密码或登录令牌。新安装用本机 `init-admin` 初始化，事务锁保证并发初始化只成功一次。启动及初始化不会修改已有账号、文章作者或文章可见性。评论角色仅通过 `account_id` 关联当前账户计算，不再维护 `is_admin` 副本。兼容边界见 [配置与兼容策略](configuration.md)。

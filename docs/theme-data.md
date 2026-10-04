@@ -46,12 +46,12 @@
 
 `randomIndices length count` 返回不重复的随机下标，最多 `min(length, count)` 个；不修改原集合。参数范围 0～10000。它不代表推荐算法，也不要求池内文章与近期列表互斥。
 
-## 模板函数审计
+## 模板函数
 
-- 移除 `articleData`、`commentsData`、`tocTemplateData`：统一使用 `dict "key" value ...` 传递模板参数。
-- 移除 `articleIdx`：直接使用模型的 `.GetIndexID`。
-- 移除 `oldVersions`：不再由 Go 拼 HTML；模板遍历 `.PreviousVersions` 并自行输出链接。文章页的 `.Data.can_read_history` 表示读者符合最新文章的整体可见性，有权阅读文章也就有权访问其历史版本；各版本片段按各自正文的规则裁剪。
-- 移除 `tocNumberLabel`：用内置 `printf` 和 `add` 在模板组合序号。
+- 使用 `dict "key" value ...` 传递模板参数。
+- 直接使用模型的 `.GetIndexID` 获取文章索引标识。
+- 模板遍历 `.PreviousVersions` 并自行输出链接。文章页的 `.Data.can_read_history` 表示读者符合最新文章的整体可见性，有权阅读文章也就有权访问其历史版本；各版本片段按各自正文的规则裁剪。
+- 用内置 `printf` 和 `add` 在模板组合序号。
 - 保留纯格式化/内容工具：`md`、`mdExcerpt`、`firstImage`、`tocHeadingCount`、`tf`、`iso8601`、`substr`、`trim`、`hasPrefix`、`add`、`last`、`ptrStrEq`、`int2str`、`uint2str`、`json`、`yaml`、`md5`、`urlencode`、`jsonEscape`、`externalLink`、`unsafe`。这些不做主题业务查询。
 
 `unsafe` 仅适合受信任的站点配置和已经服务端处理的 Markdown；不能用于会员昵称、评论文本等不可信输入。主题代码由站点管理员安装，是受信任的服务端代码，不是针对恶意主题的沙盒。

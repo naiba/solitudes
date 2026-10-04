@@ -37,3 +37,18 @@
 .access-notice { margin:1rem 0; padding:.85rem 1rem; border:1px solid currentColor; border-color:color-mix(in srgb,currentColor 18%,transparent); border-radius:6px; background:color-mix(in srgb,currentColor 3%,transparent); font-size:.9rem; font-style:normal; font-weight:400; line-height:1.6; }
 .access-notice p { margin:0 !important; font-size:inherit; }
 .access-notice a { font-weight:600; color:var(--reader-accent); }
+/* Revision controls are page metadata, never part of the Markdown prose. */
+.article-revisions, .article-revision-notice { margin: 0 0 1.5rem; border-left: 2px solid var(--color-accent); padding-left: .85rem; font-size: .8rem; line-height: 1.5; }
+.article-revisions summary { display: flex; align-items: center; gap: .4rem; box-sizing: border-box; width: calc(100% + .85rem); margin-left: -.85rem; min-height: 44px; padding: .35rem .75rem .35rem .85rem; list-style: none; cursor: pointer; color: var(--color-text); }
+.article-revisions summary::-webkit-details-marker { display: none; }
+.article-revisions summary::after { content: ""; flex-shrink: 0; width: .45rem; height: .45rem; margin-left: auto; border-right: 1.5px solid var(--color-accent); border-bottom: 1.5px solid var(--color-accent); transform: rotate(-45deg); }
+.article-revisions[open] summary::after { transform: rotate(45deg); }
+.article-revisions summary:hover { color: var(--color-accent); background-color: color-mix(in srgb, var(--color-accent) 6%, transparent); }
+.article-revisions .revision-count { color: var(--color-muted); font-weight: 400; }
+.article-revisions nav { display: flex; flex-wrap: wrap; gap: .25rem .5rem; box-sizing: border-box; max-height: 9.5rem; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--color-accent) transparent; scroll-padding-block: .375rem; padding: .375rem; margin-left: -.375rem; }
+.article-revisions nav a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 .5rem; border: 1px solid var(--reader-border); border-radius: 3px; color: var(--color-text); }
+.article-revision-notice { display: flex; flex-wrap: wrap; align-items: center; gap: 0 1rem; }
+.article-revision-notice > span { padding: .5rem 0; }
+.article-revision-notice > a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; color: var(--color-accent); }
+.article-revisions a:hover, .article-revision-notice a:hover { color: var(--color-accent); text-decoration: underline; text-underline-offset: .2em; }
+.article-revisions :is(summary, a):focus-visible, .article-revision-notice a:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 3px; }

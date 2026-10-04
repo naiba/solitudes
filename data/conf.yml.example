@@ -4,10 +4,7 @@ trustedproxies:
   - 192.168.160.1
 proxyheader: X-Forwarded-For
 database: postgres://solitudes:thisispassword@db/solitudes?sslmode=disable
-user:
-  email: hi@example.com
-  nickname: naiba
-  password: $2a$10$qXMp0vfCL2rdhYGr7VT7NuJLEMysmO.EsGAfgQGtMupITe7ZNbi86 #默认密码 123456
+
 site:
   spacename: Solitudes
   spacedesc: We love writing

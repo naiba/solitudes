@@ -13,10 +13,10 @@ A blog engine built with **Go** and **Fiber**, featuring full-text search, artic
   - Mark an article as a "Book" to use it as a cover page
   - Assign articles to a book by filling in the cover's UUID
   - Nest books for multi-level chapter structures
-- **Revision History** — Every edit is tracked and searchable
+- **Revision History** — Major revisions remain available to authorized readers
   - Mark an edit as "Major Update" to bump the version
   - Browse versions via `/v*` suffix (e.g. `/my-article/v1`)
-  - Both old and new versions appear in search results
+  - Search returns the current article only; historical bodies are not indexed
 - **Microblogging (Topics)** — Twitter/Weibo-style short posts with comments
   - Add the `Topic` tag when publishing — title and slug auto-fill if left empty
 - **RSS Auto-discovery** — Paste any blog URL into an RSS reader to discover feeds automatically
@@ -28,11 +28,9 @@ A blog engine built with **Go** and **Fiber**, featuring full-text search, artic
 ### Docker (Recommended)
 
 ```yaml
-version: '3.3'
-
 services:
   db:
-    image: postgres:13-alpine
+    image: postgres:16-alpine
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     restart: always
@@ -53,7 +51,11 @@ services:
 ```
 
 ```bash
-docker-compose up -d
+docker compose up -d db
+# Wait until PostgreSQL is ready. Configure blog-data/conf.yml first.
+docker compose run --rm solitudes /solitudes/solitudes init-admin --email you@example.com --nickname Administrator
+# Store the generated password securely: it is displayed once, not logged to a file.
+docker compose up -d solitudes
 ```
 
 ### Directory Structure
@@ -66,17 +68,15 @@ blog-data/
 └── logo.png    # Custom logo (optional)
 ```
 
-### Default Credentials
+### Administrator setup
 
-Admin panel: `/admin`
-Email: `hi@example.com`
-Password: `123456`
+There is no default account or password. For a native installation, run `./solitudes init-admin --email you@example.com --nickname Administrator` from the project directory before starting the server. The local command creates the database schema and a verified administrator, prints a cryptographically random password once, and stores only its bcrypt hash in PostgreSQL. It works only when the accounts table is empty; repeated/concurrent commands never overwrite credentials or promote registered users. Run it in a private terminal and do not redirect its output to shared logs.
 
 ## Accounts and OIDC
 
-Existing installations seed the first administrator from `user.email`, `user.nickname`, and the existing bcrypt `user.password` in `data/conf.yml`. Replace the sample/default password before exposing a new installation to the Internet. Keep these values until the first successful migration. After that, login sessions and accounts live in PostgreSQL; the old config token is not accepted. Sign in at `/login`, register at `/register`, and manage your identity/passkeys at `/account`. New email/password accounts must confirm their email (one-hour link) before login; registration requires SMTP. Administrators assign roles at `/admin/users`: editors can publish and manage their own articles, while ordinary users cannot access publishing routes. Existing articles are assigned to the seeded administrator.
+Accounts, passwords, sessions and roles live exclusively in PostgreSQL. Sign in at `/login` and change the initial password in `/account`; password changes do not modify configuration and survive restarts. Public registration at `/register` creates ordinary users, requires SMTP, and requires email verification (one-hour link) before login. Administrators assign roles at `/admin/users`: editors publish/manage their own articles; ordinary users cannot access publishing routes. Back up PostgreSQL to preserve identities and credentials. See [configuration and compatibility policy](docs/configuration.md) before deploying over an older installation.
 
-The front-site `/readers/` reader circle lists all verified, enabled accounts by default, including existing accounts; anyone can leave or rejoin in their public-profile settings at `/account`. The homepage highlights the four newest members and up to five recent public comments (including guest comments). The directory shows a recent activity feed and ranks active members using public posts and non-spam comments from the last 30 days; emails, private posts, and spam never appear. RSS, Atom, and JSON Feed credit each public post's actual author, not the configured administrator; feed metadata never exposes the administrator's email. Editors and administrators can reach article management directly from the front-site Writing workspace navigation, with a compose shortcut in their account center.
+The front-site `/readers/` reader circle lists all verified, enabled accounts by default, including existing accounts; anyone can leave or rejoin in their public-profile settings at `/account`. The homepage highlights the four newest members and up to five recent public comments (including guest comments). The directory shows a recent activity feed and ranks active members using public posts and non-spam comments from the last 30 days; emails, private posts, and spam never appear. RSS, Atom, and JSON Feed credit each public post's actual author, rather than a site-wide identity; feed metadata never exposes the administrator's email. Editors and administrators reach article management and publishing through their account center.
 
 Set `site.domain` to the exact public host (include the port if necessary), and serve production traffic over HTTPS. Configure SMTP with `email.host`, `email.port`, `email.user`, `email.pass`, and `email.ssl`. Administrators can configure GitHub, Google, and upstream OIDC sign-in under `/admin/auth/providers` (secrets are never displayed again). The equivalent configuration in `data/conf.yml` is:
 
@@ -92,7 +92,7 @@ Register the callback `https://<site.domain>/auth/{github,google,oidc}/callback`
 
 Solitudes also acts as an OAuth 2.1-style authorization server and OIDC provider: **every verified blog account**, including ordinary users and editors, can sign in to registered external applications. The front-site navigation links to `/account`, where users can change their password, add passkeys, link/unlink upstream sign-in providers, and create or disable their own downstream clients under `/account/oidc/clients`; administrators can manage every client under `/admin/oidc/clients`. External applications can use `https://<site.domain>/.well-known/openid-configuration` (OIDC) or `https://<site.domain>/.well-known/oauth-authorization-server` (OAuth metadata). This is separate from the upstream sign-in providers above. Supported grants are authorization code (mandatory PKCE S256) and rotating refresh tokens; implicit/password grants are not supported. Register an exact HTTPS callback URI (localhost HTTP is allowed). Public clients authenticate without a secret; confidential clients use `client_secret_basic`, and their secret is displayed only on creation. Request `openid` for an ID token; pure OAuth access tokens can be requested without it. Users must consent to each authorization. Disabling a client revokes its access and refresh tokens; already issued ID tokens remain cryptographically valid until expiry. Signing-key rotation keeps old public keys available for that interval. The PostgreSQL backup includes OIDC signing keys and client credentials: protect it accordingly. The issuer is unavailable until `site.domain` and the database are configured; restart after changing the domain.
 
-New clients must provide an application name, optional description, an HTTPS homepage (localhost HTTP is allowed for development), and exact redirect URIs; post-logout redirect URIs are optional and must also be registered explicitly. RP-initiated logout revokes the application's tokens, but does not sign the user out of their blog account. Owners and administrators can edit client details and redirect URIs later. During an external authorization, both the sign-in and consent screens show the registered application details, a link to its website, and a link to its creator's public blog profile. Legacy clients without a homepage or owner continue to work and can be updated; no unvalidated legacy URL is rendered as a link.
+New clients must provide an application name, optional description, an HTTPS homepage (localhost HTTP is allowed for development), and exact redirect URIs; post-logout redirect URIs are optional and must also be registered explicitly. RP-initiated logout revokes the application's tokens, but does not sign the user out of their blog account. Owners and administrators can edit client details and redirect URIs later. During an external authorization, both the sign-in and consent screens show the registered application details, a link to its website, and a link to its creator's public blog profile. Clients with missing owners or missing/invalid homepage metadata cannot authorize or authenticate. Stored URLs are still validated before display.
 
 ### Administration statistics and security audit
 

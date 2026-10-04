@@ -1155,15 +1155,22 @@ body.mobile-menu-open {
    22. Version Notice
    ========================================================================== */
 
-.version-notice {
-  background: var(--surface);
-  border-left: 3px solid var(--accent);
-  padding: 1rem 1.5rem;
-  margin-bottom: 2rem;
-  border-radius: 0 6px 6px 0;
-  font-size: 0.9rem;
-  font-style: italic;
-}
+.article-revisions, .article-revision-notice { margin-bottom: 1.75rem; border-top: 1px solid var(--text); border-bottom: 1px solid var(--border); font-family: var(--font-body); font-size: .8rem; line-height: 1.5; }
+.article-revisions summary { display: flex; align-items: center; gap: .4rem; box-sizing: border-box; width: 100%; min-height: 44px; padding: .35rem .5rem; list-style: none; cursor: pointer; font-weight: 600; letter-spacing: .06em; color: var(--text); }
+.article-revisions summary::-webkit-details-marker { display: none; }
+.article-revisions summary::after { content: ""; flex-shrink: 0; width: .45rem; height: .45rem; margin-left: auto; border-right: 1px solid currentColor; border-bottom: 1px solid currentColor; transform: rotate(-45deg); }
+.article-revisions[open] summary::after { transform: rotate(45deg); }
+.article-revisions summary:hover { color: var(--accent); background-color: color-mix(in srgb, var(--text) 4%, transparent); }
+.article-revisions .revision-count { color: var(--muted); font-weight: 400; letter-spacing: normal; }
+.article-revisions nav { display: flex; flex-wrap: wrap; gap: 0 .75rem; box-sizing: border-box; max-height: 9rem; overflow-y: auto; overscroll-behavior-y: contain; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--muted) transparent; scroll-padding-block: .375rem; padding: .375rem; margin-left: -.375rem; }
+.article-revisions nav a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 0 .25rem; font-family: var(--font-heading); font-size: 1.1rem; color: var(--text); }
+.article-revision-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 1rem; }
+.article-revision-notice > span { padding: .5rem 0; }
+.article-revision-notice > a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; font-weight: 600; color: var(--text); }
+/* These tall link targets use a text underline, not the global background rule. */
+.article-revisions a, .article-revision-notice a { background-image: none; }
+.article-revisions a:hover, .article-revision-notice a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: .25em; }
+.article-revisions :is(summary, a):focus-visible, .article-revision-notice a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* ==========================================================================
    23. Book Navigation
@@ -1245,7 +1252,6 @@ body.mobile-menu-open {
 .folio-nav,
 .article-card,
 .comment-item,
-.version-notice,
 .hero-featured {
   transition: background-color 0.3s ease, color 0.3s ease;
 }

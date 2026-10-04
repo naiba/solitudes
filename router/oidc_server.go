@@ -179,32 +179,20 @@ type oidcApplicationInfo struct {
 	OwnerName   string
 }
 
+func clientMetadataComplete(client *model.OIDCClient) bool {
+	return client.OwnerID != nil && *client.OwnerID != "" && strings.TrimSpace(client.Name) != "" && validClientHomepage(client.HomepageURL)
+}
+
 func oidcClientInfo(ctx context.Context, client op.Client) (oidcApplicationInfo, error) {
-	info := oidcApplicationInfo{ID: client.GetID(), Name: client.GetID()}
 	entry, ok := client.(*oidcClient)
-	if !ok {
-		return info, nil
+	if !ok || !clientMetadataComplete(&entry.OIDCClient) {
+		return oidcApplicationInfo{}, errors.New("invalid application metadata")
 	}
-	if entry.Name != "" {
-		info.Name = entry.Name
+	var owner model.Account
+	if err := solitudes.System.DB.WithContext(ctx).Select("id, nickname").Take(&owner, "id = ?", *entry.OwnerID).Error; err != nil {
+		return oidcApplicationInfo{}, fmt.Errorf("load OIDC client owner: %w", err)
 	}
-	info.Description = entry.Description
-	// Older client records may predate homepage validation. Never render an
-	// unvalidated stored URL as a clickable link, even if it is in the database.
-	if validClientHomepage(entry.HomepageURL) {
-		info.HomepageURL = entry.HomepageURL
-	}
-	if entry.OwnerID != nil {
-		var owner model.Account
-		err := solitudes.System.DB.WithContext(ctx).Select("id, nickname").Take(&owner, "id = ?", *entry.OwnerID).Error
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return info, fmt.Errorf("load OIDC client owner: %w", err)
-		}
-		if err == nil {
-			info.OwnerID, info.OwnerName = owner.ID, owner.Nickname
-		}
-	}
-	return info, nil
+	return oidcApplicationInfo{ID: entry.ID, Name: entry.Name, Description: entry.Description, HomepageURL: entry.HomepageURL, OwnerID: owner.ID, OwnerName: owner.Nickname}, nil
 }
 
 // Only a server-created authorization request can supply application details

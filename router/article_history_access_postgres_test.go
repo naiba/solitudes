@@ -166,7 +166,7 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 				t.Run("history-label/"+locale.language, func(t *testing.T) {
 					language = locale.language
 					body, _ := request(t, "", http.StatusOK)
-					if !strings.Contains(body, locale.label+":") || !strings.Contains(body, `href="/revision-access/v1"`) {
+					if !strings.Contains(body, "<summary>"+locale.label+` <span class="revision-count">· 1</span></summary>`) || !strings.Contains(body, `href="/revision-access/v1"`) {
 						t.Fatalf("missing unrestricted %s history entry", locale.language)
 					}
 					for _, obsolete := range []string{"仅作者和管理员可见", "author and administrators only"} {

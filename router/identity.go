@@ -50,8 +50,8 @@ func findLoginSession(token string) (*model.Account, error) {
 	return &account, nil
 }
 
-// sessionLookup is replaceable in handler tests without allowing a legacy
-// config-file token to authenticate when the database is unavailable.
+// sessionLookup is replaceable in handler tests. Authentication requires a
+// live database session and fails closed when storage is unavailable.
 var sessionLookup = findLoginSession
 
 func currentAccount(c *fiber.Ctx) *model.Account {

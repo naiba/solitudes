@@ -43,16 +43,7 @@ func buildSearchQuery(keywords string) blevequery.Query {
 	privateTitleQuery.SetField("Title")
 	privateQuery := bleve.NewConjunctionQuery(privateTitleQuery, privateFilter)
 
-	legacyPublicFilter := bleve.NewBoolFieldQuery(false)
-	legacyPublicFilter.SetField("IsPrivate")
-	legacyPrivateFilter := bleve.NewBoolFieldQuery(true)
-	legacyPrivateFilter.SetField("IsPrivate")
-	privacyFieldPresent := bleve.NewDisjunctionQuery(legacyPublicFilter, legacyPrivateFilter)
-	legacyQuery := bleve.NewBooleanQuery()
-	legacyQuery.AddMust(bleve.NewMatchQuery(keywords))
-	legacyQuery.AddMustNot(privacyFieldPresent)
-
-	return bleve.NewDisjunctionQuery(publicQuery, privateQuery, legacyQuery)
+	return bleve.NewDisjunctionQuery(publicQuery, privateQuery)
 }
 
 func articleIDFromIndexID(indexID string) string {

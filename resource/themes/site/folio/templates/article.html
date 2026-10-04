@@ -68,18 +68,21 @@
 
         {{template "site/reading_toc" .}}
 
+        {{if gt .Data.article.NewVersion .Data.article.Version}}
+        <aside class="article-revision-notice folio-narrow" data-testid="article-revision-notice" aria-label="{{.Tr.T "article_history"}}">
+            <span>{{.Tr.T "has_new_version" (.Data.article.Version|uint2str)}}</span>
+            <a href="/{{.Data.article.Slug}}" data-testid="article-latest-version">{{.Tr.T "article_latest_version" (.Data.article.NewVersion|uint2str)}} <span aria-hidden="true">→</span></a>
+        </aside>
+        {{else if and .Data.can_read_history (gt .Data.article.Version 1)}}
+        {{$versions := .Data.article.PreviousVersions}}
+        <details class="article-revisions folio-narrow" data-testid="article-history">
+            <summary>{{.Tr.T "article_history"}} <span class="revision-count">· {{len $versions}}</span></summary>
+            <nav aria-label="{{.Tr.T "article_history"}}">{{range $versions}}<a href="/{{$.Data.article.Slug}}/v{{.}}">v{{.}}</a>{{end}}</nav>
+        </details>
+        {{end}}
+
         <!-- Article content -->
         <div class="app-prose folio-narrow reading-content" data-reading-content>
-            {{if gt .Data.article.NewVersion .Data.article.Version}}
-            <div class="version-notice">
-                {{(.Tr.T "has_new_version" (.Data.article.Version|uint2str) .Data.article.Slug (.Data.article.NewVersion|uint2str) (.Data.article.NewVersion|uint2str))|unsafe}}
-            </div>
-            {{else if and .Data.can_read_history (gt .Data.article.Version 1)}}
-            <div class="version-notice">
-                {{.Tr.T "article_history"}}: {{range .Data.article.PreviousVersions}}<a href="/{{$.Data.article.Slug}}/v{{.}}">v{{.}}</a> {{end}}
-            </div>
-            {{end}}
-
             {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
 
         </div>

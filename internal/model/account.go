@@ -13,8 +13,7 @@ const (
 func (r Role) CanPublish() bool { return r == RoleAdmin || r == RoleEditor }
 func (r Role) IsAdmin() bool    { return r == RoleAdmin }
 
-// Account is a login identity. The legacy Config.User remains only a migration
-// source and for site-wide attribution settings; it is never used for login.
+// Account is the sole persisted login identity and credential source.
 type Account struct {
 	ID       string `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()" json:"id"`
 	Email    string `gorm:"uniqueIndex;not null" json:"email"`

@@ -1,4 +1,5 @@
 [
+    {"locale": "en", "key": "account.initialized", "trans": "Administrator initialized"},
     {"locale": "en", "key": "audit_actor", "trans": "Actor"},
     {"locale": "en", "key": "audit.enabled", "trans": "Auditing enabled"},
     {"locale": "en", "key": "audit_started", "trans": "Statistics start"},

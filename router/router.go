@@ -473,7 +473,7 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 			c.Set("Cache-Control", "no-store")
 		}
 		err := c.Next()
-		if authorized, ok := c.Locals(solitudes.CtxAuthorized).(bool); ok && authorized {
+		if currentAccount(c) != nil {
 			c.Set("Cache-Control", "private, no-store")
 		} else if isHTML {
 			if c.Response().StatusCode() >= http.StatusMultipleChoices ||
@@ -881,12 +881,10 @@ func setFuncMap(engine *html.Engine) {
 func auth(c *fiber.Ctx) error {
 	token := c.Cookies(solitudes.AuthCookie)
 	account, err := sessionLookup(token)
-	if err == nil && account != nil {
-		c.Locals(solitudes.CtxAccount, account)
-		c.Locals(solitudes.CtxAuthorized, true)
-	} else {
-		c.Locals(solitudes.CtxAuthorized, false)
+	if err != nil {
+		account = nil
 	}
+	c.Locals(solitudes.CtxAccount, account)
 	return c.Next()
 }
 

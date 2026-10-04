@@ -559,6 +559,9 @@ func (s *oidcStorage) GetClientByClientID(ctx context.Context, id string) (op.Cl
 	if err := s.db.WithContext(ctx).Where("id = ? AND disabled_at IS NULL", id).Take(&row).Error; err != nil {
 		return nil, err
 	}
+	if !clientMetadataComplete(&row) {
+		return nil, oidc.ErrInvalidClient().WithDescription("application metadata is incomplete or invalid")
+	}
 	if request, ok := ctx.Value(auditContextKey{}).(*auditRequest); ok {
 		request.ClientID = row.ID
 	}
@@ -578,6 +581,9 @@ func (s *oidcStorage) AuthorizeClientIDSecret(ctx context.Context, id, secret st
 	var client model.OIDCClient
 	if err := s.db.WithContext(ctx).Where("id = ? AND disabled_at IS NULL AND public = false", id).Take(&client).Error; err != nil {
 		return err
+	}
+	if !clientMetadataComplete(&client) {
+		return oidc.ErrInvalidClient().WithDescription("application metadata is incomplete or invalid")
 	}
 	if request, ok := ctx.Value(auditContextKey{}).(*auditRequest); ok {
 		request.ClientID = client.ID

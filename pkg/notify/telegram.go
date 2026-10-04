@@ -20,7 +20,7 @@ type TelegramMessage struct {
 // TGNotify TG推送
 func TGNotify(comment *model.Comment, article *model.Article, err error) {
 	// when err == nil skip admin
-	if comment.IsAdmin && err == nil {
+	if comment.PublicRole() == string(model.RoleAdmin) && err == nil {
 		return
 	}
 

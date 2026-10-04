@@ -78,13 +78,13 @@ func commentHandler(c *fiber.Ctx) error {
 	}
 
 	var cm model.Comment
-	if err := fillCommentEntry(c, isAdmin, &cm, &cf, article); err != nil {
+	if err := fillCommentEntry(c, &cm, &cf, article); err != nil {
 		return err
 	}
 	cm.IsSpam = isSpam
 
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Save(&cm).Error; err != nil {
+		if err := tx.Omit("Account").Save(&cm).Error; err != nil {
 			return fmt.Errorf("failed to save comment: %w", err)
 		}
 
@@ -110,7 +110,7 @@ func commentHandler(c *fiber.Ctx) error {
 	go func() {
 		var emailErr error
 		// Only send email if replying to someone else's comment
-		if replyTo != nil && !replyTo.IsAdmin && replyTo.Email != "" && replyTo.Email != cm.Email {
+		if replyTo != nil && replyTo.PublicRole() != string(model.RoleAdmin) && replyTo.Email != "" && replyTo.Email != cm.Email {
 			emailErr = notify.Email(&cm, replyTo, article, *cm.EmailTrackingToken)
 
 			// Update EmailReadStatus based on email sending result
@@ -154,7 +154,7 @@ func verifyArticle(cf *commentForm) (*model.Article, error) {
 func getCommentType(cf *commentForm, articleID string) (string, *model.Comment, error) {
 	if cf.ReplyTo != nil {
 		var innerReplyTo model.Comment
-		if err := visibleComments(solitudes.System.DB).Take(&innerReplyTo, "id = ? AND article_id = ?", cf.ReplyTo, articleID).Error; err != nil {
+		if err := visibleComments(solitudes.System.DB).Preload("Account", publicCommentAuthor).Take(&innerReplyTo, "id = ? AND article_id = ?", cf.ReplyTo, articleID).Error; err != nil {
 			return "", nil, fmt.Errorf("failed to find parent comment: %w", err)
 		}
 		return "reply", &innerReplyTo, nil
@@ -162,7 +162,7 @@ func getCommentType(cf *commentForm, articleID string) (string, *model.Comment, 
 	return "comment", nil, nil
 }
 
-func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *commentForm, article *model.Article) error {
+func fillCommentEntry(c *fiber.Ctx, cm *model.Comment, cf *commentForm, article *model.Article) error {
 	cm.ReplyTo = cf.ReplyTo
 	cm.Content = cf.Content
 	cm.ArticleID = &article.ID
@@ -173,6 +173,7 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 	cm.EmailTrackingToken = &token
 	if account := currentAccount(c); account != nil {
 		cm.AccountID = &account.ID
+		cm.Account = account
 		cm.Nickname = account.Nickname
 		cm.Email = account.Email
 	} else {
@@ -182,7 +183,6 @@ func fillCommentEntry(c *fiber.Ctx, isAdmin bool, cm *model.Comment, cf *comment
 		cm.IP = c.IP()
 		cm.UserAgent = string(c.Request().Header.UserAgent())
 	}
-	cm.IsAdmin = isAdmin
 	cm.Version = cf.Version
 	return nil
 }
