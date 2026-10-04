@@ -181,9 +181,26 @@ for (const role of ['guest', 'member', 'editor', 'admin'] as const) {
       }
       expect(html.includes('hidden-attachment.example')).toBe(canRead && allowed.private);
       if (role !== 'guest') expect(response!.headers()['cache-control']).toContain('no-store');
+      if (canRead) await expect(page.locator(`a[href="/access-${level}/v1"]`)).toBeVisible();
       const history = await page.request.get('/access-' + level + '/v1');
-      expect(history.status()).toBe(role === 'admin' ? 200 : 404);
-      if (role !== 'admin') expect(await history.text()).not.toContain('legacy-unguarded-secret');
+      expect(history.status()).toBe(canRead ? 200 : 404);
+      const historicalHTML = await history.text();
+      expect(historicalHTML.includes('legacy-unguarded-secret')).toBe(canRead);
+      for (const [token, visible] of [['history-member-secret', allowed.members], ['history-editor-secret', allowed.editors], ['history-author-secret', allowed.private]] as const) {
+        expect(historicalHTML.includes(token)).toBe(canRead && visible);
+      }
+      expect(historicalHTML.includes('history-hidden-attachment.example')).toBe(canRead && allowed.private);
+      const latest = await page.request.get('/access-' + level + '/v2', {maxRedirects:0});
+      expect(latest.status()).toBe(canRead ? 301 : 404);
+    }
+    await page.goto('/access-public/v1', {waitUntil:'domcontentloaded'});
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', /noindex/);
+    await expect(page.locator('[data-reading-content]')).toContainText('legacy-unguarded-secret');
+    if (role === 'guest') {
+      if (siteTheme === 'cactus') {
+        await expect(page.locator('#toc .toc-text')).toHaveText(['Historical public heading']);
+        await expect(page.locator('#toc-footer .toc-text')).toHaveText(['Historical public heading']);
+      } else await expect(page.getByTestId('article-toc')).toHaveCount(0);
     }
     await page.goto('/access-public', {waitUntil:'domcontentloaded'});
     if (role === 'guest') {

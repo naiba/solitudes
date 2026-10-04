@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -15,7 +16,7 @@ import (
 func article(c *fiber.Ctx) error {
 	var a model.Article
 	if err := solitudes.System.DB.Preload("Author").Order("created_at DESC").Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return page404(c)
 		}
 		return fmt.Errorf("failed to fetch article: %w", err)
@@ -27,25 +28,29 @@ func article(c *fiber.Ctx) error {
 	if len(a.Tags) == 0 {
 		a.Tags = nil
 	}
+	// Every revision inherits the latest article's audience. Authorize before
+	// querying history or redirecting a request for the current version.
+	if !canReadArticle(currentAccount(c), &a) {
+		return page404(c)
+	}
 
 	var title string
 	// load history
 	if c.Params("version") != "" {
-		// Historical bodies may predate a newly added restriction. Only the
-		// author/administrator can retrieve revisions, regardless of audience.
-		if !a.Allows("private", currentAccount(c)) {
+		versionParam := c.Params("version")
+		if len(versionParam) < 2 || versionParam[0] != 'v' {
 			return page404(c)
 		}
-		version, err := strconv.ParseUint(c.Params("version")[1:], 10, 64)
-		if err != nil {
-			return fmt.Errorf("invalid version format: %w", err)
+		version, err := strconv.ParseUint(versionParam[1:], 10, strconv.IntSize)
+		if err != nil || version == 0 {
+			return page404(c)
 		}
 		if uint(version) == a.Version {
 			return c.Redirect("/"+a.Slug, http.StatusMovedPermanently)
 		}
 		var history model.ArticleHistory
 		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, version).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return page404(c)
 			}
 			return fmt.Errorf("failed to fetch article history: %w", err)
@@ -59,10 +64,7 @@ func article(c *fiber.Ctx) error {
 		title = a.Title
 	}
 
-	// Private drafts are accessible only to their author or an administrator.
-	if !canReadArticle(currentAccount(c), &a) {
-		return page404(c)
-	}
+	// Apply the selected revision's own fragment rules, not the latest body's.
 	a.Content = a.ContentFor(currentAccount(c), accessNoticeFor(c))
 	if !a.Public() {
 		c.Set(fiber.HeaderXRobotsTag, "noindex, nofollow")
@@ -91,7 +93,7 @@ func article(c *fiber.Ctx) error {
 		"og_type":            "article",
 		"keywords":           a.RawTags,
 		"article":            &a,
-		"can_read_history":   a.Allows("private", currentAccount(c)),
+		"can_read_history":   true, // The latest article's audience was checked above.
 		"comment_navigation": navigation,
 		"thread":             thread,
 		"comment_page":       pg,

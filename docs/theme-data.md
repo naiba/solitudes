@@ -50,7 +50,7 @@
 
 - 移除 `articleData`、`commentsData`、`tocTemplateData`：统一使用 `dict "key" value ...` 传递模板参数。
 - 移除 `articleIdx`：直接使用模型的 `.GetIndexID`。
-- 移除 `oldVersions`：不再由 Go 拼 HTML；模板遍历 `.PreviousVersions` 并自行输出链接。文章页仅在 `.Data.can_read_history` 为真时提供历史入口。
+- 移除 `oldVersions`：不再由 Go 拼 HTML；模板遍历 `.PreviousVersions` 并自行输出链接。文章页的 `.Data.can_read_history` 表示读者符合最新文章的整体可见性，有权阅读文章也就有权访问其历史版本；各版本片段按各自正文的规则裁剪。
 - 移除 `tocNumberLabel`：用内置 `printf` 和 `add` 在模板组合序号。
 - 保留纯格式化/内容工具：`md`、`mdExcerpt`、`firstImage`、`tocHeadingCount`、`tf`、`iso8601`、`substr`、`trim`、`hasPrefix`、`add`、`last`、`ptrStrEq`、`int2str`、`uint2str`、`json`、`yaml`、`md5`、`urlencode`、`jsonEscape`、`externalLink`、`unsafe`。这些不做主题业务查询。
 

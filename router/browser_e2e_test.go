@@ -115,7 +115,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 		if err := db.Create(&secured).Error; err != nil {
 			t.Fatal(err)
 		}
-		history := model.ArticleHistory{ArticleID: secured.ID, Version: 1, Content: "legacy-unguarded-secret"}
+		history := model.ArticleHistory{ArticleID: secured.ID, Version: 1, Content: "## Historical public heading\n\nlegacy-unguarded-secret\n\n```access:members\n## Historical member heading\n\nhistory-member-secret\n```\n\n```access:editors\n## Historical editor heading\n\nhistory-editor-secret\n```\n\n```access:private\n## Historical author heading\n\nhistory-author-secret\n![hidden](https://history-hidden-attachment.example/image.jpg)\n```"}
 		if err := db.Create(&history).Error; err != nil {
 			t.Fatal(err)
 		}
