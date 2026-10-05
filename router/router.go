@@ -596,6 +596,7 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	if extraRoutes != nil {
 		extraRoutes(app)
 	}
+	app.Get("/:slug/compare/:versions?", articleCompare)
 	app.Get("/:slug/:version?", article)
 	app.Use(page404)
 
@@ -997,6 +998,9 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	soli["Desc"] = desc
 	soli["OgType"] = ogType
 	soli["Noindex"] = noindex
+	if canonical, ok := data["canonical_path"].(string); ok {
+		soli["CanonicalPath"] = safeReturnPath(canonical)
+	}
 	account := currentAccount(c)
 	soli["Account"] = account
 	soli["Queries"] = &TemplateQueries{db: solitudes.System.DB, account: account, notice: accessNoticeFor(c)}

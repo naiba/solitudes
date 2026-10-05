@@ -1,4 +1,5 @@
 [
+    {"locale": "en", "key": "revision_title_unavailable", "trans": "Title not recorded"},
     {"locale": "en", "key": "403_title", "trans": "403 Access denied"},
     {"locale": "en", "key": "403_msg", "trans": "You don't have permission to view this page."},
     {"locale": "en", "key": "500_title", "trans": "500 Something went wrong"},

@@ -1,4 +1,5 @@
 [
+    {"locale": "zh", "key": "revision_title_unavailable", "trans": "标题未记录"},
     {"locale": "zh", "key": "403_title", "trans": "403 无权访问"},
     {"locale": "zh", "key": "403_msg", "trans": "当前账号没有访问此页面的权限。"},
     {"locale": "zh", "key": "500_title", "trans": "500 遇到了问题"},

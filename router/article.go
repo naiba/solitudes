@@ -15,7 +15,7 @@ import (
 
 func article(c *fiber.Ctx) error {
 	var a model.Article
-	if err := solitudes.System.DB.Preload("Author").Order("created_at DESC").Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
+	if err := solitudes.System.DB.Preload("Author").Preload("UpdatedBy").Order("created_at DESC").Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return page404(c)
 		}
@@ -48,17 +48,13 @@ func article(c *fiber.Ctx) error {
 		if uint(version) == a.Version {
 			return c.Redirect("/"+a.Slug, http.StatusMovedPermanently)
 		}
-		var history model.ArticleHistory
-		if err := solitudes.System.DB.Take(&history, "article_id = ? and version = ?", a.ID, version).Error; err != nil {
+		a, err = loadArticleRevision(c, a, uint(version))
+		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return page404(c)
 			}
 			return fmt.Errorf("failed to fetch article history: %w", err)
 		}
-		a.NewVersion = a.Version
-		a.Version = history.Version
-		a.Content = history.Content
-		a.CreatedAt = history.CreatedAt
 		title = fmt.Sprintf("%s v%d", a.Title, a.Version)
 	} else {
 		title = a.Title
@@ -97,6 +93,7 @@ func article(c *fiber.Ctx) error {
 		"og_type":            ogType,
 		"keywords":           a.RawTags,
 		"article":            &a,
+		"canonical_path":     "/" + a.Slug,
 		"can_read_history":   true, // The latest article's audience was checked above.
 		"comment_navigation": navigation,
 		"thread":             thread,

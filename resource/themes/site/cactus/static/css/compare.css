@@ -1,0 +1,36 @@
+:root { --compare-muted: var(--color-muted); --compare-border: color-mix(in srgb, var(--color-text) 20%, transparent); --compare-accent: var(--color-accent); }
+.compare-heading h1 { margin: .6rem 0; font-size: 1.7rem; }
+.compare-hint, .compare-titles small { color: var(--compare-muted); font-size: .85rem; line-height: 1.6; }
+.compare-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin: 1.5rem 0; }
+.compare-controls label { display: flex; align-items: center; gap: .5rem; font-size: .85rem; }
+.compare-controls input { width: 5.5rem; min-height: 44px; border: 1px solid var(--compare-border); border-radius: 3px; padding: .35rem .5rem; color: inherit; background: transparent; font: inherit; }
+.compare-controls button { min-height: 44px; border: 1px solid var(--compare-accent); border-radius: 3px; background: transparent; color: var(--compare-accent); padding: .4rem .8rem; cursor: pointer; font: inherit; }
+.compare-controls button:hover { background: color-mix(in srgb, var(--compare-accent) 9%, transparent); }
+.compare-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); border-bottom: 1px solid var(--compare-border); }
+.compare-row > section { min-width: 0; padding: 1rem; overflow-wrap: anywhere; }
+.compare-row > section + section { border-left: 1px solid var(--compare-border); }
+.compare-titles { border-top: 1px solid var(--compare-border); }
+.compare-titles h2 { margin: 0; font-size: 1rem; }
+.compare-titles p { margin: .4rem 0; font-weight: 600; }
+.compare-title-changed > section:first-child p { border-inline-start: 3px solid #c45454; padding-inline-start: .6rem; }
+.compare-title-changed > section:last-child p { border-inline-start: 3px solid #419668; padding-inline-start: .6rem; }
+.compare-label { display: block; margin-bottom: .6rem; font-size: .75rem; font-weight: 600; }
+.compare-changed .compare-before, .compare-removed .compare-before { border-inline-start: 3px solid #c45454; background: color-mix(in srgb, #c45454 9%, transparent); }
+.compare-changed .compare-after, .compare-added .compare-after { border-inline-start: 3px solid #419668; background: color-mix(in srgb, #419668 9%, transparent); }
+.compare-prose { display: flow-root; font-size: .95rem; line-height: 1.8; }
+.compare-prose > :first-child { margin-top: 0; }
+.compare-prose > :last-child { margin-bottom: 0; }
+.compare-prose :is(pre, table) { max-width: 100%; overflow-x: auto; }
+.compare-prose img { max-width: 100%; height: auto; }
+.compare-prose h2:before { position: static; margin-right: .35rem; font-size: .8em; }
+@media (max-width: 767px) {
+  .compare-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .compare-controls > span { display: none; }
+  .compare-controls label { display: grid; }
+  .compare-controls input { width: 100%; }
+  .compare-controls button { grid-column: 1 / -1; }
+  .compare-row { grid-template-columns: minmax(0,1fr); }
+  .compare-row > section + section { border-left: 0; }
+  .compare-same .compare-before, .compare-added .compare-before, .compare-removed .compare-after { display: none; }
+  .compare-titles > section + section { border-top: 1px dotted var(--compare-border); }
+}

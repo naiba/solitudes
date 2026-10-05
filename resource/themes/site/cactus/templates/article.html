@@ -45,6 +45,7 @@
                 <span class="author">
                     {{if .Data.article.Author.ID}}<a href="/users/{{.Data.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.Data.article.Author.Nickname}}</a>{{else}}<span>{{.Data.article.Author.Nickname}}</span>{{end}}
                 </span>
+                {{if and .Data.article.UpdatedBy.ID (.Data.article.UpdatedAt.After .Data.article.CreatedAt)}}<span class="article-updated-by" data-testid="article-updated-by">{{.Tr.T "last_edited_by"}} <a href="/users/{{.Data.article.UpdatedBy.ID}}">{{.Data.article.UpdatedBy.Nickname}}</a></span>{{end}}
                 <div class="postdate">
                     <span class="postdate-item">{{.Tr.T "created_at_label"}}: <time datetime="{{iso8601 .Data.article.CreatedAt}}">{{tf .Data.article.CreatedAt
                         (.Tr.T "date_format")}}</time></span>
@@ -77,6 +78,7 @@
         {{if gt .Data.article.NewVersion .Data.article.Version}}
         <aside class="article-revision-notice" data-testid="article-revision-notice" aria-label="{{.Tr.T "article_history"}}">
             <span>{{.Tr.T "has_new_version" (.Data.article.Version|uint2str)}}</span>
+            <a href="/{{.Data.article.Slug}}/compare/v{{.Data.article.Version}}...v{{.Data.article.NewVersion}}" data-testid="article-compare-link">{{.Tr.T "compare_revisions"}}</a>
             <a href="/{{.Data.article.Slug}}" data-testid="article-latest-version">{{.Tr.T "article_latest_version" (.Data.article.NewVersion|uint2str)}} <span aria-hidden="true">→</span></a>
         </aside>
         {{else if and .Data.can_read_history (gt .Data.article.Version 1)}}
@@ -84,6 +86,7 @@
         <details class="article-revisions" data-testid="article-history">
             <summary>{{.Tr.T "article_history"}} <span class="revision-count">· {{len $versions}}</span></summary>
             <nav aria-label="{{.Tr.T "article_history"}}">{{range $versions}}<a href="/{{$.Data.article.Slug}}/v{{.}}">v{{.}}</a>{{end}}</nav>
+            <a class="revision-compare-link" href="/{{.Data.article.Slug}}/compare" data-testid="article-compare-latest">{{.Tr.T "compare_revisions"}}</a>
         </details>
         {{end}}
         <div class="content" data-reading-content>

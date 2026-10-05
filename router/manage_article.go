@@ -177,6 +177,7 @@ func publishHandler(c *fiber.Ctx) error {
 	// edit article
 	newArticle := &model.Article{
 		AuthorID:       &account.ID,
+		UpdatedByID:    &account.ID,
 		ID:             pa.ID,
 		Title:          strings.TrimSpace(pa.Title),
 		Slug:           strings.TrimSpace(pa.Slug),
@@ -232,11 +233,14 @@ func publishHandler(c *fiber.Ctx) error {
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if pa.NewVersion == 1 && originalArticle.ID != "" {
 			history := model.ArticleHistory{
-				EditorID:  &account.ID,
-				Content:   originalArticle.Content,
-				Version:   originalArticle.Version,
-				ArticleID: originalArticle.ID,
-				CreatedAt: originalArticle.CreatedAt,
+				EditorID:    &account.ID,
+				UpdatedByID: originalArticle.UpdatedByID,
+				UpdatedAt:   originalArticle.UpdatedAt,
+				Title:       originalArticle.Title,
+				Content:     originalArticle.Content,
+				Version:     originalArticle.Version,
+				ArticleID:   originalArticle.ID,
+				CreatedAt:   originalArticle.CreatedAt,
 			}
 			if err := tx.Create(&history).Error; err != nil {
 				return fmt.Errorf("failed to create article history: %w", err)
@@ -402,7 +406,7 @@ func fetchOriginArticle(af *model.Article) (model.Article, error) {
 		af.UpdatedAt = time.Now()
 		af.Version = originArticle.Version + 1
 	} else {
-		af.UpdatedAt = originArticle.UpdatedAt
+		af.UpdatedAt = time.Now()
 		af.Version = originArticle.Version
 	}
 

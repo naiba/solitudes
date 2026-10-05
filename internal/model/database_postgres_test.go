@@ -135,7 +135,9 @@ func TestPostgresDatabaseConstraintsAndIndexes(t *testing.T) {
 	// Every authentication ownership link is enforced, not just the indexes.
 	orphan := "00000000-0000-4000-8000-000000000000"
 	for _, record := range []interface{}{
+		&Article{Slug: "orphan-last-editor", UpdatedByID: &orphan},
 		&ArticleHistory{ArticleID: article.ID, EditorID: &orphan, Version: 2},
+		&ArticleHistory{ArticleID: article.ID, UpdatedByID: &orphan, Version: 2},
 		&EmailAction{AccountID: orphan, TokenHash: "orphan-email"},
 		&ExternalIdentity{AccountID: orphan, Provider: "test", Subject: "orphan"},
 		&Passkey{AccountID: orphan, CredentialID: []byte("orphan"), PublicKey: []byte("key")},

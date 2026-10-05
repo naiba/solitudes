@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></noscript>
-    <link rel="stylesheet" href="/static/site/folio/css/style.css?v2026100913">
+    <link rel="stylesheet" href="/static/site/folio/css/style.css?v2026101004">
     <link rel="stylesheet" href="/static/site/folio/css/editorial.css?v2026100704">
     <link rel="preconnect" href="https://fonts.googleapis.cn" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
@@ -31,7 +31,7 @@
         href="https://{{.Conf.Site.Domain}}/feed/atom">
     <link rel="alternate" type="application/json" title="{{.Conf.Site.SpaceName}} » Feed"
         href="https://{{.Conf.Site.Domain}}/feed/json">
-    {{if not .Noindex}}<link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.Path}}">{{end}}
+    {{if .CanonicalPath}}<link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.CanonicalPath}}">{{else if not .Noindex}}<link rel="canonical" href="https://{{.Conf.Site.Domain}}{{.Path}}">{{end}}
     <meta name="author" content="{{if .Data.article.Author.Nickname}}{{.Data.article.Author.Nickname}}{{else if .Data.profile.Nickname}}{{.Data.profile.Nickname}}{{else}}{{.Conf.Site.SpaceName}}{{end}}">
     <meta property="og:title" content="{{.Title}}">
     <meta property="og:description" content="{{.Desc}}">
@@ -91,7 +91,8 @@
         };
     </script>
     <link rel="stylesheet" href="/static/site/folio/css/reading.css?v2026100702">
-    <link rel="stylesheet" href="/static/site/folio/css/layout.css?v2026101001">
+    <link rel="stylesheet" href="/static/site/folio/css/layout.css?v2026101004">
+    {{if .Data.comparison}}<link rel="stylesheet" href="/static/site/folio/css/compare.css?v2026101001">{{end}}
 </head>
 
 <body class="folio-page">

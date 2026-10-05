@@ -1,4 +1,12 @@
 [
+    {"locale":"en","key":"compare_revisions","trans":"Compare versions"},
+    {"locale":"en","key":"compare_rendered_hint","trans":"Rendered content, compared by block. Red marks removed content; green marks added content. Scripts and interactive embeds are disabled."},
+    {"locale":"en","key":"compare_from","trans":"From version"},
+    {"locale":"en","key":"compare_to","trans":"To version"},
+    {"locale":"en","key":"compare_no_changes","trans":"No visible changes between these versions."},
+    {"locale":"en","key":"compare_removed","trans":"− Removed"},
+    {"locale":"en","key":"compare_added","trans":"+ Added"},
+    {"locale":"en","key":"last_edited_by","trans":"Last edited by"},
 {"locale":"en","key":"applications_and_authorizations","trans":"Applications & authorizations"},
 {"locale":"en","key":"authorized_applications","trans":"Authorized applications"},
 {"locale":"en","key":"authorized_apps_hint","trans":"Applications with valid tokens or approved requests awaiting exchange. Entries disappear when all credentials expire."},

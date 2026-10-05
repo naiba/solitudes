@@ -31,11 +31,13 @@ type SibilingArticle struct {
 
 // Article 文章表
 type Article struct {
-	ID        string  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
-	AuthorID  *string `gorm:"type:uuid"`
-	Author    Account `gorm:"foreignKey:AuthorID" json:"-"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID          string  `gorm:"type:uuid;primary_key;default:uuid_generate_v4()"`
+	AuthorID    *string `gorm:"type:uuid"`
+	Author      Account `gorm:"foreignKey:AuthorID" json:"-"`
+	UpdatedByID *string `gorm:"type:uuid"`
+	UpdatedBy   Account `gorm:"foreignKey:UpdatedByID;constraint:OnDelete:RESTRICT" json:"-"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 
 	Slug           string            `form:"slug" validate:"required" gorm:"uniqueIndex;not null"`
 	Title          string            `form:"title" validate:"required"`

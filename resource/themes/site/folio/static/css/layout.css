@@ -62,3 +62,6 @@ html { scrollbar-gutter: stable; background: var(--bg); }
 .comment-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; }
 .comment-navigation a, .comment-thread-link { display: inline-flex; align-items: center; min-height: 36px; font-size: .85rem; }
 @media (max-width: 500px) { .comment-children { margin-left: .75rem; padding-left: .75rem; } }
+
+.revision-compare-link { display: inline-flex; align-items: center; min-height: 36px; margin-top: .5rem; font-size: .8rem; }
+.article-updated-by { font-size: .75rem; color: var(--muted); }

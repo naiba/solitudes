@@ -167,6 +167,41 @@ test('pagination contract account applications, passkeys and administrative list
   await expect(page.getByTestId('account-client-row')).toHaveCount(0);
 });
 
+test('rendered version comparisons and reader biographies fit both themes', async ({page}) => {
+  test.setTimeout(60000);
+  await page.emulateMedia({reducedMotion:'reduce'});
+  for (const width of [1440,390]) {
+    await page.setViewportSize({width,height:1000});
+    await page.goto('/visual-revisions');
+    await expect(page.getByTestId('article-author-link')).toHaveText('Browser Admin');
+    await expect(page.getByTestId('article-updated-by')).toContainText('Browser Editor');
+    await page.getByTestId('article-history').locator('summary').click();
+    await page.getByTestId('article-compare-latest').click();
+    await expect(page).toHaveURL(/\/visual-revisions\/compare\/v50\.\.\.v51$/);
+    await page.getByTestId('compare-from').fill('1');
+    await page.getByTestId('compare-to').fill('51');
+    await page.getByTestId('compare-submit').click();
+    await expect(page).toHaveURL(/\/visual-revisions\/compare\/v1\.\.\.v51$/);
+    await expect(page.getByTestId('compare-before-title')).toHaveText('写作最初的想法 · 第1稿');
+    await expect(page.getByTestId('compare-after-title')).toHaveText('在修订中，留下思考的轨迹');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', /\/visual-revisions$/);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content','noindex');
+    expect(await page.getByTestId('compare-row').count()).toBeGreaterThan(0);
+    expect(await page.locator('.compare-prose h2').count()).toBeGreaterThan(0);
+    await expect(page.locator('.compare-prose script, .compare-prose iframe, .compare-prose [onclick]')).toHaveCount(0);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if (process.env.SOLITUDES_COMPARE_SCREENSHOTS) await page.screenshot({path:path.join(process.env.SOLITUDES_COMPARE_SCREENSHOTS,`${siteTheme}-compare-${width}.png`),fullPage:true,animations:'disabled'});
+    await page.goto('/readers/');
+    const bio=page.getByTestId('reader-circle-bio').first();
+    await expect(bio).toBeVisible();
+    const fonts=await bio.evaluate(el=>({bio:parseFloat(getComputedStyle(el).fontSize),name:parseFloat(getComputedStyle(el.closest('.reader-card')!.querySelector('.reader-card-name')!).fontSize),bioColor:getComputedStyle(el).color,nameColor:getComputedStyle(el.closest('.reader-card')!.querySelector('.reader-card-name')!).color}));
+    expect(fonts.bio).toBeLessThan(fonts.name);
+    expect(fonts.bioColor).not.toBe(fonts.nameColor);
+    expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if (process.env.SOLITUDES_COMPARE_SCREENSHOTS) await page.screenshot({path:path.join(process.env.SOLITUDES_COMPARE_SCREENSHOTS,`${siteTheme}-readers-${width}.png`),fullPage:true,animations:'disabled'});
+  }
+});
+
 for (const locale of ['zh-CN','en']) test.describe(`revision language ${locale}`, () => {
   test.use({locale});
   test('revision controls are separate from prose and accessible across layouts', async ({page}) => {
@@ -245,6 +280,10 @@ for (const locale of ['zh-CN','en']) test.describe(`revision language ${locale}`
       if (locale === 'zh-CN') await capture(prefix+'-scrolled');
       await page.keyboard.press('Enter');
       await expect(page).toHaveURL(/\/visual-revisions\/v1$/);
+      await expect(page.getByTestId('site-article').locator('h1')).toHaveText('写作最初的想法 · 第1稿');
+      await expect(page).toHaveTitle(/写作最初的想法 · 第1稿 v1/);
+      await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /写作最初的想法 · 第1稿 v1/);
+      await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute('content', /写作最初的想法 · 第1稿 v1/);
       const notice = page.getByTestId('article-revision-notice');
       await expect(notice).toBeVisible();
       await expect(notice).toContainText(locale === 'zh-CN' ? '正在阅读历史版本 v1' : 'You’re reading an earlier version, v1');
@@ -254,6 +293,7 @@ for (const locale of ['zh-CN','en']) test.describe(`revision language ${locale}`
       await checkRevisionUnderline(page.getByTestId('article-latest-version'), prefix+'-latest-hover');
       await page.getByTestId('article-latest-version').click();
       await expect(page).toHaveURL(/\/visual-revisions$/);
+      await expect(page.getByTestId('site-article').locator('h1')).toHaveText('在修订中，留下思考的轨迹');
       await expect(page.getByTestId('article-revision-notice')).toHaveCount(0);
     }
     await page.goto('/e2e-theme-article');

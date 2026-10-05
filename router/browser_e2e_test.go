@@ -58,6 +58,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	admin := model.Account{Email: "browser-admin@example.com", Nickname: "Browser Admin", PasswordHash: string(hash),
 		Role: model.RoleAdmin, EmailVerifiedAt: &now}
 	reader := model.Account{Email: "browser-reader@example.com", Nickname: "Browser Reader", PasswordHash: string(hash),
+		Bio:  "记录阅读、写作与生活中的小发现。喜欢慢慢读，也喜欢和大家交流。",
 		Role: model.RoleUser, EmailVerifiedAt: &now}
 	editor := model.Account{Email: "browser-editor@example.com", Nickname: "Browser Editor", PasswordHash: string(hash),
 		Role: model.RoleEditor, EmailVerifiedAt: &now}
@@ -89,6 +90,8 @@ func TestBrowserThemeMatrix(t *testing.T) {
 		t.Fatal(err)
 	}
 	revisions := model.Article{AuthorID: &admin.ID, Slug: "visual-revisions", Title: "在修订中，留下思考的轨迹",
+		UpdatedByID: &editor.ID,
+		CreatedAt:   now.Add(-48 * time.Hour), UpdatedAt: now.Add(-24 * time.Hour),
 		Content:    "写作并非一次完成。新的观察让文字更准确，而历史版本记录了想法逐渐清晰的过程。\n\n## 让阅读回到内容本身\n\n版本信息属于阅读工具，不应该伪装成作者写下的正文。需要时可以回看，不需要时安静地留在一旁。",
 		TemplateID: solitudes.ArticleTemplateID, Version: 51}
 	if err := db.Create(&revisions).Error; err != nil {
@@ -96,6 +99,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	}
 	for version := uint(1); version < revisions.Version; version++ {
 		history := model.ArticleHistory{ArticleID: revisions.ID, Version: version,
+			Title:   fmt.Sprintf("写作最初的想法 · 第%d稿", version),
 			Content: "这是较早的一次记录。有些判断会随着经历改变，保留旧稿，是为了看见思考的来路。\n\n## 当时的想法\n\n阅读旧稿时，应当知道它不是最新内容，也能够方便地回到当前版本。"}
 		if err := db.Create(&history).Error; err != nil {
 			t.Fatal(err)
@@ -128,7 +132,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 		if err := db.Create(&secured).Error; err != nil {
 			t.Fatal(err)
 		}
-		history := model.ArticleHistory{ArticleID: secured.ID, Version: 1, Content: "## Historical public heading\n\nlegacy-unguarded-secret\n\n```access:members\n## Historical member heading\n\nhistory-member-secret\n```\n\n```access:editors\n## Historical editor heading\n\nhistory-editor-secret\n```\n\n```access:private\n## Historical author heading\n\nhistory-author-secret\n![hidden](https://history-hidden-attachment.example/image.jpg)\n```"}
+		history := model.ArticleHistory{ArticleID: secured.ID, Version: 1, Title: "Earlier access " + string(visibility), Content: "## Historical public heading\n\nlegacy-unguarded-secret\n\n```access:members\n## Historical member heading\n\nhistory-member-secret\n```\n\n```access:editors\n## Historical editor heading\n\nhistory-editor-secret\n```\n\n```access:private\n## Historical author heading\n\nhistory-author-secret\n![hidden](https://history-hidden-attachment.example/image.jpg)\n```"}
 		if err := db.Create(&history).Error; err != nil {
 			t.Fatal(err)
 		}

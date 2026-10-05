@@ -1,4 +1,12 @@
 [
+    {"locale":"zh","key":"compare_revisions","trans":"版本对比"},
+    {"locale":"zh","key":"compare_rendered_hint","trans":"按渲染后的内容块对比：红色标记删除，绿色标记新增。脚本和交互嵌入不会执行。"},
+    {"locale":"zh","key":"compare_from","trans":"原版本"},
+    {"locale":"zh","key":"compare_to","trans":"新版本"},
+    {"locale":"zh","key":"compare_no_changes","trans":"这两个版本的可见内容没有变化。"},
+    {"locale":"zh","key":"compare_removed","trans":"− 删除"},
+    {"locale":"zh","key":"compare_added","trans":"+ 新增"},
+    {"locale":"zh","key":"last_edited_by","trans":"最后修改"},
 {"locale":"zh","key":"applications_and_authorizations","trans":"应用与授权"},
 {"locale":"zh","key":"authorized_applications","trans":"已授权的第三方应用"},
 {"locale":"zh","key":"authorized_apps_hint","trans":"查看当前仍有有效令牌或待兑换授权请求的应用；凭据全部失效后将不再展示。"},

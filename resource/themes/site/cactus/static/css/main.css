@@ -1903,7 +1903,7 @@ ul:has(li.vditor-task) {
 .reader-card { min-width: 0; padding: .7rem .85rem; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 10px; overflow-wrap: anywhere; }
 .reader-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .4rem; }
 .reader-card-name { display: inline-block; font-weight: 700; margin-right: .4rem; }
-.reader-card p { margin: .3rem 0; line-height: 1.4; white-space: pre-wrap; }
+.reader-card p { margin: .3rem 0; font-size: .82rem; font-weight: 400; line-height: 1.6; color: color-mix(in srgb, var(--color-muted) 50%, var(--color-text)); white-space: pre-wrap; }
 .reader-card small { display: block; opacity: .7; margin-top: .3rem; }
 @media (max-width: 650px) { .circle-feed-list { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 650px) { .reader-circle-layout { grid-template-columns: minmax(0, 1fr); gap: 0; } }

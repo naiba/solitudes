@@ -1831,7 +1831,7 @@ body.mobile-menu-open {
 .reader-card { min-width: 0; border: 1px solid var(--border); padding: .75rem .9rem; background: var(--surface); overflow-wrap: anywhere; }
 .reader-card-head { display: flex; flex-wrap: wrap; align-items: center; gap: .2rem .4rem; }
 .reader-card-name { display: inline-block; font: 600 1rem var(--font-heading); color: var(--accent); }
-.reader-card p { line-height: 1.4; white-space: pre-wrap; margin: .3rem 0; }
+.reader-card p { margin: .3rem 0; font-size: .82rem; font-weight: 400; line-height: 1.6; color: color-mix(in srgb, var(--muted) 50%, var(--text)); white-space: pre-wrap; }
 .reader-card small { display: block; color: var(--muted); margin-top: .3rem; }
 @media (max-width: 650px) { .circle-feed-list { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 650px) { .reader-circle-layout { grid-template-columns: minmax(0, 1fr); gap: 0; } }

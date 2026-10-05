@@ -57,7 +57,8 @@ Single-user and old access-policy data are not migrated automatically: back up a
 - Administrators manage the site; editors publish and manage their own articles; ordinary members cannot publish or edit. The account center links to the writing workspace.
 - Mark an article as a series cover, then assign its UUID to other articles to add chapters. Series can be nested.
 - Add the `Topic` tag for short posts; titles and slugs can be generated automatically. The dashboard also offers quick publishing.
-- Select “Major Update” when editing to retain a new revision. Historical URLs look like `/my-article/v1`; search returns only the current version.
+- Select “Major Update” when editing to preserve the previous title and body. Historical URLs look like `/my-article/v1`; search returns only the current version. Older revisions without a saved title show “Title not recorded”.
+- Creator and last editor are recorded separately. `/my-article/compare/v1...v3` compares rendered blocks with reader permissions applied; comparison pages are noindex and canonicalize to the main article.
 - Verified users appear in the reader circle by default and can leave in their account settings. Emails remain private.
 
 ### Content access

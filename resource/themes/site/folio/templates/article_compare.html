@@ -1,0 +1,28 @@
+{{define "site/article_compare"}}
+{{template "site/header" .}}
+<main id="main-content" class="revision-compare-page" data-testid="article-compare">
+  <header class="compare-heading">
+    <a href="/{{.Data.article.Slug}}" data-testid="compare-article-link">← {{.Data.article.Title}}</a>
+    <h1>{{.Tr.T "compare_revisions"}}</h1>
+    <p class="compare-hint">{{.Tr.T "compare_rendered_hint"}}</p>
+  </header>
+  <form class="compare-controls" action="/{{.Data.article.Slug}}/compare" method="get" data-testid="compare-form">
+    <label>{{.Tr.T "compare_from"}} <input type="number" name="from" min="1" max="{{.Data.article.Version}}" value="{{.Data.before.Version}}" required data-testid="compare-from"></label>
+    <span aria-hidden="true">→</span>
+    <label>{{.Tr.T "compare_to"}} <input type="number" name="to" min="1" max="{{.Data.article.Version}}" value="{{.Data.after.Version}}" required data-testid="compare-to"></label>
+    <button type="submit" data-testid="compare-submit">{{.Tr.T "compare_revisions"}}</button>
+  </form>
+  {{if not .Data.changed}}<p class="compare-hint" data-testid="compare-no-changes">{{.Tr.T "compare_no_changes"}}</p>{{end}}
+  <div class="compare-row compare-titles{{if ne .Data.before.Title .Data.after.Title}} compare-title-changed{{end}}">
+    <section><h2><a href="/{{.Data.article.Slug}}/v{{.Data.before.Version}}">v{{.Data.before.Version}}</a></h2><p data-testid="compare-before-title">{{.Data.before.Title}}</p>{{if .Data.before.UpdatedBy.ID}}<small>{{.Tr.T "last_edited_by"}} <a href="/users/{{.Data.before.UpdatedBy.ID}}">{{.Data.before.UpdatedBy.Nickname}}</a></small>{{end}}</section>
+    <section><h2><a href="/{{.Data.article.Slug}}/v{{.Data.after.Version}}">v{{.Data.after.Version}}</a></h2><p data-testid="compare-after-title">{{.Data.after.Title}}</p>{{if .Data.after.UpdatedBy.ID}}<small>{{.Tr.T "last_edited_by"}} <a href="/users/{{.Data.after.UpdatedBy.ID}}">{{.Data.after.UpdatedBy.Nickname}}</a></small>{{end}}</section>
+  </div>
+  <div class="compare-changes" data-testid="compare-changes">
+  {{range .Data.changes}}<div class="compare-row compare-{{.Kind}}" data-testid="compare-row" data-change="{{.Kind}}">
+    <section class="compare-before">{{if and (ne .Kind "same") .Before}}<span class="compare-label">{{$.Tr.T "compare_removed"}}</span>{{end}}<div class="compare-prose app-prose" data-reading-content>{{.Before|unsafe}}</div></section>
+    <section class="compare-after">{{if and (ne .Kind "same") .After}}<span class="compare-label">{{$.Tr.T "compare_added"}}</span>{{end}}<div class="compare-prose app-prose" data-reading-content>{{.After|unsafe}}</div></section>
+  </div>{{end}}
+  </div>
+</main>
+{{template "site/footer" .}}
+{{end}}

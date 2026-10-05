@@ -47,7 +47,7 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 	if err := db.Create(&a).Error; err != nil {
 		t.Fatal(err)
 	}
-	history := model.ArticleHistory{ArticleID: a.ID, Version: 1, Content: "## Historical public heading\n\npreviously-open-token\n\n" +
+	history := model.ArticleHistory{ArticleID: a.ID, Version: 1, Title: "Original revision title", Content: "## Historical public heading\n\npreviously-open-token\n\n" +
 		"```access:members\n## Historical member heading\n\nmember-history-token\n```\n\n" +
 		"```access:editors\n## Historical editor heading\n\neditor-history-token\n```\n\n" +
 		"```access:private\n## Historical private heading\n\nhistorically-private-token\n![secret](https://private-history.example/image.png)\n```\n\n" +
@@ -75,6 +75,7 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 				c.Locals(solitudes.CtxAccount, viewer)
 				return c.Next()
 			})
+			app.Get("/:slug/compare/:versions?", articleCompare)
 			app.Get("/:slug/:version?", article)
 			language := "en"
 			request := func(t *testing.T, suffix string, status int) (string, http.Header) {
@@ -107,9 +108,9 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 							viewer = reader.account
 							canRead := reader.allowed[vi%4]
 							if !canRead {
-								for _, suffix := range []string{"", "/v1", "/v2", "/v999"} {
+								for _, suffix := range []string{"", "/v1", "/v2", "/v999", "/compare/v1...v2"} {
 									body, headers := request(t, suffix, http.StatusNotFound)
-									for _, token := range []string{a.Title, "current-body-token", "previously-open-token", "historically-private-token"} {
+									for _, token := range []string{a.Title, history.Title, "current-body-token", "previously-open-token", "historically-private-token"} {
 										if strings.Contains(body, token) {
 											t.Fatalf("unauthorized response leaked %q", token)
 										}
@@ -121,7 +122,17 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 								return
 							}
 							body, headers := request(t, "/v1", http.StatusOK)
+							compared, compareHeaders := request(t, "/compare/v1...v2", http.StatusOK)
+							for token, visible := range map[string]bool{"member-history-token": reader.allowed[1], "editor-history-token": reader.allowed[2], "nested-history-token": reader.allowed[1] && reader.allowed[3], "private-history.example": reader.allowed[3]} {
+								if strings.Contains(compared, token) != visible {
+									t.Fatalf("comparison leaked or omitted fragment %q", token)
+								}
+							}
+							if !strings.Contains(compareHeaders.Get("Cache-Control"), "no-store") || !strings.Contains(compareHeaders.Get("X-Robots-Tag"), "noindex") {
+								t.Fatal("comparison is cacheable or indexable")
+							}
 							for token, visible := range map[string]bool{
+								history.Title:           true,
 								"previously-open-token": true, "current-body-token": false,
 								"member-history-token": reader.allowed[1], "Historical member heading": reader.allowed[1],
 								"editor-history-token": reader.allowed[2], "Historical editor heading": reader.allowed[2],
@@ -139,6 +150,9 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 								t.Fatal("restricted history is cacheable")
 							}
 							current, _ := request(t, "", http.StatusOK)
+							if !strings.Contains(current, a.Title) || strings.Contains(current, history.Title) {
+								t.Fatal("current article did not retain its own title")
+							}
 							if strings.Contains(current, "previously-open-token") != reader.allowed[3] || !strings.Contains(current, "historically-private-token") {
 								t.Fatal("latest fragments incorrectly inherited historical policy")
 							}
@@ -182,7 +196,7 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 	if err := db.First(&stored, "article_id = ? AND version = ?", a.ID, 1).Error; err != nil {
 		t.Fatal(err)
 	}
-	if stored.Content != history.Content {
+	if stored.Content != history.Content || stored.Title != history.Title {
 		t.Fatal("reading or changing latest visibility mutated historical source")
 	}
 }

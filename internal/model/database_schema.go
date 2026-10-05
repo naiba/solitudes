@@ -28,6 +28,7 @@ func MigrateDatabasePolicy(db *gorm.DB) error {
 			{"accounts", "accounts_role_valid", "CHECK (role IN ('admin', 'editor', 'user'))"},
 			{"articles", "articles_visibility_valid", "CHECK (visibility IN ('public', 'members', 'editors', 'private'))"},
 			{"article_histories", "history_editor_account", "FOREIGN KEY (editor_id) REFERENCES accounts(id) ON DELETE RESTRICT"},
+			{"article_histories", "history_updated_by_account", "FOREIGN KEY (updated_by_id) REFERENCES accounts(id) ON DELETE RESTRICT"},
 			{"login_sessions", "session_account", "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE"},
 			{"email_actions", "email_action_account", "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE"},
 			{"external_identities", "external_identity_account", "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE"},
