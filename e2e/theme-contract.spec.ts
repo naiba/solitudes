@@ -882,6 +882,34 @@ test('admin theme selection remains available and is saved by the settings form'
   await expect(page.getByTestId('account-new-password')).toBeVisible();
 });
 
+test('theme settings editor deletes obsolete keys across save and reload', async ({page}) => {
+  test.skip(!adminEmail, 'Requires isolated administrator.');
+  await signIn(page);
+  await page.goto('/admin/settings');
+  const editor = page.locator('#inputThemeConfig');
+  const original = await editor.inputValue();
+  const save = async () => {
+    const navigation = page.waitForNavigation({waitUntil:'domcontentloaded'});
+    const response = page.waitForResponse(response => response.url().endsWith('/admin/settings') && response.request().method() === 'POST');
+    await page.getByTestId('admin-settings-save').click();
+    expect((await response).status()).toBe(200);
+    await navigation;
+    await expect(editor).toBeVisible();
+  };
+  await editor.fill(original+'\nastro-paper.customcode: obsolete-theme-marker\ncustom.retained: retained-setting-marker\n');
+  await save();
+  await expect(editor).toHaveValue(/astro-paper\.customcode: obsolete-theme-marker/);
+  await editor.fill((await editor.inputValue()).replace(/^astro-paper\.customcode:.*\n?/m,''));
+  await save();
+  await page.reload();
+  await expect(editor).not.toHaveValue(/astro-paper/);
+  await expect(editor).toHaveValue(/custom\.retained: retained-setting-marker/);
+  // Restore the original settings so other browser cases keep their fixtures.
+  await editor.fill(original);
+  await save();
+  await expect(editor).not.toHaveValue(/retained-setting-marker|obsolete-theme-marker/);
+});
+
 test('site and admin themes use the same accessible screenshot cards', async ({page}) => {
   test.skip(!adminEmail, 'Requires isolated administrator.');
   await signIn(page);
@@ -3342,7 +3370,7 @@ test('admin can trace a reader-owned application, its logins and security events
   const clientID = (await page.getByTestId('oidc-created-id').textContent())!.trim();
   const verifier = 'a'.repeat(64);
   const authorize = new URLSearchParams({client_id: clientID, redirect_uri: oidcRedirectURI!, response_type: 'code',
-    scope: 'openid email', state: 'audit-e2e', code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256'});
+    scope: 'openid email offline_access', state: 'audit-e2e', code_challenge: createHash('sha256').update(verifier).digest('base64url'), code_challenge_method: 'S256'});
   await page.goto('/authorize?' + authorize);
   await page.getByTestId('oidc-consent-allow').click();
   await expect(page).toHaveURL(/callback\?code=/);
@@ -3351,6 +3379,16 @@ test('admin can trace a reader-owned application, its logins and security events
     redirect_uri: oidcRedirectURI!, code, code_verifier: verifier } });
   expect(token.status()).toBe(200);
   const issued = await token.json();
+  expect(issued.refresh_token).toBeTruthy();
+  const refreshed = await page.request.post('/oauth/token', {form: {
+    grant_type:'refresh_token', client_id:clientID, refresh_token:issued.refresh_token,
+  }});
+  expect(refreshed.status()).toBe(200);
+  const userInfo = await page.request.get('/userinfo', {headers: {
+    Authorization:`Bearer ${(await refreshed.json()).access_token}`,
+  }});
+  expect(userInfo.status()).toBe(200);
+  expect((await userInfo.json()).email).toBe(readerEmail);
   for (const role of ['reader', 'editor'] as const) {
     if (role === 'editor') {
       await page.goto('/account'); await page.getByTestId('account-logout').click();
@@ -3362,6 +3400,17 @@ test('admin can trace a reader-owned application, its logins and security events
   }
   await page.goto('/account'); await page.getByTestId('account-logout').click();
   await signIn(page);
+  const auditVisit = await page.goto('/admin/audit');
+  for (const id of [refreshed.headers()['x-request-id'], userInfo.headers()['x-request-id'], auditVisit!.headers()['x-request-id']]) {
+    expect(id).toBeTruthy();
+    await page.goto('/admin/audit?request_id='+encodeURIComponent(id!));
+    await expect(page.getByTestId('audit-event')).toHaveCount(0);
+  }
+  const tokenRequestID = token.headers()['x-request-id'];
+  expect(tokenRequestID).toBeTruthy();
+  await page.goto('/admin/audit?request_id='+encodeURIComponent(tokenRequestID!));
+  await expect(page.getByTestId('audit-event')).toHaveCount(1);
+  await expect(page.getByTestId('audit-event')).toContainText('oidc.login');
   for (const width of [1280, 390]) {
     await page.setViewportSize({width, height: 900});
     await page.goto('/admin/users');

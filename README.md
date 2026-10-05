@@ -88,6 +88,8 @@ Disabling or deleting an application clears its tokens and pending requests whil
 
 Administrators manage users at `/admin/users`, inspect applications and login statistics at `/admin/oidc/clients`, and investigate security events at `/admin/audit`.
 
+Audits retain logins, consent decisions, sensitive changes and failures. Routine browsing, successful token refresh/validation and intermediate authentication steps are not logged individually.
+
 The default `audit_retention_days: 0` keeps audit details indefinitely. A positive value permanently deletes older details, retaining only aggregate login statistics. Back up or archive important audit records separately.
 
 ## Themes

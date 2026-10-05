@@ -397,6 +397,93 @@ func TestPostgresAuditManagementPages(t *testing.T) {
 	}
 }
 
+func TestPostgresAuditSkipsAnonymousPageRedirectsButKeepsSecurityEvents(t *testing.T) {
+	db, admin, reader := auditTestDB(t)
+	for _, session := range []struct {
+		token   string
+		account model.Account
+		expires time.Time
+	}{
+		{"expired-session", admin, time.Now().Add(-time.Hour)},
+		{"admin-session", admin, time.Now().Add(time.Hour)},
+		{"reader-session", reader, time.Now().Add(time.Hour)},
+	} {
+		if err := db.Create(&model.LoginSession{AccountID: session.account.ID, TokenHash: secretHash(session.token), ExpiresAt: session.expires}).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	app := fiber.New()
+	app.Use(auditMiddleware, auth)
+	ok := func(c *fiber.Ctx) error { return c.SendStatus(http.StatusOK) }
+	adminRoutes := app.Group("/admin", loginRequired)
+	adminRoutes.Get("/", ok)
+	adminRoutes.Get("/audit", requireAdmin, ok)
+	adminRoutes.Post("/settings", requireAdmin, ok)
+	app.Get("/account", requireAccount, ok)
+	app.Post("/account/password", requireAccount, ok)
+	app.Get("/account/forbidden", func(c *fiber.Ctx) error { return fiber.ErrForbidden })
+	app.Get("/account/unauthorized", func(c *fiber.Ctx) error { return fiber.ErrUnauthorized })
+	app.Get("/account/error", func(c *fiber.Ctx) error { return fiber.ErrInternalServerError })
+	app.Post("/login", func(c *fiber.Ctx) error {
+		c.Locals("audit_reason", "invalid_credentials")
+		return fiber.ErrUnauthorized
+	})
+	app.Get("/authorize", func(c *fiber.Ctx) error { return c.Redirect("/login") })
+
+	for _, token := range []string{"", "invalid-session", "expired-session"} {
+		for _, method := range []string{http.MethodGet, http.MethodHead} {
+			for _, path := range []string{"/admin/", "/admin/audit", "/account"} {
+				req := httptest.NewRequest(method, path+"?private=never-record", nil)
+				if token != "" {
+					req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: token})
+				}
+				resp, err := app.Test(req, -1)
+				if err != nil {
+					t.Fatal(err)
+				}
+				resp.Body.Close()
+				if resp.StatusCode != http.StatusFound || !strings.HasPrefix(resp.Header.Get("Location"), "/login") || resp.Header.Get("X-Request-ID") == "" {
+					t.Fatalf("lost authentication redirect: %s %s: %d", method, path, resp.StatusCode)
+				}
+			}
+		}
+	}
+	var count int64
+	if err := db.Model(&model.AuditEvent{}).Count(&count).Error; err != nil || count != 0 {
+		t.Fatalf("anonymous page redirects wrote audit events: %d, %v", count, err)
+	}
+	for _, tc := range []struct {
+		method, path, token, action, outcome, reason string
+		status                                       int
+	}{
+		{"POST", "/admin/settings", "", "settings.update", "denied", "authentication_required", 302},
+		{"POST", "/account/password", "expired-session", "account.password.update", "denied", "authentication_required", 302},
+		{"POST", "/login", "", "session.login", "denied", "invalid_credentials", 401},
+		{"GET", "/admin/", "reader-session", "access.denied", "denied", "authentication_or_permission", 403},
+		{"GET", "/admin/audit", "reader-session", "audit.view", "denied", "authentication_or_permission", 403},
+		{"GET", "/account/forbidden", "", "access.denied", "denied", "authentication_or_permission", 403},
+		{"GET", "/account/unauthorized", "", "access.denied", "denied", "authentication_or_permission", 401},
+		{"GET", "/account/error", "", "request.error", "failure", "internal_error", 500},
+	} {
+		req := httptest.NewRequest(tc.method, tc.path, nil)
+		if tc.token != "" {
+			req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: tc.token})
+		}
+		resp, err := app.Test(req, -1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		var event model.AuditEvent
+		if err := db.Where("request_id = ?", resp.Header.Get("X-Request-ID")).Take(&event).Error; err != nil {
+			t.Fatalf("lost security audit for %s %s: %v", tc.method, tc.path, err)
+		}
+		if resp.StatusCode != tc.status || event.Action != tc.action || event.Outcome != tc.outcome || event.Reason != tc.reason {
+			t.Fatalf("incorrect security audit for %s %s: %+v", tc.method, tc.path, event)
+		}
+	}
+}
+
 func TestPostgresAuditFailureRollsBackNewSessionsAndTokens(t *testing.T) {
 	db, _, reader := auditTestDB(t)
 	if err := db.Callback().Create().Before("gorm:create").Register("fail_audit", func(tx *gorm.DB) {

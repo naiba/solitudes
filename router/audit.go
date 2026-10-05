@@ -99,6 +99,9 @@ func auditAction(method, path string) string {
 		if path == "/admin/audit" {
 			return "audit.view"
 		}
+		if path == "/userinfo" {
+			return "oidc.request"
+		}
 		if strings.HasPrefix(path, "/auth/") && strings.HasSuffix(path, "/callback") {
 			return "identity.callback"
 		}
@@ -139,6 +142,8 @@ func auditAction(method, path string) string {
 		return "account.profile.update"
 	case "/auth/passkey/login/finish":
 		return "session.login"
+	case "/userinfo":
+		return "oidc.request"
 	}
 	if strings.Contains(path, "/oidc/clients") {
 		if strings.HasSuffix(path, "/delete") {
@@ -173,6 +178,31 @@ func auditAction(method, path string) string {
 	return ""
 }
 
+// Successful protocol plumbing is not a security event. Token issuance has
+// its own transactional oidc.login event; refresh/introspection and challenges
+// are routine. Failures (including OAuth errors conveyed by redirects) must
+// bypass this filter. Consent, revocation and completed mutations are not here.
+func routineAuditSuccess(method, path string, status int) bool {
+	if status < http.StatusOK || status >= http.StatusBadRequest {
+		return false
+	}
+	if method == http.MethodGet {
+		switch path {
+		case "/admin/audit", "/authorize", "/authorize/callback":
+			return true
+		case "/userinfo":
+			return status < http.StatusMultipleChoices
+		}
+	}
+	if method == http.MethodPost && status < http.StatusMultipleChoices {
+		switch path {
+		case "/oauth/token", "/oauth/introspect", "/userinfo", "/auth/passkey/login/begin", "/account/passkeys/begin":
+			return true
+		}
+	}
+	return false
+}
+
 func auditStatus(c *fiber.Ctx, err error) int {
 	if err == nil {
 		return c.Response().StatusCode()
@@ -200,17 +230,34 @@ func auditMiddleware(c *fiber.Ctx) error {
 	c.SetUserContext(context.WithValue(c.UserContext(), auditContextKey{}, &auditRequest{ID: id, IP: ip}))
 	err = c.Next()
 	status := auditStatus(c, err)
+	reason, _ := c.Locals("audit_reason").(string)
+	failed := err != nil || status >= 400 || reason != "" || c.Locals("audit_outcome") == "failure" || c.Locals("audit_outcome") == "denied"
+	if !failed && routineAuditSuccess(c.Method(), c.Path(), status) {
+		return nil
+	}
+	location := c.GetRespHeader("Location")
+	protectedPage := c.Path() == "/admin" || strings.HasPrefix(c.Path(), "/admin/") || c.Path() == "/account" || strings.HasPrefix(c.Path(), "/account/")
+	authenticationRedirect := currentAccount(c) == nil && status >= 300 && status < 400 &&
+		(location == "/login" || strings.HasPrefix(location, "/login?")) && protectedPage
+	// Browsing with no usable session (including expired cookies) is not a
+	// login attempt. Keep auditing mutations, permission failures and errors.
+	if !failed && authenticationRedirect && (c.Method() == http.MethodGet || c.Method() == http.MethodHead) {
+		return nil
+	}
 	action := auditAction(c.Method(), c.Path())
 	if status >= 500 {
 		action = "request.error"
 	}
-	if action == "" && status >= 400 && (strings.HasPrefix(c.Path(), "/admin") || strings.HasPrefix(c.Path(), "/account") || strings.HasPrefix(c.Path(), "/authorize")) {
+	// Missing pages are not permission denials. Explicit operations still retain
+	// their failure event when a target is missing (for example client deletion).
+	if action == "" && status >= 400 && status != http.StatusNotFound &&
+		(protectedPage || c.Path() == "/authorize" || strings.HasPrefix(c.Path(), "/authorize/")) {
 		action = "access.denied"
 	}
-	if action == "" && currentAccount(c) == nil && status >= 300 && status < 400 && strings.HasPrefix(c.GetRespHeader("Location"), "/login") && (strings.HasPrefix(c.Path(), "/admin") || strings.HasPrefix(c.Path(), "/account")) {
+	if action == "" && authenticationRedirect {
 		action = "access.denied"
 	}
-	if action == "" || (err == nil && c.Locals("audit_recorded") == true) {
+	if action == "" || (!failed && c.Locals("audit_recorded") == true) {
 		return err
 	}
 	event := model.AuditEvent{Action: action, Outcome: "success", Method: c.Method(), Status: status}
@@ -272,7 +319,7 @@ func auditMiddleware(c *fiber.Ctx) error {
 	if outcome, ok := c.Locals("audit_outcome").(string); ok {
 		event.Outcome = outcome
 	}
-	if currentAccount(c) == nil && status >= 300 && status < 400 && (strings.HasPrefix(c.Path(), "/admin") || strings.HasPrefix(c.Path(), "/account")) {
+	if authenticationRedirect {
 		event.Outcome, event.Reason = "denied", "authentication_required"
 	}
 	if event.Reason == "consent_declined" {

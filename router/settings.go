@@ -31,21 +31,21 @@ func settings(c *fiber.Ctx) error {
 }
 
 type settingsRequest struct {
-	SiteTitle    string `json:"site_title,omitempty" form:"site_title"`
-	SiteDesc     string `json:"site_desc,omitempty" form:"site_desc"`
-	TgBotToken   string `json:"tg_bot_token,omitempty" form:"tg_bot_token"`
-	TgChatId     string `json:"tg_chat_id,omitempty" form:"tg_chat_id"`
-	MailServer   string `json:"mail_server,omitempty" form:"mail_server"`
-	MailPort     int    `json:"mail_port,omitempty" form:"mail_port"`
-	MailUser     string `json:"mail_user,omitempty" form:"mail_user"`
-	MailPassword string `json:"mail_password,omitempty" form:"mail_password"`
-	MailSSL      bool   `json:"mail_ssl,omitempty" form:"mail_ssl"`
-	Akismet      string `json:"akismet,omitempty" form:"akismet"`
-	SiteDomain   string `json:"site_domain,omitempty" form:"site_domain"`
-	SiteKeywords string `json:"site_keywords,omitempty" form:"site_keywords"`
-	SiteTheme    string `json:"site_theme,omitempty" form:"site_theme"`
-	AdminTheme   string `json:"admin_theme,omitempty" form:"admin_theme"`
-	ThemeConfig  string `json:"theme_config,omitempty" form:"theme_config"`
+	SiteTitle    string  `json:"site_title,omitempty" form:"site_title"`
+	SiteDesc     string  `json:"site_desc,omitempty" form:"site_desc"`
+	TgBotToken   string  `json:"tg_bot_token,omitempty" form:"tg_bot_token"`
+	TgChatId     string  `json:"tg_chat_id,omitempty" form:"tg_chat_id"`
+	MailServer   string  `json:"mail_server,omitempty" form:"mail_server"`
+	MailPort     int     `json:"mail_port,omitempty" form:"mail_port"`
+	MailUser     string  `json:"mail_user,omitempty" form:"mail_user"`
+	MailPassword string  `json:"mail_password,omitempty" form:"mail_password"`
+	MailSSL      bool    `json:"mail_ssl,omitempty" form:"mail_ssl"`
+	Akismet      string  `json:"akismet,omitempty" form:"akismet"`
+	SiteDomain   string  `json:"site_domain,omitempty" form:"site_domain"`
+	SiteKeywords string  `json:"site_keywords,omitempty" form:"site_keywords"`
+	SiteTheme    string  `json:"site_theme,omitempty" form:"site_theme"`
+	AdminTheme   string  `json:"admin_theme,omitempty" form:"admin_theme"`
+	ThemeConfig  *string `json:"theme_config,omitempty" form:"theme_config"`
 }
 
 func settingsHandler(c *fiber.Ctx) error {
@@ -76,21 +76,6 @@ func settingsHandler(c *fiber.Ctx) error {
 		candidate.Admin.Theme = sr.AdminTheme
 	}
 
-	// Find active theme meta (使用当前主题或新主题)
-	var activeThemeMeta theme.ThemeMeta
-	foundActiveTheme := false
-	targetTheme := sr.SiteTheme
-	if targetTheme == "" {
-		targetTheme = candidate.Site.Theme
-	}
-	for _, t := range availableThemes.Site {
-		if t.ID == targetTheme {
-			activeThemeMeta = t
-			foundActiveTheme = true
-			break
-		}
-	}
-
 	// 检查 Telegram 配置是否发生变化
 	tgTokenChanged := candidate.TGBotToken != sr.TgBotToken && sr.TgBotToken != ""
 	tgChatIDChanged := candidate.TGChatID != sr.TgChatId && sr.TgChatId != ""
@@ -108,37 +93,16 @@ func settingsHandler(c *fiber.Ctx) error {
 	candidate.Site.Domain = sr.SiteDomain
 	candidate.Site.SpaceKeywords = sr.SiteKeywords
 
-	var newConfig map[string]interface{}
-	if sr.ThemeConfig != "" {
-		if err := yaml.Unmarshal([]byte(sr.ThemeConfig), &newConfig); err != nil {
+	// The editor submits the complete map, not a patch. Omission preserves it;
+	// an explicitly empty editor resets it to the active theme's defaults.
+	if sr.ThemeConfig != nil {
+		var newConfig map[string]interface{}
+		if err := yaml.Unmarshal([]byte(*sr.ThemeConfig), &newConfig); err != nil {
 			return fiber.NewError(http.StatusBadRequest, "Invalid theme config YAML: "+err.Error())
 		}
-		if newConfig == nil {
-			newConfig = make(map[string]interface{})
-		}
-
-		// 补充 theme.config 中存在但用户未提交的 key
-		if foundActiveTheme && activeThemeMeta.Config != nil {
-			for k, defaultValue := range activeThemeMeta.Config {
-				if _, exists := newConfig[k]; !exists {
-					newConfig[k] = defaultValue
-				}
-			}
-		}
-
-		for k, v := range newConfig {
-			candidate.Site.ThemeConfig[k] = v
-		}
-	} else {
-		// 如果用户没有提交 theme_config，使用 theme.config 中的默认值补充
-		if foundActiveTheme && activeThemeMeta.Config != nil {
-			for k, defaultValue := range activeThemeMeta.Config {
-				if _, exists := candidate.Site.ThemeConfig[k]; !exists {
-					candidate.Site.ThemeConfig[k] = defaultValue
-				}
-			}
-		}
+		candidate.Site.ThemeConfig = newConfig
 	}
+	model.SyncThemeConfig(&candidate, availableThemes)
 
 	if err := model.ValidateThemeConfig(&candidate, availableThemes); err != nil {
 		return fiber.NewError(http.StatusBadRequest, "Theme config validation failed: "+err.Error())
@@ -164,7 +128,6 @@ func settingsHandler(c *fiber.Ctx) error {
 		}
 	}
 
-	model.SyncThemeConfig(&candidate, availableThemes)
 	*solitudes.System.Config = candidate
 	if err := candidate.Save(); err != nil {
 		*solitudes.System.Config = previous

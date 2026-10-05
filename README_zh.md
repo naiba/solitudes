@@ -88,6 +88,8 @@ docker compose up -d solitudes
 
 管理员可在 `/admin/users` 管理用户、在 `/admin/oidc/clients` 查看应用及登录统计、在 `/admin/audit` 查询安全事件。
 
+审计保留登录、授权决定、敏感变更和失败事件；普通浏览、成功的令牌刷新/校验及认证中间步骤不逐次记录。
+
 `audit_retention_days: 0` 默认永久保留审计。设为正整数后会永久删除超期详情，只保留累计登录统计；重要部署请另行备份或归档。
 
 ## 主题

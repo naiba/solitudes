@@ -63,7 +63,7 @@ func TestCactusSettings(t *testing.T) {
 	reqBody := settingsRequest{
 		SiteTheme:   "cactus",
 		AdminTheme:  "default",
-		ThemeConfig: string(tcBytes),
+		ThemeConfig: new(string(tcBytes)),
 	}
 
 	body, _ := json.Marshal(reqBody)
