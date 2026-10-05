@@ -1490,6 +1490,53 @@ test('home reader names flow at natural widths and truncate without wrapping rol
   }
 });
 
+test('cactus home keeps a compact article list and aligned column headings and content', async ({ page }) => {
+  test.skip(siteTheme !== 'cactus', 'Cactus has independently stacked home columns.');
+  for (const width of [1440, 1024, 768, 390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto('/', { waitUntil: 'networkidle' });
+    await expect(page.locator('.home-articles-section [data-testid="article-list-link"]')).toHaveCount(6);
+    expect(await page.getByTestId('reader-circle-home').getByTestId('reader-circle-member').count()).toBeLessThanOrEqual(4);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if (width > 650) {
+      const search = (await page.locator('.home-search-section h2').boundingBox())!;
+      const input = (await page.getByTestId('site-search-input').boundingBox())!;
+      const button = (await page.getByTestId('site-search-submit').boundingBox())!;
+      const firstTitle = page.locator('.home-most-read-section [data-testid="article-list-link"]').first();
+      const firstTextLine = await firstTitle.evaluate(node => {
+        // The border needs a small optical inset within the text's font box,
+        // not alignment with the outer list item and its extra line leading.
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        const textBox = range.getClientRects()[0];
+        if (!textBox) throw new Error('First article title has no rendered text');
+        return textBox.y;
+      });
+      expect(input.y, `search field must not sit above the first title at ${width}px`).toBeGreaterThanOrEqual(firstTextLine);
+      expect(input.y - firstTextLine, `optical text inset at ${width}px`).toBeLessThanOrEqual(4);
+      expect(Math.abs(button.y - input.y)).toBeLessThanOrEqual(1);
+      expect(input.height).toBeGreaterThanOrEqual(44);
+      // The first available sidebar heading must align even if earlier widgets
+      // have no data. Removing them mirrors the template's conditional output.
+      for (const selector of ['.home-most-read-section', '.home-comments', '.reader-circle-home']) {
+        const widget = page.locator(selector);
+        await expect(widget).toBeVisible();
+        const heading = (await widget.locator(':scope > .h1').boundingBox())!;
+        expect(Math.abs(heading.y - search.y), `${selector} at ${width}px`).toBeLessThanOrEqual(1);
+        await widget.evaluate(node => node.remove());
+      }
+    } else {
+      await expect(page.locator('.home-search-section #search > form')).toHaveCSS('margin-top', '0px');
+      const primary = (await page.locator('.home-primary').boundingBox())!;
+      const secondary = (await page.locator('.home-secondary').boundingBox())!;
+      expect(secondary.y).toBeGreaterThanOrEqual(primary.y + primary.height - 1);
+    }
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto('/search/', { waitUntil: 'networkidle' });
+  await expect(page.locator('#search > form')).toHaveCSS('margin-top', '0px');
+});
+
 test('reader circle defaults to visible and supports opt-out and rejoin without revealing email', async ({ page }) => {
   test.skip(!readerEmail || !readerPassword || !editorEmail || !adminEmail || !adminPassword,
     'Requires isolated reader, editor, and admin fixtures.');

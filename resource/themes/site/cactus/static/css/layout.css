@@ -22,6 +22,14 @@ body.max-width { box-sizing: border-box; width: 100%; max-width: var(--site-widt
 #main-content { display: flow-root; margin-top: 0; padding-top: 0; }
 #main-content > :first-child, #main-content #posts > h2:first-of-type,
 #main-content .home-search-section #search > h2, #main-content > .content > #search > h2 { margin-top: 0; }
+/* Both independent home columns start on the same heading baseline,
+   including when the most-read or recent-comment widget is absent. */
+#main-content .home-column > :first-child > .h1 { margin-top: 0; }
+/* Match the list margin, then optically align the control border with the
+   title's visible text below its line-box top. Keep all article lists intact. */
+@media (min-width: 651px) {
+  .home-search-section #search > form { margin-top: calc(1em + .3rem); }
+}
 #main-content .home-grid-layout { margin-top: 0; }
 /* Standalone pages use the site navigation, not the article reading tools. */
 .page-edit-link { display: inline-flex; align-items: center; min-height: 44px; font-size: .8rem; }

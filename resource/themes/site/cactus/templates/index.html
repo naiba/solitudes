@@ -1,6 +1,6 @@
 {{define "site/index"}}
 {{template "site/header" .}}
-{{$articles := .Queries.Articles "newest" 16 "without_tag" "Topic"}}
+{{$articles := .Queries.Articles "newest" 6 "without_tag" "Topic"}}
 {{$readers := .Queries.Users "newest" 4}}
 {{$comments := .Queries.RecentComments 5}}
 {{$topics := .Queries.Articles "newest" 5 "tag" "Topic"}}
@@ -59,10 +59,9 @@
           </span>
         </li>
         {{else}}
-        {{$articleLimit := 16}}{{range $topics}}{{$articleLimit = add $articleLimit -2}}{{end}}
-        {{range $i, $article := $articles}}{{if lt $i $articleLimit}}
+        {{range $article := $articles}}
         {{template "site/article_list_entry" (dict "article" $article "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}
-        {{end}}{{end}}
+        {{end}}
         {{end}}
       </ul>
     </div>
