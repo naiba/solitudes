@@ -957,7 +957,8 @@ article header .author {
 
 article header .postdate { display: inline; }
 
-article .content h2:before {
+/* Markdown styling belongs to the reading body, including standalone pages. */
+[data-reading-content] h2:before {
   position: absolute;
   top: -4px;
   left: -1rem;
@@ -967,24 +968,24 @@ article .content h2:before {
   font-size: 1.2rem;
 }
 
-article .content img,
-article .content video {
+[data-reading-content] img,
+[data-reading-content] video {
   display: block;
   margin: auto;
   max-width: 80% !important;
   height: auto;
 }
 
-article .content .video-container {
+[data-reading-content] .video-container {
   position: relative;
   overflow: hidden;
   padding-top: 56.25%;
   height: 0;
 }
 
-article .content .video-container iframe,
-article .content .video-container object,
-article .content .video-container embed {
+[data-reading-content] .video-container iframe,
+[data-reading-content] .video-container object,
+[data-reading-content] .video-container embed {
   position: absolute;
   top: 0;
   left: 0;
@@ -993,7 +994,7 @@ article .content .video-container embed {
   height: 100%;
 }
 
-article .content blockquote {
+[data-reading-content] blockquote {
   margin: 1rem 10px;
   padding: 0.5em 10px;
   background: inherit;
@@ -1002,9 +1003,9 @@ article .content blockquote {
   font-weight: bold;
 }
 
-article .content blockquote p { margin: 0; }
+[data-reading-content] blockquote p { margin: 0; }
 
-article .content blockquote:before {
+[data-reading-content] blockquote:before {
   margin-right: 0.25em;
   color: var(--color-accent);
   content: "\201C";
@@ -1013,27 +1014,27 @@ article .content blockquote:before {
   line-height: 0.1em;
 }
 
-article .content blockquote footer {
+[data-reading-content] blockquote footer {
   margin: 0;
   color: #666;
   font-size: 11px;
 }
 
-article .content blockquote footer a {
+[data-reading-content] blockquote footer a {
   color: #666;
 }
 
-article .content blockquote footer a:hover {
+[data-reading-content] blockquote footer a:hover {
   text-decoration: underline;
   color: #858585;
 }
 
-article .content blockquote footer cite:before {
+[data-reading-content] blockquote footer cite:before {
   padding: 0 0.5em;
   content: "—";
 }
 
-article .content .caption {
+[data-reading-content] .caption {
   position: relative;
   display: block;
   margin-top: 0.5em;
@@ -1446,7 +1447,7 @@ body {
 }
 
 /* 文章标题字体大小优化 - Article heading font size optimization */
-article .content h1 {
+[data-reading-content] h1 {
   font-size: 2rem;
   font-weight: 700;
   margin-top: 1.5rem;
@@ -1454,7 +1455,7 @@ article .content h1 {
   line-height: 1.3;
 }
 
-article .content h2 {
+[data-reading-content] h2 {
   font-size: 1.5rem;
   font-weight: 700;
   margin-top: 1.4rem;
@@ -1462,7 +1463,7 @@ article .content h2 {
   line-height: 1.3;
 }
 
-article .content h3 {
+[data-reading-content] h3 {
   font-size: 1.25rem;
   font-weight: 600;
   margin-top: 1.3rem;
@@ -1470,7 +1471,7 @@ article .content h3 {
   line-height: 1.3;
 }
 
-article .content h4 {
+[data-reading-content] h4 {
   font-size: 1.15rem;
   font-weight: 600;
   margin-top: 1.2rem;
@@ -1478,7 +1479,7 @@ article .content h4 {
   line-height: 1.3;
 }
 
-article .content h5 {
+[data-reading-content] h5 {
   font-size: 1.1rem;
   font-weight: 600;
   margin-top: 1.1rem;
@@ -1486,7 +1487,7 @@ article .content h5 {
   line-height: 1.3;
 }
 
-article .content h6 {
+[data-reading-content] h6 {
   font-size: 1rem;
   font-weight: 600;
   margin-top: 1rem;
@@ -1641,8 +1642,8 @@ ul:has(li.vditor-task) {
     height: auto !important;
   }
   
-  article .content img,
-  article .content video {
+  [data-reading-content] img,
+  [data-reading-content] video {
     max-width: 95% !important;
   }
   

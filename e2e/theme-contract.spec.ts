@@ -2198,7 +2198,22 @@ test('standalone pages have their own layout, metadata and working comments', as
       expect(await page.locator('[data-reading-content] > p').first().evaluate(node=>getComputedStyle(node,'::first-letter').float)).toBe('none');
     } else {
       await expect(page.locator('#header')).toBeVisible();
+      // Page and article templates must share Markdown typography, not browser
+      // default blockquote margins (40px per side on a narrow phone screen).
+      const quote = page.locator('[data-reading-content] > blockquote');
+      const quoteBox = (await quote.boundingBox())!;
+      expect(quoteBox.x - bodyBox.x).toBeCloseTo(10, 0);
+      expect(bodyBox.width - quoteBox.width).toBeCloseTo(20, 0);
+      expect(await quote.locator('p').first().evaluate(node => getComputedStyle(node).margin)).toBe('0px');
+      expect(await quote.evaluate(node => getComputedStyle(node, '::before').content)).not.toBe('none');
+      expect(await page.locator('[data-reading-content] h2').evaluate(node => getComputedStyle(node).fontSize)).toBe('24px');
+      const image = page.locator('[data-reading-content] img');
+      expect(await image.evaluate(node => getComputedStyle(node).display)).toBe('block');
+      expect(await image.evaluate(node => getComputedStyle(node).maxWidth)).toBe(width <= 768 ? '95%' : '80%');
     }
+    const codeBox = (await page.locator('[data-reading-content] pre').boundingBox())!;
+    expect(codeBox.x).toBeGreaterThanOrEqual(bodyBox.x);
+    expect(codeBox.x + codeBox.width).toBeLessThanOrEqual(bodyBox.x + bodyBox.width + 1);
     expect(await page.evaluate(()=>document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     if (process.env.SOLITUDES_LAYOUT_SCREENSHOTS && [390,1440].includes(width)) {
       await page.screenshot({path:path.join(process.env.SOLITUDES_LAYOUT_SCREENSHOTS,`${siteTheme}-standalone-page-${width}.png`),fullPage:true,animations:'disabled'});
