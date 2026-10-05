@@ -41,7 +41,7 @@ func databasePolicyTestDB(t *testing.T) *gorm.DB {
 			t.Error(err)
 		}
 	})
-	config.RuntimeParams["search_path"] = schema + ",public"
+	config.RuntimeParams["search_path"] = schema
 	conn := stdlib.OpenDB(*config)
 	conn.SetMaxOpenConns(4)
 	t.Cleanup(func() { _ = conn.Close() })

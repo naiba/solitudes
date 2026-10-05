@@ -28,7 +28,7 @@ func (v *paginationView) Render(w io.Writer, name string, binding interface{}, l
 
 func TestPostgresPaginationBoundariesAndPrivacy(t *testing.T) {
 	db := newPostgresIdentityTestDB(t)
-	if err := db.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.Passkey{}, &model.ExternalIdentity{}, &model.OIDCClient{}); err != nil {
+	if err := db.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.Passkey{}, &model.ExternalIdentity{}, &model.OIDCClient{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
 		t.Fatal(err)
 	}
 	admin := model.Account{Email: "admin@pagination.test", Nickname: "Admin", Role: model.RoleAdmin}

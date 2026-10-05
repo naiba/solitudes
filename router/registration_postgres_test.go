@@ -62,7 +62,9 @@ func newPostgresIdentityTestDB(t testing.TB) *gorm.DB {
 			t.Errorf("remove temporary test schema %s: %v", schema, err)
 		}
 	})
-	if err := db.Exec("SET search_path TO " + quoted + ", public").Error; err != nil {
+	// Never fall back to public: existing application tables would hide missing
+	// fixture migrations and could expose non-test data to a test query.
+	if err := db.Exec("SET search_path TO " + quoted).Error; err != nil {
 		t.Fatal(err)
 	}
 	// uuid-ossp is database-wide and may already belong to another test's
@@ -74,6 +76,18 @@ func newPostgresIdentityTestDB(t testing.TB) *gorm.DB {
 		t.Fatal(err)
 	}
 	return db
+}
+
+func TestPostgresIdentityFixtureIsIsolated(t *testing.T) {
+	db := newPostgresIdentityTestDB(t)
+	var isolated bool
+	if err := db.Raw(`SELECT cardinality(current_schemas(false)) = 1
+ AND current_schema() LIKE 'solitudes_test_%'`).Scan(&isolated).Error; err != nil {
+		t.Fatal(err)
+	}
+	if !isolated {
+		t.Fatal("test queries must only resolve tables in their temporary schema")
+	}
 }
 
 // startMailCatcher implements enough of SMTP to exercise gomail's real TCP

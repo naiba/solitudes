@@ -54,7 +54,7 @@ func administratorTestDB(t *testing.T) *gorm.DB {
 			t.Errorf("remove temporary test schema %s: %v", schema, err)
 		}
 	})
-	if err := db.Exec("SET search_path TO " + quoted + ", public").Error; err != nil {
+	if err := db.Exec("SET search_path TO " + quoted).Error; err != nil {
 		t.Fatal(err)
 	}
 	// migrate() creates uuid-ossp in this schema when it does not exist yet.
@@ -209,11 +209,11 @@ func TestPostgresAdministratorSetupUsesConfigWithoutSavingCredentials(t *testing
 			t.Fatal(err)
 		}
 		q := u.Query()
-		q.Set("search_path", schema+",public")
+		q.Set("search_path", schema)
 		u.RawQuery = q.Encode()
 		dsn = u.String()
 	} else {
-		dsn += " search_path=" + schema + ",public"
+		dsn += " search_path=" + schema
 	}
 	t.Chdir(t.TempDir())
 	if err := os.Mkdir("data", 0700); err != nil {
