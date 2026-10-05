@@ -82,6 +82,7 @@ docker compose up -d solitudes
 - 使用授权码 + PKCE S256，支持轮换刷新令牌，不支持隐式或密码授权。请求 `openid` 才会获得 ID Token。
 - 公开客户端无需密钥；机密客户端使用 `client_secret_basic`，密钥只在创建时显示。
 - `/account/oidc/authorizations` 查看并撤销当前有效授权；凭据全部失效后不再展示。
+- 已登录且有效访问／刷新令牌覆盖请求权限时跳过确认；新增权限或 `prompt=consent` 需要确认。`prompt=none` 在需要交互时返回 `login_required` 或 `consent_required`；`prompt=login`、`max_age` 检查登录是否足够新。
 
 禁用或删除应用会清理相关令牌与待处理请求，但保留审计。撤销不能收回应用已保存的数据、退出其自身会话或使 ID Token 的离线签名立即失效。修改站点域名后需重启服务。
 

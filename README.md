@@ -82,6 +82,7 @@ Every verified user can create clients at `/account/oidc/clients`. Provide an ap
 - Use authorization code + PKCE S256. Rotating refresh tokens are supported; implicit/password grants are not. Request `openid` for an ID token.
 - Public clients need no secret; confidential clients use `client_secret_basic`. Secrets are displayed only on creation.
 - View and revoke current access at `/account/oidc/authorizations`. Applications disappear when all credentials expire.
+- Signed-in users skip consent when valid access/refresh tokens cover the requested scopes. New scopes or `prompt=consent` require confirmation; `prompt=none` returns `login_required` or `consent_required` when interaction is needed. `prompt=login` and `max_age` enforce a fresh enough sign-in.
 
 Disabling or deleting an application clears its tokens and pending requests while preserving audits. Revocation cannot erase data already copied by the application, end its own sessions or immediately invalidate an ID token's offline signature. Restart after changing the site's host.
 

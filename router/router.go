@@ -940,6 +940,21 @@ func csrfGuard(c *fiber.Ctx) error {
 
 func guestRequired(c *fiber.Ctx) error {
 	if account := currentAccount(c); account != nil {
+		// A validated pending OIDC flow may require a fresh sign-in. Do not
+		// redirect an already signed-in browser back into a max_age/login loop.
+		if c.Path() == "/login" || strings.HasPrefix(c.Path(), "/auth/") {
+			returnTo := c.Query("return_to")
+			if c.Method() == http.MethodPost {
+				returnTo = c.FormValue("return_to")
+			}
+			application, err := loginOIDCApplication(c, safeReturnPath(returnTo))
+			if err != nil {
+				return err
+			}
+			if application != nil {
+				return c.Next()
+			}
+		}
 		if target := safeReturnPath(c.Query("return_to")); target != "" {
 			return c.Redirect(target, http.StatusFound)
 		}

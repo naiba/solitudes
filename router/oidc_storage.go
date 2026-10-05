@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -79,8 +80,10 @@ func (s *oidcStorage) CreateAuthRequest(ctx context.Context, request *oidc.AuthR
 		return nil, oidc.ErrInvalidRequest().WithDescription("authorization code with PKCE S256 required")
 	}
 	for _, prompt := range request.Prompt {
-		if prompt == oidc.PromptNone {
-			return nil, oidc.ErrLoginRequired()
+		switch prompt {
+		case oidc.PromptNone, oidc.PromptConsent, oidc.PromptLogin, oidc.PromptSelectAccount:
+		default:
+			return nil, oidc.ErrInvalidRequest().WithDescription("unsupported prompt")
 		}
 	}
 	data, err := json.Marshal(request)
@@ -91,17 +94,30 @@ func (s *oidcStorage) CreateAuthRequest(ctx context.Context, request *oidc.AuthR
 	if err != nil {
 		return nil, err
 	}
+	now := time.Now()
 	row := model.OIDCAuthRequest{ID: id, ClientID: request.ClientID, RequestJSON: data,
-		ExpiresAt: time.Now().Add(10 * time.Minute)}
+		CreatedAt: now, ExpiresAt: now.Add(10 * time.Minute)}
+	if subject != "" {
+		row.AccountID = &subject // Validated ID-token hint, not a login session.
+	}
+	pending := &oidcAuthRequest{OIDCAuthRequest: row, req: *request}
 	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if _, err := lockOIDCClient(tx, request.ClientID, true); err != nil {
 			return err
 		}
-		return tx.Create(&row).Error
+		browser, _ := ctx.Value(oidcBrowserKey{}).(oidcBrowserIdentity)
+		decision, err := evaluateOIDCConsent(tx, pending, browser, false, time.Now())
+		if err != nil {
+			return err
+		}
+		if decision != oidcConsentReady && slices.Contains(request.Prompt, oidc.PromptNone) {
+			return decision.protocolError()
+		}
+		return tx.Create(&pending.OIDCAuthRequest).Error
 	}); err != nil {
 		return nil, err
 	}
-	return oidcRequestFromRow(row)
+	return pending, nil
 }
 
 func (s *oidcStorage) AuthRequestByID(ctx context.Context, id string) (op.AuthRequest, error) {

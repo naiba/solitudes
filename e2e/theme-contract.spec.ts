@@ -688,10 +688,11 @@ test('member app authorization can be revoked and owner deletion invalidates cre
   await page.goto('/account'); await page.getByTestId('account-logout').click();
   await signIn(page, editorEmail!, readerPassword!);
   const verifier = 'g'.repeat(64);
-  const authorize = async () => {
+  const authorize = async (expectConsent = true) => {
     await page.goto('/authorize?'+new URLSearchParams({client_id:clientID,redirect_uri:oidcRedirectURI!,response_type:'code',scope:'openid email profile offline_access',
       code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'}));
-    await page.getByTestId('oidc-consent-allow').click();
+    if (expectConsent) await page.getByTestId('oidc-consent-allow').click();
+    else await expect(page.getByTestId('oidc-consent-allow')).toHaveCount(0);
     await expect(page).toHaveURL(/callback\?code=/);
     return new URL(page.url()).searchParams.get('code')!;
   };
@@ -700,7 +701,7 @@ test('member app authorization can be revoked and owner deletion invalidates cre
   expect(tokensResponse.status()).toBe(200);
   const tokens = await tokensResponse.json();
   expect(tokens.refresh_token).toBeTruthy();
-  const pendingCode = await authorize();
+  const pendingCode = await authorize(false);
   await page.goto('/account'); await page.getByTestId('account-authorizations').click();
   const row = page.locator(`[data-testid="authorization-row"][data-client-id="${clientID}"]`);
   await expect(row).toContainText('Revocable application');
@@ -3322,8 +3323,12 @@ for (const publicClient of [true, false]) {
         await page.getByTestId('auth-captcha').fill('0');
         await page.getByTestId('auth-submit').click();
       }
-      await expect(page).toHaveURL(/\/oidc\/consent\?/);
-      await page.getByTestId('oidc-consent-allow').click();
+      if (scope !== 'openid') {
+        await expect(page).toHaveURL(/\/oidc\/consent\?/);
+        await page.getByTestId('oidc-consent-allow').click();
+      } else {
+        await expect(page.getByTestId('oidc-consent-allow')).toHaveCount(0);
+      }
       await expect(page).toHaveURL(/callback\?code=/);
       expect(new URL(page.url()).searchParams.get('state')).toBe(state);
       const form = { grant_type: 'authorization_code', client_id: clientID, redirect_uri: oidcRedirectURI!,
@@ -3365,9 +3370,37 @@ for (const publicClient of [true, false]) {
     }
     expect((await page.request.get('/userinfo')).status()).toBe(401);
     expect((await page.request.get('/userinfo', {headers: {Authorization: 'Bearer invalid-token'}})).status()).toBe(401);
+    const authorizeURL = (extra: Record<string, string>) => '/authorize?' + new URLSearchParams({
+      client_id:clientID, redirect_uri:oidcRedirectURI!, response_type:'code', scope:'openid email profile', state:'reuse-state',
+      code_challenge:createHash('sha256').update('c'.repeat(64)).digest('base64url'), code_challenge_method:'S256', ...extra,
+    });
+    await page.goto(authorizeURL({prompt:'none'}));
+    await expect(page).toHaveURL(/callback\?code=/);
+    expect(new URL(page.url()).searchParams.get('state')).toBe('reuse-state');
+    await page.goto(authorizeURL({prompt:'none',scope:'openid email profile offline_access'}));
+    expect(new URL(page.url()).searchParams.get('error')).toBe('consent_required');
+    const consentPrompts: Record<string, string>[] = [{prompt:'consent'}, {scope:'openid email profile offline_access'}];
+    for (const extra of consentPrompts) {
+      await page.goto(authorizeURL(extra));
+      await expect(page).toHaveURL(/\/oidc\/consent\?/);
+      await expect(page.getByTestId('oidc-consent-allow')).toBeVisible();
+    }
+    await page.goto(authorizeURL({prompt:'login'}));
+    await expect(page).toHaveURL(/\/login\?return_to=/);
+    await page.getByTestId('auth-email').fill(editorEmail!);
+    await page.getByTestId('auth-password').fill(readerPassword!);
+    await page.getByTestId('auth-captcha').fill('0');
+    await page.getByTestId('auth-submit').click();
+    await expect(page).toHaveURL(/callback\?code=/);
     await page.goto('/account');
     await page.getByTestId('account-logout').click();
+    const silentGuest = await page.request.get(authorizeURL({prompt:'none'}), {maxRedirects:0});
+    expect(silentGuest.status()).toBe(302);
+    expect(new URL(silentGuest.headers().location!).searchParams.get('error')).toBe('login_required');
     await signIn(page, readerEmail!, readerPassword!);
+    const otherUser = await page.request.get(authorizeURL({prompt:'none'}), {maxRedirects:0});
+    expect(otherUser.status()).toBe(302);
+    expect(new URL(otherUser.headers().location!).searchParams.get('error')).toBe('consent_required');
     for (const width of [1440, 390]) {
       await page.setViewportSize({width, height:1000});
       await page.goto('/account/oidc/clients');
@@ -3415,7 +3448,7 @@ for (const role of ['user', 'editor', 'admin'] as const) {
     const verifier = 'v'.repeat(64);
     const challenge = createHash('sha256').update(verifier).digest('base64url');
     const query = new URLSearchParams({ client_id: oidcClientID!, redirect_uri: oidcRedirectURI!,
-      response_type: 'code', scope: 'openid email profile', state: `browser-${role}`,
+      response_type: 'code', scope: 'openid email profile', state: `browser-${role}`, prompt: 'consent',
       code_challenge: challenge, code_challenge_method: 'S256' });
     await page.goto('/authorize?' + query.toString(), { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/login\?return_to=/);

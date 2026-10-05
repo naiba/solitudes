@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -17,6 +18,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	googleuuid "github.com/google/uuid"
 	"github.com/hashicorp/go-uuid"
+	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -59,7 +61,7 @@ func oidcHTTPHandler(provider http.Handler) fiber.Handler {
 		if c.Path() == "/.well-known/oauth-authorization-server" {
 			address = publicBaseURL() + "/.well-known/openid-configuration"
 		}
-		r, err := http.NewRequestWithContext(c.UserContext(), c.Method(), address, bytes.NewReader(c.Body()))
+		r, err := http.NewRequestWithContext(oidcBrowserContext(c), c.Method(), address, bytes.NewReader(c.Body()))
 		if err != nil {
 			return err
 		}
@@ -83,7 +85,10 @@ func oidcHTTPHandler(provider http.Handler) fiber.Handler {
 			}
 		}
 		switch protocolError.Error {
-		case "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "invalid_scope", "unsupported_grant_type", "access_denied", "login_required", "consent_required", "server_error", "temporarily_unavailable", "invalid_token", "insufficient_scope", "unsupported_response_type", "interaction_required":
+		case "login_required", "consent_required":
+			// Normal silent-login interaction requirements are not failed login
+			// attempts. Do not fill the audit ledger with background SSO checks.
+		case "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "invalid_scope", "unsupported_grant_type", "access_denied", "server_error", "temporarily_unavailable", "invalid_token", "insufficient_scope", "unsupported_response_type", "interaction_required":
 			c.Locals("audit_reason", protocolError.Error)
 			c.Locals("audit_outcome", "failure")
 			// This is the targeted application, not proof of authentication.
@@ -158,10 +163,18 @@ func consentPage(c *fiber.Ctx) error {
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	if currentAccount(c) == nil {
-		return c.Redirect("/login?return_to="+url.QueryEscape("/oidc/consent?authRequestID="+id), http.StatusFound)
+	pending, ok := request.(*oidcAuthRequest)
+	if !ok {
+		return fiber.ErrBadRequest
 	}
-	if request.Done() {
+	resolved, decision, err := completeOIDCConsent(c, pending, false)
+	if err != nil {
+		return err
+	}
+	if decision == oidcNeedsLogin || (decision == oidcNeedsConsent && slices.Contains(resolved.req.Prompt, oidc.PromptNone)) {
+		return oidcConsentResponse(c, resolved, decision)
+	}
+	if decision == oidcConsentReady {
 		return c.Redirect("/authorize/callback?id="+url.QueryEscape(id), http.StatusFound)
 	}
 	info, err := oidcClientInfo(c.UserContext(), client)
@@ -259,22 +272,16 @@ func consentHandler(c *fiber.Ctx) error {
 		_ = activeOIDCProvider.Storage().DeleteAuthRequest(c.UserContext(), id)
 		return c.Redirect(target.String(), http.StatusFound)
 	}
-	if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
-		if _, err := lockOIDCClient(tx, request.GetClientID(), true); err != nil {
-			return err
-		}
-		result := tx.Model(&model.OIDCAuthRequest{}).
-			Where("id = ? AND client_id = ? AND approved = false AND expires_at > ?", id, request.GetClientID(), time.Now()).
-			Updates(map[string]interface{}{"approved": true, "account_id": account.ID, "auth_time": time.Now()})
-		if result.Error != nil {
-			return result.Error
-		}
-		if result.RowsAffected != 1 {
-			return fiber.ErrBadRequest
-		}
-		return nil
-	}); err != nil {
+	pending, ok := request.(*oidcAuthRequest)
+	if !ok {
+		return fiber.ErrBadRequest
+	}
+	resolved, decision, err := completeOIDCConsent(c, pending, true)
+	if err != nil {
 		return err
+	}
+	if decision != oidcConsentReady {
+		return oidcConsentResponse(c, resolved, decision)
 	}
 	return c.Redirect("/authorize/callback?id="+url.QueryEscape(id), http.StatusFound)
 }
