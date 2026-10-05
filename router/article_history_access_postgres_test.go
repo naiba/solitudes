@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
@@ -64,6 +65,7 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 		t.Run(theme, func(t *testing.T) {
 			conf := &model.Config{}
 			conf.Site.Theme, conf.Admin.Theme = theme, "default"
+			conf.Site.Domain = "example.test"
 			solitudes.System = &solitudes.SysVariable{Config: conf, DB: db}
 			if err := LoadTemplates(); err != nil {
 				t.Fatal(err)
@@ -150,6 +152,20 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 								t.Fatal("restricted history is cacheable")
 							}
 							current, _ := request(t, "", http.StatusOK)
+							for page, html := range map[string]string{"current": current, "history": body, "comparison": compared} {
+								doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
+								if err != nil {
+									t.Fatal(err)
+								}
+								canonical := doc.Find(`link[rel="canonical"]`)
+								if visibility == model.VisibilityPublic {
+									if href, _ := canonical.Attr("href"); canonical.Length() != 1 || href != "https://example.test/"+a.Slug {
+										t.Fatalf("%s: public canonical must point to the main article, got %q", page, href)
+									}
+								} else if canonical.Length() != 0 {
+									t.Fatalf("%s: non-public article must not output a canonical link", page)
+								}
+							}
 							if !strings.Contains(current, a.Title) || strings.Contains(current, history.Title) {
 								t.Fatal("current article did not retain its own title")
 							}

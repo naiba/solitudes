@@ -132,9 +132,13 @@ func articleCompare(c *fiber.Ctx) error {
 	// Templates get revision metadata and sanitized changes, never another
 	// path to raw source or the latest article's unfiltered fragments.
 	latest.Content, before.Content, after.Content = "", "", ""
-	return c.Render("site/article_compare", injectSiteData(c, fiber.Map{
-		"title": fmt.Sprintf("%s · v%d ↔ v%d", latest.Title, from, to), "noindex": true, "canonical_path": "/" + latest.Slug,
+	data := fiber.Map{
+		"title": fmt.Sprintf("%s · v%d ↔ v%d", latest.Title, from, to), "noindex": true,
 		"article": latest, "before": before, "after": after, "changes": rows, "changed": changed,
 		"comparison": true,
-	}))
+	}
+	if latest.Public() {
+		data["canonical_path"] = "/" + latest.Slug
+	}
+	return c.Render("site/article_compare", injectSiteData(c, data))
 }

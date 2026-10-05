@@ -87,19 +87,22 @@ func article(c *fiber.Ctx) error {
 		ogType = "website"
 	}
 
-	return c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, fiber.Map{
+	data := fiber.Map{
 		"title":              title,
 		"desc":               desc,
 		"og_type":            ogType,
 		"keywords":           a.RawTags,
 		"article":            &a,
-		"canonical_path":     "/" + a.Slug,
 		"can_read_history":   true, // The latest article's audience was checked above.
 		"comment_navigation": navigation,
 		"thread":             thread,
 		"comment_page":       pg,
 		"noindex":            isOldVersion || !a.Public() || pg.Page > 1 || thread != "",
-	}))
+	}
+	if a.Public() {
+		data["canonical_path"] = "/" + a.Slug
+	}
+	return c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, data))
 }
 
 func relatedSiblingArticle(p *model.Article, account *model.Account) (prev model.Article, next model.Article) {
