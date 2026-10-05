@@ -49,7 +49,7 @@ func newOIDCProvider() (*op.Provider, error) {
 	return op.NewOpenIDProvider(issuer, config, &oidcStorage{db: solitudes.System.DB}, options...)
 }
 
-func oidcHTTPHandler(provider *op.Provider) fiber.Handler {
+func oidcHTTPHandler(provider http.Handler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if len(c.Body()) > 1<<20 {
 			return fiber.ErrRequestEntityTooLarge
@@ -126,8 +126,11 @@ func oidcHTTPHandler(provider *op.Provider) fiber.Handler {
 			return c.Status(http.StatusOK).JSON(document)
 		}
 		for header, values := range result.Header {
+			// Replace Fiber's defaults (notably text/plain Content-Type) and
+			// retain separate values such as Set-Cookie instead of comma-joining.
+			c.Response().Header.Del(header)
 			for _, value := range values {
-				c.Append(header, value)
+				c.Response().Header.Add(header, value)
 			}
 		}
 		c.Set(fiber.HeaderCacheControl, "no-store")
