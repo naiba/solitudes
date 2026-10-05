@@ -65,3 +65,7 @@ html { scrollbar-gutter: stable; background: var(--bg); }
 
 .revision-compare-link { display: inline-flex; align-items: center; min-height: 36px; margin-top: .5rem; font-size: .8rem; }
 .article-updated-by { font-size: .75rem; color: var(--muted); }
+.client-usage { display: flex; flex-wrap: wrap; gap: .3rem 1.25rem; margin: .5rem 0; font-size: .8rem; color: var(--muted); }
+.client-usage > span { display: inline-flex; align-items: baseline; gap: .35rem; white-space: nowrap; }
+.client-usage strong { color: var(--text); }
+.client-usage-hint { font-size: .8rem; line-height: 1.6; color: var(--muted); }

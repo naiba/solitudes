@@ -300,6 +300,16 @@ func oidcClientsPage(c *fiber.Ctx) error {
 		model.OIDCClient
 		RedirectURIs string
 		LogoutURIs   string
+		LoginUsers   int64
+		ActiveUsers  int64
+	}
+	ids := make([]string, len(clients))
+	for i := range clients {
+		ids[i] = clients[i].ID
+	}
+	usage, err := ownedClientUsage(solitudes.System.DB.WithContext(c.UserContext()), currentAccount(c).ID, ids, time.Now())
+	if err != nil {
+		return err
 	}
 	views := make([]clientView, 0, len(clients))
 	for _, client := range clients {
@@ -310,7 +320,7 @@ func oidcClientsPage(c *fiber.Ctx) error {
 		_ = json.Unmarshal([]byte(client.RedirectURIsJSON), &redirects)
 		var logoutURIs []string
 		_ = json.Unmarshal([]byte(client.PostLogoutURIsJSON), &logoutURIs)
-		views = append(views, clientView{OIDCClient: client, RedirectURIs: strings.Join(redirects, "\n"), LogoutURIs: strings.Join(logoutURIs, "\n")})
+		views = append(views, clientView{OIDCClient: client, RedirectURIs: strings.Join(redirects, "\n"), LogoutURIs: strings.Join(logoutURIs, "\n"), LoginUsers: usage[client.ID].LoginUsers, ActiveUsers: usage[client.ID].ActiveUsers})
 	}
 	c.Set("Cache-Control", "private, no-store")
 	return c.Status(http.StatusOK).Render("site/account_oidc_clients", injectSiteData(c, fiber.Map{

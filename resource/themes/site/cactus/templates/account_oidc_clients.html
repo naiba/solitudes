@@ -5,6 +5,7 @@
   <p><a href="/account">← {{.Tr.T "my_account"}}</a></p>
   <h1>{{.Tr.T "provider_external_apps"}}</h1>
   <p>{{.Tr.T "owned_clients_hint"}}</p>
+  <p class="client-usage-hint">{{.Tr.T "client_usage_hint"}}</p>
   <p>{{.Tr.T "oidc_issuer"}}: <code>{{.Data.issuer}}</code></p>
   <p><a href="{{.Data.issuer}}/.well-known/openid-configuration">{{.Tr.T "discovery_document"}}</a></p>
   <div class="account-grid">
@@ -27,6 +28,7 @@
     </section>
     <section class="account-card" id="clients"><h2>{{.Tr.T "manage_clients"}}</h2>
       <ul>{{range .Data.clients}}<li data-testid="account-client-row"><strong>{{.Name}}</strong> · <code>{{.ID}}</code>{{if .HomepageURL}} · <a href="{{.HomepageURL}}" target="_blank" rel="noopener noreferrer">{{$.Tr.T "application_homepage"}}</a>{{end}}
+        <p class="client-usage" data-testid="oidc-client-usage"><span>{{$.Tr.T "client_login_users"}} <strong data-testid="oidc-client-login-users">{{.LoginUsers}}</strong></span><span>{{$.Tr.T "client_active_users"}} <strong data-testid="oidc-client-active-users">{{.ActiveUsers}}</strong></span></p>
         {{if .DisabledAt}}({{$.Tr.T "disabled"}}){{else}}
         <details><summary>{{$.Tr.T "edit_client"}}</summary>
           <form method="post" action="/account/oidc/clients/{{.ID}}/metadata" data-testid="oidc-client-edit-form">

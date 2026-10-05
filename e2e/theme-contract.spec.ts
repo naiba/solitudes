@@ -1496,6 +1496,10 @@ test('cactus home keeps a compact article list and aligned column headings and c
     await page.setViewportSize({ width, height: 1000 });
     await page.goto('/', { waitUntil: 'networkidle' });
     await expect(page.locator('.home-articles-section [data-testid="article-list-link"]')).toHaveCount(6);
+    await expect(page.locator('.home-most-read-section h2')).toHaveText('Recommended');
+    const picks = await page.locator('.home-most-read-section [data-testid="article-list-link"]').evaluateAll(links => links.map(link => link.getAttribute('href')));
+    expect(picks).toHaveLength(3);
+    expect(new Set(picks).size).toBe(3);
     expect(await page.getByTestId('reader-circle-home').getByTestId('reader-circle-member').count()).toBeLessThanOrEqual(4);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     if (width > 650) {
@@ -3361,6 +3365,23 @@ for (const publicClient of [true, false]) {
     }
     expect((await page.request.get('/userinfo')).status()).toBe(401);
     expect((await page.request.get('/userinfo', {headers: {Authorization: 'Bearer invalid-token'}})).status()).toBe(401);
+    await page.goto('/account');
+    await page.getByTestId('account-logout').click();
+    await signIn(page, readerEmail!, readerPassword!);
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({width, height:1000});
+      await page.goto('/account/oidc/clients');
+      const app = page.getByTestId('account-client-row').filter({has: page.locator('code').filter({hasText:clientID})});
+      // Two authorizations by one person are one user, never two token users.
+      await expect(app.getByTestId('oidc-client-login-users')).toHaveText('1');
+      await expect(app.getByTestId('oidc-client-active-users')).toHaveText('1');
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      if (process.env.SOLITUDES_USAGE_SCREENSHOTS && publicClient) await page.screenshot({path:path.join(process.env.SOLITUDES_USAGE_SCREENSHOTS,`${siteTheme}-usage-${width}.png`),fullPage:true,animations:'disabled'});
+    }
+    const app = page.getByTestId('account-client-row').filter({has: page.locator('code').filter({hasText:clientID})});
+    await app.getByTestId('oidc-client-disable').click();
+    await expect(app.getByTestId('oidc-client-active-users')).toHaveText('0');
+    await expect(app.getByTestId('oidc-client-login-users')).toHaveText('1');
   });
 }
 

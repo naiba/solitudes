@@ -80,11 +80,12 @@
     {{end}}
     </div>
     <aside class="home-column home-secondary">
-    {{$mostRead := .Queries.Articles "reads" 3 "without_tag" "Topic" "template" "1"}}
-    {{if ge (len $mostRead) 3}}
+    {{$pool := .Queries.Articles "reads" 10 "without_tag" "Topic" "template" "1"}}
+    {{$picks := randomIndices (len $pool) 3}}
+    {{if $picks}}
     <section class="home-most-read-section">
-      <h2 class="h1">{{.Tr.T "most_read"}}</h2>
-      <ul class="post-list">{{range $mostRead}}{{template "site/article_list_entry" (dict "article" . "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}{{end}}</ul>
+      <h2 class="h1">{{.Tr.T "recommended_reading"}}</h2>
+      <ul class="post-list">{{range $picks}}{{template "site/article_list_entry" (dict "article" (index $pool .) "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}{{end}}</ul>
     </section>
     {{end}}
     {{if $comments}}<section class="home-comments" data-testid="home-recent-comments">
