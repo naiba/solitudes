@@ -1,23 +1,24 @@
 {{define "site/page"}}
 {{template "site/header" .}}
 {{if not .Noindex}}
+{{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebPage",
-  "name": "{{jsonEscape .Data.article.Title}}",
+  "name": "{{.Data.article.Title}}",
   "url": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}",
-  "description": "{{jsonEscape .Desc}}",
+  "description": "{{.Desc}}",
   "datePublished": "{{iso8601 .Data.article.CreatedAt}}",
   "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
   "author": {
     "@type": "Person",
-    "name": "{{jsonEscape .Data.article.Author.Nickname}}",
+    "name": "{{.Data.article.Author.Nickname}}",
     "url": "https://{{.Conf.Site.Domain}}/{{if .Data.article.Author.ID}}users/{{.Data.article.Author.ID}}{{end}}"
   },
   "publisher": {
     "@type": "Organization",
-    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+    "name": "{{.Conf.Site.SpaceName}}",
     "logo": {
       "@type": "ImageObject",
       "url": "https://{{.Conf.Site.Domain}}/logo.png"
@@ -25,7 +26,7 @@
   },
   "isPartOf": {
     "@type": "WebSite",
-    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+    "name": "{{.Conf.Site.SpaceName}}",
     "url": "https://{{.Conf.Site.Domain}}/"
   }
 }

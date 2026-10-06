@@ -4,15 +4,16 @@
 {{$readers := .Queries.Users "newest" 4}}
 {{$comments := .Queries.RecentComments 5}}
 {{$topics := .Queries.Articles "newest" 5 "tag" "Topic"}}
+{{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "WebSite",
-      "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+      "name": "{{.Conf.Site.SpaceName}}",
       "url": "https://{{.Conf.Site.Domain}}/",
-      "description": "{{jsonEscape .Desc}}",
+      "description": "{{.Desc}}",
       "potentialAction": {
         "@type": "SearchAction",
         "target": {
@@ -24,7 +25,7 @@
     },
     {
       "@type": "Organization",
-      "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+      "name": "{{.Conf.Site.SpaceName}}",
       "url": "https://{{.Conf.Site.Domain}}/"
     }
   ]

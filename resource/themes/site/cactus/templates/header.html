@@ -34,7 +34,8 @@
     <meta name="author" content="{{if .Data.article.Author.Nickname}}{{.Data.article.Author.Nickname}}{{else if .Data.profile.Nickname}}{{.Data.profile.Nickname}}{{else}}{{.Conf.Site.SpaceName}}{{end}}">
     <meta property="og:title" content="{{.Title}}">
     <meta property="og:description" content="{{.Desc}}">
-    <meta property="og:url" content="https://{{.Conf.Site.Domain}}{{.Path}}">
+    {{/* Revision and comparison pages must share the canonical article URL. */}}
+    <meta property="og:url" content="https://{{.Conf.Site.Domain}}{{if .CanonicalPath}}{{.CanonicalPath}}{{else}}{{.Path}}{{end}}">
     <meta property="og:type" content="{{.OgType}}">
     <meta property="og:site_name" content="{{.Conf.Site.SpaceName}}">
     {{if eq .OgType "article"}}<meta property="og:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
@@ -60,7 +61,8 @@
     {{if ne .Path "/"}}
     {{if not .Noindex}}
     {{if .Data.article}}
-    <script type="application/ld+json">
+    {{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
+<script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
@@ -80,7 +82,7 @@
         {
           "@type": "ListItem",
           "position": {{if eq .OgType "article"}}3{{else}}2{{end}},
-          "name": "{{jsonEscape .Data.article.Title}}",
+          "name": "{{.Data.article.Title}}",
           "item": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
         }
       ]
@@ -107,8 +109,8 @@
         {
           "@type": "ListItem",
           "position": 3,
-          "name": "{{jsonEscape .Data.tag}}",
-          "item": "https://{{.Conf.Site.Domain}}/tags/{{.Data.tag}}/"
+          "name": "{{.Data.tag}}",
+          "item": "https://{{.Conf.Site.Domain}}/tags/{{pathEscape .Data.tag}}/"
         }{{else if eq .Path "/tags/"}},
         {
           "@type": "ListItem",

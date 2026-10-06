@@ -1,6 +1,7 @@
 {{define "site/article"}}
 {{template "site/header" .}}
 {{if not .Noindex}}
+{{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -9,17 +10,17 @@
     "@type": "WebPage",
     "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
   },
-  "headline": "{{jsonEscape .Data.article.Title}}",
+  "headline": "{{.Data.article.Title}}",
   "url": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}",
   "image": "{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}",
   "author": {
     "@type": "Person",
-    "name": "{{jsonEscape .Data.article.Author.Nickname}}",
+    "name": "{{.Data.article.Author.Nickname}}",
     "url": "https://{{.Conf.Site.Domain}}/{{if .Data.article.Author.ID}}users/{{.Data.article.Author.ID}}{{end}}"
   },
   "publisher": {
     "@type": "Organization",
-    "name": "{{jsonEscape .Conf.Site.SpaceName}}",
+    "name": "{{.Conf.Site.SpaceName}}",
     "logo": {
       "@type": "ImageObject",
       "url": "https://{{.Conf.Site.Domain}}/logo.png"
@@ -27,8 +28,8 @@
   },
   "datePublished": "{{iso8601 .Data.article.CreatedAt}}",
   "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
-  "description": "{{jsonEscape .Desc}}"{{if .Data.article.Tags}},
-  "keywords": [{{range $i, $tag := .Data.article.Tags}}{{if $i}}, {{end}}"{{jsonEscape $tag}}"{{end}}]{{end}}
+  "description": "{{.Desc}}"{{if .Data.article.Tags}},
+  "keywords": [{{range $i, $tag := .Data.article.Tags}}{{if $i}}, {{end}}"{{$tag}}"{{end}}]{{end}}
 }
 </script>
 {{end}}
@@ -59,8 +60,9 @@
             </div>
             {{if .Data.article.RawTags}}
             <div class="article-tags">
+                {{/* Escape tags as path segments: #, ?, and / are tag text, not URL delimiters. */}}
                 {{range $k, $v := .Data.article.Tags}}
-                {{if $v}}<a href="https://{{$.Conf.Site.Domain}}/tags/{{$v}}/" class="article-tag">{{$v}}</a>{{end}}
+                {{if $v}}<a href="https://{{$.Conf.Site.Domain}}/tags/{{pathEscape $v}}/" class="article-tag">{{$v}}</a>{{end}}
                 {{end}}
             </div>
             {{end}}

@@ -440,26 +440,8 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 		},
 	})
 
+	app.Use(canonicalURLRedirect)
 	app.Use(func(c *fiber.Ctx) error {
-		p := c.Path()
-		if len(p) > 1 {
-			hasSlash := p[len(p)-1] == '/'
-			trimmed := strings.TrimRight(p, "/")
-			isList := trimmed == "/posts" || trimmed == "/books" || trimmed == "/tags" || trimmed == "/search" || trimmed == "/readers" ||
-				strings.HasPrefix(trimmed, "/tags/") || strings.HasPrefix(trimmed, "/posts/") || strings.HasPrefix(trimmed, "/books/")
-			needRedirect := (isList && !hasSlash) || (!isList && hasSlash)
-			if needRedirect {
-				q := string(c.Request().URI().QueryString())
-				target := trimmed
-				if isList {
-					target += "/"
-				}
-				if q != "" {
-					target += "?" + q
-				}
-				return c.Redirect(target, http.StatusMovedPermanently)
-			}
-		}
 		c.Set("X-Frame-Options", "SAMEORIGIN")
 		c.Set("X-Content-Type-Options", "nosniff")
 		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")

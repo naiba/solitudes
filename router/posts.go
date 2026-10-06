@@ -57,6 +57,10 @@ func posts(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	// Out-of-range archives are missing pages, not successful empty pages (soft 404s).
+	if page > pg.TotalPage {
+		return page404(c)
+	}
 	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), articles); err != nil {
 		return err
 	}
@@ -87,6 +91,10 @@ func book(c *fiber.Ctx) error {
 	}, &articles)
 	if err != nil {
 		return err
+	}
+	// Out-of-range archives are missing pages, not successful empty pages (soft 404s).
+	if page > pg.TotalPage {
+		return page404(c)
 	}
 	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), articles); err != nil {
 		return err
