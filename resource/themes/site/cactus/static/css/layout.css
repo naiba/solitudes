@@ -2,15 +2,23 @@
 :root { --site-width: 72rem; --auth-width: 36rem; --site-gutter: clamp(1rem, 2.5vw, 2rem); }
 html { scrollbar-gutter: stable; background: var(--color-bg); }
 body.max-width { box-sizing: border-box; width: 100%; max-width: var(--site-width); padding-inline: var(--site-gutter); }
-/* Collapse before staff-only links force the navigation onto another line. */
-@media (min-width: 769px) and (max-width: 1100px) {
-  #header #title { display: table; margin-right: 5rem; min-height: 50px; }
-  #header #title .h1 { display: table-cell; vertical-align: middle; }
+/* Keep logo, wrapping title and toggle in one grid row. Fixed page offsets
+   drift when the title wraps or a page changes its top padding. */
+@media (max-width: 1100px) {
+  #header { display: grid; grid-template-columns: 50px minmax(0, 1fr) 44px; column-gap: 20px; align-items: center; }
+  #header #logo { float: none; margin: 0; }
+  #header #title { display: flex; align-items: center; min-height: 50px; min-width: 0; }
+  #header #title .h1 { display: block; }
+  #header #nav, #header #nav ul { display: contents; }
   #header #nav ul li { display: none; border-right: 0; }
-  #header #nav ul li.icon { position: absolute; top: 4rem; right: 0; display: inline-block; }
+  #header #nav ul li.icon { grid-column: 3; grid-row: 1; display: block; margin: 0; }
   #header #nav ul.responsive li { display: block; }
-  #header #nav li:not(:first-child) { padding-top: 1rem; padding-left: 70px; font-size: 1rem; }
-  #header #nav ul.responsive a { display: flex; align-items: center; min-height: 44px; }
+  /* Links already supply 44px touch targets. Extra li padding previously
+     expanded every menu row to 60px. Keep the gap above the menu only. */
+  #header #nav li:not(:first-child) { grid-column: 2 / -1; margin: 0; padding: 0; font-size: .875rem; }
+  #header #nav ul.responsive li:nth-child(2) { margin-top: .5rem; }
+  #header #nav ul.responsive a { display: flex; align-items: center; gap: .4rem; min-height: 44px; margin: 0; }
+  #header #nav ul a:hover { background: none; }
 }
 .account-center, .reader-circle, .public-profile { box-sizing: border-box; width: 100%; max-width: none; padding-inline: 0; }
 .auth-shell { width: 100%; max-width: var(--auth-width); padding-inline: 0; }

@@ -1651,34 +1651,6 @@ ul:has(li.vditor-task) {
     max-width: 95% !important;
   }
 
-  #header #title {
-    display: table;
-    margin-right: 5rem;
-    min-height: 50px;
-  }
-  #header #title h1,
-  #header #title .h1 {
-    display: table-cell;
-    vertical-align: middle;
-  }
-  #header #nav ul a:hover { background: none; }
-  #header #nav ul li {
-    display: none;
-    border-right: 0;
-  }
-  #header #nav ul li.icon {
-    position: absolute;
-    top: 77px;
-    right: 0;
-    display: inline-block;
-  }
-  #header #nav ul.responsive li { display: block; }
-  #header #nav li:not(:first-child) {
-    padding-top: 1rem;
-    padding-left: 70px;
-    font-size: 1rem;
-  }
-  
   .search-input {
     width: 65%;
   }
@@ -1716,9 +1688,6 @@ ul:has(li.vditor-task) {
 #main-content { scroll-margin-top: 1rem; }
 .content img, .content video, .content iframe { max-width: 100%; height: auto; }
 .content pre, .content table { max-width: 100%; overflow-x: auto; }
-@media (max-width: 768px) {
-  #header #nav ul.responsive a { display: flex; align-items: center; min-height: 44px; }
-}
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {

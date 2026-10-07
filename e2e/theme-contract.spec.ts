@@ -3606,3 +3606,44 @@ test('folio theme preference persists through reload', async ({ page }) => {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveClass(/dark/);
 });
+
+test('Cactus responsive site header aligns controls and keeps menu rows compact', async ({ page }, testInfo) => {
+  test.skip(siteTheme !== 'cactus');
+  test.setTimeout(120000);
+  for (const width of [390, 320, 768, 769, 1100, 1101, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ['/', '/posts/', '/books/', '/tags/', '/search/?w=reading', '/readers/', '/users/' + process.env.E2E_READER_ID, '/login', '/register']) {
+      await page.goto(route);
+      const title = page.locator('#header #title');
+      const button = page.locator('#cactus-navigation .icon button');
+      const links = page.locator('#cactus-navigation > li:not(.icon) > a');
+      if (width <= 1100) {
+        await expect(button).toBeVisible();
+        await expect(links.first()).toBeHidden();
+        const titleBox = (await title.boundingBox())!;
+        const buttonBox = (await button.boundingBox())!;
+        expect.soft(Math.abs(titleBox.y + titleBox.height / 2 - buttonBox.y - buttonBox.height / 2), `${width} ${route}: header centers`).toBeLessThanOrEqual(1);
+        if (route === '/' && width === 390) await page.screenshot({ path: testInfo.outputPath('cactus-home-collapsed.png'), fullPage: true });
+        await button.click();
+        await expect(button).toHaveAttribute('aria-expanded', 'true');
+        await expect(links.first()).toBeVisible();
+        if (route === '/' && width === 390) await page.screenshot({ path: testInfo.outputPath('cactus-home-expanded.png'), fullPage: true });
+        const boxes = await links.evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(); return { y: r.y, height: r.height }; }));
+        for (const [index, box] of boxes.entries()) {
+          expect.soft(box.height, `${width} ${route}: touch target`).toBeGreaterThanOrEqual(44);
+          expect.soft(box.height, `${width} ${route}: compact row`).toBeLessThanOrEqual(44);
+          if (index > 0) expect.soft(box.y - boxes[index - 1].y, `${width} ${route}: row spacing`).toBeLessThanOrEqual(48);
+        }
+        const openedTitle = (await title.boundingBox())!;
+        expect(openedTitle.y).toBe(titleBox.y);
+        await page.keyboard.press('Escape');
+        await expect(button).toHaveAttribute('aria-expanded', 'false');
+        await expect(links.first()).toBeHidden();
+      } else {
+        await expect(button).toBeHidden();
+        for (const link of await links.all()) await expect(link).toBeVisible();
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    }
+  }
+});
