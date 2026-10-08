@@ -3632,7 +3632,13 @@ test('Cactus responsive site header aligns controls and keeps menu rows compact'
         for (const [index, box] of boxes.entries()) {
           expect.soft(box.height, `${width} ${route}: touch target`).toBeGreaterThanOrEqual(44);
           expect.soft(box.height, `${width} ${route}: compact row`).toBeLessThanOrEqual(44);
-          if (index > 0) expect.soft(box.y - boxes[index - 1].y, `${width} ${route}: row spacing`).toBeLessThanOrEqual(48);
+          if (index > 0) {
+            // noUncheckedIndexedAccess cannot infer array bounds from index > 0.
+            // Assert the predecessor exists so spacing checks never silently skip.
+            const previousBox = boxes[index - 1];
+            if (!previousBox) throw new Error(`Missing preceding menu row at index ${index}`);
+            expect.soft(box.y - previousBox.y, `${width} ${route}: row spacing`).toBeLessThanOrEqual(48);
+          }
         }
         const openedTitle = (await title.boundingBox())!;
         expect(openedTitle.y).toBe(titleBox.y);
