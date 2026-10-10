@@ -1,6 +1,8 @@
 {{define "admin/user_detail"}}{{template "admin/header" .}}
 <div class="identity-admin" data-testid="admin-user-profile"><a href="/admin/users">← {{.Tr.T "users"}}</a>
 <h1>{{.Data.user.Nickname}}</h1><p>{{.Data.user.Email}}</p><code>{{.Data.user.ID}}</code>
+<p>{{template "admin/email_verification_status" (dict "user" .Data.user "tr" .Tr)}}{{if .Data.user.DisabledAt}} · {{.Tr.T "disabled"}}{{end}}</p>
+{{if .Data.user.EmailVerifiedAt}}<p>{{.Tr.T "identity_email_verified_at"}}: <time datetime="{{iso8601 .Data.user.EmailVerifiedAt}}" data-testid="admin-email-verified-at">{{tf .Data.user.EmailVerifiedAt "2006-01-02 15:04"}}</time></p>{{end}}
 <div class="identity-actions"><a href="/users/{{.Data.user.ID}}">{{.Tr.T "identity_public_profile"}}</a><a href="/admin/audit?user_id={{.Data.user.ID}}" data-testid="user-audit-link">{{.Tr.T "security_audit"}}</a></div>
 <div class="identity-metrics identity-card"><span>{{.Tr.T "identity_owned_apps"}}: <b>{{.Data.user.AppCount}}</b></span><span>{{.Tr.T "identity_site_logins"}}: <b>{{.Data.user.LoginCount}}</b></span><span>{{.Tr.T "identity_last_login"}}: {{if .Data.user.LastLoginAt}}{{tf .Data.user.LastLoginAt "2006-01-02 15:04"}}{{else}}—{{end}}</span><span>{{.Tr.T "identity_registered"}}: {{tf .Data.user.CreatedAt "2006-01-02 15:04"}}</span></div>
 <p class="identity-hint">{{.Tr.T "identity_stats_hint"}}</p><h2>{{.Tr.T "identity_owned_apps"}}</h2><p>{{.Tr.T "identity_recent_25"}}</p>

@@ -22,3 +22,8 @@
 {{if not .DisabledAt}}<form method="post" action="/admin/oidc/clients/{{.ID}}/disable"><button type="submit" class="identity-danger" data-testid="oidc-client-disable">{{$.Tr.T "disable"}}</button></form>{{end}}
 </li>{{else}}<li class="identity-card">{{.Tr.T "identity_empty"}}</li>{{end}}</ul>
 {{end}}
+
+{{/* Verification and disablement are independent: disabling an account must not hide its email status. */}}
+{{define "admin/email_verification_status"}}
+<span data-testid="admin-email-verification" data-verification-state="{{if .user.EmailVerifiedAt}}verified{{else}}unverified{{end}}">{{if .user.EmailVerifiedAt}}{{.tr.T "identity_email_verified"}}{{else}}{{.tr.T "identity_unverified"}}{{end}}</span>
+{{end}}

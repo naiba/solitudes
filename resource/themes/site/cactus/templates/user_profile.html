@@ -13,7 +13,7 @@
       <div class="public-profile-name"><h1>{{.Data.profile.Nickname}}</h1><span class="comment-role role-{{.Data.profile.Role}}">{{if eq .Data.profile.Role "admin"}}{{.Tr.T "role_admin"}}{{else if eq .Data.profile.Role "editor"}}{{.Tr.T "role_editor"}}{{else}}{{.Tr.T "role_user"}}{{end}}</span></div>
       <p class="public-profile-joined">{{.Tr.T "joined_at"}} <time datetime="{{iso8601 .Data.profile.CreatedAt}}">{{tf .Data.profile.CreatedAt (.Tr.T "date_format")}}</time></p>
     </div>
-    {{if .Data.profile.Bio}}<p class="public-profile-bio" data-testid="public-profile-bio">{{.Data.profile.Bio}}</p>{{end}}
+    {{if .Data.profile.Bio}}<p class="public-profile-bio" data-testid="public-profile-bio">{{profileBio .Data.profile.Bio}}</p>{{end}}
   </header>
   <div class="public-profile-activity">
   <section id="profile-articles" aria-labelledby="profile-articles-title"><h2 id="profile-articles-title">{{.Tr.T "recent_articles"}}</h2>

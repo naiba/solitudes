@@ -252,5 +252,7 @@
     {"locale": "en", "key": "access_help", "trans": "Insert restricted Markdown from the toolbar; edit its content and audience inside the fence. Uploaded files remain public URLs, not private attachments."},
     {"locale": "en", "key": "cancel", "trans": "Cancel"},
     {"locale": "en", "key": "theme_selection_help", "trans": "Choose a theme, then save to apply. Site and administration themes are independent; arrow keys also change the selection."},
-    {"locale": "en", "key": "theme_selected", "trans": "Selected"}
+    {"locale": "en", "key": "theme_selected", "trans": "Selected"},
+    {"locale": "en", "key": "identity_email_verified", "trans": "Email verified"},
+    {"locale": "en", "key": "identity_email_verified_at", "trans": "Email verified at"}
 ]

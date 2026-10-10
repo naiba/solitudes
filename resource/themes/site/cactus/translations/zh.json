@@ -83,7 +83,7 @@
     {"locale":"zh","key":"role_guest","trans":"游客"},
     {"locale":"zh","key":"comment_as","trans":"当前评论身份："},
     {"locale":"zh","key":"verified_member","trans":"已登录用户"},
-    {"locale":"zh","key":"guest_comment_hint","trans":"无需登录也可评论；登录或注册后，评论会归入你的公开主页。"},
+    {"locale":"zh","key":"guest_comment_hint","trans":"当前评论身份：游客。昵称必填，邮箱选填。验证邮箱并登录后发表的新评论才会关联你的个人主页；已有游客评论不会自动关联。"},
     {"locale":"zh","key":"create_account","trans":"注册"},
     {"locale":"zh","key":"my_account","trans":"个人中心"},
     {"locale":"zh","key":"sign_in","trans":"登录"},

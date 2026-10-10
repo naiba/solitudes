@@ -252,5 +252,7 @@
     {"locale": "zh", "key": "access_help", "trans": "在工具栏插入受限 Markdown 内容；可在围栏内编辑正文和权限。上传文件仍是公开链接，请勿用于私密附件。"},
     {"locale": "zh", "key": "cancel", "trans": "取消"},
     {"locale": "zh", "key": "theme_selection_help", "trans": "选择主题后点击「保存」生效。前台与后台可独立选择，方向键也可切换选项。"},
-    {"locale": "zh", "key": "theme_selected", "trans": "已选择"}
+    {"locale": "zh", "key": "theme_selected", "trans": "已选择"},
+    {"locale": "zh", "key": "identity_email_verified", "trans": "邮箱已验证"},
+    {"locale": "zh", "key": "identity_email_verified_at", "trans": "邮箱验证时间"}
 ]

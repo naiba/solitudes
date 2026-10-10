@@ -83,7 +83,7 @@
     {"locale":"en","key":"role_guest","trans":"Guest"},
     {"locale":"en","key":"comment_as","trans":"Commenting as"},
     {"locale":"en","key":"verified_member","trans":"Signed-in member"},
-    {"locale":"en","key":"guest_comment_hint","trans":"You can comment as a guest. Sign in or register to link comments to your profile."},
+    {"locale":"en","key":"guest_comment_hint","trans":"Commenting as a guest. A nickname is required; email is optional. Only new comments posted after verifying your email and signing in will appear on your profile. Existing guest comments will not be linked automatically."},
     {"locale":"en","key":"create_account","trans":"Register"},
     {"locale":"en","key":"my_account","trans":"My account"},
     {"locale":"en","key":"sign_in","trans":"Sign in"},

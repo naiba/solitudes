@@ -852,14 +852,8 @@ func setFuncMap(engine *html.Engine) {
 			// json.Marshal returns "quoted string", strip outer quotes
 			return string(b[1 : len(b)-1])
 		},
-		"externalLink": func(urlStr string) string {
-			// 将外部链接转换为 /r/go?url=base64 格式
-			if urlStr == "" {
-				return ""
-			}
-			encoded := base64.URLEncoding.EncodeToString([]byte(urlStr))
-			return "/r/go?url=" + encoded
-		},
+		"externalLink": externalLink,
+		"profileBio":   profileBio,
 	}
 	for name, fn := range funcMap {
 		engine.AddFunc(name, fn)
