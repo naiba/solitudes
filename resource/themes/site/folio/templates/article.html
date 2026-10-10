@@ -6,6 +6,19 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
+  "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}#article",
+  "version": "{{.Data.article.Version}}",
+  "isPartOf": {
+    "@type": "Blog",
+    "@id": "https://{{.Conf.Site.Domain}}/#blog",
+    "name": "{{.Conf.Site.SpaceName}}",
+    "url": "https://{{.Conf.Site.Domain}}/"
+  },
+  "hasPart": {
+    "@type": "WebPageElement",
+    "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}#article-body",
+    "name": "{{.Data.article.Title}}"
+  },
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
@@ -87,8 +100,8 @@
         {{end}}
 
         <!-- Article content -->
-        <div class="app-prose folio-narrow reading-content" data-reading-content>
-            {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
+        <div class="app-prose folio-narrow reading-content" data-reading-content id="article-body">
+            {{(articleMarkdown .Data.article.GetIndexID .Data.article.Content)|unsafe}}
 
         </div>
 

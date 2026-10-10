@@ -796,10 +796,11 @@ func setFuncMap(engine *html.Engine) {
 		"iso8601": func(t time.Time) string {
 			return t.Format(time.RFC3339)
 		},
-		"md":            mdRender,
-		"randomIndices": randomIndices,
-		"dict":          templateDict,
-		"pathEscape":    url.PathEscape,
+		"md":              mdRender,
+		"articleMarkdown": articleMarkdown,
+		"randomIndices":   randomIndices,
+		"dict":            templateDict,
+		"pathEscape":      url.PathEscape,
 		"last": func(x int, a interface{}) bool {
 			return x == reflect.ValueOf(a).Len()-1
 		},

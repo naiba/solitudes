@@ -29,3 +29,15 @@
 </aside>
 {{end}}
 {{end}}
+
+{{define "site/image_dialog"}}
+<dialog class="reader-image-dialog" id="article-image-dialog" aria-label="{{.Tr.T "image_viewer"}}" data-open-label="{{.Tr.T "image_enlarge"}}">
+    <div class="reader-image-toolbar">
+        <a data-image-original target="_blank" rel="noopener noreferrer">{{.Tr.T "image_original"}} ↗</a>
+        <button type="button" data-image-zoom aria-pressed="false">{{.Tr.T "image_zoom"}}</button>
+        <button type="button" data-image-close aria-label="{{.Tr.T "reading_close"}}">×</button>
+    </div>
+    <div class="reader-image-stage"><img data-image-full alt=""></div>
+    <p data-image-caption hidden></p>
+</dialog>
+{{end}}

@@ -68,7 +68,8 @@
 </script>
 {{ $code := index .Theme "cactus.customcode" }}{{ if $code }}{{ printf "%s" $code | unsafe }}{{ end }}
 {{if eq .OgType "article"}}{{template "site/share_dialog" .}}{{end}}
-<script defer src="/static/site/cactus/js/reading.js?v2026100502"></script>
+{{if .Data.article}}{{template "site/image_dialog" .}}{{end}}
+<script defer src="/static/site/cactus/js/reading.js?v=caption-lightbox"></script>
 </body>
 
 </html>

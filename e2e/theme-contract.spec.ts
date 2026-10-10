@@ -2327,10 +2327,13 @@ test('standalone pages have their own layout, metadata and working comments', as
       expect(await quote.locator('p').first().evaluate(node => getComputedStyle(node).margin)).toBe('0px');
       expect(await quote.evaluate(node => getComputedStyle(node, '::before').content)).not.toBe('none');
       expect(await page.locator('[data-reading-content] h2').evaluate(node => getComputedStyle(node).fontSize)).toBe('24px');
-      const image = page.locator('[data-reading-content] img');
-      expect(await image.evaluate(node => getComputedStyle(node).display)).toBe('block');
-      expect(await image.evaluate(node => getComputedStyle(node).maxWidth)).toBe(width <= 768 ? '95%' : '80%');
     }
+    // Whitespace belongs to the figure, not a second percentage constraint on its image.
+    const image = page.locator('[data-reading-content] img');
+    expect(await image.evaluate(node => getComputedStyle(node).display)).toBe('block');
+    expect(await image.evaluate(node => getComputedStyle(node).maxWidth)).toBe('100%');
+    const figureBox = (await page.locator('[data-reading-content] figure.article-image').boundingBox())!;
+    expect(figureBox.width / bodyBox.width).toBeCloseTo(width <= 600 ? 1 : .88, 2);
     const codeBox = (await page.locator('[data-reading-content] pre').boundingBox())!;
     expect(codeBox.x).toBeGreaterThanOrEqual(bodyBox.x);
     expect(codeBox.x + codeBox.width).toBeLessThanOrEqual(bodyBox.x + bodyBox.width + 1);
@@ -3061,7 +3064,8 @@ test('public profiles show only public activity and comments distinguish every i
   await expect(member.getByTestId('comment-author-link')).toHaveAttribute('href', `/users/${readerID}`);
   await expect(member).not.toContainText('Spoofed Administrator');
   await page.goto(`/users/${readerID}`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('meta[name="robots"]')).toHaveCount(0);
+  // A preview permission is indexable; only noindex should exclude public profiles.
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'max-image-preview:large');
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', new RegExp(`/users/${readerID}$`));
   await expect(page.getByTestId('public-profile-comment').first()).toContainText('Member identity');
   await expect(page.getByTestId('public-profile-comment-article').first()).toContainText(articleTitle!);

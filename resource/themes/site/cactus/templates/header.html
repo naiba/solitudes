@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
     <title>{{.Title}}</title>
-    {{if .Noindex}}<meta name="robots" content="noindex">{{end}}
+    {{if .Noindex}}<meta name="robots" content="noindex">{{else}}<meta name="robots" content="max-image-preview:large">{{end}}
     <meta name="description" content="{{.Desc}}">
     <meta name="keywords" content="{{.Keywords}}">
     <link rel="alternate" type="application/rss+xml" title="{{.Conf.Site.SpaceName}} » Feed"
@@ -51,7 +51,7 @@
     <meta name="twitter:description" content="{{.Desc}}">
     {{if eq .OgType "article"}}<meta name="twitter:image" content="{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}">
     {{else}}<meta name="twitter:image" content="https://{{.Conf.Site.Domain}}/logo.png">{{end}}
-    <link rel="stylesheet" href="/static/site/cactus/css/reading.css?v2026100913">
+    <link rel="stylesheet" href="/static/site/cactus/css/reading.css?v=caption-lightbox">
     <link rel="stylesheet" href="/static/site/cactus/css/layout.css?v2026101009">
     {{if .Data.comparison}}<link rel="stylesheet" href="/static/site/cactus/css/compare.css?v2026101001">{{end}}
 </head>

@@ -111,3 +111,66 @@
   if (typeof ResizeObserver !== 'undefined') new ResizeObserver(schedule).observe(content);
   schedule();
 })();
+
+(function () {
+  'use strict';
+  const dialog = document.querySelector('#article-image-dialog');
+  if (!dialog || typeof dialog.showModal !== 'function') return;
+  const full = dialog.querySelector('[data-image-full]');
+  const caption = dialog.querySelector('[data-image-caption]');
+  const original = dialog.querySelector('[data-image-original]');
+  const zoom = dialog.querySelector('[data-image-zoom]');
+  const close = dialog.querySelector('[data-image-close]');
+  const stage = dialog.querySelector('.reader-image-stage');
+  let opener, previousOverflow;
+  document.querySelectorAll('[data-reading-content] figure.article-image img').forEach(image => {
+    // Linked illustrations are navigation, not zoom controls. Never hijack them.
+    if (image.closest('a, button')) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'article-image-open';
+    button.setAttribute('aria-label', dialog.dataset.openLabel + (image.alt ? ': ' + image.alt : ''));
+    button.setAttribute('aria-haspopup', 'dialog');
+    button.setAttribute('aria-controls', dialog.id);
+    image.before(button);
+    button.append(image);
+    button.addEventListener('click', () => {
+      let source;
+      try { source = new URL(image.currentSrc || image.src, location.href); } catch (_) { return; }
+      if (!['http:', 'https:'].includes(source.protocol)) return;
+      opener = button;
+      full.src = source.href;
+      full.alt = image.alt;
+      original.href = source.href;
+      caption.textContent = image.closest('figure').querySelector('figcaption')?.textContent || '';
+      caption.hidden = !caption.textContent;
+      dialog.classList.remove('reader-image-actual');
+      zoom.setAttribute('aria-pressed', 'false');
+      previousOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      dialog.showModal();
+      stage.scrollTo(0, 0);
+      close.focus();
+    });
+  });
+  zoom.addEventListener('click', () => {
+    const actual = dialog.classList.toggle('reader-image-actual');
+    zoom.setAttribute('aria-pressed', String(actual));
+  });
+  close.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', event => {
+    if (event.target !== dialog) return;
+    const rect = dialog.getBoundingClientRect();
+    if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
+  });
+  dialog.addEventListener('keydown', event => {
+    if (event.key !== 'Tab') return;
+    if (event.shiftKey && document.activeElement === original) { event.preventDefault(); close.focus(); }
+    else if (!event.shiftKey && document.activeElement === close) { event.preventDefault(); original.focus(); }
+  });
+  dialog.addEventListener('close', () => {
+    document.body.style.overflow = previousOverflow || '';
+    full.removeAttribute('src');
+    opener?.focus({ preventScroll: true });
+  });
+})();

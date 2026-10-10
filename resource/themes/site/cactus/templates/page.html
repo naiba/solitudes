@@ -34,8 +34,8 @@
 {{end}}
 {{template "site/menu" .}}
 <main class="post standalone-page" id="main-content" data-testid="site-page" aria-label="{{.Data.article.Title}}" tabindex="-1">
-  <div class="content" data-reading-content>
-    {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
+  <div class="content" data-reading-content id="article-body">
+    {{(articleMarkdown .Data.article.GetIndexID .Data.article.Content)|unsafe}}
   </div>
   <p class="page-dates" data-testid="page-dates">
     <span>{{.Tr.T "page_created_at"}} <time datetime="{{iso8601 .Data.article.CreatedAt}}" data-testid="page-created-at">{{tf .Data.article.CreatedAt (.Tr.T "date_format")}} {{tf .Data.article.CreatedAt "15:04"}}</time></span>

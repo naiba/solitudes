@@ -6,6 +6,19 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
+  "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}#article",
+  "version": "{{.Data.article.Version}}",
+  "isPartOf": {
+    "@type": "Blog",
+    "@id": "https://{{.Conf.Site.Domain}}/#blog",
+    "name": "{{.Conf.Site.SpaceName}}",
+    "url": "https://{{.Conf.Site.Domain}}/"
+  },
+  "hasPart": {
+    "@type": "WebPageElement",
+    "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}#article-body",
+    "name": "{{.Data.article.Title}}"
+  },
   "mainEntityOfPage": {
     "@type": "WebPage",
     "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
@@ -91,8 +104,8 @@
             <a class="revision-compare-link" href="/{{.Data.article.Slug}}/compare" data-testid="article-compare-latest">{{.Tr.T "compare_revisions"}}</a>
         </details>
         {{end}}
-        <div class="content" data-reading-content>
-            {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
+        <div class="content" data-reading-content id="article-body">
+            {{(articleMarkdown .Data.article.GetIndexID .Data.article.Content)|unsafe}}
         </div>
         {{if .Data.article.IsBook}}
         <section class="book-section" data-testid="book-section" aria-labelledby="book-chapters-title">

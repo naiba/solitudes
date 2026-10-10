@@ -201,5 +201,9 @@
     {"locale": "en", "key": "manage_content", "trans": "Writing workspace"},
     {"locale": "en", "key": "manage_articles", "trans": "Manage articles"},
     {"locale": "en", "key": "compose_article", "trans": "Write an article"},
-    {"locale": "en", "key": "admin_dashboard", "trans": "Admin dashboard"}
+    {"locale": "en", "key": "admin_dashboard", "trans": "Admin dashboard"},
+    {"locale": "en", "key": "image_viewer", "trans": "Image viewer"},
+    {"locale": "en", "key": "image_enlarge", "trans": "Enlarge image"},
+    {"locale": "en", "key": "image_original", "trans": "View original"},
+    {"locale": "en", "key": "image_zoom", "trans": "Actual size"}
 ]

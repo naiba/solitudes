@@ -41,6 +41,9 @@ jobs:
           bunx playwright install --with-deps chromium
       - name: Typecheck browser tests
         run: e2e/node_modules/.bin/tsc --noEmit -p e2e/tsconfig.json
+      - name: Article image viewer across site themes and screen sizes
+        working-directory: e2e
+        run: bunx playwright test article-images.spec.ts
       - name: Site-theme and default-admin Chromium browser matrix
         run: go test -p 2 -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v -timeout 20m
 

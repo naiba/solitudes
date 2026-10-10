@@ -215,5 +215,9 @@
     {"locale": "zh", "key": "manage_content", "trans": "创作工作台"},
     {"locale": "zh", "key": "manage_articles", "trans": "管理文章"},
     {"locale": "zh", "key": "compose_article", "trans": "写文章"},
-    {"locale": "zh", "key": "admin_dashboard", "trans": "管理后台"}
+    {"locale": "zh", "key": "admin_dashboard", "trans": "管理后台"},
+    {"locale": "zh", "key": "image_viewer", "trans": "查看大图"},
+    {"locale": "zh", "key": "image_enlarge", "trans": "放大图片"},
+    {"locale": "zh", "key": "image_original", "trans": "查看原图"},
+    {"locale": "zh", "key": "image_zoom", "trans": "原始尺寸"}
 ]

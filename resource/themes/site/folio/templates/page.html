@@ -35,8 +35,8 @@
 
 <main id="main-content" class="standalone-page" data-testid="site-page" aria-label="{{.Data.article.Title}}">
 
-    <div class="app-prose page-content" data-reading-content>
-        {{(md .Data.article.GetIndexID .Data.article.Content)|unsafe}}
+    <div class="app-prose page-content" data-reading-content id="article-body">
+        {{(articleMarkdown .Data.article.GetIndexID .Data.article.Content)|unsafe}}
     </div>
 
   <p class="page-dates" data-testid="page-dates">
