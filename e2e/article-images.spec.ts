@@ -45,7 +45,10 @@ for (const theme of ['cactus', 'folio']) {
       await page.keyboard.press('Escape');
       await expect(viewer).not.toBeVisible();
       await expect(opener).toBeFocused();
-      expect(await page.evaluate(() => document.body.style.overflow)).toBe('');
+      // Native dialog dismissal restores focus before its queued close event
+      // runs our scroll-lock cleanup; visibility alone is not completion.
+      await expect.poll(() => page.evaluate(() => document.body.style.overflow)).toBe('');
+      await expect(page.locator('[data-image-full]')).not.toHaveAttribute('src');
       await page.locator('.article-image-open').last().click();
       await expect(page.locator('[data-image-caption]')).toBeHidden();
       await page.locator('[data-image-close]').click();
