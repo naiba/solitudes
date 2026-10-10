@@ -101,6 +101,9 @@ func article(c *fiber.Ctx) error {
 	}
 	if a.Public() {
 		data["canonical_path"] = "/" + a.Slug
+		if !isOldVersion {
+			c.Set("Link", "<"+articleMarkdownURL(&a)+">; rel=\"alternate\"; type=\"text/markdown\", <"+publicBaseURL()+"/llms.txt>; rel=\"describedby\"")
+		}
 	}
 	return c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, data))
 }

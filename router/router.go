@@ -489,6 +489,8 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	app.Get("/r/go", goRedirect)
 	app.Get("/robots.txt", robotsHandler)
 	app.Get("/sitemap.xml", sitemapHandler)
+	app.Get("/llms.txt", llmsDirectory)
+	app.Get("/read/:id/article.md", articleMachineContent)
 	app.Post("/logout", requireAccount, logoutHandler)
 	app.Get("/captcha", generateCaptcha)
 	app.Post("/api/comment", commentHandler)
@@ -796,11 +798,12 @@ func setFuncMap(engine *html.Engine) {
 		"iso8601": func(t time.Time) string {
 			return t.Format(time.RFC3339)
 		},
-		"md":              mdRender,
-		"articleMarkdown": articleMarkdown,
-		"randomIndices":   randomIndices,
-		"dict":            templateDict,
-		"pathEscape":      url.PathEscape,
+		"md":                 mdRender,
+		"articleMarkdown":    articleMarkdown,
+		"articleMarkdownURL": articleMarkdownURL,
+		"randomIndices":      randomIndices,
+		"dict":               templateDict,
+		"pathEscape":         url.PathEscape,
 		"last": func(x int, a interface{}) bool {
 			return x == reflect.ValueOf(a).Len()-1
 		},

@@ -23,6 +23,8 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"></noscript>
     <title>{{.Title}}</title>
     {{if .Noindex}}<meta name="robots" content="noindex">{{else}}<meta name="robots" content="max-image-preview:large">{{end}}
+    {{if not .Noindex}}<link rel="describedby" href="/llms.txt" type="text/markdown">
+    {{if .Data.article}}<link rel="alternate" type="text/markdown" href="{{articleMarkdownURL .Data.article}}">{{end}}{{end}}
     <meta name="description" content="{{.Desc}}">
     <meta name="keywords" content="{{.Keywords}}">
     <link rel="alternate" type="application/rss+xml" title="{{.Conf.Site.SpaceName}} » Feed"

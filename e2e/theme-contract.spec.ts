@@ -3657,3 +3657,40 @@ test('Cactus responsive site header aligns controls and keeps menu rows compact'
     }
   }
 });
+
+
+test('machine content is discoverable without JavaScript and redirect targets are client-only', async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, javaScriptEnabled: false });
+  const page = await context.newPage();
+  try {
+    await page.goto('/visual-page', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('link[rel="describedby"]')).toHaveAttribute('href', '/llms.txt');
+    const markdownURL = await page.locator('link[rel="alternate"][type="text/markdown"]').getAttribute('href');
+    expect(markdownURL).toMatch(/\/read\/[a-f0-9-]+\/article\.md$/);
+    // The fixture config uses a canonical host; use its path on the isolated server.
+    const response = await context.request.get(new URL(markdownURL!).pathname);
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toContain('text/markdown');
+    expect(response.headers()['cache-control']).toBe('no-store');
+    expect(response.headers()['link']).toContain('rel="canonical"');
+    const markdown = await response.text();
+    expect(markdown).toContain('# About this publication');
+    expect(markdown).toContain('/visual-page');
+    expect(markdown).not.toContain('<script');
+    const directory = await context.request.get('/llms.txt');
+    expect(directory.status()).toBe(200);
+    expect(await directory.text()).toContain('## Navigation');
+    const target = 'https://external.example.test/reference?source=blog&format=paper';
+    await page.goto('/r/go?url=' + Buffer.from(target).toString('base64url'), { waitUntil: 'domcontentloaded' });
+    // User-controlled redirect targets must never be reflected by the server.
+    await expect(page.locator('#target-url')).toHaveText('');
+    await expect(page.locator('#continue-link')).toHaveAttribute('href', '#');
+    expect(await page.content()).not.toContain(target);
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
+    await page.goto('/r/go?url=' + Buffer.from('javascript:alert(1)').toString('base64url'));
+    await expect(page.locator('#continue-link')).toHaveAttribute('href', '#');
+    expect(await page.content()).not.toContain('javascript:alert(1)');
+  } finally {
+    await context.close();
+  }
+});

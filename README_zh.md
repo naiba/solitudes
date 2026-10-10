@@ -133,3 +133,15 @@ CI 通过测试后构建镜像。E2E 覆盖两主题的核心流程，不代表�
 [Bleve](https://github.com/blevesearch/bleve) · [Lute](https://github.com/88250/lute) · [Vditor](https://github.com/Vanessa219/Vditor) · [Cactus](https://github.com/probberechts/hexo-theme-cactus)
 
 [AGPL-3.0](LICENSE)
+
+
+## 生成式搜索与机器读取
+
+- `/llms.txt` 提供站点介绍、内容导航和公开文章目录，每页 50 条；沿“Next page”继续读取历史内容。它是机器导航入口，不是排名保证，也不授予额外的训练或内容使用权限。
+- 公开文章和独立页面通过 HTML `rel="alternate"` 及 HTTP `Link` 声明 Markdown 地址：`/read/{文章ID}/article.md`。该地址不占用文章 slug，包含标题、作者公开主页、发布时间、更新时间、版本和原文地址。
+- Markdown 固定按匿名权限生成：过滤受限片段，不导出评论、历史版本或作者邮箱；登录管理员也不会获得额外内容。原始 HTML 中的脚本、表单和嵌入不会导出。表格、代码、图片和说明保留为静态内容。
+- 所有导出的站外导航链接仍经 `/r/go` 中转，包括引用式、自动识别和 HTML 链接。外部图片仍是媒体资源，不是导航链接。中转目标仅在客户端解析，禁止服务端向 HTML 回显请求中的任意目标。robots 继续禁止 `/r/` 抓取，中转页保持 noindex。经过中转追溯来源需要 JavaScript，这是优先于机器读取便利性的安全边界。
+- 机器入口使用 `Cache-Control: no-store`，每次重新检查公开状态；不要在 CDN 中强制缓存这些入口。Markdown 使用 canonical 指向原文，并标记 `noindex, follow`，避免把副本当成独立搜索页面。
+- 部署时确认搜索爬虫不会被 CDN/WAF 挑战页拦截。搜索发现、用户主动读取和模型训练是不同用途，本站不会为 GEO 自动更改训练授权策略；爬虫放行须核验官方 IP，不能只信 User-Agent。
+
+写作时优先提供原创经验、结论及适用条件、真实版本、可核验数据和参考来源；不要为 GEO 伪造引语、资历、FAQ 或更新时间。可选用“结论 → 环境/条件 → 步骤或证据 → 局限 → 来源”的结构。以一组真实问题定期记录平台、引用 URL、引用准确性和访问效果，区分抓取、提及、引用与点击；技术测试通过不代表已被 AI 搜索收录或引用。

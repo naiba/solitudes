@@ -133,3 +133,15 @@ CI builds images after tests pass. E2E covers core flows in both themes, not eve
 [Bleve](https://github.com/blevesearch/bleve) · [Lute](https://github.com/88250/lute) · [Vditor](https://github.com/Vanessa219/Vditor) · [Cactus](https://github.com/probberechts/hexo-theme-cactus)
 
 [AGPL-3.0](LICENSE)
+
+
+## Generative search and machine-readable content
+
+- `/llms.txt` provides a site overview, navigation and a paginated public-content directory (50 entries per page). Follow “Next page” to discover older content. It is a discovery aid, not a ranking guarantee or an additional training/content license.
+- Public articles and standalone pages advertise `/read/{articleID}/article.md` through HTML alternate links and HTTP `Link` headers. Stable IDs avoid article-slug collisions. Markdown includes the title, public author profile, publication/update timestamps, version and canonical original URL.
+- Exports always use anonymous permissions, including requests from signed-in administrators. Restricted fragments, comments, historical revisions and author email addresses are excluded. Executable HTML, forms and embeds are removed; tables, code, images and captions remain static content.
+- All exported outbound navigation links use `/r/go`, including reference links, autolinks and HTML anchors. External images remain media resources, not navigation links. The interstitial remains client-only: the server must not echo arbitrary request targets into HTML. Robots continues to disallow `/r/`, and the interstitial remains noindex. Source traversal through it requires JavaScript; this deliberate safety boundary takes precedence over agent convenience.
+- Machine endpoints send `Cache-Control: no-store` and recheck public visibility on every request. Do not override this with CDN caching. Markdown points to the original using canonical and sends `noindex, follow` to avoid indexing a duplicate representation.
+- Verify that CDN/WAF challenges do not block intended search crawlers. Search discovery, user-requested retrieval and model training are separate purposes; this feature does not change training permissions. Verify official crawler IP ranges rather than trusting User-Agent strings alone.
+
+Prefer original experience, explicit conclusions and conditions, real software versions, verifiable evidence and references. Do not fabricate quotes, credentials, FAQs or freshness. An optional writing structure is “conclusion → environment/conditions → steps/evidence → limitations → sources”. Monitor a fixed set of real questions, recording the platform, cited URL, accuracy and useful visits. Crawls, mentions, citations and clicks are different metrics; passing technical tests does not establish AI-search inclusion.
