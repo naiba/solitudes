@@ -65,10 +65,24 @@ func updateAccountProfile(c *fiber.Ctx) error {
 		strings.ContainsAny(nickname, "\r\n\x00") || strings.ContainsRune(bio, '\x00') {
 		return fiber.NewError(http.StatusBadRequest, "invalid public profile")
 	}
-	if err := solitudes.System.DB.Model(&model.Account{}).Where("id = ?", account.ID).
-		Updates(map[string]interface{}{"nickname": nickname, "bio": bio, "directory_hidden": visible != "on"}).Error; err != nil {
+	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		var stored model.Account
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&stored, "id = ?", account.ID).Error; err != nil {
+			return err
+		}
+		// Compare locked database state, not a potentially stale browser session.
+		if stored.Nickname == nickname && stored.Bio == bio && stored.DirectoryHidden == (visible != "on") {
+			return nil
+		}
+		if err := tx.Model(&stored).Updates(map[string]interface{}{"nickname": nickname, "bio": bio, "directory_hidden": visible != "on"}).Error; err != nil {
+			return err
+		}
+		return auditMutation(c, tx, "account.profile.update", account.ID, "", "")
+	})
+	if err != nil {
 		return err
 	}
+	c.Locals("audit_recorded", true)
 	return c.Redirect("/account?profile_updated=1", http.StatusSeeOther)
 }
 
@@ -189,6 +203,10 @@ func setUserRole(c *fiber.Ctx) error {
 			return err
 		}
 		previous := account.Role
+		// Re-saving an unchanged role is not a privilege change.
+		if previous == role {
+			return nil
+		}
 		if err := tx.Model(&account).Update("role", role).Error; err != nil {
 			return err
 		}

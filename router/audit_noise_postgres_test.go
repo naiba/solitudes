@@ -21,6 +21,13 @@ func TestPostgresAuditRoutineRequestsDoNotHideSecurityEvents(t *testing.T) {
 		recorded                            bool
 	}{
 		{"GET", "/admin/audit", "", "", "", 200, false},
+		{"POST", "/api/comment", "", "", "", 200, false},
+		{"POST", "/api/comment", "", "", "comment.create", 403, false},
+		{"POST", "/api/comment", "", "", "request.error", 500, false},
+		{"POST", "/login", "", "", "", 302, false},
+		{"POST", "/auth/passkey/login/finish", "", "", "", 302, false},
+		{"POST", "/login", "invalid_credentials", "failure", "session.login", 302, false},
+		{"POST", "/auth/passkey/login/finish", "", "denied", "session.login", 200, false},
 		{"GET", "/authorize", "", "", "", 302, false},
 		{"GET", "/authorize/callback", "", "", "", 302, false},
 		{"POST", "/oauth/token", "", "", "", 200, false},
@@ -49,7 +56,7 @@ func TestPostgresAuditRoutineRequestsDoNotHideSecurityEvents(t *testing.T) {
 		{"DELETE", "/account/passkeys/key-id", "", "", "passkey.operation", 200, false},
 		{"POST", "/oidc/consent", "", "", "oidc.consent", 302, false},
 		{"POST", "/oidc/consent", "consent_declined", "", "oidc.consent", 302, false},
-		{"POST", "/revoke", "", "", "oidc.request", 200, false},
+		{"POST", "/revoke", "", "", "", 200, false},
 		{"GET", "/end_session", "", "", "oidc.logout", 302, false},
 		{"POST", "/account/password", "", "", "account.password.update", 302, false},
 		{"POST", "/admin/settings", "", "", "settings.update", 200, false},

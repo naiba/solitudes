@@ -22,6 +22,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -85,10 +86,15 @@ func oidcHTTPHandler(provider http.Handler) fiber.Handler {
 			}
 		}
 		switch protocolError.Error {
-		case "login_required", "consent_required":
-			// Normal silent-login interaction requirements are not failed login
-			// attempts. Do not fill the audit ledger with background SSO checks.
-		case "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "invalid_scope", "unsupported_grant_type", "access_denied", "server_error", "temporarily_unavailable", "invalid_token", "insufficient_scope", "unsupported_response_type", "interaction_required":
+		case "login_required", "consent_required", "interaction_required":
+			// These authorization responses ask the browser to interact, not report
+			// failed credentials. Mark even HTTP 400 responses; status alone cannot
+			// distinguish a normal guest login prompt from a security failure.
+			if c.Method() == http.MethodGet && (c.Path() == "/authorize" || c.Path() == "/authorize/callback") &&
+				(result.StatusCode == http.StatusBadRequest || (result.StatusCode >= 300 && result.StatusCode < 400)) {
+				c.Locals("audit_interaction_required", true)
+			}
+		case "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "invalid_scope", "unsupported_grant_type", "access_denied", "server_error", "temporarily_unavailable", "invalid_token", "insufficient_scope", "unsupported_response_type":
 			c.Locals("audit_reason", protocolError.Error)
 			c.Locals("audit_outcome", "failure")
 			// This is the targeted application, not proof of authentication.
@@ -479,7 +485,18 @@ func updateOIDCClient(c *fiber.Ctx) error {
 		if !account.Role.IsAdmin() {
 			query = query.Where("owner_id = ?", account.ID)
 		}
-		result := query.Updates(map[string]interface{}{
+		var stored model.OIDCClient
+		if err := query.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&stored).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return fiber.ErrNotFound
+			}
+			return err
+		}
+		// An unchanged form submission must not claim an application configuration change.
+		if stored.Name == metadata.name && stored.Description == metadata.description && stored.HomepageURL == metadata.homepage && stored.RedirectURIsJSON == metadata.redirects && stored.PostLogoutURIsJSON == metadata.logoutURIs {
+			return nil
+		}
+		result := tx.Model(&stored).Updates(map[string]interface{}{
 			"name": metadata.name, "description": metadata.description,
 			"homepage_url": metadata.homepage, "redirect_uris_json": metadata.redirects,
 			"post_logout_uris_json": metadata.logoutURIs,

@@ -126,6 +126,10 @@ func startOAuthLogin(c *fiber.Ctx, link bool) error {
 		Name: oauthStateCookie, Value: state, Path: "/auth/", MaxAge: 600,
 		HTTPOnly: true, SameSite: fiber.CookieSameSiteLaxMode, Secure: c.Protocol() == "https",
 	})
+	// Starting the flow does not mean an external identity was linked.
+	if link {
+		c.Locals("audit_no_change", true)
+	}
 	return c.Redirect(target, http.StatusFound)
 }
 

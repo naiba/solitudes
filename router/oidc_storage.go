@@ -309,42 +309,43 @@ func (s *oidcStorage) GetRefreshTokenInfo(ctx context.Context, clientID, raw str
 }
 
 func (s *oidcStorage) RevokeToken(ctx context.Context, tokenOrID, subject, clientID string) *oidc.Error {
-	if subject != "" {
-		var token model.OIDCAccessToken
-		err := s.db.WithContext(ctx).Where("id = ?", tokenOrID).Take(&token).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var accountID string
+		if subject != "" {
+			var token model.OIDCAccessToken
+			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND client_id = ?", tokenOrID, clientID).Take(&token).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			if err := tx.Delete(&token).Error; err != nil {
+				return err
+			}
+			accountID = token.AccountID
+		} else {
+			var token model.OIDCRefreshToken
+			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("token_hash = ? AND client_id = ?", secretHash(tokenOrID), clientID).Take(&token).Error
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			if err := tx.Delete(&token).Error; err != nil {
+				return err
+			}
+			if err := tx.Delete(&model.OIDCAccessToken{}, "id = ?", token.AccessID).Error; err != nil {
+				return err
+			}
+			accountID = token.AccountID
 		}
-		if err != nil {
-			return oidc.ErrServerError()
-		}
-		if token.ClientID != clientID {
-			// RFC 7009 requires the same response for an unknown token. Never
-			// disclose whether another client's token exists.
-			return nil
-		}
-		if err := s.db.WithContext(ctx).Delete(&token).Error; err != nil {
-			return oidc.ErrServerError()
-		}
-		return nil
-	}
-	var token model.OIDCRefreshToken
-	err := s.db.WithContext(ctx).Where("token_hash = ?", secretHash(tokenOrID)).Take(&token).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil
-	}
+		// RFC 7009 no-op responses are deliberately indistinguishable to callers;
+		// audit only a real deletion, atomically with the credential revocation.
+		return saveAudit(ctx, tx, model.AuditEvent{Action: "oidc.request", Outcome: "success", ActorID: accountID, ClientID: clientID, Method: http.MethodPost, Route: "/revoke", Status: http.StatusOK, Reason: "token_revoked"})
+	})
 	if err != nil {
-		return oidc.ErrServerError()
-	}
-	if token.ClientID != clientID {
-		return nil
-	}
-	if err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Delete(&token).Error; err != nil {
-			return err
-		}
-		return tx.Delete(&model.OIDCAccessToken{}, "id = ?", token.AccessID).Error
-	}); err != nil {
 		return oidc.ErrServerError()
 	}
 	return nil

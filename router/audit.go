@@ -194,9 +194,15 @@ func routineAuditSuccess(method, path string, status int) bool {
 			return status < http.StatusMultipleChoices
 		}
 	}
+	// Completed sign-ins are recorded transactionally by issueLoginSession.
+	// A successful response without that event is navigation, not a login attempt.
+	if method == http.MethodPost && (path == "/login" || path == "/auth/passkey/login/finish") {
+		return true
+	}
 	if method == http.MethodPost && status < http.StatusMultipleChoices {
 		switch path {
-		case "/oauth/token", "/oauth/introspect", "/userinfo", "/auth/passkey/login/begin", "/account/passkeys/begin":
+		// Revocations audit actual deletions in storage; comments already have business records.
+		case "/revoke", "/api/comment", "/oauth/token", "/oauth/introspect", "/userinfo", "/auth/passkey/login/begin", "/account/passkeys/begin":
 			return true
 		}
 	}
@@ -231,8 +237,15 @@ func auditMiddleware(c *fiber.Ctx) error {
 	err = c.Next()
 	status := auditStatus(c, err)
 	reason, _ := c.Locals("audit_reason").(string)
+	// Only the protocol adapter may identify expected interaction responses.
+	// Never let that marker hide middleware errors or explicit denials.
+	if c.Locals("audit_interaction_required") == true && err == nil && reason == "" &&
+		c.Locals("audit_outcome") != "failure" && c.Locals("audit_outcome") != "denied" &&
+		(status == http.StatusBadRequest || (status >= 300 && status < 400)) {
+		return nil
+	}
 	failed := err != nil || status >= 400 || reason != "" || c.Locals("audit_outcome") == "failure" || c.Locals("audit_outcome") == "denied"
-	if !failed && routineAuditSuccess(c.Method(), c.Path(), status) {
+	if !failed && (c.Locals("audit_no_change") == true || routineAuditSuccess(c.Method(), c.Path(), status)) {
 		return nil
 	}
 	location := c.GetRespHeader("Location")
@@ -264,9 +277,6 @@ func auditMiddleware(c *fiber.Ctx) error {
 	event.TargetID = auditIdentifier(c.Params("id"))
 	if strings.HasPrefix(action, "client.") {
 		event.ClientID = event.TargetID
-	}
-	if action == "session.login" && status < 400 {
-		event.Action = "session.attempt"
 	}
 	if len(event.Method) > 16 {
 		event.Method = "OTHER"

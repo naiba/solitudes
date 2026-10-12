@@ -468,3 +468,25 @@ func TestOIDCConsentRequiredErrorCode(t *testing.T) {
 		t.Fatal(string(body), err)
 	}
 }
+
+func TestPostgresOIDCGuestLoginNavigationDoesNotCreateAudit(t *testing.T) {
+	f := newConsentFixture(t)
+	for _, cookie := range []string{"", "expired-session"} {
+		location := consentLocation(t, f.authorize(t, cookie, nil))
+		if location.Path != "/oidc/consent" {
+			t.Fatalf("unexpected authorization destination: %s", location.Path)
+		}
+		location = consentLocation(t, f.request(t, http.MethodGet, location.String(), cookie, nil))
+		if location.Path != "/login" {
+			t.Fatalf("guest did not reach login: %s", location.Path)
+		}
+		response := f.request(t, http.MethodGet, location.String(), cookie, nil)
+		if response.StatusCode != http.StatusOK {
+			t.Fatalf("login page status: %d", response.StatusCode)
+		}
+	}
+	var count int64
+	if err := f.db.Model(&model.AuditEvent{}).Count(&count).Error; err != nil || count != 0 {
+		t.Fatalf("guest navigation created %d audit records: %v", count, err)
+	}
+}

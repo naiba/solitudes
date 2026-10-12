@@ -122,6 +122,7 @@ func resendVerification(c *fiber.Ctx) error {
 	if !verifyCaptcha(form.CaptchaID, form.Captcha) {
 		return fiber.NewError(http.StatusBadRequest, "invalid captcha")
 	}
+	sent := false
 	var account model.Account
 	err := solitudes.System.DB.Where("email = ? AND email_verified_at IS NULL AND disabled_at IS NULL", strings.ToLower(strings.TrimSpace(form.Email))).Take(&account).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -137,7 +138,12 @@ func resendVerification(c *fiber.Ctx) error {
 			if err := sendVerification(&account, safeReturnPath(c.FormValue("return_to"))); err != nil {
 				return fiber.NewError(http.StatusServiceUnavailable, "verification email unavailable")
 			}
+			sent = true
 		}
+	}
+	// The enumeration-safe response also covers no delivery and throttling.
+	if !sent {
+		c.Locals("audit_no_change", true)
 	}
 	return c.SendString("If an unverified account exists, a confirmation link has been sent.")
 }
