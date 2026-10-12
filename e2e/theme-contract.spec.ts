@@ -232,11 +232,18 @@ for (const locale of ['zh-CN','en']) test.describe(`revision language ${locale}`
       const prefix = `${locale}-${width}-${scheme}`;
       if (locale === 'zh-CN') await capture(prefix+'-collapsed');
       const summary = history.locator('summary');
+      // Deferred styles can reflow the page between two boundingBox calls.
+      // Sample both rectangles in one frame and retry the original constraints.
+      await expect.poll(() => history.evaluate(el => {
+        const historyBox = el.getBoundingClientRect();
+        const summaryBox = el.querySelector('summary')!.getBoundingClientRect();
+        return {
+          rightAligned: Math.abs(summaryBox.right - historyBox.right) <= 2,
+          fullWidth: summaryBox.width >= historyBox.width - 2,
+          touchTarget: summaryBox.height >= 44,
+        };
+      })).toEqual({rightAligned: true, fullWidth: true, touchTarget: true});
       const summaryBox = (await summary.boundingBox())!;
-      const historyBox = (await history.boundingBox())!;
-      expect(Math.abs(summaryBox.x + summaryBox.width - historyBox.x - historyBox.width)).toBeLessThanOrEqual(2);
-      expect(summaryBox.width).toBeGreaterThanOrEqual(historyBox.width - 2);
-      expect(summaryBox.height).toBeGreaterThanOrEqual(44);
       const closedArrow = await summary.evaluate(el => getComputedStyle(el, '::after').transform);
       // The whitespace in the middle and the far-right end are both targets,
       // not just the label or the disclosure arrow.
