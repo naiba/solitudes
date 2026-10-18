@@ -42,7 +42,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	if err := db.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.FeedVisit{},
 		&model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.ExternalIdentity{},
 		&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{},
-		&model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
+		&model.OIDCRefreshToken{}, &model.OIDCConsent{}, &model.DatabaseMigration{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
 		t.Fatal(err)
 	}
 	// Exercise the same ownership constraints and query indexes as production,
@@ -356,9 +356,9 @@ func TestBrowserThemeMatrix(t *testing.T) {
 				if !ready {
 					t.Fatal("isolated application did not start")
 				}
-				// The full role/layout matrix now includes more than 70 browser
+				// The full role/layout matrix now includes more than 90 browser
 				// cases per theme. Leave room for slower CI hosts without retries.
-				testTimeout := 8 * time.Minute
+				testTimeout := 9 * time.Minute
 				ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 				defer cancel()
 				root := repoRoot

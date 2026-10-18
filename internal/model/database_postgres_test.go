@@ -52,7 +52,7 @@ func databasePolicyTestDB(t *testing.T) *gorm.DB {
 	if err := db.Exec(`CREATE FUNCTION uuid_generate_v4() RETURNS uuid LANGUAGE SQL AS 'SELECT gen_random_uuid()'`).Error; err != nil {
 		t.Fatal(err)
 	}
-	if err := db.AutoMigrate(&Account{}, &Article{}, &ArticleHistory{}, &Comment{}, &LoginSession{}, &EmailAction{}, &ExternalIdentity{}, &Passkey{}, &PasskeyCeremony{}, &OAuthAttempt{}, &OIDCClient{}, &OIDCAuthRequest{}, &OIDCAccessToken{}, &OIDCRefreshToken{}, &OIDCSigningKey{}, &OIDCCryptoKey{}, &AuditEvent{}, &LoginSummary{}, &FeedVisit{}); err != nil {
+	if err := db.AutoMigrate(&Account{}, &Article{}, &ArticleHistory{}, &Comment{}, &LoginSession{}, &EmailAction{}, &ExternalIdentity{}, &Passkey{}, &PasskeyCeremony{}, &OAuthAttempt{}, &OIDCClient{}, &OIDCConsent{}, &DatabaseMigration{}, &OIDCAuthRequest{}, &OIDCAccessToken{}, &OIDCRefreshToken{}, &OIDCSigningKey{}, &OIDCCryptoKey{}, &AuditEvent{}, &LoginSummary{}, &FeedVisit{}); err != nil {
 		t.Fatal(err)
 	}
 	return db

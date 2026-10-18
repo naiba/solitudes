@@ -31,7 +31,9 @@ func lockOIDCClient(tx *gorm.DB, id string, activeOnly bool) (*model.OIDCClient,
 }
 
 func deleteOIDCCredentials(tx *gorm.DB, clientID, accountID string) error {
-	for _, table := range []interface{}{&model.OIDCAuthRequest{}, &model.OIDCRefreshToken{}, &model.OIDCAccessToken{}} {
+	// Application revocation removes remembered consent as well as credentials;
+	// otherwise an expired or deleted token could silently regain access.
+	for _, table := range []interface{}{&model.OIDCConsent{}, &model.OIDCAuthRequest{}, &model.OIDCRefreshToken{}, &model.OIDCAccessToken{}} {
 		query := tx.Where("client_id = ?", clientID)
 		if accountID != "" {
 			query = query.Where("account_id = ?", accountID)
@@ -43,20 +45,6 @@ func deleteOIDCCredentials(tx *gorm.DB, clientID, accountID string) error {
 	return nil
 }
 
-// Current access is derived from credentials, never a second consent ledger.
-// Filter each branch by account before aggregating; existing account indexes
-// bound the work to this user's credentials rather than all applications.
-func activeOIDCCredentials(db *gorm.DB, accountID string, now time.Time) *gorm.DB {
-	return db.Raw(`
-SELECT client_id, scopes, expires_at FROM o_id_c_access_tokens WHERE account_id = ? AND expires_at > ?
-UNION ALL
-SELECT client_id, scopes, expires_at FROM o_id_c_refresh_tokens WHERE account_id = ? AND expires_at > ?
-UNION ALL
-SELECT client_id, convert_from(request_json, 'UTF8')::jsonb->>'scope' AS scopes, expires_at
-FROM o_id_c_auth_requests WHERE account_id = ? AND approved = true AND code_used_at IS NULL AND expires_at > ?`,
-		accountID, now, accountID, now, accountID, now)
-}
-
 type oidcAuthorization struct {
 	ClientID    string
 	Name        string
@@ -66,16 +54,16 @@ type oidcAuthorization struct {
 	OwnerName   string
 	Scopes      string
 	ScopeList   []string `gorm:"-"`
-	ExpiresAt   time.Time
 }
 
-func authorizedApplicationsQuery(db *gorm.DB, accountID string, now time.Time) *gorm.DB {
-	summary := db.Table("(?) AS credentials", activeOIDCCredentials(db, accountID, now)).
-		Select("client_id, string_agg(DISTINCT scopes, ' ') AS scopes, max(expires_at) AS expires_at").Group("client_id")
-	return db.Table("(?) AS active", summary).
-		Select("active.client_id, active.scopes, active.expires_at, c.name, c.description, c.homepage_url, c.owner_id, a.nickname AS owner_name").
-		Joins("JOIN o_id_c_clients c ON c.id = active.client_id AND c.disabled_at IS NULL").
-		Joins("LEFT JOIN accounts a ON a.id = c.owner_id").Order("c.name ASC, c.id ASC")
+func authorizedApplicationsQuery(db *gorm.DB, accountID string) *gorm.DB {
+	// Consent outlives credentials: expiry, cleanup and logout must not hide
+	// applications or narrow the cumulative permissions the user can revoke.
+	return db.Table("o_id_c_consents AS consent").
+		Select("consent.client_id, consent.scopes, c.name, c.description, c.homepage_url, c.owner_id, a.nickname AS owner_name").
+		Joins("JOIN o_id_c_clients c ON c.id = consent.client_id AND c.disabled_at IS NULL").
+		Joins("LEFT JOIN accounts a ON a.id = c.owner_id").
+		Where("consent.account_id = ?", accountID).Order("c.name ASC, c.id ASC")
 }
 
 func authorizedApplicationsPage(c *fiber.Ctx) error {
@@ -84,7 +72,7 @@ func authorizedApplicationsPage(c *fiber.Ctx) error {
 		return err
 	}
 	var applications []oidcAuthorization
-	err = authorizedApplicationsQuery(solitudes.System.DB.WithContext(c.UserContext()), currentAccount(c).ID, time.Now()).
+	err = authorizedApplicationsQuery(solitudes.System.DB.WithContext(c.UserContext()), currentAccount(c).ID).
 		Limit(21).Offset((page - 1) * 20).Scan(&applications).Error
 	if err != nil {
 		return err
@@ -130,10 +118,11 @@ func revokeApplicationGrant(c *fiber.Ctx) error {
 		// page or an in-flight code exchange must still be safely revocable.
 		var ownsCredentials bool
 		if err := tx.Raw(`SELECT EXISTS (
-SELECT 1 FROM o_id_c_access_tokens WHERE client_id = ? AND account_id = ?
+SELECT 1 FROM o_id_c_consents WHERE client_id = ? AND account_id = ?
+UNION ALL SELECT 1 FROM o_id_c_access_tokens WHERE client_id = ? AND account_id = ?
 UNION ALL SELECT 1 FROM o_id_c_refresh_tokens WHERE client_id = ? AND account_id = ?
 UNION ALL SELECT 1 FROM o_id_c_auth_requests WHERE client_id = ? AND account_id = ?
-)`, id, account.ID, id, account.ID, id, account.ID).Scan(&ownsCredentials).Error; err != nil {
+)`, id, account.ID, id, account.ID, id, account.ID, id, account.ID).Scan(&ownsCredentials).Error; err != nil {
 			return err
 		}
 		if !ownsCredentials {

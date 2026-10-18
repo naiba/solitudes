@@ -34,7 +34,7 @@ func (p *performanceSQL) Trace(_ context.Context, start time.Time, _ func() (str
 // only in a random test schema; no benchmark data enters the preview/public DB.
 func BenchmarkPostgresReading(b *testing.B) {
 	db := newPostgresIdentityTestDB(b)
-	if err := db.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.ExternalIdentity{}, &model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}, &model.FeedVisit{}); err != nil {
+	if err := db.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.ExternalIdentity{}, &model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCConsent{}, &model.DatabaseMigration{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}, &model.FeedVisit{}); err != nil {
 		b.Fatal(err)
 	}
 	if err := model.MigrateDatabasePolicy(db); err != nil {

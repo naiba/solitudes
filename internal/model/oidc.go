@@ -18,6 +18,16 @@ type OIDCClient struct {
 	CreatedAt          time.Time
 }
 
+// OIDCConsent remembers explicit permission independently of credential expiry.
+// Its composite key prevents duplicate grants for one account/application pair.
+type OIDCConsent struct {
+	AccountID string `gorm:"type:uuid;primaryKey"`
+	ClientID  string `gorm:"primaryKey;index"`
+	Scopes    string `gorm:"type:text;not null"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type OIDCAuthRequest struct {
 	ID          string  `gorm:"type:uuid;primaryKey;default:uuid_generate_v4()"`
 	ClientID    string  `gorm:"not null;index"`

@@ -3,6 +3,7 @@
 package router
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -46,6 +47,9 @@ func newIdentityTestDB(t *testing.T) *gorm.DB {
 		`CREATE TABLE o_id_c_access_tokens (id TEXT PRIMARY KEY, client_id TEXT, account_id TEXT, scopes TEXT, expires_at datetime, created_at datetime)`,
 		`CREATE TABLE o_id_c_refresh_tokens (id TEXT PRIMARY KEY, token_hash TEXT UNIQUE, client_id TEXT, account_id TEXT, access_id TEXT, scopes TEXT, auth_time datetime, expires_at datetime)`,
 		`CREATE TABLE o_id_c_signing_keys (id TEXT PRIMARY KEY, key_der BLOB, active BOOL, created_at datetime)`,
+		`CREATE TABLE o_id_c_consents (account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, client_id TEXT NOT NULL REFERENCES o_id_c_clients(id) ON DELETE CASCADE, scopes TEXT NOT NULL, created_at datetime, updated_at datetime, PRIMARY KEY (account_id, client_id))`,
+		`CREATE INDEX idx_o_id_c_consents_client_id ON o_id_c_consents (client_id)`,
+		`CREATE TABLE database_migrations (name TEXT PRIMARY KEY, completed_at datetime NOT NULL)`,
 		`CREATE TABLE o_id_c_crypto_keys (id TEXT PRIMARY KEY, key BLOB)`,
 	} {
 		if err := db.Exec(ddl).Error; err != nil {
@@ -59,7 +63,23 @@ func newIdentityTestDB(t *testing.T) *gorm.DB {
 }
 
 func TestIdentityTablesAccessible(t *testing.T) {
-	newIdentityTestDB(t)
+	db := newIdentityTestDB(t)
+	account := testAccount(t, db, model.RoleUser)
+	client := model.OIDCClient{ID: "consent-fixture", Name: "Consent fixture", RedirectURIsJSON: "[]"}
+	if err := db.Create(&client).Error; err != nil {
+		t.Fatal(err)
+	}
+	consent := model.OIDCConsent{AccountID: account.ID, ClientID: client.ID, Scopes: "email openid"}
+	if err := db.Create(&consent).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&consent).Error; err == nil {
+		t.Fatal("SQLite fixture accepted duplicate account/client consent")
+	}
+	var stored model.OIDCConsent
+	if err := db.Take(&stored, "account_id = ? AND client_id = ?", account.ID, client.ID).Error; err != nil || stored.Scopes != "email openid" {
+		t.Fatalf("SQLite consent round trip: %+v, %v", stored, err)
+	}
 }
 
 func TestAccountSignInMethodsCannotBeCompletelyRemoved(t *testing.T) {
@@ -536,6 +556,11 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 		if form != nil {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		}
+		if strings.HasPrefix(target, "/authorize?") {
+			// This test calls the provider directly; production's Fiber adapter
+			// resolves the cookie into this browser context before dispatch.
+			req = req.WithContext(context.WithValue(req.Context(), oidcBrowserKey{}, oidcBrowserIdentity{secretHash("consent-cookie")}))
+		}
 		response := httptest.NewRecorder()
 		provider.ServeHTTP(response, req)
 		return response
@@ -567,7 +592,7 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 	digest := sha256.Sum256([]byte(verifier))
 	challenge := base64.RawURLEncoding.EncodeToString(digest[:])
 	query := url.Values{"client_id": {client.ID}, "redirect_uri": {"http://localhost:9090/callback"},
-		"response_type": {"code"}, "scope": {"openid email"}, "state": {"state-123"},
+		"response_type": {"code"}, "scope": {"openid email"}, "state": {"state-123"}, "prompt": {"consent"},
 		"code_challenge": {challenge}, "code_challenge_method": {"S256"}}
 	start := request(http.MethodGet, "/authorize?"+query.Encode(), nil)
 	if start.Code != http.StatusFound {
@@ -580,6 +605,13 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 	id := location.Query().Get("authRequestID")
 	if id == "" {
 		t.Fatal("missing authorization request ID")
+	}
+	var pending model.OIDCAuthRequest
+	if err := db.Take(&pending, "id = ?", id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if pending.AccountID == nil || *pending.AccountID != account.ID || pending.Approved || pending.AuthTime != nil {
+		t.Fatal("authenticated pending request must have an owner without approval")
 	}
 	approve(id)
 	callback := request(http.MethodGet, "/authorize/callback?id="+url.QueryEscape(id), nil)

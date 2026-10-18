@@ -220,7 +220,7 @@ func TestPostgresAuditRevocationFailureRollsBackTokens(t *testing.T) {
 		t.Fatal(err)
 	}
 	storage := &oidcStorage{db: db}
-	for _, token := range []struct{ value, subject string }{{access.ID, reader.ID}, {"rollback-refresh", ""}} {
+	for _, token := range []struct{ value, subject string }{{access.ID, reader.ID}, {refresh.ID, reader.ID}, {"rollback-refresh", ""}} {
 		if err := storage.RevokeToken(t.Context(), token.value, token.subject, access.ClientID); err == nil {
 			t.Fatal("revocation ignored audit failure")
 		}
@@ -263,5 +263,61 @@ func TestPostgresAuditUnchangedClientStillChecksOwnership(t *testing.T) {
 	}
 	if len(events) != 1 || events[0].Outcome != "failure" || events[0].ActorID != reader.ID {
 		t.Fatalf("ownership failure missing: %+v", events)
+	}
+}
+
+func TestPostgresOIDCStorageRevocationSDKSubjectAndClientIsolation(t *testing.T) {
+	for _, kind := range []string{"access", "refresh"} {
+		t.Run(kind, func(t *testing.T) {
+			db, other, reader := auditTestDB(t)
+			access := model.OIDCAccessToken{ClientID: "subject-bound-client", AccountID: reader.ID, ExpiresAt: time.Now().Add(time.Hour)}
+			if err := db.Create(&access).Error; err != nil {
+				t.Fatal(err)
+			}
+			refresh := model.OIDCRefreshToken{ClientID: access.ClientID, AccountID: reader.ID, AccessID: access.ID, TokenHash: secretHash("subject-bound-refresh"), ExpiresAt: access.ExpiresAt}
+			if err := db.Create(&refresh).Error; err != nil {
+				t.Fatal(err)
+			}
+			storage := &oidcStorage{db: db}
+			id, subject := access.ID, reader.ID
+			if kind == "refresh" {
+				var err error
+				subject, id, err = storage.GetRefreshTokenInfo(t.Context(), access.ClientID, "subject-bound-refresh")
+				if err != nil || subject != reader.ID || id != refresh.ID {
+					t.Fatalf("SDK refresh resolution: %s %s %v", subject, id, err)
+				}
+			}
+			for _, invalid := range []struct{ id, subject string }{{"invalid-id", reader.ID}, {access.ID, "invalid-subject"}, {"\xff", reader.ID}, {access.ID, "\xff"}} {
+				if err := storage.RevokeToken(t.Context(), invalid.id, invalid.subject, access.ClientID); err != nil {
+					t.Fatalf("unknown token leaked malformed ID: %v", err)
+				}
+			}
+			for step, caller := range []struct{ client, subject string }{{"other-client", subject}, {access.ClientID, other.ID}, {access.ClientID, subject}, {access.ClientID, subject}} {
+				if err := storage.RevokeToken(t.Context(), id, caller.subject, caller.client); err != nil {
+					t.Fatal(err)
+				}
+				var accessCount, refreshCount, auditCount int64
+				if err := db.Model(&model.OIDCAccessToken{}).Count(&accessCount).Error; err != nil {
+					t.Fatal(err)
+				}
+				if err := db.Model(&model.OIDCRefreshToken{}).Count(&refreshCount).Error; err != nil {
+					t.Fatal(err)
+				}
+				if err := db.Model(&model.AuditEvent{}).Where("reason = 'token_revoked'").Count(&auditCount).Error; err != nil {
+					t.Fatal(err)
+				}
+				wantAccess, wantRefresh, wantAudit := int64(1), int64(1), int64(0)
+				if step >= 2 {
+					wantAccess = 0
+					wantAudit = 1
+					if kind == "refresh" {
+						wantRefresh = 0
+					}
+				}
+				if accessCount != wantAccess || refreshCount != wantRefresh || auditCount != wantAudit {
+					t.Fatalf("step %d: access=%d refresh=%d audit=%d want=%d/%d/%d", step, accessCount, refreshCount, auditCount, wantAccess, wantRefresh, wantAudit)
+				}
+			}
+		})
 	}
 }

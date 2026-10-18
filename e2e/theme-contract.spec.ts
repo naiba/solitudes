@@ -682,8 +682,10 @@ test('account columns remain compact across roles and screen widths', async ({pa
   }
 });
 
-test('member app authorization can be revoked and owner deletion invalidates credentials', async ({page}) => {
-  test.skip(!readerEmail || !editorEmail || !oidcRedirectURI);
+test('member app durable authorization survives credential removal and requires consent after revocation', async ({page}) => {
+  expect(readerEmail, 'isolated member account is required').toBeTruthy();
+  expect(editorEmail, 'isolated editor account is required').toBeTruthy();
+  expect(oidcRedirectURI, 'isolated callback is required').toBeTruthy();
   await signIn(page, readerEmail!, readerPassword!);
   await page.getByTestId('account-oidc-clients').click();
   await page.getByTestId('oidc-client-name').fill('Revocable application');
@@ -695,8 +697,8 @@ test('member app authorization can be revoked and owner deletion invalidates cre
   await page.goto('/account'); await page.getByTestId('account-logout').click();
   await signIn(page, editorEmail!, readerPassword!);
   const verifier = 'g'.repeat(64);
-  const authorize = async (expectConsent = true) => {
-    await page.goto('/authorize?'+new URLSearchParams({client_id:clientID,redirect_uri:oidcRedirectURI!,response_type:'code',scope:'openid email profile offline_access',
+  const authorize = async (expectConsent = true, scope = 'openid email profile offline_access') => {
+    await page.goto('/authorize?'+new URLSearchParams({client_id:clientID,redirect_uri:oidcRedirectURI!,response_type:'code',scope,
       code_challenge:createHash('sha256').update(verifier).digest('base64url'),code_challenge_method:'S256'}));
     if (expectConsent) await page.getByTestId('oidc-consent-allow').click();
     else await expect(page.getByTestId('oidc-consent-allow')).toHaveCount(0);
@@ -706,7 +708,50 @@ test('member app authorization can be revoked and owner deletion invalidates cre
   const exchange = (code: string) => page.request.post('/oauth/token',{form:{grant_type:'authorization_code',client_id:clientID,redirect_uri:oidcRedirectURI!,code,code_verifier:verifier}});
   const tokensResponse = await exchange(await authorize());
   expect(tokensResponse.status()).toBe(200);
-  const tokens = await tokensResponse.json();
+  let tokens = await tokensResponse.json();
+  expect(tokens.refresh_token).toBeTruthy();
+  const narrowResponse = await exchange(await authorize(false, 'openid'));
+  expect(narrowResponse.status()).toBe(200);
+  const narrow = await narrowResponse.json();
+  expect(narrow.scope.split(' ')).toEqual(['openid']);
+  expect(narrow.refresh_token).toBeUndefined();
+  const narrowInfo = await page.request.get('/userinfo', {headers:{Authorization:'Bearer '+narrow.access_token}});
+  expect(narrowInfo.status()).toBe(200);
+  expect(await narrowInfo.json()).toEqual({sub:process.env.E2E_EDITOR_ID});
+  const broadInfo = await page.request.get('/userinfo', {headers:{Authorization:'Bearer '+tokens.access_token}});
+  expect(broadInfo.status()).toBe(200);
+  expect(await broadInfo.json()).toMatchObject({sub:process.env.E2E_EDITOR_ID, email:editorEmail, email_verified:true});
+  const revoked = await page.request.post('/revoke', {form:{client_id:clientID,token:narrow.access_token,token_type_hint:'access_token'}});
+  expect(revoked.status()).toBe(200);
+  expect((await page.request.get('/userinfo', {headers:{Authorization:'Bearer '+narrow.access_token}})).status()).toBe(403);
+  const refreshRevoked = await page.request.post('/revoke', {form:{client_id:clientID,token:tokens.refresh_token,token_type_hint:'refresh_token'}});
+  expect(refreshRevoked.status()).toBe(200);
+  expect((await page.request.post('/oauth/token', {form:{grant_type:'refresh_token',client_id:clientID,refresh_token:tokens.refresh_token}})).status()).toBe(400);
+  expect((await page.request.get('/userinfo', {headers:{Authorization:'Bearer '+tokens.access_token}})).status()).toBe(403);
+  // Issue a separate grant so RP logout still proves removal of live credentials.
+  const logoutResponse = await exchange(await authorize(false));
+  expect(logoutResponse.status()).toBe(200);
+  tokens = await logoutResponse.json();
+  expect(tokens.refresh_token).toBeTruthy();
+  const ended = await page.request.get('/end_session?'+new URLSearchParams({id_token_hint:tokens.id_token}), {maxRedirects:0});
+  expect(ended.status()).toBe(302);
+  expect((await page.request.post('/oauth/token', {form:{grant_type:'refresh_token',client_id:clientID,refresh_token:tokens.refresh_token}})).status()).toBe(400);
+  for (const access of [tokens.access_token, narrow.access_token]) {
+    expect((await page.request.get('/userinfo', {headers:{Authorization:'Bearer '+access}})).status()).toBe(403);
+  }
+  // No tokens remain, and logging out must not erase the cumulative permission.
+  await page.goto('/account'); await page.getByTestId('account-logout').click();
+  await signIn(page, editorEmail!, readerPassword!);
+  await page.getByTestId('account-authorizations').click();
+  const durable = page.locator(`[data-testid="authorization-row"][data-client-id="${clientID}"]`);
+  await expect(durable).toBeVisible();
+  await expect(durable).toContainText('Authorized until you revoke access.');
+  await expect(durable.locator('time')).toHaveCount(0);
+  await expect(durable.locator('.authorization-scopes li')).toHaveCount(4);
+  await expect(durable).toContainText('email');
+  const restoredResponse = await exchange(await authorize(false));
+  expect(restoredResponse.status()).toBe(200);
+  tokens = await restoredResponse.json();
   expect(tokens.refresh_token).toBeTruthy();
   const pendingCode = await authorize(false);
   await page.goto('/account'); await page.getByTestId('account-authorizations').click();
@@ -741,6 +786,18 @@ test('member app authorization can be revoked and owner deletion invalidates cre
   await owned.getByTestId('oidc-client-delete').click();
   await expect(owned).toHaveCount(0);
   expect((await page.request.get('/userinfo',{headers:{Authorization:'Bearer '+fresh.access_token}})).status()).toBe(403);
+  const deletedClientRefresh = await page.request.post('/oauth/token',{form:{grant_type:'refresh_token',client_id:clientID,refresh_token:fresh.refresh_token}});
+  // The provider currently maps a missing client lookup to server_error, before
+  // it can inspect the refresh grant; application deletion must still deny tokens.
+  expect(deletedClientRefresh.status()).toBe(500);
+  const deletedClientError = await deletedClientRefresh.json();
+  expect(deletedClientError).toMatchObject({error:'server_error'});
+  expect(deletedClientError.access_token).toBeUndefined();
+  expect(deletedClientError.refresh_token).toBeUndefined();
+  await page.goto('/account'); await page.getByTestId('account-logout').click();
+  await signIn(page, editorEmail!, readerPassword!);
+  await page.getByTestId('account-authorizations').click();
+  await expect(page.locator(`[data-testid="authorization-row"][data-client-id="${clientID}"]`)).toHaveCount(0);
 });
 
 const siteTheme = process.env.E2E_SITE_THEME || 'cactus';
@@ -1502,7 +1559,13 @@ test('cactus home keeps a compact article list and aligned column headings and c
   test.skip(siteTheme !== 'cactus', 'Cactus has independently stacked home columns.');
   for (const width of [1440, 1024, 768, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto('/', { waitUntil: 'networkidle' });
+    // Measure visible, styled content once fonts settle, not unrelated network
+    // silence across five navigations within this case's 30-second budget.
+    expect((await page.goto('/', { waitUntil: 'domcontentloaded' }))?.status()).toBe(200);
+    await expect(page.locator('#main-content')).toHaveCSS('display', 'flow-root');
+    await expect(page.locator('.home-grid-layout')).toHaveCSS('display', width > 650 ? 'grid' : 'flex');
+    await expect(page.getByTestId('site-search-input')).toBeVisible();
+    await page.evaluate(async () => { await document.fonts.ready; });
     await expect(page.locator('.home-articles-section [data-testid="article-list-link"]')).toHaveCount(6);
     await expect(page.locator('.home-most-read-section h2')).toHaveText('Recommended');
     const picks = await page.locator('.home-most-read-section [data-testid="article-list-link"]').evaluateAll(links => links.map(link => link.getAttribute('href')));
@@ -1545,7 +1608,9 @@ test('cactus home keeps a compact article list and aligned column headings and c
     }
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/search/', { waitUntil: 'networkidle' });
+  expect((await page.goto('/search/', { waitUntil: 'domcontentloaded' }))?.status()).toBe(200);
+  await expect(page.locator('#main-content')).toHaveCSS('display', 'flow-root');
+  await expect(page.locator('#search > form')).toBeVisible();
   await expect(page.locator('#search > form')).toHaveCSS('margin-top', '0px');
 });
 

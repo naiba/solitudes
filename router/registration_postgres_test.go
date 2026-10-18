@@ -435,7 +435,7 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 
 func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
 	db := newPostgresIdentityTestDB(t)
-	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
+	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCConsent{}, &model.DatabaseMigration{}); err != nil {
 		t.Fatal(err)
 	}
 	previous := solitudes.System
@@ -530,7 +530,7 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 		}
 	}
 	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{},
-		&model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
+		&model.OIDCRefreshToken{}, &model.OIDCConsent{}, &model.DatabaseMigration{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
 		t.Fatal(err)
 	}
 	previous := solitudes.System
