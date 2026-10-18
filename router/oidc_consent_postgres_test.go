@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -115,6 +116,9 @@ func consentLocation(t *testing.T, resp *http.Response) *url.URL {
 
 func (f *consentFixture) grant(t *testing.T, accountID, clientID, scopes string, expires time.Time, refresh bool) {
 	t.Helper()
+	if err := f.db.Create(&model.OIDCConsent{AccountID: accountID, ClientID: clientID, Scopes: scopes}).Error; err != nil {
+		t.Fatal(err)
+	}
 	access := model.OIDCAccessToken{AccountID: accountID, ClientID: clientID, Scopes: scopes, ExpiresAt: expires}
 	if refresh {
 		access.ExpiresAt = f.now.Add(-time.Hour)
@@ -133,7 +137,9 @@ func TestPostgresOIDCConsentReuseAndIsolation(t *testing.T) {
 	for _, tc := range []struct {
 		name, cookie, prompt, scope, want                     string
 		refresh, expired, foreignUser, foreignClient, noGrant bool
+		tokenOnly                                             bool
 	}{
+		{name: "token-only", cookie: "reader-session", tokenOnly: true, prompt: "none", want: "consent_required"},
 		{name: "existing", cookie: "reader-session", want: "ready"},
 		{name: "subset", cookie: "reader-session", scope: "openid", want: "ready"},
 		{name: "scope-order", cookie: "reader-session", scope: "email openid", want: "ready"},
@@ -144,8 +150,8 @@ func TestPostgresOIDCConsentReuseAndIsolation(t *testing.T) {
 		{name: "new-offline-access", cookie: "reader-session", scope: "openid email offline_access", want: "consent"},
 		{name: "silent-new-scope", cookie: "reader-session", scope: "openid email profile", prompt: "none", want: "consent_required"},
 		{name: "silent-no-grant", cookie: "reader-session", prompt: "none", noGrant: true, want: "consent_required"},
-		{name: "expired-access", cookie: "reader-session", expired: true, want: "consent"},
-		{name: "expired-refresh", cookie: "reader-session", expired: true, refresh: true, prompt: "none", want: "consent_required"},
+		{name: "expired-access", cookie: "reader-session", expired: true, want: "ready"},
+		{name: "expired-refresh", cookie: "reader-session", expired: true, refresh: true, prompt: "none", want: "ready"},
 		{name: "other-user", cookie: "reader-session", foreignUser: true, prompt: "none", want: "consent_required"},
 		{name: "other-client", cookie: "reader-session", foreignClient: true, prompt: "none", want: "consent_required"},
 		{name: "guest", prompt: "none", want: "login_required"},
@@ -168,6 +174,11 @@ func TestPostgresOIDCConsentReuseAndIsolation(t *testing.T) {
 					expires = f.now
 				}
 				f.grant(t, accountID, clientID, "openid email", expires, tc.refresh)
+				if tc.tokenOnly {
+					if err := f.db.Where("account_id = ?", accountID).Delete(&model.OIDCConsent{}).Error; err != nil {
+						t.Fatal(err)
+					}
+				}
 			}
 			extra := url.Values{}
 			if tc.prompt != "" {
@@ -315,7 +326,7 @@ func TestPostgresOIDCConsentSessionBoundariesAndHints(t *testing.T) {
 			case "missing-pkce":
 				extra.Set("code_challenge", "")
 			case "scope-prefix":
-				mutate(f.db.Model(&model.OIDCAccessToken{}).Where("client_id = ?", f.client.ID).Update("scopes", "openid email.read"))
+				mutate(f.db.Model(&model.OIDCConsent{}).Where("client_id = ?", f.client.ID).Update("scopes", "openid email.read"))
 			case "approved-request-only":
 				authorizedRequestFixture(t, f.db, f.client.ID, f.reader.ID)
 			case "hint-only", "wrong-hint":
@@ -422,21 +433,6 @@ func TestOIDCFreshAuthentication(t *testing.T) {
 	}
 }
 
-func TestPostgresOIDCConsentCombinesOnlyLiveScopes(t *testing.T) {
-	f := newConsentFixture(t)
-	f.grant(t, f.reader.ID, f.client.ID, "openid", f.now.Add(time.Hour), false)
-	f.grant(t, f.reader.ID, f.client.ID, "email", f.now.Add(time.Hour), true)
-	f.grant(t, f.reader.ID, f.client.ID, "profile", f.now, false)
-	location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"none"}}))
-	if location.Path != "/oidc/consent" {
-		t.Fatal("live scopes were not combined")
-	}
-	location = consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"none"}, "scope": {"openid email profile"}}))
-	if location.Query().Get("error") != "consent_required" {
-		t.Fatal("expired scope was reused")
-	}
-}
-
 func TestPostgresOIDCConsentAuditAndStorageFailure(t *testing.T) {
 	f := newConsentFixture(t)
 	for _, cookie := range []string{"", "reader-session"} {
@@ -446,7 +442,7 @@ func TestPostgresOIDCConsentAuditAndStorageFailure(t *testing.T) {
 	if err := f.db.Model(&model.AuditEvent{}).Count(&count).Error; err != nil || count != 0 {
 		t.Fatal("routine silent-login checks created audit noise", err)
 	}
-	if err := f.db.Migrator().DropTable(&model.OIDCAccessToken{}); err != nil {
+	if err := f.db.Migrator().DropTable(&model.OIDCConsent{}); err != nil {
 		t.Fatal(err)
 	}
 	location := consentLocation(t, f.authorize(t, "reader-session", nil))
@@ -488,5 +484,299 @@ func TestPostgresOIDCGuestLoginNavigationDoesNotCreateAudit(t *testing.T) {
 	var count int64
 	if err := f.db.Model(&model.AuditEvent{}).Count(&count).Error; err != nil || count != 0 {
 		t.Fatalf("guest navigation created %d audit records: %v", count, err)
+	}
+}
+
+func (f *consentFixture) storedConsent(t *testing.T) model.OIDCConsent {
+	t.Helper()
+	var rows []model.OIDCConsent
+	if err := f.db.Where("account_id = ? AND client_id = ?", f.reader.ID, f.client.ID).Find(&rows).Error; err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("expected one cumulative consent, got %d", len(rows))
+	}
+	return rows[0]
+}
+
+func (f *consentFixture) approve(t *testing.T, scope string) *url.URL {
+	t.Helper()
+	location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"consent"}, "scope": {scope}}))
+	next := consentLocation(t, f.request(t, http.MethodPost, "/oidc/consent", "reader-session", url.Values{"request_id": {location.Query().Get("authRequestID")}, "allow": {"yes"}}))
+	if next.Path != "/authorize/callback" {
+		t.Fatalf("approval failed: %s", next)
+	}
+	return next
+}
+
+func TestPostgresOIDCDurableConsentExplicitMergeAndTokenSubset(t *testing.T) {
+	f := newConsentFixture(t)
+	f.approve(t, "openid email offline_access")
+	first := f.storedConsent(t)
+	f.approve(t, "openid profile")
+	merged := f.storedConsent(t)
+	if merged.Scopes != "email offline_access openid profile" || !merged.CreatedAt.Equal(first.CreatedAt) || !merged.UpdatedAt.After(first.UpdatedAt) {
+		t.Fatalf("invalid cumulative consent: %+v", merged)
+	}
+	callback := f.approve(t, "openid offline_access")
+	subset := f.storedConsent(t)
+	if subset.Scopes != merged.Scopes || !subset.CreatedAt.Equal(first.CreatedAt) {
+		t.Fatal("subset approval removed historical scopes")
+	}
+	replay := f.request(t, http.MethodPost, "/oidc/consent", "reader-session", url.Values{"request_id": {callback.Query().Get("id")}, "allow": {"yes"}})
+	if replay.StatusCode != http.StatusBadRequest || !reflect.DeepEqual(f.storedConsent(t), subset) {
+		t.Fatal("replayed approval mutated consent")
+	}
+	location := consentLocation(t, f.request(t, http.MethodGet, callback.RequestURI(), "reader-session", nil))
+	response := f.request(t, http.MethodPost, "/oauth/token", "", url.Values{"grant_type": {"authorization_code"}, "client_id": {f.client.ID}, "code": {location.Query().Get("code")}, "redirect_uri": {"http://localhost:9090/callback"}, "code_verifier": {strings.Repeat("v", 64)}})
+	if response.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(response.Body)
+		t.Fatalf("token exchange %d: %s", response.StatusCode, body)
+	}
+	var tokens []model.OIDCAccessToken
+	if err := f.db.Find(&tokens).Error; err != nil || len(tokens) != 1 || tokens[0].Scopes != "openid offline_access" {
+		t.Fatalf("token broadened to historical consent: %+v %v", tokens, err)
+	}
+	var refreshTokens []model.OIDCRefreshToken
+	if err := f.db.Find(&refreshTokens).Error; err != nil || len(refreshTokens) != 1 || refreshTokens[0].Scopes != "openid offline_access" {
+		t.Fatalf("refresh token broadened to historical consent: %+v %v", refreshTokens, err)
+	}
+	for _, table := range []interface{}{&model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
+		if err := f.db.Model(table).Where("client_id = ?", f.client.ID).Update("expires_at", f.now.Add(-time.Hour)).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, remove := range []bool{false, true} {
+		if remove {
+			for _, table := range []interface{}{&model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
+				if err := f.db.Where("client_id = ?", f.client.ID).Delete(table).Error; err != nil {
+					t.Fatal(err)
+				}
+			}
+		}
+		location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"none"}, "scope": {"openid email profile"}}))
+		if location.Path != "/oidc/consent" {
+			t.Fatalf("credential expiry/removal revoked consent: %s", location)
+		}
+		if got := f.storedConsent(t); !reflect.DeepEqual(got, subset) {
+			t.Fatal("silent reuse mutated consent")
+		}
+	}
+}
+
+func TestPostgresOIDCDurableConsentRejectedApprovalDoesNotMutate(t *testing.T) {
+	for _, mode := range []string{"decline", "stale-authentication", "disabled-client", "expired-request", "consent-write-failure", "request-write-failure"} {
+		t.Run(mode, func(t *testing.T) {
+			f := newConsentFixture(t)
+			f.approve(t, "openid")
+			before := f.storedConsent(t)
+			extra := url.Values{"prompt": {"consent"}, "scope": {"openid email"}}
+			if mode == "stale-authentication" {
+				extra.Set("max_age", "0")
+			}
+			location := consentLocation(t, f.authorize(t, "reader-session", extra))
+			id := location.Query().Get("authRequestID")
+			var err error
+			switch mode {
+			case "disabled-client":
+				err = f.db.Model(&f.client).Update("disabled_at", f.now).Error
+			case "expired-request":
+				err = f.db.Model(&model.OIDCAuthRequest{}).Where("id = ?", id).Update("expires_at", f.now.Add(-time.Hour)).Error
+			case "consent-write-failure":
+				err = f.db.Exec("ALTER TABLE o_id_c_consents ADD CONSTRAINT consent_scope_guard CHECK (scopes = 'openid')").Error
+			case "request-write-failure":
+				err = f.db.Exec("ALTER TABLE o_id_c_auth_requests ADD CONSTRAINT approval_guard CHECK (NOT approved OR id <> '" + id + "')").Error
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			allow := "yes"
+			if mode == "decline" {
+				allow = "no"
+			}
+			response := f.request(t, http.MethodPost, "/oidc/consent", "reader-session", url.Values{"request_id": {id}, "allow": {allow}})
+			switch mode {
+			case "decline":
+				if next := consentLocation(t, response); next.Query().Get("error") != "access_denied" {
+					t.Fatalf("decline did not deny access: %s", next)
+				}
+			case "stale-authentication":
+				if next := consentLocation(t, response); next.Path != "/login" {
+					t.Fatalf("stale authentication did not require login: %s", next)
+				}
+			case "disabled-client", "expired-request":
+				if response.StatusCode != http.StatusBadRequest {
+					t.Fatalf("invalid approval status: %d", response.StatusCode)
+				}
+			default:
+				if response.StatusCode != http.StatusInternalServerError {
+					t.Fatalf("storage failure status: %d", response.StatusCode)
+				}
+			}
+			if got := f.storedConsent(t); !reflect.DeepEqual(got, before) {
+				t.Fatalf("failed approval mutated consent: %+v", got)
+			}
+			var approved int64
+			if err := f.db.Model(&model.OIDCAuthRequest{}).Where("id = ? AND approved = true", id).Count(&approved).Error; err != nil || approved != 0 {
+				t.Fatal("failed approval persisted request", err)
+			}
+		})
+	}
+}
+
+func TestPostgresOIDCDurableConsentTokenRevocationAndLogoutPreserve(t *testing.T) {
+	for _, operation := range []string{"access-revoke", "refresh-revoke", "logout"} {
+		t.Run(operation, func(t *testing.T) {
+			f := newConsentFixture(t)
+			f.grant(t, f.reader.ID, f.client.ID, "openid email", f.now.Add(time.Hour), true)
+			before := f.storedConsent(t)
+			var access model.OIDCAccessToken
+			if err := f.db.Take(&access).Error; err != nil {
+				t.Fatal(err)
+			}
+			storage := &oidcStorage{db: f.db}
+			switch operation {
+			case "access-revoke":
+				if err := storage.RevokeToken(t.Context(), access.ID, f.reader.ID, f.client.ID); err != nil {
+					t.Fatal(err)
+				}
+			case "refresh-revoke":
+				if err := storage.RevokeToken(t.Context(), access.ID, "", f.client.ID); err != nil {
+					t.Fatal(err)
+				}
+			case "logout":
+				if err := storage.TerminateSession(t.Context(), f.reader.ID, f.client.ID); err != nil {
+					t.Fatal(err)
+				}
+			}
+			var count int64
+			if err := f.db.Model(&model.OIDCAccessToken{}).Count(&count).Error; err != nil || count != 0 {
+				t.Fatal("token not removed", err)
+			}
+			if operation != "access-revoke" {
+				if err := f.db.Model(&model.OIDCRefreshToken{}).Count(&count).Error; err != nil || count != 0 {
+					t.Fatal("refresh token not removed", err)
+				}
+			}
+			if got := f.storedConsent(t); !reflect.DeepEqual(got, before) {
+				t.Fatal("credential revocation erased consent")
+			}
+			location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"none"}}))
+			if location.Path != "/oidc/consent" {
+				t.Fatalf("consent not reusable: %s", location)
+			}
+		})
+	}
+}
+
+func TestPostgresOIDCDurableConsentApprovalWaitsForRevocation(t *testing.T) {
+	f := newConsentFixture(t)
+	f.grant(t, f.reader.ID, f.client.ID, "openid", f.now.Add(time.Hour), false)
+	location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"consent"}}))
+	id := location.Query().Get("authRequestID")
+	// Bind the pending request to its authenticated account so revocation removes it.
+	if err := f.db.Model(&model.OIDCAuthRequest{}).Where("id = ?", id).Update("account_id", f.reader.ID).Error; err != nil {
+		t.Fatal(err)
+	}
+	var schema string
+	if err := f.db.Raw("SELECT current_schema()").Scan(&schema).Error; err != nil {
+		t.Fatal(err)
+	}
+	config, err := pgx.ParseConfig(os.Getenv("SOLITUDES_TEST_POSTGRES_DSN"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.RuntimeParams["search_path"] = schema
+	connection := stdlib.OpenDB(*config)
+	defer connection.Close()
+	peer, err := gorm.Open(postgres.New(postgres.Config{Conn: connection}), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx := peer.Begin()
+	defer tx.Rollback()
+	if _, err := lockOIDCClient(tx, f.client.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := deleteOIDCCredentials(tx, f.client.ID, f.reader.ID); err != nil {
+		t.Fatal(err)
+	}
+	var approvalPID int
+	if err := f.db.Raw("SELECT pg_backend_pid()").Scan(&approvalPID).Error; err != nil {
+		t.Fatal(err)
+	}
+	type approvalResult struct {
+		response *http.Response
+		err      error
+	}
+	result := make(chan approvalResult, 1)
+	req := httptest.NewRequest(http.MethodPost, "/oidc/consent", strings.NewReader(url.Values{"request_id": {id}, "allow": {"yes"}}.Encode()))
+	req.Host = "localhost:8080"
+	req.Header.Set("Origin", "http://localhost:8080")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "reader-session"})
+	go func() { response, err := f.app.Test(req, -1); result <- approvalResult{response, err} }()
+	// Observe a real PostgreSQL lock wait, not a goroutine scheduling delay.
+	deadline := time.Now().Add(5 * time.Second)
+	waiting := false
+	for time.Now().Before(deadline) {
+		if err := tx.Exec("SELECT pg_stat_clear_snapshot()").Error; err != nil {
+			t.Fatal(err)
+		}
+		// A wait on the deleted request row would also block without the client
+		// lock. Assert the exact connection is waiting in the client query.
+		if err := tx.Raw(`SELECT pg_backend_pid() = ANY(pg_blocking_pids(?)) AND EXISTS (
+SELECT 1 FROM pg_stat_activity WHERE pid = ? AND query LIKE '%o_id_c_clients%'
+)`, approvalPID, approvalPID).Scan(&waiting).Error; err != nil {
+			t.Fatal(err)
+		}
+		if waiting {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !waiting {
+		t.Fatal("explicit approval did not wait on client revocation lock")
+	}
+	if err := tx.Commit().Error; err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case completed := <-result:
+		if completed.err != nil {
+			t.Fatal(completed.err)
+		}
+		defer completed.response.Body.Close()
+		if completed.response.StatusCode < 400 {
+			t.Fatalf("revoked pending approval succeeded: %d", completed.response.StatusCode)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("approval deadlocked")
+	}
+	for _, table := range []interface{}{&model.OIDCConsent{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
+		var count int64
+		if err := f.db.Model(table).Where("client_id = ?", f.client.ID).Count(&count).Error; err != nil || count != 0 {
+			t.Fatalf("revoked state survived in %T: %d %v", table, count, err)
+		}
+	}
+}
+
+func TestPostgresOIDCDurableConsentOnlyApplicationRevocation(t *testing.T) {
+	f := newConsentFixture(t)
+	if err := f.db.Create(&[]model.OIDCConsent{{AccountID: f.reader.ID, ClientID: f.client.ID, Scopes: "openid email"}, {AccountID: f.owner.ID, ClientID: f.client.ID, Scopes: "openid"}}).Error; err != nil {
+		t.Fatal(err)
+	}
+	f.app.Post("/account/oidc/authorizations/:id/revoke", requireAccount, revokeApplicationGrant)
+	response := f.request(t, http.MethodPost, "/account/oidc/authorizations/"+f.client.ID+"/revoke", "reader-session", url.Values{})
+	if response.StatusCode != http.StatusSeeOther {
+		t.Fatalf("consent-only application cannot be revoked: %d", response.StatusCode)
+	}
+	var rows []model.OIDCConsent
+	if err := f.db.Find(&rows).Error; err != nil || len(rows) != 1 || rows[0].AccountID != f.owner.ID {
+		t.Fatalf("revocation isolation failed: %+v %v", rows, err)
+	}
+	location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"none"}}))
+	if location.Query().Get("error") != "consent_required" {
+		t.Fatalf("revoked consent reused: %s", location)
 	}
 }

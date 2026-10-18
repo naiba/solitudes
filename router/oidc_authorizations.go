@@ -31,7 +31,9 @@ func lockOIDCClient(tx *gorm.DB, id string, activeOnly bool) (*model.OIDCClient,
 }
 
 func deleteOIDCCredentials(tx *gorm.DB, clientID, accountID string) error {
-	for _, table := range []interface{}{&model.OIDCAuthRequest{}, &model.OIDCRefreshToken{}, &model.OIDCAccessToken{}} {
+	// Application revocation removes remembered consent as well as credentials;
+	// otherwise an expired or deleted token could silently regain access.
+	for _, table := range []interface{}{&model.OIDCConsent{}, &model.OIDCAuthRequest{}, &model.OIDCRefreshToken{}, &model.OIDCAccessToken{}} {
 		query := tx.Where("client_id = ?", clientID)
 		if accountID != "" {
 			query = query.Where("account_id = ?", accountID)
@@ -130,10 +132,11 @@ func revokeApplicationGrant(c *fiber.Ctx) error {
 		// page or an in-flight code exchange must still be safely revocable.
 		var ownsCredentials bool
 		if err := tx.Raw(`SELECT EXISTS (
-SELECT 1 FROM o_id_c_access_tokens WHERE client_id = ? AND account_id = ?
+SELECT 1 FROM o_id_c_consents WHERE client_id = ? AND account_id = ?
+UNION ALL SELECT 1 FROM o_id_c_access_tokens WHERE client_id = ? AND account_id = ?
 UNION ALL SELECT 1 FROM o_id_c_refresh_tokens WHERE client_id = ? AND account_id = ?
 UNION ALL SELECT 1 FROM o_id_c_auth_requests WHERE client_id = ? AND account_id = ?
-)`, id, account.ID, id, account.ID, id, account.ID).Scan(&ownsCredentials).Error; err != nil {
+)`, id, account.ID, id, account.ID, id, account.ID, id, account.ID).Scan(&ownsCredentials).Error; err != nil {
 			return err
 		}
 		if !ownsCredentials {

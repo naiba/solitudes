@@ -46,21 +46,21 @@ func (d oidcConsentDecision) protocolError() error {
 	return &oidc.Error{ErrorType: "consent_required"}
 }
 
-// Only live credentials prove reusable consent; login history and old approved
-// requests cannot resurrect a revoked/expired grant. UNION bounds duplicate scopes.
-func oidcScopesGranted(db *gorm.DB, clientID, accountID string, scopes []string, now time.Time) (bool, error) {
-	var existing []string
-	err := db.Raw(`SELECT scopes FROM o_id_c_access_tokens WHERE client_id = ? AND account_id = ? AND expires_at > ?
-UNION SELECT scopes FROM o_id_c_refresh_tokens WHERE client_id = ? AND account_id = ? AND expires_at > ?`,
-		clientID, accountID, now, clientID, accountID, now).Scan(&existing).Error
-	if err != nil || len(existing) == 0 {
+// Token expiry or single-token revocation is not withdrawal of consent. Only
+// the durable, explicitly approved grant permits reuse; credentials and old
+// authorization requests must never resurrect an application-level revocation.
+func oidcScopesGranted(db *gorm.DB, clientID, accountID string, scopes []string) (bool, error) {
+	var consent model.OIDCConsent
+	err := db.Where("client_id = ? AND account_id = ?", clientID, accountID).Take(&consent).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return false, nil
+	}
+	if err != nil {
 		return false, err
 	}
 	granted := map[string]bool{}
-	for _, value := range existing {
-		for _, scope := range strings.Fields(value) {
-			granted[scope] = true
-		}
+	for _, scope := range strings.Fields(consent.Scopes) {
+		granted[scope] = true
 	}
 	for _, scope := range scopes {
 		if !granted[scope] {
@@ -107,7 +107,7 @@ func evaluateOIDCConsent(db *gorm.DB, request *oidcAuthRequest, browser oidcBrow
 		if slices.Contains(request.req.Prompt, oidc.PromptConsent) {
 			return oidcNeedsConsent, nil
 		}
-		granted, err := oidcScopesGranted(db, request.ClientID, session.AccountID, request.GetScopes(), now)
+		granted, err := oidcScopesGranted(db, request.ClientID, session.AccountID, request.GetScopes())
 		if err != nil || !granted {
 			return oidcNeedsConsent, err
 		}
@@ -138,6 +138,27 @@ func completeOIDCConsent(c *fiber.Ctx, original *oidcAuthRequest, explicit bool)
 		decision, err = evaluateOIDCConsent(tx, request, oidcBrowser(c), explicit, time.Now())
 		if err != nil || decision != oidcConsentReady || row.Approved {
 			return err
+		}
+		if explicit {
+			// The client lock also serializes scope merging with application
+			// revocation. Never write consent from a silent authorization, and keep
+			// request scopes unchanged so tokens cannot inherit historical scopes.
+			var consent model.OIDCConsent
+			err := tx.Where("client_id = ? AND account_id = ?", request.ClientID, *request.AccountID).Take(&consent).Error
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			scopes := append(strings.Fields(consent.Scopes), request.GetScopes()...)
+			slices.Sort(scopes)
+			consent.AccountID, consent.ClientID = *request.AccountID, request.ClientID
+			consent.Scopes = strings.Join(slices.Compact(scopes), " ")
+			consent.UpdatedAt = time.Now()
+			if err := tx.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "account_id"}, {Name: "client_id"}},
+				DoUpdates: clause.AssignmentColumns([]string{"scopes", "updated_at"}),
+			}).Create(&consent).Error; err != nil {
+				return err
+			}
 		}
 		return tx.Model(&row).Updates(map[string]interface{}{"approved": true, "account_id": request.AccountID, "auth_time": request.AuthTime}).Error
 	})
