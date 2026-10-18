@@ -27,7 +27,7 @@ import (
 func auditTestDB(t *testing.T) (*gorm.DB, model.Account, model.Account) {
 	t.Helper()
 	db := newPostgresIdentityTestDB(t)
-	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
+	if err := db.AutoMigrate(&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCConsent{}, &model.DatabaseMigration{}); err != nil {
 		t.Fatal(err)
 	}
 	previous := solitudes.System

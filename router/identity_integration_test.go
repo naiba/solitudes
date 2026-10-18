@@ -46,6 +46,9 @@ func newIdentityTestDB(t *testing.T) *gorm.DB {
 		`CREATE TABLE o_id_c_access_tokens (id TEXT PRIMARY KEY, client_id TEXT, account_id TEXT, scopes TEXT, expires_at datetime, created_at datetime)`,
 		`CREATE TABLE o_id_c_refresh_tokens (id TEXT PRIMARY KEY, token_hash TEXT UNIQUE, client_id TEXT, account_id TEXT, access_id TEXT, scopes TEXT, auth_time datetime, expires_at datetime)`,
 		`CREATE TABLE o_id_c_signing_keys (id TEXT PRIMARY KEY, key_der BLOB, active BOOL, created_at datetime)`,
+		`CREATE TABLE o_id_c_consents (account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE, client_id TEXT NOT NULL REFERENCES o_id_c_clients(id) ON DELETE CASCADE, scopes TEXT NOT NULL, created_at datetime, updated_at datetime, PRIMARY KEY (account_id, client_id))`,
+		`CREATE INDEX idx_o_id_c_consents_client_id ON o_id_c_consents (client_id)`,
+		`CREATE TABLE database_migrations (name TEXT PRIMARY KEY, completed_at datetime NOT NULL)`,
 		`CREATE TABLE o_id_c_crypto_keys (id TEXT PRIMARY KEY, key BLOB)`,
 	} {
 		if err := db.Exec(ddl).Error; err != nil {
@@ -59,7 +62,23 @@ func newIdentityTestDB(t *testing.T) *gorm.DB {
 }
 
 func TestIdentityTablesAccessible(t *testing.T) {
-	newIdentityTestDB(t)
+	db := newIdentityTestDB(t)
+	account := testAccount(t, db, model.RoleUser)
+	client := model.OIDCClient{ID: "consent-fixture", Name: "Consent fixture", RedirectURIsJSON: "[]"}
+	if err := db.Create(&client).Error; err != nil {
+		t.Fatal(err)
+	}
+	consent := model.OIDCConsent{AccountID: account.ID, ClientID: client.ID, Scopes: "email openid"}
+	if err := db.Create(&consent).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&consent).Error; err == nil {
+		t.Fatal("SQLite fixture accepted duplicate account/client consent")
+	}
+	var stored model.OIDCConsent
+	if err := db.Take(&stored, "account_id = ? AND client_id = ?", account.ID, client.ID).Error; err != nil || stored.Scopes != "email openid" {
+		t.Fatalf("SQLite consent round trip: %+v, %v", stored, err)
+	}
 }
 
 func TestAccountSignInMethodsCannotBeCompletelyRemoved(t *testing.T) {

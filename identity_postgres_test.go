@@ -77,6 +77,10 @@ func TestPostgresAdministratorInitialization(t *testing.T) {
 	if err := initializeDatabase(db); err != nil {
 		t.Fatal(err)
 	}
+	var consentMigrationCount int64
+	if err := db.Table("database_migrations").Where("name = ?", "oidc_persistent_consent").Count(&consentMigrationCount).Error; err != nil || consentMigrationCount != 1 {
+		t.Fatalf("startup did not complete the empty consent migration: count=%d error=%v", consentMigrationCount, err)
+	}
 	if err := requireAdministrator(db); err == nil {
 		t.Fatal("uninitialized server must not start")
 	}

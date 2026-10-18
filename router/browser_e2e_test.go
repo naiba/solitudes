@@ -42,7 +42,7 @@ func TestBrowserThemeMatrix(t *testing.T) {
 	if err := db.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.FeedVisit{},
 		&model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.ExternalIdentity{},
 		&model.OIDCClient{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{},
-		&model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
+		&model.OIDCRefreshToken{}, &model.OIDCConsent{}, &model.DatabaseMigration{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
 		t.Fatal(err)
 	}
 	// Exercise the same ownership constraints and query indexes as production,

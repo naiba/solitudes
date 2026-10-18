@@ -36,6 +36,8 @@ func MigrateDatabasePolicy(db *gorm.DB) error {
 			{"passkey_ceremonies", "ceremony_account", "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE"},
 			{"o_auth_attempts", "oauth_attempt_account", "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE"},
 			{"o_id_c_clients", "client_owner", "FOREIGN KEY (owner_id) REFERENCES accounts(id) ON DELETE RESTRICT"},
+			{"o_id_c_consents", "consent_account", "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE"},
+			{"o_id_c_consents", "consent_client", "FOREIGN KEY (client_id) REFERENCES o_id_c_clients(id) ON DELETE CASCADE"},
 			{"o_id_c_auth_requests", "auth_request_account", "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE"},
 			{"o_id_c_auth_requests", "auth_request_client", "FOREIGN KEY (client_id) REFERENCES o_id_c_clients(id) ON DELETE CASCADE"},
 			{"o_id_c_access_tokens", "access_token_account", "FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE CASCADE"},

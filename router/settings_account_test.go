@@ -130,7 +130,7 @@ func TestPostgresSettingsCannotModifyAccountOrRevokeSessions(t *testing.T) {
 	db := newPostgresIdentityTestDB(t)
 	app, _, account := settingsAccountFixture(t)
 	solitudes.System.DB = db
-	if err := db.AutoMigrate(&model.OIDCAccessToken{}, &model.OIDCRefreshToken{}); err != nil {
+	if err := db.AutoMigrate(&model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCConsent{}, &model.DatabaseMigration{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Create(account).Error; err != nil {
