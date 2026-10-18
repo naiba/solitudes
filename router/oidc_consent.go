@@ -173,9 +173,23 @@ func completeOIDCConsent(c *fiber.Ctx, original *oidcAuthRequest, explicit bool)
 			}).Create(&consent).Error; err != nil {
 				return err
 			}
+			// Approval expands durable authority: its success audit must commit
+			// with the grant and request, not in the middleware's best-effort
+			// fallback. A later request-update failure rolls this event back too.
+			if err := saveAudit(c.UserContext(), tx, model.AuditEvent{
+				Action: "oidc.consent", Outcome: "success", ActorID: *request.AccountID,
+				ClientID: request.ClientID, TargetID: request.ID,
+				Method: http.MethodPost, Route: "/oidc/consent", Status: http.StatusFound,
+			}); err != nil {
+				return err
+			}
 		}
 		return tx.Model(&row).Updates(map[string]interface{}{"approved": true, "account_id": request.AccountID, "auth_time": request.AuthTime}).Error
 	})
+	if err == nil && explicit && decision == oidcConsentReady {
+		// Suppress duplicate middleware success events only after commit.
+		c.Locals("audit_recorded", true)
+	}
 	return request, decision, err
 }
 

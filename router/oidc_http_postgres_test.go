@@ -341,3 +341,110 @@ func TestPostgresOIDCHTTPRevocationTokenHintsAndIsolation(t *testing.T) {
 		}
 	}
 }
+
+func TestPostgresOIDCHTTPRefreshNarrowsWithoutExpandingConsent(t *testing.T) {
+	f := newConsentFixture(t)
+	f.app.Use("/userinfo", oidcHTTPHandler(activeOIDCProvider))
+	server := httptest.NewServer(adaptor.FiberApp(f.app))
+	defer server.Close()
+	client := server.Client()
+	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	requestJSON := func(method, path string, form url.Values, bearer string, status int, dest interface{}) {
+		t.Helper()
+		req, err := http.NewRequest(method, server.URL+path, strings.NewReader(form.Encode()))
+		if err != nil {
+			t.Fatal(err)
+		}
+		// The fixture's issuer is localhost:8080; use a real HTTP transport without
+		// changing that issuer or bypassing the production Fiber protocol adapter.
+		req.Host = "localhost:8080"
+		if form != nil {
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		}
+		if bearer != "" {
+			req.Header.Set("Authorization", "Bearer "+bearer)
+		}
+		response, err := client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer response.Body.Close()
+		if response.StatusCode != status {
+			t.Fatalf("%s %s: status %d, want %d", method, path, response.StatusCode, status)
+		}
+		if err := json.NewDecoder(response.Body).Decode(dest); err != nil {
+			t.Fatal(err)
+		}
+	}
+	f.approve(t, "openid email profile offline_access")
+	callback := f.approve(t, "openid email offline_access")
+	consent := f.storedConsent(t)
+	location := consentLocation(t, f.request(t, http.MethodGet, callback.RequestURI(), "reader-session", nil))
+	type tokenResponse struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		Scope        string `json:"scope"`
+	}
+	var original tokenResponse
+	requestJSON(http.MethodPost, "/oauth/token", url.Values{"grant_type": {"authorization_code"}, "client_id": {f.client.ID}, "code": {location.Query().Get("code")}, "redirect_uri": {"http://localhost:9090/callback"}, "code_verifier": {strings.Repeat("v", 64)}}, "", http.StatusOK, &original)
+	if original.AccessToken == "" || original.RefreshToken == "" {
+		t.Fatal("authorization code did not issue both tokens")
+	}
+	var storedRefresh model.OIDCRefreshToken
+	if err := f.db.Take(&storedRefresh, "token_hash = ?", secretHash(original.RefreshToken)).Error; err != nil {
+		t.Fatal(err)
+	}
+	if storedRefresh.Scopes != "openid email offline_access" {
+		t.Fatalf("original refresh scope: %s", storedRefresh.Scopes)
+	}
+	var originalUser map[string]interface{}
+	requestJSON(http.MethodGet, "/userinfo", nil, original.AccessToken, http.StatusOK, &originalUser)
+	if originalUser["email"] != f.reader.Email {
+		t.Fatal("initial access token did not grant email")
+	}
+	var rejected struct {
+		Error string `json:"error"`
+	}
+	requestJSON(http.MethodPost, "/oauth/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {f.client.ID}, "refresh_token": {original.RefreshToken}, "scope": {"openid profile"}}, "", http.StatusBadRequest, &rejected)
+	if rejected.Error != "invalid_scope" {
+		t.Fatalf("historical consent expanded refresh permission: %s", rejected.Error)
+	}
+	var unchanged model.OIDCRefreshToken
+	if err := f.db.Take(&unchanged, "id = ?", storedRefresh.ID).Error; err != nil || !reflect.DeepEqual(unchanged, storedRefresh) {
+		t.Fatal("rejected scope consumed or changed original refresh token", err)
+	}
+	if got := f.storedConsent(t); !reflect.DeepEqual(got, consent) {
+		t.Fatal("rejected refresh mutated durable consent")
+	}
+	originalUser = nil
+	requestJSON(http.MethodGet, "/userinfo", nil, original.AccessToken, http.StatusOK, &originalUser)
+	if originalUser["email"] != f.reader.Email {
+		t.Fatal("rejected refresh invalidated the original access token")
+	}
+	var narrowed tokenResponse
+	requestJSON(http.MethodPost, "/oauth/token", url.Values{"grant_type": {"refresh_token"}, "client_id": {f.client.ID}, "refresh_token": {original.RefreshToken}, "scope": {"openid"}}, "", http.StatusOK, &narrowed)
+	if narrowed.Scope != "openid" || narrowed.AccessToken == "" || narrowed.AccessToken == original.AccessToken || narrowed.RefreshToken == "" || narrowed.RefreshToken == original.RefreshToken {
+		t.Fatalf("refresh response did not narrow and rotate: scope=%s", narrowed.Scope)
+	}
+	var access []model.OIDCAccessToken
+	var refresh []model.OIDCRefreshToken
+	if err := f.db.Find(&access).Error; err != nil || len(access) != 1 || access[0].Scopes != "openid" {
+		t.Fatalf("access token was not narrowed: %+v %v", access, err)
+	}
+	if err := f.db.Find(&refresh).Error; err != nil || len(refresh) != 1 || refresh[0].Scopes != "openid" || refresh[0].TokenHash != secretHash(narrowed.RefreshToken) || refresh[0].AccessID != access[0].ID {
+		t.Fatalf("refresh token was not narrowed/rotated: %+v %v", refresh, err)
+	}
+	var user map[string]interface{}
+	requestJSON(http.MethodGet, "/userinfo", nil, narrowed.AccessToken, http.StatusOK, &user)
+	if user["sub"] != f.reader.ID {
+		t.Fatal("narrowed token changed subject")
+	}
+	for _, claim := range []string{"email", "email_verified", "name", "nickname"} {
+		if _, ok := user[claim]; ok {
+			t.Fatalf("narrowed userinfo leaked %s", claim)
+		}
+	}
+	if got := f.storedConsent(t); !reflect.DeepEqual(got, consent) {
+		t.Fatal("refresh narrowed or mutated durable consent")
+	}
+}

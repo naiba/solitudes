@@ -901,3 +901,195 @@ func TestPostgresOIDCPendingConsentBindsOnlyAfterFreshAuthentication(t *testing.
 		})
 	}
 }
+
+func TestPostgresOIDCExplicitConsentAuditIsAtomic(t *testing.T) {
+	for _, mode := range []string{"first-approval-audit-failure", "scope-expansion-audit-failure", "request-update-failure"} {
+		t.Run(mode, func(t *testing.T) {
+			f := newConsentFixture(t)
+			var before *model.OIDCConsent
+			if mode == "scope-expansion-audit-failure" {
+				f.approve(t, "openid")
+				saved := f.storedConsent(t)
+				before = &saved
+			}
+			var priorSuccess int64
+			if err := f.db.Model(&model.AuditEvent{}).Where("action = ? AND outcome = ?", "oidc.consent", "success").Count(&priorSuccess).Error; err != nil {
+				t.Fatal(err)
+			}
+			location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"consent"}, "scope": {"openid email"}}))
+			id := location.Query().Get("authRequestID")
+			if mode == "request-update-failure" {
+				if err := f.db.Exec("ALTER TABLE o_id_c_auth_requests ADD CONSTRAINT reject_request_approval CHECK (NOT approved OR id <> '" + id + "')").Error; err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				// Reject only the success event under test, not unrelated or failure audits.
+				if err := f.db.Exec(`CREATE FUNCTION reject_successful_oidc_consent() RETURNS trigger LANGUAGE plpgsql AS $$
+ BEGIN
+ IF NEW.action = 'oidc.consent' AND NEW.outcome = 'success' THEN
+ RAISE EXCEPTION 'consent success audit unavailable' USING ERRCODE = '23514';
+ END IF;
+ RETURN NEW;
+ END $$;
+ CREATE TRIGGER reject_successful_oidc_consent BEFORE INSERT ON audit_events
+ FOR EACH ROW EXECUTE FUNCTION reject_successful_oidc_consent();`).Error; err != nil {
+					t.Fatal(err)
+				}
+			}
+			form := url.Values{"request_id": {id}, "allow": {"yes"}}
+			response := f.request(t, http.MethodPost, "/oidc/consent", "reader-session", form)
+			if response.StatusCode != http.StatusInternalServerError || strings.Contains(response.Header.Get("Location"), "/authorize/callback") {
+				t.Errorf("failed audit/request write still approved: status=%d location=%s", response.StatusCode, response.Header.Get("Location"))
+			}
+			var grants []model.OIDCConsent
+			if err := f.db.Find(&grants).Error; err != nil {
+				t.Fatal(err)
+			}
+			if before == nil {
+				if len(grants) != 0 {
+					t.Errorf("failed initial approval left consent: %+v", grants)
+				}
+			} else if len(grants) != 1 || !reflect.DeepEqual(grants[0], *before) {
+				t.Errorf("failed expansion changed scopes/timestamps: %+v", grants)
+			}
+			var pending model.OIDCAuthRequest
+			if err := f.db.Take(&pending, "id = ?", id).Error; err != nil {
+				t.Fatal(err)
+			}
+			if pending.Approved || pending.AuthTime != nil {
+				t.Error("failed transaction approved request or persisted auth time")
+			}
+			var success int64
+			if err := f.db.Model(&model.AuditEvent{}).Where("action = ? AND outcome = ?", "oidc.consent", "success").Count(&success).Error; err != nil || success != priorSuccess {
+				t.Errorf("failed transaction retained success audit: %d %v", success, err)
+			}
+			if mode == "request-update-failure" {
+				if err := f.db.Exec("ALTER TABLE o_id_c_auth_requests DROP CONSTRAINT reject_request_approval").Error; err != nil {
+					t.Fatal(err)
+				}
+			} else if err := f.db.Exec("DROP TRIGGER reject_successful_oidc_consent ON audit_events").Error; err != nil {
+				t.Fatal(err)
+			}
+			response = f.request(t, http.MethodPost, "/oidc/consent", "reader-session", form)
+			if next := consentLocation(t, response); next.Path != "/authorize/callback" {
+				t.Fatalf("same valid request cannot retry: %s", next)
+			}
+			if got := f.storedConsent(t); got.Scopes != "email openid" {
+				t.Fatalf("retry scopes: %s", got.Scopes)
+			}
+			if err := f.db.Take(&pending, "id = ?", id).Error; err != nil || !pending.Approved || pending.AuthTime == nil {
+				t.Fatal("retry did not approve request", err)
+			}
+			if err := f.db.Model(&model.AuditEvent{}).Where("action = ? AND outcome = ?", "oidc.consent", "success").Count(&success).Error; err != nil || success != priorSuccess+1 {
+				t.Fatalf("success audit duplicated/missing: %d %v", success, err)
+			}
+			var event model.AuditEvent
+			if err := f.db.Take(&event, "request_id = ? AND action = ? AND outcome = ?", response.Header.Get("X-Request-ID"), "oidc.consent", "success").Error; err != nil {
+				t.Fatal(err)
+			}
+			if event.ActorID != f.reader.ID || event.ClientID != f.client.ID || event.Method != http.MethodPost || event.Route != "/oidc/consent" || event.Status != http.StatusFound {
+				t.Fatalf("incorrect approval audit identity/route: %+v", event)
+			}
+		})
+	}
+}
+
+func TestPostgresOIDCConcurrentExplicitApprovalsMergeScopes(t *testing.T) {
+	f := newConsentFixture(t)
+	var requestIDs []string
+	for _, scope := range []string{"openid email", "openid profile"} {
+		location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"consent"}, "scope": {scope}}))
+		requestIDs = append(requestIDs, location.Query().Get("authRequestID"))
+	}
+	var schema string
+	if err := f.db.Raw("SELECT current_schema()").Scan(&schema).Error; err != nil {
+		t.Fatal(err)
+	}
+	config, err := pgx.ParseConfig(os.Getenv("SOLITUDES_TEST_POSTGRES_DSN"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.RuntimeParams["search_path"] = schema
+	config.RuntimeParams["application_name"] = schema
+	connection := stdlib.OpenDB(*config)
+	defer connection.Close()
+	connection.SetMaxOpenConns(3)
+	peer, err := gorm.Open(postgres.New(postgres.Config{Conn: connection}), &gorm.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	previousDB := solitudes.System.DB
+	solitudes.System.DB = peer
+	defer func() { solitudes.System.DB = previousDB }()
+	// Hold only the first pending request row. The first real POST must acquire
+	// the client lock before it blocks here; a second real POST then waits on it.
+	blocker := peer.Begin()
+	defer blocker.Rollback()
+	if err := blocker.Exec("SELECT id FROM o_id_c_auth_requests WHERE id = ? FOR UPDATE", requestIDs[0]).Error; err != nil {
+		t.Fatal(err)
+	}
+	var blockerPID int
+	if err := blocker.Raw("SELECT pg_backend_pid()").Scan(&blockerPID).Error; err != nil {
+		t.Fatal(err)
+	}
+	type approvalResult struct {
+		response *http.Response
+		err      error
+	}
+	results := make(chan approvalResult, 2)
+	launch := func(id string) {
+		req := httptest.NewRequest(http.MethodPost, "/oidc/consent", strings.NewReader(url.Values{"request_id": {id}, "allow": {"yes"}}.Encode()))
+		req.Host = "localhost:8080"
+		req.Header.Set("Origin", "http://localhost:8080")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "reader-session"})
+		go func() { response, err := f.app.Test(req, -1); results <- approvalResult{response, err} }()
+	}
+	waitForQuery := func(fragment string, blockedBy int) int {
+		t.Helper()
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			var pid int
+			if err := f.db.Raw(`SELECT pid FROM pg_stat_activity WHERE application_name = ?
+ AND wait_event_type = 'Lock' AND query LIKE ? AND ? = ANY(pg_blocking_pids(pid))`, schema, "%"+fragment+"%", blockedBy).Scan(&pid).Error; err != nil {
+				t.Fatal(err)
+			}
+			if pid != 0 {
+				return pid
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatalf("no real PostgreSQL wait for %s", fragment)
+		return 0
+	}
+	launch(requestIDs[0])
+	firstPID := waitForQuery("o_id_c_auth_requests", blockerPID)
+	launch(requestIDs[1])
+	waitForQuery("o_id_c_clients", firstPID)
+	if err := blocker.Commit().Error; err != nil {
+		t.Fatal(err)
+	}
+	for range requestIDs {
+		select {
+		case result := <-results:
+			if result.err != nil {
+				t.Fatal(result.err)
+			}
+			result.response.Body.Close()
+			if result.response.StatusCode != http.StatusFound || !strings.HasPrefix(result.response.Header.Get("Location"), "/authorize/callback") {
+				t.Fatalf("concurrent approval failed: %d", result.response.StatusCode)
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatal("concurrent approvals deadlocked")
+		}
+	}
+	if consent := f.storedConsent(t); consent.Scopes != "email openid profile" {
+		t.Fatalf("concurrent approval lost scopes: %s", consent.Scopes)
+	}
+	for _, id := range requestIDs {
+		var request model.OIDCAuthRequest
+		if err := f.db.Take(&request, "id = ?", id).Error; err != nil || !request.Approved || request.AccountID == nil || *request.AccountID != f.reader.ID || request.AuthTime == nil {
+			t.Fatal("concurrent request not approved for original account", err)
+		}
+	}
+}
