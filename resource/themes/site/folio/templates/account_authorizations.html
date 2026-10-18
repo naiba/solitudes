@@ -16,7 +16,7 @@
       <ul class="authorization-scopes">{{range .ScopeList}}<li>{{if eq . "openid"}}{{$.Tr.T "scope_identity"}}{{else if eq . "email"}}{{$.Tr.T "scope_email"}}{{else if eq . "profile"}}{{$.Tr.T "scope_profile"}}{{else if eq . "offline_access"}}{{$.Tr.T "scope_offline"}}{{else}}{{.}}{{end}}</li>{{end}}</ul>
       <div class="authorization-actions"><p>{{$.Tr.T "authorization_until_revoked"}}</p>
         <form method="post" action="/account/oidc/authorizations/{{.ClientID}}/revoke" data-confirm="{{$.Tr.T "confirm_revoke_application"}}">
-          <button type="submit" data-testid="authorization-revoke">{{$.Tr.T "revoke_application"}}</button>
+          <button type="submit" disabled data-testid="authorization-revoke">{{$.Tr.T "revoke_application"}}</button>
         </form>
       </div>
     </li>
@@ -24,6 +24,6 @@
   </ul>
   {{template "site/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
 </main>
-<script src="/static/site/folio/js/account.js?v2026101002" defer></script>
+<script src="/static/site/folio/js/account.js?v=confirmation-readiness"></script>
 {{template "site/footer" .}}
 {{end}}

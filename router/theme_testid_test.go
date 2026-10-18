@@ -116,3 +116,24 @@ func TestSiteAccountNavigationContract(t *testing.T) {
 		}
 	}
 }
+
+func TestSiteDestructiveConfirmationStartsDisabled(t *testing.T) {
+	for _, theme := range []string{"cactus", "folio"} {
+		for file, selector := range map[string]string{"account_authorizations.html": "authorization-revoke", "account_oidc_clients.html": "oidc-client-delete"} {
+			t.Run(theme+"/"+selector, func(t *testing.T) {
+				content, err := os.ReadFile(filepath.Join("..", "resource", "themes", "site", theme, "templates", file))
+				if err != nil {
+					t.Fatal(err)
+				}
+				buttons := regexp.MustCompile(`<button\b[^>]*data-testid="`+selector+`"[^>]*>`).FindAllString(string(content), -1)
+				if len(buttons) != 1 || !regexp.MustCompile(`\sdisabled(?:\s|>|=)`).MatchString(buttons[0]) {
+					t.Fatalf("destructive confirmation must start disabled before account.js binds: %v", buttons)
+				}
+				script := regexp.MustCompile(`<script\b[^>]*src="/static/site/` + theme + `/js/account\.js\?[^>]+>`).FindString(string(content))
+				if script == "" || strings.Contains(script, " defer") || strings.Index(string(content), script) > strings.Index(string(content), `{{template "site/footer"`) {
+					t.Fatal("confirmation binding must run before optional footer scripts")
+				}
+			})
+		}
+	}
+}

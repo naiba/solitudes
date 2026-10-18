@@ -1,7 +1,12 @@
 (function () {
-  document.querySelectorAll('form[data-confirm]').forEach(form => form.addEventListener('submit', event => {
-    if (!confirm(form.dataset.confirm)) event.preventDefault();
-  }));
+  // Destructive controls start disabled: a slow or failed script must not
+  // allow an early click to bypass confirmation. Enable only after binding.
+  document.querySelectorAll('form[data-confirm]').forEach(form => {
+    form.addEventListener('submit', event => {
+      if (!confirm(form.dataset.confirm)) event.preventDefault();
+    });
+    form.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled = false; });
+  });
   async function request(url, payload, method = 'POST') {
     const response = await fetch(url, {
       method, credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },

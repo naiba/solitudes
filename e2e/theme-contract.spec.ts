@@ -688,12 +688,65 @@ test('member app durable authorization survives credential removal and requires 
   expect(oidcRedirectURI, 'isolated callback is required').toBeTruthy();
   await signIn(page, readerEmail!, readerPassword!);
   await page.getByTestId('account-oidc-clients').click();
-  await page.getByTestId('oidc-client-name').fill('Revocable application');
+  const applicationName = `Revocable ${siteTheme} application`;
+  await page.getByTestId('oidc-client-name').fill(applicationName);
   await page.getByTestId('oidc-client-homepage').fill('https://external.example.test/');
   await page.getByTestId('oidc-client-redirects').fill(oidcRedirectURI!);
   await page.getByTestId('oidc-client-public').check();
   await page.getByTestId('oidc-client-submit').click();
   const clientID = (await page.getByTestId('oidc-created-id').innerText()).trim();
+  const revokePath = `/account/oidc/authorizations/${clientID}/revoke`;
+  const deletePath = `/account/oidc/clients/${clientID}/delete`;
+  const mutationPosts: string[] = [];
+  page.on('request', request => {
+    const pathname = new URL(request.url()).pathname;
+    if (request.method() === 'POST' && [revokePath, deletePath].includes(pathname)) mutationPosts.push(pathname);
+  });
+  const visitBeforeConfirmationLoads = async (target: string, button: Locator) => {
+    let releaseAccount!: () => void;
+    let releaseFooter!: () => void;
+    const accountReady = new Promise<void>(resolve => { releaseAccount = resolve; });
+    const footerReady = new Promise<void>(resolve => { releaseFooter = resolve; });
+    const script = `**/static/site/${siteTheme}/js/account.js?*`;
+    const footer = 'https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/method.min.js';
+    await page.route(script, async route => { await accountReady; await route.continue(); });
+    await page.route(footer, async route => { await footerReady; await route.abort(); });
+    try {
+      await page.goto(target, {waitUntil:'commit'});
+      await expect(button).toBeVisible();
+      // Visible destructive controls must not submit while confirmation binding
+      // is delayed, and must initialize independently of optional footer scripts.
+      await expect(button).toBeDisabled();
+      releaseAccount();
+      await expect(button).toBeEnabled();
+    } finally {
+      releaseAccount(); releaseFooter();
+      await page.unroute(script); await page.unroute(footer);
+    }
+  };
+  const answerConfirmation = async (button: Locator, pathname: string, accept: boolean) => {
+    const before = mutationPosts.length;
+    const form = button.locator('..');
+    if (!accept) {
+      await form.evaluate(node => node.addEventListener('submit', event => {
+        queueMicrotask(() => node.setAttribute('data-submit-prevented', String(event.defaultPrevented)));
+      }, {once:true}));
+    }
+    const prompted = page.waitForEvent('dialog');
+    const submitted = accept ? page.waitForResponse(response => new URL(response.url()).pathname === pathname && response.request().method() === 'POST') : undefined;
+    const clicked = button.click({noWaitAfter:true});
+    const dialog = await prompted;
+    expect(dialog.type()).toBe('confirm');
+    if (accept) await dialog.accept(); else await dialog.dismiss();
+    await clicked;
+    if (submitted) {
+      expect((await submitted).status()).toBe(303);
+      expect(mutationPosts.slice(before)).toEqual([pathname]);
+    } else {
+      await expect(form).toHaveAttribute('data-submit-prevented', 'true');
+      expect(mutationPosts).toHaveLength(before);
+    }
+  };
   await page.goto('/account'); await page.getByTestId('account-logout').click();
   await signIn(page, editorEmail!, readerPassword!);
   const verifier = 'g'.repeat(64);
@@ -754,9 +807,9 @@ test('member app durable authorization survives credential removal and requires 
   tokens = await restoredResponse.json();
   expect(tokens.refresh_token).toBeTruthy();
   const pendingCode = await authorize(false);
-  await page.goto('/account'); await page.getByTestId('account-authorizations').click();
   const row = page.locator(`[data-testid="authorization-row"][data-client-id="${clientID}"]`);
-  await expect(row).toContainText('Revocable application');
+  await visitBeforeConfirmationLoads('/account/oidc/authorizations', row.getByTestId('authorization-revoke'));
+  await expect(row).toContainText(applicationName);
   await expect(row.locator(`a[href="/users/${process.env.E2E_READER_ID}"]`)).toBeVisible();
   await expect(row).toContainText('email');
   for (const width of [1440,390]) {
@@ -764,11 +817,13 @@ test('member app durable authorization survives credential removal and requires 
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     if (process.env.SOLITUDES_ACCOUNT_SCREENSHOTS) await page.screenshot({path:path.join(process.env.SOLITUDES_ACCOUNT_SCREENSHOTS,`${siteTheme}-authorizations-${width}.png`),fullPage:true,animations:'disabled'});
   }
-  page.once('dialog', dialog => dialog.dismiss());
-  await row.getByTestId('authorization-revoke').click();
+  await answerConfirmation(row.getByTestId('authorization-revoke'), revokePath, false);
   await expect(row).toBeVisible();
-  page.once('dialog', dialog => dialog.accept());
-  await row.getByTestId('authorization-revoke').click();
+  const retained = await page.request.get('/account/oidc/authorizations');
+  expect(retained.status()).toBe(200);
+  expect(await retained.text()).toContain(`data-client-id="${clientID}"`);
+  expect(mutationPosts).toEqual([]);
+  await answerConfirmation(row.getByTestId('authorization-revoke'), revokePath, true);
   await expect(page.getByTestId('authorization-revoked')).toBeVisible();
   await expect(row).toHaveCount(0);
   expect((await exchange(pendingCode)).status()).toBe(400);
@@ -780,10 +835,16 @@ test('member app durable authorization survives credential removal and requires 
   expect((await page.request.get('/userinfo',{headers:{Authorization:'Bearer '+fresh.access_token}})).status()).toBe(200);
   await page.goto('/account'); await page.getByTestId('account-logout').click();
   await signIn(page, readerEmail!, readerPassword!);
-  await page.getByTestId('account-oidc-clients').click();
-  const owned = page.getByTestId('account-client-row').filter({hasText:'Revocable application'});
-  page.once('dialog', dialog => dialog.accept());
-  await owned.getByTestId('oidc-client-delete').click();
+  const owned = page.getByTestId('account-client-row').filter({has:page.locator(`form[action="${deletePath}"]`)});
+  await visitBeforeConfirmationLoads('/account/oidc/clients', owned.getByTestId('oidc-client-delete'));
+  await answerConfirmation(owned.getByTestId('oidc-client-delete'), deletePath, false);
+  await expect(owned).toBeVisible();
+  const retainedClient = await page.request.get('/account/oidc/clients');
+  expect(retainedClient.status()).toBe(200);
+  expect(await retainedClient.text()).toContain(`action="${deletePath}"`);
+  expect(mutationPosts).toEqual([revokePath]);
+  await answerConfirmation(owned.getByTestId('oidc-client-delete'), deletePath, true);
+  expect(mutationPosts).toEqual([revokePath, deletePath]);
   await expect(owned).toHaveCount(0);
   expect((await page.request.get('/userinfo',{headers:{Authorization:'Bearer '+fresh.access_token}})).status()).toBe(403);
   const deletedClientRefresh = await page.request.post('/oauth/token',{form:{grant_type:'refresh_token',client_id:clientID,refresh_token:fresh.refresh_token}});
