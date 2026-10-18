@@ -724,6 +724,15 @@ test('member app durable authorization survives credential removal and requires 
   const revoked = await page.request.post('/revoke', {form:{client_id:clientID,token:narrow.access_token,token_type_hint:'access_token'}});
   expect(revoked.status()).toBe(200);
   expect((await page.request.get('/userinfo', {headers:{Authorization:'Bearer '+narrow.access_token}})).status()).toBe(403);
+  const refreshRevoked = await page.request.post('/revoke', {form:{client_id:clientID,token:tokens.refresh_token,token_type_hint:'refresh_token'}});
+  expect(refreshRevoked.status()).toBe(200);
+  expect((await page.request.post('/oauth/token', {form:{grant_type:'refresh_token',client_id:clientID,refresh_token:tokens.refresh_token}})).status()).toBe(400);
+  expect((await page.request.get('/userinfo', {headers:{Authorization:'Bearer '+tokens.access_token}})).status()).toBe(403);
+  // Issue a separate grant so RP logout still proves removal of live credentials.
+  const logoutResponse = await exchange(await authorize(false));
+  expect(logoutResponse.status()).toBe(200);
+  tokens = await logoutResponse.json();
+  expect(tokens.refresh_token).toBeTruthy();
   const ended = await page.request.get('/end_session?'+new URLSearchParams({id_token_hint:tokens.id_token}), {maxRedirects:0});
   expect(ended.status()).toBe(302);
   expect((await page.request.post('/oauth/token', {form:{grant_type:'refresh_token',client_id:clientID,refresh_token:tokens.refresh_token}})).status()).toBe(400);

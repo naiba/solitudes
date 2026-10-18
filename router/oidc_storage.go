@@ -303,30 +303,56 @@ func (s *oidcStorage) TerminateSession(ctx context.Context, subject, clientID st
 func (s *oidcStorage) GetRefreshTokenInfo(ctx context.Context, clientID, raw string) (string, string, error) {
 	var token model.OIDCRefreshToken
 	if err := s.db.WithContext(ctx).Where("client_id = ? AND token_hash = ? AND expires_at > ?", clientID, secretHash(raw), time.Now()).Take(&token).Error; err != nil {
-		return "", "", op.ErrInvalidRefreshToken
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", "", op.ErrInvalidRefreshToken
+		}
+		// Only a missing token permits the SDK's access-token fallback; storage
+		// failures must not become a successful, unaudited revocation no-op.
+		return "", "", err
 	}
 	return token.AccountID, token.ID, nil
 }
 
 func (s *oidcStorage) RevokeToken(ctx context.Context, tokenOrID, subject, clientID string) *oidc.Error {
+	if subject != "" {
+		// SDK legacy decryption can misidentify opaque garbage as ID:subject.
+		// Unknown credentials are RFC 7009 no-ops, not UUID/UTF-8 SQL errors.
+		if _, err := uuid.ParseUUID(tokenOrID); err != nil {
+			return nil
+		}
+		if _, err := uuid.ParseUUID(subject); err != nil {
+			return nil
+		}
+	}
 	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var accountID string
 		if subject != "" {
+			// The SDK resolves BOTH access and refresh tokens to an ID + subject.
+			// A nonempty subject is not a token-type discriminator: if no access
+			// token matches, look up the refresh ID within the same client/account.
 			var token model.OIDCAccessToken
-			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND client_id = ?", tokenOrID, clientID).Take(&token).Error
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil
-			}
-			if err != nil {
+			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND client_id = ? AND account_id = ?", tokenOrID, clientID, subject).Take(&token).Error
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
-			if err := tx.Delete(&token).Error; err != nil {
-				return err
+			if err == nil {
+				if err := tx.Delete(&token).Error; err != nil {
+					return err
+				}
+				accountID = token.AccountID
 			}
-			accountID = token.AccountID
-		} else {
+		}
+		if accountID == "" {
 			var token model.OIDCRefreshToken
-			err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("token_hash = ? AND client_id = ?", secretHash(tokenOrID), clientID).Take(&token).Error
+			query := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("client_id = ?", clientID)
+			if subject != "" {
+				query = query.Where("id = ? AND account_id = ?", tokenOrID, subject)
+			} else {
+				// With an access_token hint the SDK may pass a raw refresh token
+				// through unchanged; hints must not prevent revoking that credential.
+				query = query.Where("token_hash = ?", secretHash(tokenOrID))
+			}
+			err := query.Take(&token).Error
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil
 			}

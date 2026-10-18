@@ -68,8 +68,24 @@ func oidcHTTPHandler(provider http.Handler) fiber.Handler {
 		}
 		c.Request().Header.VisitAll(func(key, value []byte) { r.Header.Add(string(key), string(value)) })
 		r.Host = c.Hostname()
+		var revocationFormError error
+		if c.Method() == http.MethodPost && c.Path() == "/revoke" {
+			revocationFormError = r.ParseForm()
+			if revocationFormError == nil {
+				// RFC 7009 hints only optimize lookup; a wrong hint must not
+				// prevent revocation. Always let the SDK authenticate the client
+				// and check its refresh tokens before attempting access-token
+				// decryption, which can misidentify an opaque refresh value.
+				r.Form.Del("token_type_hint")
+				r.PostForm.Del("token_type_hint")
+			}
+		}
 		response := httptest.NewRecorder()
-		provider.ServeHTTP(response, r)
+		if revocationFormError != nil {
+			op.RevocationRequestError(response, r, oidc.ErrInvalidRequest().WithDescription("unable to parse request").WithParent(revocationFormError))
+		} else {
+			provider.ServeHTTP(response, r)
+		}
 		result := response.Result()
 		defer result.Body.Close()
 		// Capture only the standardized error code, never error descriptions or
