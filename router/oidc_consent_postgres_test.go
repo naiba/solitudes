@@ -670,94 +670,123 @@ func TestPostgresOIDCDurableConsentTokenRevocationAndLogoutPreserve(t *testing.T
 }
 
 func TestPostgresOIDCDurableConsentApprovalWaitsForRevocation(t *testing.T) {
-	f := newConsentFixture(t)
-	f.grant(t, f.reader.ID, f.client.ID, "openid", f.now.Add(time.Hour), false)
-	location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"consent"}}))
-	id := location.Query().Get("authRequestID")
-	// Bind the pending request to its authenticated account so revocation removes it.
-	if err := f.db.Model(&model.OIDCAuthRequest{}).Where("id = ?", id).Update("account_id", f.reader.ID).Error; err != nil {
-		t.Fatal(err)
-	}
-	var schema string
-	if err := f.db.Raw("SELECT current_schema()").Scan(&schema).Error; err != nil {
-		t.Fatal(err)
-	}
-	config, err := pgx.ParseConfig(os.Getenv("SOLITUDES_TEST_POSTGRES_DSN"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	config.RuntimeParams["search_path"] = schema
-	connection := stdlib.OpenDB(*config)
-	defer connection.Close()
-	peer, err := gorm.Open(postgres.New(postgres.Config{Conn: connection}), &gorm.Config{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	tx := peer.Begin()
-	defer tx.Rollback()
-	if _, err := lockOIDCClient(tx, f.client.ID, true); err != nil {
-		t.Fatal(err)
-	}
-	if err := deleteOIDCCredentials(tx, f.client.ID, f.reader.ID); err != nil {
-		t.Fatal(err)
-	}
-	var approvalPID int
-	if err := f.db.Raw("SELECT pg_backend_pid()").Scan(&approvalPID).Error; err != nil {
-		t.Fatal(err)
-	}
-	type approvalResult struct {
-		response *http.Response
-		err      error
-	}
-	result := make(chan approvalResult, 1)
-	req := httptest.NewRequest(http.MethodPost, "/oidc/consent", strings.NewReader(url.Values{"request_id": {id}, "allow": {"yes"}}.Encode()))
-	req.Host = "localhost:8080"
-	req.Header.Set("Origin", "http://localhost:8080")
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "reader-session"})
-	go func() { response, err := f.app.Test(req, -1); result <- approvalResult{response, err} }()
-	// Observe a real PostgreSQL lock wait, not a goroutine scheduling delay.
-	deadline := time.Now().Add(5 * time.Second)
-	waiting := false
-	for time.Now().Before(deadline) {
-		if err := tx.Exec("SELECT pg_stat_clear_snapshot()").Error; err != nil {
-			t.Fatal(err)
-		}
-		// A wait on the deleted request row would also block without the client
-		// lock. Assert the exact connection is waiting in the client query.
-		if err := tx.Raw(`SELECT pg_backend_pid() = ANY(pg_blocking_pids(?)) AND EXISTS (
+	for _, mode := range []string{"prompt-consent", "additional-scope", "return-from-login"} {
+		t.Run(mode, func(t *testing.T) {
+			f := newConsentFixture(t)
+			f.grant(t, f.reader.ID, f.client.ID, "openid", f.now.Add(time.Hour), false)
+			cookie := "reader-session"
+			extra := url.Values{}
+			if mode == "prompt-consent" {
+				extra.Set("prompt", "consent")
+			}
+			if mode == "return-from-login" {
+				cookie = ""
+			}
+			location := consentLocation(t, f.authorize(t, cookie, extra))
+			if mode == "return-from-login" {
+				if response := f.request(t, http.MethodGet, location.RequestURI(), "reader-session", nil); response.StatusCode != http.StatusOK {
+					t.Fatalf("consent UI after login: %d", response.StatusCode)
+				}
+			}
+			id := location.Query().Get("authRequestID")
+			var schema string
+			if err := f.db.Raw("SELECT current_schema()").Scan(&schema).Error; err != nil {
+				t.Fatal(err)
+			}
+			config, err := pgx.ParseConfig(os.Getenv("SOLITUDES_TEST_POSTGRES_DSN"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			config.RuntimeParams["search_path"] = schema
+			connection := stdlib.OpenDB(*config)
+			defer connection.Close()
+			peer, err := gorm.Open(postgres.New(postgres.Config{Conn: connection}), &gorm.Config{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			tx := peer.Begin()
+			defer tx.Rollback()
+			if _, err := lockOIDCClient(tx, f.client.ID, true); err != nil {
+				t.Fatal(err)
+			}
+			if err := deleteOIDCCredentials(tx, f.client.ID, f.reader.ID); err != nil {
+				t.Fatal(err)
+			}
+			var approvalPID int
+			if err := f.db.Raw("SELECT pg_backend_pid()").Scan(&approvalPID).Error; err != nil {
+				t.Fatal(err)
+			}
+			type approvalResult struct {
+				response *http.Response
+				err      error
+			}
+			result := make(chan approvalResult, 1)
+			req := httptest.NewRequest(http.MethodPost, "/oidc/consent", strings.NewReader(url.Values{"request_id": {id}, "allow": {"yes"}}.Encode()))
+			req.Host = "localhost:8080"
+			req.Header.Set("Origin", "http://localhost:8080")
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "reader-session"})
+			go func() { response, err := f.app.Test(req, -1); result <- approvalResult{response, err} }()
+			// Observe a real PostgreSQL lock wait, not a goroutine scheduling delay.
+			deadline := time.Now().Add(5 * time.Second)
+			waiting := false
+			for time.Now().Before(deadline) {
+				if err := tx.Exec("SELECT pg_stat_clear_snapshot()").Error; err != nil {
+					t.Fatal(err)
+				}
+				// A wait on the deleted request row would also block without the client
+				// lock. Assert the exact connection is waiting in the client query.
+				if err := tx.Raw(`SELECT pg_backend_pid() = ANY(pg_blocking_pids(?)) AND EXISTS (
 SELECT 1 FROM pg_stat_activity WHERE pid = ? AND query LIKE '%o_id_c_clients%'
 )`, approvalPID, approvalPID).Scan(&waiting).Error; err != nil {
-			t.Fatal(err)
-		}
-		if waiting {
-			break
-		}
-		time.Sleep(10 * time.Millisecond)
-	}
-	if !waiting {
-		t.Fatal("explicit approval did not wait on client revocation lock")
-	}
-	if err := tx.Commit().Error; err != nil {
-		t.Fatal(err)
-	}
-	select {
-	case completed := <-result:
-		if completed.err != nil {
-			t.Fatal(completed.err)
-		}
-		defer completed.response.Body.Close()
-		if completed.response.StatusCode < 400 {
-			t.Fatalf("revoked pending approval succeeded: %d", completed.response.StatusCode)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("approval deadlocked")
-	}
-	for _, table := range []interface{}{&model.OIDCConsent{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
-		var count int64
-		if err := f.db.Model(table).Where("client_id = ?", f.client.ID).Count(&count).Error; err != nil || count != 0 {
-			t.Fatalf("revoked state survived in %T: %d %v", table, count, err)
-		}
+					t.Fatal(err)
+				}
+				if waiting {
+					break
+				}
+				time.Sleep(10 * time.Millisecond)
+			}
+			if !waiting {
+				t.Fatal("explicit approval did not wait on client revocation lock")
+			}
+			if err := tx.Commit().Error; err != nil {
+				t.Fatal(err)
+			}
+			select {
+			case completed := <-result:
+				if completed.err != nil {
+					t.Fatal(completed.err)
+				}
+				defer completed.response.Body.Close()
+				if completed.response.StatusCode < 400 {
+					t.Fatalf("revoked pending approval succeeded: %d", completed.response.StatusCode)
+				}
+			case <-time.After(5 * time.Second):
+				t.Fatal("approval deadlocked")
+			}
+
+			callback := f.request(t, http.MethodGet, "/authorize/callback?id="+url.QueryEscape(id), "reader-session", nil)
+			destination, err := url.Parse(callback.Header.Get("Location"))
+			if err != nil || destination.Query().Get("code") != "" {
+				t.Fatal("revoked request produced an authorization code", err)
+			}
+			storage := &oidcStorage{db: f.db}
+			if err := storage.SaveAuthCode(t.Context(), id, "revoked-request-code"); err == nil {
+				t.Fatal("revoked request accepted a code")
+			}
+			exchange := f.request(t, http.MethodPost, "/oauth/token", "", url.Values{"grant_type": {"authorization_code"}, "client_id": {f.client.ID}, "code": {"revoked-request-code"}, "redirect_uri": {"http://localhost:9090/callback"}, "code_verifier": {strings.Repeat("v", 64)}})
+			if exchange.StatusCode != http.StatusBadRequest {
+				t.Fatalf("revoked code exchange status: %d", exchange.StatusCode)
+			}
+
+			for _, table := range []interface{}{&model.OIDCConsent{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
+				var count int64
+				if err := f.db.Model(table).Where("client_id = ?", f.client.ID).Count(&count).Error; err != nil || count != 0 {
+					t.Fatalf("revoked state survived in %T: %d %v", table, count, err)
+				}
+			}
+
+		})
 	}
 }
 
@@ -778,5 +807,97 @@ func TestPostgresOIDCDurableConsentOnlyApplicationRevocation(t *testing.T) {
 	location := consentLocation(t, f.authorize(t, "reader-session", url.Values{"prompt": {"none"}}))
 	if location.Query().Get("error") != "consent_required" {
 		t.Fatalf("revoked consent reused: %s", location)
+	}
+}
+
+func TestPostgresOIDCPendingConsentOwnership(t *testing.T) {
+	for _, guest := range []bool{false, true} {
+		name := "authenticated-request"
+		if guest {
+			name = "return-from-login"
+		}
+		t.Run(name, func(t *testing.T) {
+			f := newConsentFixture(t)
+			cookie := "reader-session"
+			if guest {
+				cookie = ""
+			}
+			location := consentLocation(t, f.authorize(t, cookie, url.Values{"prompt": {"consent"}}))
+			if guest {
+				if response := f.request(t, http.MethodGet, location.RequestURI(), "reader-session", nil); response.StatusCode != http.StatusOK {
+					t.Fatalf("consent UI status: %d", response.StatusCode)
+				}
+			}
+			id := location.Query().Get("authRequestID")
+			for _, method := range []string{http.MethodGet, http.MethodPost} {
+				target := location.RequestURI()
+				var form url.Values
+				if method == http.MethodPost {
+					target = "/oidc/consent"
+					form = url.Values{"request_id": {id}, "allow": {"yes"}}
+				}
+				response := f.request(t, method, target, "owner-session", form)
+				if next := consentLocation(t, response); next.Path != "/login" {
+					t.Fatalf("another account took pending request via %s: %s", method, next)
+				}
+			}
+			var row model.OIDCAuthRequest
+			if err := f.db.Take(&row, "id = ?", id).Error; err != nil {
+				t.Fatal(err)
+			}
+			if row.AccountID == nil || *row.AccountID != f.reader.ID || row.Approved || row.AuthTime != nil {
+				t.Fatalf("pending owner must not imply approval: %+v", row)
+			}
+			var count int64
+			if err := f.db.Model(&model.OIDCConsent{}).Count(&count).Error; err != nil || count != 0 {
+				t.Fatal("pending request created consent", err)
+			}
+			response := f.request(t, http.MethodPost, "/oidc/consent", "reader-session", url.Values{"request_id": {id}, "allow": {"yes"}})
+			if next := consentLocation(t, response); next.Path != "/authorize/callback" {
+				t.Fatalf("rightful owner could not approve: %s", next)
+			}
+			if err := f.db.Model(&model.OIDCConsent{}).Count(&count).Error; err != nil || count != 1 {
+				t.Fatal("wrong consent count", err)
+			}
+			if grant := f.storedConsent(t); grant.AccountID != f.reader.ID {
+				t.Fatal("wrong consent owner")
+			}
+		})
+	}
+}
+
+func TestPostgresOIDCPendingConsentBindsOnlyAfterFreshAuthentication(t *testing.T) {
+	for _, extra := range []url.Values{{"prompt": {"login"}}, {"prompt": {"select_account"}}, {"max_age": {"0"}}} {
+		t.Run(extra.Encode(), func(t *testing.T) {
+			f := newConsentFixture(t)
+			location := consentLocation(t, f.authorize(t, "reader-session", extra))
+			id := location.Query().Get("authRequestID")
+			var row model.OIDCAuthRequest
+			if err := f.db.Take(&row, "id = ?", id).Error; err != nil {
+				t.Fatal(err)
+			}
+			if row.AccountID != nil || row.Approved {
+				t.Fatal("stale session prematurely bound the account")
+			}
+			if next := consentLocation(t, f.request(t, http.MethodGet, location.RequestURI(), "reader-session", nil)); next.Path != "/login" {
+				t.Fatal("fresh login not required")
+			}
+			// A fresh sign-in may choose another account when there is no subject hint.
+			if err := f.db.Model(&model.LoginSession{}).Where("token_hash = ?", secretHash("owner-session")).Update("created_at", time.Now()).Error; err != nil {
+				t.Fatal(err)
+			}
+			if response := f.request(t, http.MethodGet, location.RequestURI(), "owner-session", nil); response.StatusCode != http.StatusOK {
+				t.Fatalf("fresh account did not reach consent: %d", response.StatusCode)
+			}
+			if err := f.db.Take(&row, "id = ?", id).Error; err != nil {
+				t.Fatal(err)
+			}
+			if row.AccountID == nil || *row.AccountID != f.owner.ID || row.Approved {
+				t.Fatal("fresh account did not own pending consent")
+			}
+			if next := consentLocation(t, f.request(t, http.MethodPost, "/oidc/consent", "owner-session", url.Values{"request_id": {id}, "allow": {"yes"}})); next.Path != "/authorize/callback" {
+				t.Fatal("fresh account could not approve")
+			}
+		})
 	}
 }

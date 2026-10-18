@@ -103,6 +103,12 @@ func evaluateOIDCConsent(db *gorm.DB, request *oidcAuthRequest, browser oidcBrow
 	if !oidcFreshAuthentication(request, session.CreatedAt, now) {
 		return oidcNeedsLogin, nil
 	}
+	// Bind an authenticated, fresh pending request before asking for consent.
+	// Otherwise account-scoped revocation misses its NULL owner and an old
+	// consent POST can recreate the grant after revocation wins the client lock.
+	// Do not bind before freshness checks: login/select_account may choose a
+	// different account, while an existing subject hint still constrains it.
+	request.AccountID = &session.AccountID
 	if !explicit {
 		if slices.Contains(request.req.Prompt, oidc.PromptConsent) {
 			return oidcNeedsConsent, nil
@@ -136,8 +142,16 @@ func completeOIDCConsent(c *fiber.Ctx, original *oidcAuthRequest, explicit bool)
 			return err
 		}
 		decision, err = evaluateOIDCConsent(tx, request, oidcBrowser(c), explicit, time.Now())
-		if err != nil || decision != oidcConsentReady || row.Approved {
+		if err != nil {
 			return err
+		}
+		if decision == oidcNeedsConsent && row.AccountID == nil && request.AccountID != nil {
+			// Requests created as guests acquire ownership on their authenticated
+			// return to the consent page, under the same revocation/client lock.
+			return tx.Model(&row).Update("account_id", request.AccountID).Error
+		}
+		if decision != oidcConsentReady || row.Approved {
+			return nil
 		}
 		if explicit {
 			// The client lock also serializes scope merging with application

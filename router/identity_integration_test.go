@@ -3,6 +3,7 @@
 package router
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
@@ -555,6 +556,11 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 		if form != nil {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		}
+		if strings.HasPrefix(target, "/authorize?") {
+			// This test calls the provider directly; production's Fiber adapter
+			// resolves the cookie into this browser context before dispatch.
+			req = req.WithContext(context.WithValue(req.Context(), oidcBrowserKey{}, oidcBrowserIdentity{secretHash("consent-cookie")}))
+		}
 		response := httptest.NewRecorder()
 		provider.ServeHTTP(response, req)
 		return response
@@ -586,7 +592,7 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 	digest := sha256.Sum256([]byte(verifier))
 	challenge := base64.RawURLEncoding.EncodeToString(digest[:])
 	query := url.Values{"client_id": {client.ID}, "redirect_uri": {"http://localhost:9090/callback"},
-		"response_type": {"code"}, "scope": {"openid email"}, "state": {"state-123"},
+		"response_type": {"code"}, "scope": {"openid email"}, "state": {"state-123"}, "prompt": {"consent"},
 		"code_challenge": {challenge}, "code_challenge_method": {"S256"}}
 	start := request(http.MethodGet, "/authorize?"+query.Encode(), nil)
 	if start.Code != http.StatusFound {
@@ -599,6 +605,13 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 	id := location.Query().Get("authRequestID")
 	if id == "" {
 		t.Fatal("missing authorization request ID")
+	}
+	var pending model.OIDCAuthRequest
+	if err := db.Take(&pending, "id = ?", id).Error; err != nil {
+		t.Fatal(err)
+	}
+	if pending.AccountID == nil || *pending.AccountID != account.ID || pending.Approved || pending.AuthTime != nil {
+		t.Fatal("authenticated pending request must have an owner without approval")
 	}
 	approve(id)
 	callback := request(http.MethodGet, "/authorize/callback?id="+url.QueryEscape(id), nil)
