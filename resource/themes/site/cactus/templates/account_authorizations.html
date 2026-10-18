@@ -14,7 +14,7 @@
       {{if .Description}}<p>{{.Description}}</p>{{end}}
       {{if .OwnerID}}<p>{{$.Tr.T "application_owner"}}: <a href="/users/{{.OwnerID}}">{{.OwnerName}}</a></p>{{end}}
       <ul class="authorization-scopes">{{range .ScopeList}}<li>{{if eq . "openid"}}{{$.Tr.T "scope_identity"}}{{else if eq . "email"}}{{$.Tr.T "scope_email"}}{{else if eq . "profile"}}{{$.Tr.T "scope_profile"}}{{else if eq . "offline_access"}}{{$.Tr.T "scope_offline"}}{{else}}{{.}}{{end}}</li>{{end}}</ul>
-      <div class="authorization-actions"><p>{{$.Tr.T "credential_expires"}} <time datetime="{{iso8601 .ExpiresAt}}">{{tf .ExpiresAt ($.Tr.T "date_format")}} {{tf .ExpiresAt "15:04"}}</time></p>
+      <div class="authorization-actions"><p>{{$.Tr.T "authorization_until_revoked"}}</p>
         <form method="post" action="/account/oidc/authorizations/{{.ClientID}}/revoke" data-confirm="{{$.Tr.T "confirm_revoke_application"}}">
           <button type="submit" data-testid="authorization-revoke">{{$.Tr.T "revoke_application"}}</button>
         </form>

@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -37,6 +38,15 @@ func TestPostgresOIDCAuthorizationRevocationAndClientDeletion(t *testing.T) {
 			other := model.OIDCClient{ID: "other", OwnerID: &admin.ID, Name: "Other", RedirectURIsJSON: "[]"}
 			if err := db.Create(&[]model.OIDCClient{client, other}).Error; err != nil {
 				t.Fatal(err)
+			}
+			for _, grant := range []model.OIDCConsent{
+				{AccountID: reader.ID, ClientID: client.ID, Scopes: "openid email"},
+				{AccountID: admin.ID, ClientID: client.ID, Scopes: "openid profile"},
+				{AccountID: reader.ID, ClientID: other.ID, Scopes: "openid"},
+			} {
+				if err := db.Create(&grant).Error; err != nil {
+					t.Fatal(err)
+				}
 			}
 			storage := &oidcStorage{db: db}
 			request := authorizedRequestFixture(t, db, client.ID, reader.ID)
@@ -100,7 +110,7 @@ func TestPostgresOIDCAuthorizationRevocationAndClientDeletion(t *testing.T) {
 			if err := db.Model(&model.OIDCAccessToken{}).Where("id = ?", access).Count(&count).Error; err != nil || count != 0 {
 				t.Fatalf("access survived: %d %v", count, err)
 			}
-			for _, table := range []interface{}{&model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
+			for _, table := range []interface{}{&model.OIDCConsent{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
 				query := db.Model(table).Where("client_id = ?", client.ID)
 				if operation == "revoke" {
 					query = query.Where("account_id = ?", reader.ID)
@@ -112,7 +122,13 @@ func TestPostgresOIDCAuthorizationRevocationAndClientDeletion(t *testing.T) {
 			if err := db.Model(&model.OIDCAuthRequest{}).Where("client_id = ?", other.ID).Count(&count).Error; err != nil || count != 1 {
 				t.Fatal("unrelated app changed", err)
 			}
+			if err := db.Model(&model.OIDCConsent{}).Where("client_id = ?", other.ID).Count(&count).Error; err != nil || count != 1 {
+				t.Fatalf("unrelated consent changed: %d %v", count, err)
+			}
 			if operation == "revoke" {
+				if err := db.Model(&model.OIDCConsent{}).Where("client_id = ? AND account_id = ?", client.ID, admin.ID).Count(&count).Error; err != nil || count != 1 {
+					t.Fatalf("other user's consent changed: %d %v", count, err)
+				}
 				if err := db.Model(&model.OIDCAuthRequest{}).Where("client_id = ? AND account_id = ?", client.ID, admin.ID).Count(&count).Error; err != nil || count != 1 {
 					t.Fatal("other user's grant changed", err)
 				}
@@ -139,6 +155,9 @@ func TestPostgresOIDCAuthorizationScopesPaginationAndRollback(t *testing.T) {
 			t.Fatal(err)
 		}
 		authorizedRequestFixture(t, db, id, reader.ID)
+		if err := db.Create(&model.OIDCConsent{ClientID: id, AccountID: reader.ID, Scopes: "openid email profile offline_access"}).Error; err != nil {
+			t.Fatal(err)
+		}
 	}
 	authorizedRequestFixture(t, db, "client-00", admin.ID)
 	t.Chdir("..")
@@ -162,6 +181,9 @@ func TestPostgresOIDCAuthorizationScopesPaginationAndRollback(t *testing.T) {
 			resp.Body.Close()
 			if resp.StatusCode != 200 || strings.Count(string(body), `data-testid="authorization-row"`) != expected || resp.Header.Get("Cache-Control") != "private, no-store" {
 				t.Fatalf("%s page %d: %d %s", theme, page+1, resp.StatusCode, body)
+			}
+			if expected > 0 && (!strings.Contains(string(body), "Authorized until you revoke access.") || strings.Contains(string(body), "Latest credential expiry") || strings.Contains(string(body), "<time")) {
+				t.Fatalf("%s still describes expiring credentials: %s", theme, body)
 			}
 			if page == 1 && !strings.Contains(string(body), `data-client-id="client-20"`) {
 				t.Fatal("unstable pagination")
@@ -190,110 +212,188 @@ func TestPostgresOIDCAuthorizationScopesPaginationAndRollback(t *testing.T) {
 	}
 }
 
-func TestPostgresOIDCAuthorizationsDerivedOnlyFromEffectiveCredentials(t *testing.T) {
+func TestPostgresOIDCAuthorizationsDerivedOnlyFromDurableConsent(t *testing.T) {
 	db, admin, reader := auditTestDB(t)
-	now := time.Now().UTC().Truncate(time.Second)
-	valid := now.Add(time.Hour)
-	later := now.Add(24 * time.Hour)
+	now := time.Now()
 	create := func(row interface{}) {
 		t.Helper()
 		if err := db.Create(row).Error; err != nil {
 			t.Fatal(err)
 		}
 	}
-	for _, id := range []string{"access", "refresh", "pending", "combined", "expired", "unapproved", "consumed", "other-user", "disabled", "audit-only"} {
-		client := model.OIDCClient{ID: id, Name: "Same name", OwnerID: &reader.ID, RedirectURIsJSON: "[]"}
+	for _, id := range []string{"consent-only", "combined", "expired", "tokens-only", "request-only", "other-user", "disabled", "audit-only"} {
+		client := model.OIDCClient{ID: id, Name: "Same name", Description: "Application description", HomepageURL: "https://example.test/", OwnerID: &admin.ID, RedirectURIsJSON: "[]"}
 		if id == "disabled" {
 			client.DisabledAt = &now
 		}
 		create(&client)
 	}
-	for _, id := range []string{"access", "combined", "disabled"} {
-		create(&model.OIDCAccessToken{ClientID: id, AccountID: reader.ID, Scopes: "openid email", ExpiresAt: valid})
+	for _, id := range []string{"consent-only", "combined", "expired", "disabled"} {
+		create(&model.OIDCConsent{ClientID: id, AccountID: reader.ID, Scopes: "email offline_access openid profile"})
 	}
-	for _, id := range []string{"refresh", "combined"} {
-		create(&model.OIDCRefreshToken{ClientID: id, AccountID: reader.ID, AccessID: reader.ID, TokenHash: "refresh-" + id, Scopes: "openid profile", ExpiresAt: later})
-	}
-	create(&model.OIDCAccessToken{ClientID: "combined", AccountID: reader.ID, Scopes: "openid email", ExpiresAt: valid})
-	create(&model.OIDCAccessToken{ClientID: "combined", AccountID: reader.ID, Scopes: "expired-scope", ExpiresAt: now})
-	create(&model.OIDCRefreshToken{ClientID: "combined", AccountID: reader.ID, AccessID: reader.ID, TokenHash: "expired-combined", Scopes: "expired-refresh-scope", ExpiresAt: now})
-	for _, id := range []string{"pending", "combined", "unapproved", "consumed", "expired"} {
-		row := model.OIDCAuthRequest{ClientID: id, AccountID: &reader.ID, Approved: true, ExpiresAt: valid, RequestJSON: []byte(`{"scope":"openid offline_access"}`)}
-		if id == "unapproved" {
-			row.Approved = false
-		}
-		if id == "consumed" {
-			row.CodeUsedAt = &now
-		}
+	create(&model.OIDCConsent{ClientID: "other-user", AccountID: admin.ID, Scopes: "openid"})
+	create(&model.OIDCConsent{ClientID: "combined", AccountID: admin.ID, Scopes: "admin-only-scope"})
+	for _, id := range []string{"combined", "expired", "tokens-only"} {
+		expiry := now.Add(time.Hour)
 		if id == "expired" {
-			row.ExpiresAt = now
+			expiry = now.Add(-time.Hour)
 		}
-		create(&row)
+		access := model.OIDCAccessToken{ClientID: id, AccountID: reader.ID, Scopes: "openid token-only-scope", ExpiresAt: expiry}
+		create(&access)
+		create(&model.OIDCRefreshToken{ClientID: id, AccountID: reader.ID, AccessID: access.ID, TokenHash: "refresh-" + id, Scopes: "openid", ExpiresAt: expiry})
 	}
-	create(&model.OIDCAccessToken{ClientID: "expired", AccountID: reader.ID, Scopes: "openid", ExpiresAt: now})
-	create(&model.OIDCRefreshToken{ClientID: "expired", AccountID: reader.ID, AccessID: reader.ID, TokenHash: "expired", Scopes: "openid", ExpiresAt: now})
-	create(&model.OIDCAccessToken{ClientID: "other-user", AccountID: admin.ID, Scopes: "openid", ExpiresAt: valid})
+	authorizedRequestFixture(t, db, "request-only", reader.ID)
 	create(&model.AuditEvent{ID: "audit-only", ClientID: "audit-only", ActorID: reader.ID, Action: "oidc.login", Outcome: "success"})
-	var apps []oidcAuthorization
-	if err := authorizedApplicationsQuery(db, reader.ID, now).Scan(&apps).Error; err != nil {
-		t.Fatal(err)
-	}
-	if len(apps) != 4 {
-		t.Fatalf("unexpected active applications: %+v", apps)
-	}
-	for i, id := range []string{"access", "combined", "pending", "refresh"} {
-		if apps[i].ClientID != id {
-			t.Fatalf("duplicate rows or unstable order: %+v", apps)
-		}
-		if strings.Contains(apps[i].Scopes, "expired") {
-			t.Fatalf("expired scopes leaked: %+v", apps[i])
-		}
-	}
-	for _, scope := range []string{"openid", "email", "profile", "offline_access"} {
-		if !strings.Contains(apps[1].Scopes, scope) {
-			t.Fatalf("missing effective scope %q", scope)
-		}
-	}
-	if !apps[1].ExpiresAt.Equal(later) {
-		t.Fatalf("wrong latest expiry: %+v", apps[1])
-	}
-	// Access-token expiry must not conceal a still-usable refresh token.
-	apps = nil
-	if err := authorizedApplicationsQuery(db, reader.ID, valid).Scan(&apps).Error; err != nil {
-		t.Fatal(err)
-	}
-	if len(apps) != 2 || apps[0].ClientID != "combined" || apps[1].ClientID != "refresh" {
-		t.Fatalf("refresh-only access lost: %+v", apps)
-	}
-	for _, app := range apps {
-		if app.Scopes != "openid profile" {
-			t.Fatalf("expired permissions retained: %+v", app)
-		}
-	}
-	apps = nil
-	if err := authorizedApplicationsQuery(db, reader.ID, later).Scan(&apps).Error; err != nil || len(apps) != 0 {
-		t.Fatalf("expired entries retained: %+v %v", apps, err)
-	}
-
-	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &reader); return c.Next() })
-	app.Post("/account/oidc/authorizations/:id/revoke", requireAccount, revokeApplicationGrant)
-	// Exercise access-only, refresh-only, pending-only and in-flight consumed codes.
-	for _, id := range []string{"access", "refresh", "pending", "consumed", "expired"} {
-		resp, err := app.Test(httptest.NewRequest("POST", "/account/oidc/authorizations/"+id+"/revoke", nil), -1)
-		if err != nil {
+	assertListing := func() {
+		t.Helper()
+		var apps []oidcAuthorization
+		if err := authorizedApplicationsQuery(db, reader.ID).Scan(&apps).Error; err != nil {
 			t.Fatal(err)
 		}
-		resp.Body.Close()
-		if resp.StatusCode != 303 {
-			t.Fatalf("revoke %s: %d", id, resp.StatusCode)
+		if len(apps) != 3 {
+			t.Fatalf("expected three durable authorizations, got %+v", apps)
 		}
-		for _, table := range []interface{}{&model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCAuthRequest{}} {
-			var count int64
-			if err := db.Model(table).Where("client_id = ? AND account_id = ?", id, reader.ID).Count(&count).Error; err != nil || count != 0 {
-				t.Fatalf("revoke left %T: %d %v", table, count, err)
+		for i, id := range []string{"combined", "consent-only", "expired"} {
+			app := apps[i]
+			if app.ClientID != id || app.Scopes != "email offline_access openid profile" || app.OwnerID != admin.ID || app.OwnerName != admin.Nickname || app.Name != "Same name" || app.Description != "Application description" || app.HomepageURL != "https://example.test/" {
+				t.Fatalf("wrong grant, metadata, scopes, or order: %+v", app)
 			}
 		}
+		var others []oidcAuthorization
+		if err := authorizedApplicationsQuery(db, admin.ID).Scan(&others).Error; err != nil {
+			t.Fatal(err)
+		}
+		if len(others) != 2 || others[0].ClientID != "combined" || others[0].Scopes != "admin-only-scope" || others[1].ClientID != "other-user" || others[1].Scopes != "openid" {
+			t.Fatalf("account isolation lost: %+v", others)
+		}
+	}
+	assertListing()
+	// Removing all credentials must neither hide grants nor shrink remembered scopes.
+	for _, table := range []interface{}{&model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCAuthRequest{}} {
+		if err := db.Where("account_id = ?", reader.ID).Delete(table).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	assertListing()
+}
+
+func TestPostgresOIDCDurableAuthorizationAuditRollback(t *testing.T) {
+	for _, operation := range []string{"revoke", "delete"} {
+		for _, withCredentials := range []bool{false, true} {
+			t.Run(fmt.Sprintf("%s/credentials=%t", operation, withCredentials), func(t *testing.T) {
+				db, admin, reader := auditTestDB(t)
+				client := model.OIDCClient{ID: "durable-grant", OwnerID: &reader.ID, Name: "Durable", RedirectURIsJSON: "[]"}
+				if err := db.Create(&client).Error; err != nil {
+					t.Fatal(err)
+				}
+				grants := []model.OIDCConsent{{ClientID: client.ID, AccountID: reader.ID, Scopes: "openid email"}, {ClientID: client.ID, AccountID: admin.ID, Scopes: "openid profile"}}
+				if err := db.Create(&grants).Error; err != nil {
+					t.Fatal(err)
+				}
+				if withCredentials {
+					request := authorizedRequestFixture(t, db, client.ID, reader.ID)
+					if _, _, _, err := (&oidcStorage{db: db}).CreateAccessAndRefreshTokens(t.Context(), request, ""); err != nil {
+						t.Fatal(err)
+					}
+				}
+				var before []model.OIDCConsent
+				if err := db.Order("account_id").Find(&before).Error; err != nil {
+					t.Fatal(err)
+				}
+				app := fiber.New()
+				app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &reader); return c.Next() })
+				app.Post("/revoke/:id", revokeApplicationGrant)
+				app.Post("/delete/:id", deleteOIDCClient)
+				if err := db.Callback().Create().Before("gorm:create").Register("durable_grant_audit_failure", func(tx *gorm.DB) {
+					if tx.Statement.Table == "audit_events" {
+						tx.AddError(errors.New("audit offline"))
+					}
+				}); err != nil {
+					t.Fatal(err)
+				}
+				response, err := app.Test(httptest.NewRequest("POST", "/"+operation+"/"+client.ID, nil), -1)
+				db.Callback().Create().Remove("durable_grant_audit_failure")
+				if err != nil {
+					t.Fatal(err)
+				}
+				response.Body.Close()
+				if response.StatusCode != 500 {
+					t.Fatalf("audit failure status: %d", response.StatusCode)
+				}
+				var after []model.OIDCConsent
+				if err := db.Order("account_id").Find(&after).Error; err != nil {
+					t.Fatal(err)
+				}
+				if !reflect.DeepEqual(before, after) {
+					t.Fatalf("consent not rolled back: before=%+v after=%+v", before, after)
+				}
+				var count int64
+				if err := db.Model(&model.OIDCClient{}).Where("id = ?", client.ID).Count(&count).Error; err != nil || count != 1 {
+					t.Fatalf("client not restored: %d %v", count, err)
+				}
+				for _, table := range []interface{}{&model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
+					expected := int64(0)
+					if withCredentials {
+						expected = 1
+					}
+					if err := db.Model(table).Where("client_id = ?", client.ID).Count(&count).Error; err != nil || count != expected {
+						t.Fatalf("%T not restored: %d %v", table, count, err)
+					}
+				}
+				if err := db.Model(&model.AuditEvent{}).Where("action IN ?", []string{"grant.revoke", "client.delete"}).Count(&count).Error; err != nil || count != 0 {
+					t.Fatalf("failed mutation audited: %d %v", count, err)
+				}
+			})
+		}
+	}
+}
+
+func TestPostgresOIDCLegacyCredentialsRemainRevocableWithoutConsent(t *testing.T) {
+	for _, kind := range []string{"access", "refresh", "pending", "consumed", "expired"} {
+		t.Run(kind, func(t *testing.T) {
+			db, _, reader := auditTestDB(t)
+			client := model.OIDCClient{ID: "legacy-credentials", Name: "Legacy", RedirectURIsJSON: "[]"}
+			if err := db.Create(&client).Error; err != nil {
+				t.Fatal(err)
+			}
+			now := time.Now()
+			var row interface{}
+			switch kind {
+			case "access":
+				row = &model.OIDCAccessToken{ClientID: client.ID, AccountID: reader.ID, Scopes: "openid", ExpiresAt: now.Add(time.Hour)}
+			case "refresh":
+				row = &model.OIDCRefreshToken{ClientID: client.ID, AccountID: reader.ID, AccessID: reader.ID, TokenHash: "legacy-refresh", Scopes: "openid", ExpiresAt: now.Add(time.Hour)}
+			default:
+				request := &model.OIDCAuthRequest{ClientID: client.ID, AccountID: &reader.ID, Approved: true, RequestJSON: []byte(`{"scope":"openid"}`), ExpiresAt: now.Add(time.Hour)}
+				if kind == "consumed" {
+					request.CodeUsedAt = &now
+				}
+				if kind == "expired" {
+					request.ExpiresAt = now.Add(-time.Hour)
+				}
+				row = request
+			}
+			if err := db.Create(row).Error; err != nil {
+				t.Fatal(err)
+			}
+			app := fiber.New()
+			app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &reader); return c.Next() })
+			app.Post("/:id/revoke", requireAccount, revokeApplicationGrant)
+			response, err := app.Test(httptest.NewRequest("POST", "/"+client.ID+"/revoke", nil), -1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			response.Body.Close()
+			if response.StatusCode != 303 {
+				t.Fatalf("legacy %s revoke: %d", kind, response.StatusCode)
+			}
+			for _, table := range []interface{}{&model.OIDCConsent{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}} {
+				var count int64
+				if err := db.Model(table).Where("client_id = ? AND account_id = ?", client.ID, reader.ID).Count(&count).Error; err != nil || count != 0 {
+					t.Fatalf("legacy revoke left %T: %d %v", table, count, err)
+				}
+			}
+		})
 	}
 }
 

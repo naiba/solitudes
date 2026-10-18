@@ -266,15 +266,42 @@ func TestPostgresOIDCConsentConstraintsCascadeAndMaintenance(t *testing.T) {
 	if err := db.Raw(`SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname=current_schema() AND tablename='o_id_c_consents' AND indexdef LIKE '%(client_id)%')`).Scan(&indexed).Error; err != nil || !indexed {
 		t.Fatalf("missing client index: %v", err)
 	}
-	if _, err := MaintainDatabase(t.Context(), db, cutoff.AddDate(1, 0, 0), 1); err != nil {
+	other := Account{Email: "remaining-consent@example.test", Nickname: "Remaining"}
+	if err := db.Create(&other).Error; err != nil {
 		t.Fatal(err)
 	}
-	assertConsentScopes(t, db, map[string]string{accountID + "/reader": "openid"})
+	if err := db.Create(&OIDCConsent{AccountID: other.ID, ClientID: "writer", Scopes: "profile"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	access := OIDCAccessToken{AccountID: accountID, ClientID: "reader", Scopes: "openid", ExpiresAt: cutoff}
+	if err := db.Create(&access).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&OIDCRefreshToken{AccountID: accountID, ClientID: "reader", AccessID: access.ID, TokenHash: "expired-consent-maintenance", Scopes: "openid", ExpiresAt: cutoff}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if err := db.Create(&OIDCAuthRequest{AccountID: &accountID, ClientID: "reader", RequestJSON: []byte(`{"scope":"openid"}`), Approved: true, ExpiresAt: cutoff}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if removed, err := MaintainDatabase(t.Context(), db, cutoff.AddDate(1, 0, 0), 1); err != nil || removed != 3 {
+		t.Fatalf("expired credential cleanup = %d, %v", removed, err)
+	}
+	for _, table := range []interface{}{&OIDCAccessToken{}, &OIDCRefreshToken{}, &OIDCAuthRequest{}} {
+		var count int64
+		if err := db.Model(table).Count(&count).Error; err != nil || count != 0 {
+			t.Fatalf("expired %T survived cleanup: %d, %v", table, count, err)
+		}
+	}
+	var retained OIDCConsent
+	if err := db.Where("account_id = ? AND client_id = ?", accountID, "reader").Take(&retained).Error; err != nil || retained.Scopes != consent.Scopes || !retained.CreatedAt.Equal(consent.CreatedAt) || !retained.UpdatedAt.Equal(consent.UpdatedAt) {
+		t.Fatalf("cleanup changed durable consent: %+v, %v", retained, err)
+	}
+	assertConsentScopes(t, db, map[string]string{accountID + "/reader": "openid", other.ID + "/writer": "profile"})
 	policySQL(t, db, `DELETE FROM o_id_c_clients WHERE id='reader'`)
-	assertConsentScopes(t, db, map[string]string{})
+	assertConsentScopes(t, db, map[string]string{other.ID + "/writer": "profile"})
 	if err := db.Create(&OIDCConsent{AccountID: accountID, ClientID: "writer", Scopes: "email"}).Error; err != nil {
 		t.Fatal(err)
 	}
 	policySQL(t, db, `DELETE FROM accounts WHERE id=?`, accountID)
-	assertConsentScopes(t, db, map[string]string{})
+	assertConsentScopes(t, db, map[string]string{other.ID + "/writer": "profile"})
 }
