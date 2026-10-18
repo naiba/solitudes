@@ -1559,7 +1559,13 @@ test('cactus home keeps a compact article list and aligned column headings and c
   test.skip(siteTheme !== 'cactus', 'Cactus has independently stacked home columns.');
   for (const width of [1440, 1024, 768, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    await page.goto('/', { waitUntil: 'networkidle' });
+    // Measure visible, styled content once fonts settle, not unrelated network
+    // silence across five navigations within this case's 30-second budget.
+    expect((await page.goto('/', { waitUntil: 'domcontentloaded' }))?.status()).toBe(200);
+    await expect(page.locator('#main-content')).toHaveCSS('display', 'flow-root');
+    await expect(page.locator('.home-grid-layout')).toHaveCSS('display', width > 650 ? 'grid' : 'flex');
+    await expect(page.getByTestId('site-search-input')).toBeVisible();
+    await page.evaluate(async () => { await document.fonts.ready; });
     await expect(page.locator('.home-articles-section [data-testid="article-list-link"]')).toHaveCount(6);
     await expect(page.locator('.home-most-read-section h2')).toHaveText('Recommended');
     const picks = await page.locator('.home-most-read-section [data-testid="article-list-link"]').evaluateAll(links => links.map(link => link.getAttribute('href')));
@@ -1602,7 +1608,9 @@ test('cactus home keeps a compact article list and aligned column headings and c
     }
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
-  await page.goto('/search/', { waitUntil: 'networkidle' });
+  expect((await page.goto('/search/', { waitUntil: 'domcontentloaded' }))?.status()).toBe(200);
+  await expect(page.locator('#main-content')).toHaveCSS('display', 'flow-root');
+  await expect(page.locator('#search > form')).toBeVisible();
   await expect(page.locator('#search > form')).toHaveCSS('margin-top', '0px');
 });
 

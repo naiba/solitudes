@@ -356,9 +356,9 @@ func TestBrowserThemeMatrix(t *testing.T) {
 				if !ready {
 					t.Fatal("isolated application did not start")
 				}
-				// The full role/layout matrix now includes more than 70 browser
+				// The full role/layout matrix now includes more than 90 browser
 				// cases per theme. Leave room for slower CI hosts without retries.
-				testTimeout := 8 * time.Minute
+				testTimeout := 9 * time.Minute
 				ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 				defer cancel()
 				root := repoRoot
