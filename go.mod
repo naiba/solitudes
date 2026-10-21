@@ -104,7 +104,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.5 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/leodido/go-urn v1.5.0 // indirect
 	github.com/liuzl/cedar-go v0.0.0-20170805034717-80a9c64b256d // indirect
 	github.com/liuzl/da v0.0.0-20180704015230-14771aad5b1d // indirect
