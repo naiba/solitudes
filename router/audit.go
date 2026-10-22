@@ -60,7 +60,7 @@ func auditResource(path string) (route, target, client string) {
 		return route, target, client
 	}
 	switch path {
-	case "/admin/users", "/admin/oidc/clients", "/admin/settings", "/admin/auth/providers", "/admin/publish", "/admin/articles", "/admin/audit":
+	case "/admin/users", "/admin/oidc/clients", "/admin/settings", "/admin/auth/providers", "/admin/publish", "/admin/articles", "/admin/audit", "/admin/redirects":
 		return path, "", ""
 	}
 	return "", "", ""
@@ -132,6 +132,11 @@ func auditAction(method, path string) string {
 		return "oidc.keys.rotate"
 	case "/admin/publish":
 		return "article.save"
+	case "/admin/redirects":
+		if method == http.MethodDelete {
+			return "redirect.delete"
+		}
+		return "redirect.save"
 	case "/admin/articles":
 		return "article.delete"
 	case "/api/comment":

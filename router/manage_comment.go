@@ -13,6 +13,7 @@ import (
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/pagination"
+	"github.com/naiba/solitudes/pkg/siteurl"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
@@ -246,7 +247,7 @@ func submitAkismetFeedback(cm model.Comment, article model.Article, referrer str
 		UserAgent:          cm.UserAgent,
 		CommentType:        commentType,
 		Referrer:           referrer,
-		Permalink:          "https://" + solitudes.System.Config.Site.Domain + "/" + article.Slug,
+		Permalink:          "https://" + solitudes.System.Config.Site.Domain + siteurl.ArticlePath(article.Slug),
 		CommentAuthor:      cm.Nickname,
 		CommentAuthorEmail: cm.Email,
 		CommentAuthorURL:   cm.Website,

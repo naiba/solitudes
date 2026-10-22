@@ -897,6 +897,106 @@ async function signIn(page: Page, email = adminEmail!, password = adminPassword!
   await expect(page).toHaveURL(destination);
 }
 
+test('Unicode article URLs survive publishing, metadata, sign-in links and renaming', async ({page}) => {
+  test.skip(!adminEmail || !adminPassword, 'Requires isolated administrator fixtures.');
+  test.setTimeout(90000);
+  await useRealEditor(page);
+  await signIn(page);
+  await page.goto('/admin/publish', {waitUntil:'domcontentloaded'});
+  await waitForEditor(page);
+  const slug = `中文-${siteTheme} C#? % + &`;
+  await page.getByTestId('publish-title').fill('Unicode URL round-trip');
+  await page.getByTestId('publish-slug').fill(slug);
+  await page.evaluate(() => eval('vditor.setValue("Unicode URL body")'));
+  const saved = page.waitForResponse(r => new URL(r.url()).pathname === '/admin/publish' && r.request().method() === 'POST');
+  const counted = page.waitForRequest(r => new URL(r.url()).pathname === '/api/count' && new URL(r.url()).searchParams.get('slug') === slug);
+  await page.getByTestId('publish-submit').click();
+  const saveResponse = await saved;
+  expect(saveResponse.status()).toBe(200);
+  await expect(page).toHaveURL(u => decodeURIComponent(u.pathname) === '/' + slug && !u.search && !u.hash);
+  expect((await counted).method()).toBe('POST');
+  await expect(page.getByTestId('site-article')).toContainText('Unicode URL body');
+  // Navigation can evict Chromium's POST response body; read the persisted ID
+  // from the real article page instead of racing Network.getResponseBody.
+  const editLink = (await page.getByTestId('article-edit-link').getAttribute('href'))!;
+  const articleID = new URL(editLink, page.url()).searchParams.get('id')!;
+  expect(articleID).toMatch(/^[a-f0-9-]{36}$/);
+  const canonical = (await page.locator('link[rel="canonical"]').getAttribute('href'))!;
+  const parsedCanonical = new URL(canonical);
+  expect(decodeURIComponent(parsedCanonical.pathname)).toBe('/' + slug);
+  expect(parsedCanonical.search).toBe('');
+  expect(parsedCanonical.hash).toBe('');
+  expect(await page.getByTestId('article-share-dialog').getAttribute('data-url')).toBe(canonical);
+  const feed = await (await page.request.get('/feed/json')).json();
+  expect(feed.items.find((item:{url:string}) => item.url === canonical)).toBeTruthy();
+  await page.context().clearCookies();
+  await page.reload({waitUntil:'domcontentloaded'});
+  const signInLink = new URL((await page.getByTestId('comment-sign-in').getAttribute('href'))!, page.url());
+  expect(signInLink.searchParams.get('return_to')).toBe(parsedCanonical.pathname + '#reply');
+  await signIn(page);
+  const renamed = `改名-${siteTheme} C#? % + &`;
+  const origin = new URL(page.url()).origin;
+  const published = await page.request.post('/admin/publish', {headers:{Origin:origin}, form:{
+    id:articleID, title:'Unicode URL round-trip', slug:renamed, content:'Unicode URL body', template:'1', visibility:'public',
+  }});
+  expect(published.status()).toBe(200);
+  const old = await page.request.get('/' + encodeURIComponent(slug), {maxRedirects:0});
+  expect(old.status()).toBe(301);
+  expect(decodeURIComponent(new URL(old.headers().location!, origin).pathname)).toBe('/' + renamed);
+  expect((await page.goto(old.headers().location!, {waitUntil:'domcontentloaded'}))!.status()).toBe(200);
+  const rejected = await page.request.post('/admin/publish', {headers:{Origin:origin}, form:{
+    id:articleID, title:'Unicode URL round-trip', slug:'POSTS', content:'Unicode URL body', template:'1', visibility:'public',
+  }});
+  expect(rejected.status()).toBe(400);
+  expect((await page.request.get('/' + encodeURIComponent(renamed))).status()).toBe(200);
+  const normalized = await page.request.get('/POSTS/001/?utm_source=browser', {maxRedirects:0});
+  expect(normalized.status()).toBe(301);
+  expect(normalized.headers().location).toBe('/posts/?utm_source=browser');
+  expect((await page.request.delete('/admin/articles?id=' + articleID, {headers:{Origin:origin}})).status()).toBe(200);
+});
+
+test('redirect management persists rules and deletes selected entries after confirmation', async ({page}) => {
+  test.skip(!adminEmail || !adminPassword, 'Requires isolated administrator fixtures.');
+  await signIn(page);
+  await page.goto('/admin/redirects', {waitUntil:'domcontentloaded'});
+  await expect(page.getByTestId('redirect-management')).toBeVisible();
+  const prefix = `managed-redirect-${siteTheme}`;
+  const saveRule = async (source:string, target:string, expected:number) => {
+    await page.getByTestId('redirect-source-input').fill(source);
+    await page.getByTestId('redirect-target-input').fill(target);
+    const response = page.waitForResponse(r => new URL(r.url()).pathname === '/admin/redirects' && r.request().method() === 'POST');
+    const navigation = page.waitForNavigation({waitUntil:'domcontentloaded'});
+    await page.getByTestId('redirect-save').click();
+    expect((await response).status()).toBe(expected);
+    await navigation;
+  };
+  await saveRule(`/${prefix}-first`, '/posts/', 201);
+  await saveRule(`/${prefix}-second`, '/books/', 201);
+  const first = page.getByTestId('redirect-rule-row').filter({has:page.getByTestId('redirect-source').filter({hasText:`/${prefix}-first`})});
+  await first.getByTestId('redirect-edit').click();
+  await saveRule(`/${prefix}-first`, '/tags/', 200);
+  const moved = await page.request.get(`/${prefix}-first?utm_source=browser`, {maxRedirects:0});
+  expect(moved.status()).toBe(301);
+  expect(moved.headers().location).toBe('/tags/?utm_source=browser');
+  await page.getByTestId('redirect-search').fill(prefix);
+  await page.getByTestId('redirect-search-submit').click();
+  await expect(page.getByTestId('redirect-rule-row')).toHaveCount(2);
+  await page.getByTestId('redirect-select-page').check();
+  page.once('dialog', dialog => dialog.dismiss());
+  await page.getByTestId('redirect-delete-selected').click();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await expect(page.getByTestId('redirect-rule-row')).toHaveCount(2);
+  await page.getByTestId('redirect-select-page').check();
+  page.once('dialog', dialog => dialog.accept());
+  const removed = page.waitForResponse(r => new URL(r.url()).pathname === '/admin/redirects' && r.request().method() === 'DELETE');
+  const navigation = page.waitForNavigation({waitUntil:'domcontentloaded'});
+  await page.getByTestId('redirect-delete-selected').click();
+  expect((await removed).status()).toBe(204);
+  await navigation;
+  await expect(page.getByTestId('redirect-rule-row')).toHaveCount(0);
+  expect((await page.request.get(`/${prefix}-first`, {maxRedirects:0})).status()).toBe(404);
+});
+
 test('Folio editorial front page keeps unique stories above compact community', async ({ page }) => {
   test.skip(siteTheme !== 'folio');
   for (const width of [1280, 768, 390, 320]) {
@@ -3117,7 +3217,18 @@ test('public profiles show only public activity and comments distinguish every i
   await expect(page.getByTestId('article-author-link').first()).toHaveAttribute('rel', 'author');
   await expect(page.locator('meta[name="author"]')).toHaveAttribute('content', /Browser Admin/);
   await expect(page.getByTestId('comment-sign-in')).toBeVisible();
-  await expect(page.getByTestId('comment-register')).toHaveAttribute('href', `/register?return_to=%2F${articleSlug}%23reply`);
+  // Percent escapes are case-insensitive (%2F and %2f both mean '/').
+  // Assert the full URL meaning, including nested return_to, rather than the
+  // renderer's spelling of those escapes.
+  for (const [testID, destination] of [['comment-sign-in', '/login'], ['comment-register', '/register']] as const) {
+    const href = await page.getByTestId(testID).getAttribute('href');
+    expect(href).not.toBeNull();
+    const target = new URL(href!, page.url());
+    expect(target.origin).toBe(new URL(page.url()).origin);
+    expect(target.pathname).toBe(destination);
+    expect([...target.searchParams]).toEqual([['return_to', `/${articleSlug}#reply`]]);
+    expect(target.hash).toBe('');
+  }
   await expect(page.getByTestId('comment-sign-in')).toHaveCSS('min-height', '44px');
   await page.getByTestId('article-author-link').first().click();
   await expect(page.getByTestId('public-profile')).toBeVisible();

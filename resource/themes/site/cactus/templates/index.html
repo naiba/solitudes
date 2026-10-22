@@ -1,4 +1,5 @@
 {{define "site/index"}}
+{{/* Article slugs are single URL path segments, not query strings or fragments. */}}
 {{template "site/header" .}}
 {{$articles := .Queries.Articles "newest" 6 "without_tag" "Topic"}}
 {{$readers := .Queries.Users "newest" 4}}
@@ -93,7 +94,7 @@
       <h2 class="h1">{{.Tr.T "recent_comments"}}</h2>
       <ul class="home-comments-list" role="list">{{range $comments}}<li data-testid="home-recent-comment">
         <div class="home-comment-byline">{{if .AccountID}}<a href="/users/{{.AccountID}}" data-testid="home-comment-author">{{.Nickname}}</a>{{else}}<span>{{.Nickname}}</span>{{end}}<span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else if eq .Role "user"}}{{$.Tr.T "role_user"}}{{else}}{{$.Tr.T "role_guest"}}{{end}}</span><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></div>
-        <a class="home-comment-excerpt" href="/{{.ArticleSlug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="home-comment-link">{{substr .Content 0 160}}</a>
+        <a class="home-comment-excerpt" href="/{{pathEscape .ArticleSlug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="home-comment-link">{{substr .Content 0 160}}</a>
         <span class="home-comment-context">{{$.Tr.T "comment_on"}} {{.ArticleTitle}}</span>
       </li>{{end}}</ul>
     </section>{{end}}

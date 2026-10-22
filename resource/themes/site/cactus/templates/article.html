@@ -1,12 +1,12 @@
 {{define "site/article"}}
 {{template "site/header" .}}
 {{if not .Noindex}}
-{{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
+{{/* Escape article slugs as path segments before JSON/HTML escaping; # and ? belong to the slug. */}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}#article",
+  "@id": "https://{{.Conf.Site.Domain}}/{{pathEscape .Data.article.Slug}}#article",
   "version": "{{.Data.article.Version}}",
   "isPartOf": {
     "@type": "Blog",
@@ -16,15 +16,15 @@
   },
   "hasPart": {
     "@type": "WebPageElement",
-    "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}#article-body",
+    "@id": "https://{{.Conf.Site.Domain}}/{{pathEscape .Data.article.Slug}}#article-body",
     "name": "{{.Data.article.Title}}"
   },
   "mainEntityOfPage": {
     "@type": "WebPage",
-    "@id": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
+    "@id": "https://{{.Conf.Site.Domain}}/{{pathEscape .Data.article.Slug}}"
   },
   "headline": "{{.Data.article.Title}}",
-  "url": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}",
+  "url": "https://{{.Conf.Site.Domain}}/{{pathEscape .Data.article.Slug}}",
   "image": "{{firstImage .Data.article.Content (printf "https://%s/logo.png" .Conf.Site.Domain)}}",
   "author": {
     "@type": "Person",
@@ -93,15 +93,15 @@
         {{if gt .Data.article.NewVersion .Data.article.Version}}
         <aside class="article-revision-notice" data-testid="article-revision-notice" aria-label="{{.Tr.T "article_history"}}">
             <span>{{.Tr.T "has_new_version" (.Data.article.Version|uint2str)}}</span>
-            <a href="/{{.Data.article.Slug}}/compare/v{{.Data.article.Version}}...v{{.Data.article.NewVersion}}" data-testid="article-compare-link">{{.Tr.T "compare_revisions"}}</a>
-            <a href="/{{.Data.article.Slug}}" data-testid="article-latest-version">{{.Tr.T "article_latest_version" (.Data.article.NewVersion|uint2str)}} <span aria-hidden="true">→</span></a>
+            <a href="/{{pathEscape .Data.article.Slug}}/compare/v{{.Data.article.Version}}...v{{.Data.article.NewVersion}}" data-testid="article-compare-link">{{.Tr.T "compare_revisions"}}</a>
+            <a href="/{{pathEscape .Data.article.Slug}}" data-testid="article-latest-version">{{.Tr.T "article_latest_version" (.Data.article.NewVersion|uint2str)}} <span aria-hidden="true">→</span></a>
         </aside>
         {{else if and .Data.can_read_history (gt .Data.article.Version 1)}}
         {{$versions := .Data.article.PreviousVersions}}
         <details class="article-revisions" data-testid="article-history">
             <summary>{{.Tr.T "article_history"}} <span class="revision-count">· {{len $versions}}</span></summary>
-            <nav aria-label="{{.Tr.T "article_history"}}">{{range $versions}}<a href="/{{$.Data.article.Slug}}/v{{.}}">v{{.}}</a>{{end}}</nav>
-            <a class="revision-compare-link" href="/{{.Data.article.Slug}}/compare" data-testid="article-compare-latest">{{.Tr.T "compare_revisions"}}</a>
+            <nav aria-label="{{.Tr.T "article_history"}}">{{range $versions}}<a href="/{{pathEscape $.Data.article.Slug}}/v{{.}}">v{{.}}</a>{{end}}</nav>
+            <a class="revision-compare-link" href="/{{pathEscape .Data.article.Slug}}/compare" data-testid="article-compare-latest">{{.Tr.T "compare_revisions"}}</a>
         </details>
         {{end}}
         <div class="content" data-reading-content id="article-body">
@@ -115,15 +115,15 @@
         {{end}}
         {{if .Data.article.Book}}
         <nav class="book-navigation" aria-labelledby="book-parent-title" data-testid="book-navigation">
-            <h2 id="book-parent-title"><span class="book-context">{{.Tr.T "book_context"}}</span><a href="/{{.Data.article.Book.Slug}}" data-testid="book-parent" aria-label="{{.Tr.T "back_to_book"}}: {{.Data.article.Book.Title}}">{{.Data.article.Book.Title}}</a></h2>
+            <h2 id="book-parent-title"><span class="book-context">{{.Tr.T "book_context"}}</span><a href="/{{pathEscape .Data.article.Book.Slug}}" data-testid="book-parent" aria-label="{{.Tr.T "back_to_book"}}: {{.Data.article.Book.Title}}">{{.Data.article.Book.Title}}</a></h2>
             {{if or .Data.article.SibilingArticle.Prev.ID .Data.article.SibilingArticle.Next.ID}}
             <ul class="book-neighbors">
                 {{if .Data.article.SibilingArticle.Prev.ID}}<li class="book-previous"><a
-                        href="/{{.Data.article.SibilingArticle.Prev.Slug}}" data-testid="book-previous"><span class="book-direction"><span aria-hidden="true">← </span>{{.Tr.T "prev_chapter"}}</span><span>{{.Data.article.SibilingArticle.Prev.Title}}</span></a>
+                        href="/{{pathEscape .Data.article.SibilingArticle.Prev.Slug}}" data-testid="book-previous"><span class="book-direction"><span aria-hidden="true">← </span>{{.Tr.T "prev_chapter"}}</span><span>{{.Data.article.SibilingArticle.Prev.Title}}</span></a>
                 </li>
                 {{end}}
                 {{if .Data.article.SibilingArticle.Next.ID}}<li class="book-next"><a
-                        href="/{{.Data.article.SibilingArticle.Next.Slug}}" data-testid="book-next"><span class="book-direction"><span aria-hidden="true">→ </span>{{.Tr.T "next_chapter"}}</span><span>{{.Data.article.SibilingArticle.Next.Title}}</span></a>
+                        href="/{{pathEscape .Data.article.SibilingArticle.Next.Slug}}" data-testid="book-next"><span class="book-direction"><span aria-hidden="true">→ </span>{{.Tr.T "next_chapter"}}</span><span>{{.Data.article.SibilingArticle.Next.Title}}</span></a>
                 </li>
                 {{end}}
             </ul>
@@ -141,7 +141,8 @@
     {{template "site/pagination" (dict "nav" .Data.comment_navigation "tr" .Tr)}}
     {{if not .Data.article.DisableComment}}
     <div id="reply" data-testid="comment-form">
-{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
+{{/* Encode the inner path first; html/template escapes the complete return_to query value once. */}}
+{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to={{printf "/%s#reply" (pathEscape .Data.article.Slug)}}" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to={{printf "/%s#reply" (pathEscape .Data.article.Slug)}}" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
         <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
         <textarea cols="40" rows="6" id="id_content" data-testid="comment-content"
             placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
@@ -176,7 +177,8 @@
             if (document.querySelector("#id_website")) {
                 document.querySelector("#id_website").value = localStorage.getItem("solitudes_cm_website") || ''
             }
-            fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" })
+            // JavaScript string escaping does not encode query values.
+            fetch("/api/count?action=article&slug={{urlencode .Data.article.Slug}}", { method: "POST" })
         })()
 
         let loadCommenterInfoTimeout

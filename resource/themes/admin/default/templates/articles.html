@@ -1,5 +1,6 @@
 {{define "admin/articles"}}
 {{template "admin/header" .}}
+{{/* Escape article URL path segments without changing raw slug display text. */}}
 
 <div class="admin-container">
     <div class="page-header with-action"><div>
@@ -24,7 +25,7 @@
                 <tbody>
                     {{range .Data.articles}}
                     <tr>
-                        <td data-label="{{$.Tr.T "title"}}" class="article-primary"><a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a><small>/{{.Slug}}</small></td>
+                        <td data-label="{{$.Tr.T "title"}}" class="article-primary"><a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{pathEscape .Slug}}/v{{.Version}}" class="text-blue-600 hover:underline">{{.Title}}</a><small>/{{.Slug}}</small></td>
                         <td data-label="{{$.Tr.T "author"}}">{{.Author.Nickname}}</td>
                         <td data-label="{{$.Tr.T "read"}}" class="text-gray-600">{{.ReadNum}}</td>
                         <td data-label="{{$.Tr.T "status"}}"><span class="article-state">{{if not .Public}}<i class="fa-solid fa-lock" aria-hidden="true"></i> {{$.Tr.T (printf "visibility_%s" .Visibility)}}{{else}}{{$.Tr.T "visibility_public"}}{{end}}</span>{{if .IsBook}} <span class="article-state">{{$.Tr.T "book"}}</span>{{end}}</td>

@@ -103,6 +103,8 @@
 
     {{if ne .Path "/"}}
     {{if not .Noindex}}
+    {{/* Only known current pages qualify: a home-only BreadcrumbList is invalid. */}}
+    {{$profilePage := and .Data.profile (eq .Path (printf "/users/%s" .Data.profile.ID))}}
     {{if .Data.article}}
     {{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
 <script type="application/ld+json">
@@ -126,12 +128,12 @@
           "@type": "ListItem",
           "position": {{if eq .OgType "article"}}3{{else}}2{{end}},
           "name": "{{.Data.article.Title}}",
-          "item": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}"
+          "item": "https://{{.Conf.Site.Domain}}/{{pathEscape .Data.article.Slug}}"
         }
       ]
     }
     </script>
-    {{else}}
+    {{else if or .Data.tag $profilePage (eq .Path "/tags/" "/posts/" "/search/" "/books/" "/readers/")}}
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -172,6 +174,24 @@
           "position": 2,
           "name": "{{.Tr.T "search"}}",
           "item": "https://{{.Conf.Site.Domain}}/search/"
+        }{{else if eq .Path "/books/"}},
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{.Tr.T "books"}}",
+          "item": "https://{{.Conf.Site.Domain}}/books/"
+        }{{else if eq .Path "/readers/"}},
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{.Tr.T "reader_circle"}}",
+          "item": "https://{{.Conf.Site.Domain}}/readers/"
+        }{{else if $profilePage}},
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "{{.Data.profile.Nickname}}",
+          "item": "https://{{.Conf.Site.Domain}}/users/{{.Data.profile.ID}}"
         }{{end}}
       ]
     }

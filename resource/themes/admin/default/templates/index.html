@@ -68,7 +68,8 @@
         $.post("/admin/publish", article, (data) => {
              alert('{{.Tr.T "publish_success"}}');
              if (data && data.Slug) {
-                 window.location.href = "/" + data.Slug;
+                 // The returned slug is raw text, not an already encoded URL path.
+                 window.location.href = "/" + encodeURIComponent(data.Slug);
              } else {
                  window.location.reload();
              }

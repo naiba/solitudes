@@ -1,5 +1,6 @@
 {{define "admin/comments"}}
 {{template "admin/header" .}}
+{{/* Escape article URL path segments without changing raw slug display text. */}}
 
 <div class="admin-container">
     <div class="page-header">
@@ -51,7 +52,7 @@
                             {{if .Website}}<div class="text-xs"><a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener noreferrer" class="text-blue-600 hover:underline">{{.Website}}</a></div>{{end}}
                             <div class="comment-ip"><span>{{$.Tr.T "ip_address"}}:</span> <code>{{if .IP}}{{.IP}}{{else}}—{{end}}</code></div>
                         </div></td>
-                        <td data-label="{{$.Tr.T "article"}}"><a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline text-sm">{{.Article.Title}}</a></td>
+                        <td data-label="{{$.Tr.T "article"}}"><a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{pathEscape .Article.Slug}}/v{{.Version}}" class="text-blue-600 hover:underline text-sm">{{.Article.Title}}</a></td>
                         <td data-label="{{$.Tr.T "created_at"}}" class="text-gray-600 text-sm">{{tf .CreatedAt ($.Tr.T "date_format")}}</td>
                         <td data-label="{{$.Tr.T "email_status"}}" class="text-center">
                             {{if ptrStrEq .EmailReadStatus "read"}}

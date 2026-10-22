@@ -570,6 +570,9 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	admin.Delete("/media", requireAdmin, mediaHandler)
 	admin.Get("/settings", requireAdmin, settings)
 	admin.Post("/settings", requireAdmin, settingsHandler)
+	admin.Get("/redirects", requireAdmin, redirectManagement)
+	admin.Post("/redirects", requireAdmin, saveRedirect)
+	admin.Delete("/redirects", requireAdmin, deleteRedirects)
 	admin.Get("/tags", requireAdmin, tagsManagePage)
 	admin.Delete("/tags", requireAdmin, deleteTag)
 	admin.Patch("/tags", requireAdmin, renameTag)
@@ -580,6 +583,9 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 	if extraRoutes != nil {
 		extraRoutes(app)
 	}
+	// System routes (and canonical normalization above) win over managed
+	// redirects; managed redirects in turn win over article routes.
+	app.Use(registeredRedirect)
 	app.Get("/:slug/compare/:versions?", articleCompare)
 	app.Get("/:slug/:version?", article)
 	app.Use(page404)

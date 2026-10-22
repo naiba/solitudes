@@ -56,7 +56,7 @@ func newIdentityTestDB(t *testing.T) *gorm.DB {
 			t.Fatal(err)
 		}
 	}
-	if err := db.AutoMigrate(&model.AuditEvent{}, &model.LoginSummary{}); err != nil {
+	if err := db.AutoMigrate(&model.AuditEvent{}, &model.LoginSummary{}, &model.RedirectRule{}); err != nil {
 		t.Fatal(err)
 	}
 	return db

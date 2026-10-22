@@ -1,0 +1,142 @@
+{{define "admin/redirects"}}
+{{template "admin/header" .}}
+<div class="admin-container" data-testid="redirect-management">
+    <div class="page-header">
+        <h1 class="page-title">{{.Tr.T "manage_redirects"}}</h1>
+        <p class="page-subtitle" data-testid="redirect-priority-hint">{{.Tr.T "redirect_priority_hint"}}</p>
+    </div>
+
+    <section class="wf-card" aria-labelledby="redirect-form-heading">
+        <div class="wf-card-body">
+            <h2 id="redirect-form-heading" data-testid="redirect-form-heading">{{.Tr.T "redirect_add"}}</h2>
+            <p id="redirect-path-hint">{{.Tr.T "redirect_path_hint"}}</p>
+            <form id="redirect-form" data-testid="redirect-form" class="identity-filters" method="post" action="/admin/redirects">
+                <input type="hidden" name="id" value="0">
+                <label for="redirect-source-path">{{.Tr.T "redirect_source"}}
+                    <input id="redirect-source-path" data-testid="redirect-source-input" class="form-control" name="source_path" required placeholder="/old-path" aria-describedby="redirect-path-hint" autocomplete="off">
+                </label>
+                <label for="redirect-target-path">{{.Tr.T "redirect_target"}}
+                    <input id="redirect-target-path" data-testid="redirect-target-input" class="form-control" name="target_path" required placeholder="/new-path" aria-describedby="redirect-path-hint" autocomplete="off">
+                </label>
+                <button type="submit" data-testid="redirect-save" class="admin-button primary">{{.Tr.T "save"}}</button>
+                <button type="button" id="redirect-cancel-edit" data-testid="redirect-cancel-edit" class="admin-button" hidden>{{.Tr.T "cancel"}}</button>
+            </form>
+        </div>
+    </section>
+
+    <form class="identity-filters" method="get" action="/admin/redirects" data-testid="redirect-search-form">
+        <label for="redirect-search">{{.Tr.T "redirect_search"}}<input id="redirect-search" data-testid="redirect-search" class="form-control" name="q" value="{{.Data.q}}" autocomplete="off"></label>
+        <button type="submit" data-testid="redirect-search-submit" class="admin-button">{{.Tr.T "identity_filter"}}</button>
+        <a href="/admin/redirects" class="admin-button">{{.Tr.T "identity_reset"}}</a>
+    </form>
+
+    <div class="wf-card">
+        <div class="wf-card-body flex flex-wrap items-center gap-3">
+            <span>{{.Tr.T "identity_results"}}: <span data-testid="redirect-total">{{.Data.total}}</span></span>
+            {{if .Data.rules}}<label class="flex items-center gap-2"><input type="checkbox" id="redirect-select-page" data-testid="redirect-select-page">{{.Tr.T "redirect_select_page"}}</label>{{end}}
+            <button type="button" id="redirect-delete-selected" data-testid="redirect-delete-selected" class="admin-button danger" disabled>{{.Tr.T "redirect_delete_selected"}}</button>
+        </div>
+        {{if .Data.rules}}
+        <div class="table-scroll">
+            <table class="wf-table mobile-card-table" data-testid="redirect-rules-table">
+                <thead><tr>
+                    <th>{{.Tr.T "redirect_select"}}</th>
+                    <th>{{.Tr.T "redirect_source"}}</th>
+                    <th>{{.Tr.T "redirect_target"}}</th>
+                    <th>{{.Tr.T "redirect_kind"}}</th>
+                    <th>{{.Tr.T "status"}}</th>
+                    <th>{{.Tr.T "created_at"}}</th>
+                    <th>{{.Tr.T "manage"}}</th>
+                </tr></thead>
+                <tbody>{{range .Data.rules}}
+                    <tr data-testid="redirect-rule-row" data-redirect-id="{{.ID}}">
+                        <td data-label="{{$.Tr.T "redirect_select"}}"><input type="checkbox" name="redirect_ids" value="{{.ID}}" data-testid="redirect-select" aria-label="{{$.Tr.T "redirect_select"}} {{.SourcePath}}"></td>
+                        <td data-label="{{$.Tr.T "redirect_source"}}"><code data-testid="redirect-source">{{.SourcePath}}</code></td>
+                        <td data-label="{{$.Tr.T "redirect_target"}}"><code data-testid="redirect-target">{{.TargetPath}}</code></td>
+                        <td data-label="{{$.Tr.T "redirect_kind"}}">
+                            {{if .ArticleID}}
+                            <span class="article-state" data-testid="redirect-rule-kind">{{$.Tr.T "redirect_automatic"}}</span>
+                            <a href="/admin/publish?id={{.ArticleID}}" data-testid="redirect-article">{{.ArticleTitle}}</a>
+                            <p class="text-sm text-gray-600">{{$.Tr.T "redirect_automatic_hint"}}</p>
+                            {{else}}<span class="article-state" data-testid="redirect-rule-kind">{{$.Tr.T "redirect_manual"}}</span>{{end}}
+                        </td>
+                        <td data-label="{{$.Tr.T "status"}}" data-testid="redirect-status">301</td>
+                        <td data-label="{{$.Tr.T "created_at"}}" class="text-sm text-gray-600"><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></td>
+                        <td data-label="{{$.Tr.T "manage"}}" class="actions-cell"><div class="flex flex-wrap gap-2">
+                            {{if not .ArticleID}}<button type="button" class="admin-button compact" data-testid="redirect-edit">{{$.Tr.T "edit"}}</button>{{end}}
+                            <button type="button" class="admin-button compact danger" data-testid="redirect-delete">{{$.Tr.T "delete"}}</button>
+                        </div></td>
+                    </tr>
+                {{end}}</tbody>
+            </table>
+        </div>
+        {{else}}<div class="admin-empty-state"><p data-testid="redirect-empty">{{.Tr.T "no_data"}}</p></div>{{end}}
+        {{template "admin/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
+    </div>
+</div>
+<script>
+(function () {
+    const form = document.getElementById('redirect-form');
+    const heading = document.getElementById('redirect-form-heading');
+    const cancelEdit = document.getElementById('redirect-cancel-edit');
+    const selectPage = document.getElementById('redirect-select-page');
+    const deleteSelected = document.getElementById('redirect-delete-selected');
+    const selections = Array.from(document.querySelectorAll('[data-testid="redirect-select"]'));
+    const ruleID = form.elements.namedItem('id');
+    const sourcePath = form.elements.namedItem('source_path');
+    const targetPath = form.elements.namedItem('target_path');
+    function resetEditor() {
+        form.reset();
+        ruleID.value = '0';
+        heading.textContent = '{{.Tr.T "redirect_add"}}';
+        cancelEdit.hidden = true;
+    }
+    cancelEdit.addEventListener('click', resetEditor);
+    document.querySelectorAll('[data-testid="redirect-edit"]').forEach(button => {
+        button.addEventListener('click', () => {
+            const row = button.closest('[data-testid="redirect-rule-row"]');
+            ruleID.value = row.dataset.redirectId;
+            sourcePath.value = row.querySelector('[data-testid="redirect-source"]').textContent;
+            targetPath.value = row.querySelector('[data-testid="redirect-target"]').textContent;
+            heading.textContent = '{{.Tr.T "redirect_edit"}}';
+            cancelEdit.hidden = false;
+            sourcePath.focus();
+        });
+    });
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        if (!form.reportValidity() || !/^(0|[1-9][0-9]*)$/.test(ruleID.value)) return;
+        // Keep uint64 identifiers as decimal strings until writing JSON; Number loses precision.
+        const data = '{"id":' + ruleID.value + ',"source_path":' + JSON.stringify(sourcePath.value) + ',"target_path":' + JSON.stringify(targetPath.value) + '}';
+        ajaxRequest({url: '/admin/redirects', type: 'POST', contentType: 'application/json', data,
+            success: () => window.location.reload()});
+    });
+    function updateSelection() {
+        const selectedCount = selections.filter(input => input.checked).length;
+        deleteSelected.disabled = selectedCount === 0;
+        if (selectPage) {
+            selectPage.checked = selections.length > 0 && selectedCount === selections.length;
+            selectPage.indeterminate = selectedCount > 0 && selectedCount < selections.length;
+        }
+    }
+    if (selectPage) selectPage.addEventListener('change', () => {
+        selections.forEach(input => { input.checked = selectPage.checked; });
+        updateSelection();
+    });
+    selections.forEach(input => input.addEventListener('change', updateSelection));
+    function deleteRules(ids) {
+        if (!ids.length || ids.some(id => !/^[1-9][0-9]*$/.test(id))) return;
+        // Confirmation must precede ajaxRequest for both single and current-page batch deletion.
+        if (!window.confirm('{{.Tr.T "redirect_confirm_delete"}}')) return;
+        ajaxRequest({url: '/admin/redirects', type: 'DELETE', contentType: 'application/json',
+            data: '{"ids":[' + ids.join(',') + ']}', success: () => window.location.reload()});
+    }
+    document.querySelectorAll('[data-testid="redirect-delete"]').forEach(button => {
+        button.addEventListener('click', () => deleteRules([button.closest('[data-testid="redirect-rule-row"]').dataset.redirectId]));
+    });
+    deleteSelected.addEventListener('click', () => deleteRules(selections.filter(input => input.checked).map(input => input.value)));
+    updateSelection();
+})();
+</script>
+{{template "admin/footer" .}}
+{{end}}

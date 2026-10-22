@@ -1,13 +1,13 @@
 {{define "site/page"}}
 {{template "site/header" .}}
 {{if not .Noindex}}
-{{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
+{{/* Escape article slugs as path segments before JSON/HTML escaping; # and ? belong to the slug. */}}
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
   "@type": "WebPage",
   "name": "{{.Data.article.Title}}",
-  "url": "https://{{.Conf.Site.Domain}}/{{.Data.article.Slug}}",
+  "url": "https://{{.Conf.Site.Domain}}/{{pathEscape .Data.article.Slug}}",
   "description": "{{.Desc}}",
   "datePublished": "{{iso8601 .Data.article.CreatedAt}}",
   "dateModified": "{{iso8601 .Data.article.UpdatedAt}}",
@@ -61,7 +61,8 @@
         {{if not .Data.article.DisableComment}}
         <form class="comment-form" id="reply" data-testid="comment-form" novalidate>
             <h3>{{.Tr.T "leave_a_comment"}}</h3>
-{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to=%2F{{.Data.article.Slug}}%23reply" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
+{{/* Encode the inner path first; html/template escapes the complete return_to query value once. */}}
+{{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to={{printf "/%s#reply" (pathEscape .Data.article.Slug)}}" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to={{printf "/%s#reply" (pathEscape .Data.article.Slug)}}" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
             <p class="comment-form-hint">{{.Tr.T "may_not_reply_if_email_not_exist"}}</p>
             <p class="comment-form-status" id="comment_form_status" role="status" aria-live="polite"></p>
             <div class="comment-reply-target" id="comment_reply_target" hidden>
@@ -101,7 +102,8 @@
 
 <script>
     (function () {
-        fetch("/api/count?action=article&slug={{.Data.article.Slug}}", { method: "POST" });
+        // JavaScript string escaping does not encode query values.
+        fetch("/api/count?action=article&slug={{urlencode .Data.article.Slug}}", { method: "POST" });
         {{if .Account}}
         if (document.querySelector("#id_nickname")) document.querySelector("#id_nickname").value = '{{.Account.Nickname}}';
         {{else}}

@@ -13,6 +13,7 @@ import (
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/content"
+	"github.com/naiba/solitudes/pkg/siteurl"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
@@ -57,8 +58,12 @@ func articleCompare(c *fiber.Ctx) error {
 	// Personalized fragments must never be shared through caches or indexed.
 	c.Set(fiber.HeaderCacheControl, "private, no-store")
 	c.Set(fiber.HeaderXRobotsTag, "noindex, follow")
+	slug, err := siteurl.DecodeArticleSlug(c.Params("slug"))
+	if err != nil {
+		return page404(c)
+	}
 	var latest model.Article
-	if err := solitudes.System.DB.Preload("Author").Preload("UpdatedBy").Where("slug = ?", c.Params("slug")).Take(&latest).Error; err != nil {
+	if err := solitudes.System.DB.Preload("Author").Preload("UpdatedBy").Where("slug = ?", slug).Take(&latest).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return page404(c)
 		}
@@ -84,7 +89,7 @@ func articleCompare(c *fiber.Ctx) error {
 		if _, ok := comparisonVersion("v"+to, latest.Version); !ok {
 			return page404(c)
 		}
-		return c.Redirect("/"+latest.Slug+"/compare/v"+from+"...v"+to, http.StatusSeeOther)
+		return c.Redirect(siteurl.ArticlePath(latest.Slug)+"/compare/v"+from+"...v"+to, http.StatusSeeOther)
 	}
 	pair := strings.Split(c.Params("versions"), "...")
 	if len(pair) != 2 {
@@ -138,7 +143,7 @@ func articleCompare(c *fiber.Ctx) error {
 		"comparison": true,
 	}
 	if latest.Public() {
-		data["canonical_path"] = "/" + latest.Slug
+		data["canonical_path"] = siteurl.ArticlePath(latest.Slug)
 	}
 	return c.Render("site/article_compare", injectSiteData(c, data))
 }

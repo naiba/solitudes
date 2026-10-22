@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/utils"
 )
 
 func canonicalURLRedirect(c *fiber.Ctx) error {
@@ -15,11 +16,95 @@ func canonicalURLRedirect(c *fiber.Ctx) error {
 		return c.Next()
 	}
 	path := c.Path()
+	target := canonicalPath(path)
+	if target != path {
+		if query := string(c.Request().URI().QueryString()); query != "" {
+			target += "?" + query
+		}
+		return c.Redirect(target, http.StatusMovedPermanently)
+	}
+	return c.Next()
+}
+
+// Mirror the GET route shapes in router.go, preserving registration order where
+// a literal route precedes a parameter (r/go and static/i). Parameters and file
+// wildcards deliberately remain opaque, including their original escaping.
+var canonicalSystemRoutePatterns = [][]string{
+	{"favicon.ico"}, {"logo.png"}, {"feed", ":format?"},
+	{"posts", ":page?"}, {"books", ":page?"}, {"search"}, {"readers"},
+	{"users", ":id"}, {"tags", ":tag", ":page?"}, {"tags"},
+	{"r", "go"}, {"robots.txt"}, {"sitemap.xml"}, {"llms.txt"},
+	{"read", ":id", "article.md"}, {"captcha"}, {"api", "commenter-info"},
+	{"r", ":token"}, {"static", "i", ":token"},
+	{"static", ":kind", ":theme", "*"}, {"upload", "*"},
+	{"login"}, {"register"}, {"verify-email"}, {"account"},
+	{"account", "oidc", "clients"}, {"account", "oidc", "authorizations"},
+	{"oidc", "consent"}, {"auth", ":provider", "callback"}, {"auth", ":provider"},
+	{"admin"}, {"admin", "users"}, {"admin", "users", ":id"},
+	{"admin", "audit"}, {"admin", "auth", "providers"},
+	{"admin", "oidc", "clients"}, {"admin", "oidc", "clients", ":id"},
+	{"admin", "publish"}, {"admin", "comments"}, {"admin", "articles"},
+	{"admin", "media"}, {"admin", "settings"}, {"admin", "redirects"}, {"admin", "tags"},
+	{"admin", "api", "search-tags"}, {"admin", "api", "search-books"},
+	{"admin", "theme", "preview", ":kind", ":name"},
+}
+
+func canonicalSystemPathParts(parts []string) {
+	// Fiber matches route literals case-insensitively, but crawlers do not.
+	// Lowercasing the whole path would corrupt case-sensitive slugs, tags,
+	// identity tokens and asset names; normalize only a matched route's literals.
+	// Use Fiber's ASCII folding, not Unicode folding (e.g. ſ must not become s).
+	for _, pattern := range canonicalSystemRoutePatterns {
+		if len(parts) > len(pattern) && pattern[len(pattern)-1] != "*" {
+			continue
+		}
+		matched := true
+		for i, segment := range pattern {
+			if segment == "*" {
+				break
+			}
+			if i >= len(parts) {
+				matched = strings.HasSuffix(segment, "?")
+				break
+			}
+			if strings.HasPrefix(segment, ":") {
+				if parts[i] == "" {
+					matched = false
+					break
+				}
+			} else if !utils.EqualFold(parts[i], segment) {
+				matched = false
+				break
+			}
+		}
+		if !matched {
+			continue
+		}
+		for i, segment := range pattern {
+			if i >= len(parts) || segment == "*" {
+				break
+			}
+			if !strings.HasPrefix(segment, ":") {
+				parts[i] = segment
+			}
+		}
+		return
+	}
+}
+
+// Redirect keys and destinations must use the same path normalization as the
+// system middleware, otherwise a rule can redirect straight back to itself.
+func canonicalPath(path string) string {
 	if len(path) <= 1 || strings.HasPrefix(path, "//") {
-		return c.Next()
+		return path
 	}
 	target := strings.TrimRight(path, "/")
 	parts := strings.Split(strings.TrimPrefix(target, "/"), "/")
+	canonicalSystemPathParts(parts)
+	target = strings.Join(parts, "/")
+	if strings.HasPrefix(path, "/") {
+		target = "/" + target
+	}
 	list := target == "/search" || target == "/readers" || target == "/tags" ||
 		parts[0] == "posts" || parts[0] == "books" || strings.HasPrefix(target, "/tags/")
 	// Archive page one and zero-padded page numbers represent the same content.
@@ -39,12 +124,5 @@ func canonicalURLRedirect(c *fiber.Ctx) error {
 	if list {
 		target += "/"
 	}
-	// Compare the entire path so repeated trailing slashes are normalized too.
-	if target != path {
-		if query := string(c.Request().URI().QueryString()); query != "" {
-			target += "?" + query
-		}
-		return c.Redirect(target, http.StatusMovedPermanently)
-	}
-	return c.Next()
+	return target
 }

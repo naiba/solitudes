@@ -6,6 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/siteurl"
 )
 
 // 1x1 transparent GIF pixel
@@ -81,5 +82,5 @@ func trackEmailReadRedirect(c *fiber.Ctx) error {
 
 	// Redirect to the comment's article
 	// Use 302 (Found) instead of 301 (Permanent) to allow tracking on each visit
-	return c.Redirect("/"+comment.Article.Slug, fiber.StatusFound)
+	return c.Redirect(siteurl.ArticlePath(comment.Article.Slug), fiber.StatusFound)
 }

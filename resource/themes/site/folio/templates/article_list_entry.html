@@ -1,4 +1,5 @@
 {{define "site/article_list_entry"}}
+{{/* Article slugs are single URL path segments, not query strings or fragments. */}}
 <div class="article-card">
     {{if .article.IsTopic}}
 {{$comments := .Queries.Comments .article.ID 5}}
@@ -12,7 +13,7 @@
                     {{if .Account}}<a href="/users/{{.Account.ID}}" data-testid="comment-author-link">{{.PublicName}}</a>{{else}}<span>{{.PublicName}}</span>{{end}}
                     <span class="comment-role role-{{.PublicRole}}">{{if eq .PublicRole "admin"}}{{$.tr.T "role_admin"}}{{else if eq .PublicRole "editor"}}{{$.tr.T "role_editor"}}{{else if eq .PublicRole "user"}}{{$.tr.T "role_user"}}{{else}}{{$.tr.T "role_guest"}}{{end}}</span>
                 </div>
-                <a class="topic-comment-text" href="/{{$.article.Slug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="topic-comment-link">{{.Content}}</a>
+                <a class="topic-comment-text" href="/{{pathEscape $.article.Slug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="topic-comment-link">{{.Content}}</a>
             </li>
             {{end}}
         </ul>
@@ -22,7 +23,7 @@
     </div>
     {{else}}
     <div class="article-card-body">
-        <h3 class="article-card-heading">{{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if not .article.Public}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a href="/{{.article.Slug}}" data-testid="article-list-link" class="article-card-title">{{.article.Title}}</a></h3>
+        <h3 class="article-card-heading">{{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if not .article.Public}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a href="/{{pathEscape .article.Slug}}" data-testid="article-list-link" class="article-card-title">{{.article.Title}}</a></h3>
     </div>
     {{template "site/article_list_byline" .}}
     {{end}}
@@ -32,7 +33,7 @@
 {{define "site/article_list_byline"}}
 <div class="article-card-meta{{if .article.IsTopic}} topic-byline{{end}}"{{if .article.IsTopic}} data-testid="topic-byline"{{end}}>
     {{if .article.Author.Nickname}}{{if .article.Author.ID}}<a href="/users/{{.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.article.Author.Nickname}}</a>{{else}}<span>{{.article.Author.Nickname}}</span>{{end}}{{if not .article.IsTopic}}<span aria-hidden="true">·</span>{{end}}{{end}}<time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
-    {{if .article.IsTopic}}<span class="topic-inline-actions">{{if .article.ReadNum}}<span aria-label="{{.tr.T "views"}}"><i class="fa-regular fa-eye" aria-hidden="true"></i> {{.article.ReadNum}}</span>{{end}}{{if .article.CommentNum}}<span aria-label="{{.tr.T "comments"}}"><i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.article.CommentNum}}</span>{{end}}<a href="https://{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a><a href="https://{{.Conf.Site.Domain}}/{{.article.Slug}}" data-testid="topic-reply-link">{{.tr.T "topic_comment_action"}} →</a></span>{{end}}
+    {{if .article.IsTopic}}<span class="topic-inline-actions">{{if .article.ReadNum}}<span aria-label="{{.tr.T "views"}}"><i class="fa-regular fa-eye" aria-hidden="true"></i> {{.article.ReadNum}}</span>{{end}}{{if .article.CommentNum}}<span aria-label="{{.tr.T "comments"}}"><i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.article.CommentNum}}</span>{{end}}<a href="https://{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a><a href="https://{{.Conf.Site.Domain}}/{{pathEscape .article.Slug}}" data-testid="topic-reply-link">{{.tr.T "topic_comment_action"}} →</a></span>{{end}}
     {{if and (not .article.IsTopic) .article.ReadNum}}<small class="article-card-stats"><i class="fa-regular fa-eye" aria-hidden="true"></i> {{.article.ReadNum}}{{if .article.CommentNum}} · <i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.article.CommentNum}}{{end}}</small>{{end}}
 </div>
 {{end}}

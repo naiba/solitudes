@@ -11,11 +11,18 @@ import (
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/siteurl"
 )
 
 func article(c *fiber.Ctx) error {
+	// Route parameters are escaped path segments; decode once before lookup so
+	// sitemap, browser and canonical URLs all identify the same stored slug.
+	slug, err := siteurl.DecodeArticleSlug(c.Params("slug"))
+	if err != nil {
+		return page404(c)
+	}
 	var a model.Article
-	if err := solitudes.System.DB.Preload("Author").Preload("UpdatedBy").Order("created_at DESC").Take(&a, "slug = ?", c.Params("slug")).Error; err != nil {
+	if err := solitudes.System.DB.Preload("Author").Preload("UpdatedBy").Order("created_at DESC").Take(&a, "slug = ?", slug).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return page404(c)
 		}
@@ -46,7 +53,7 @@ func article(c *fiber.Ctx) error {
 			return page404(c)
 		}
 		if uint(version) == a.Version {
-			return c.Redirect("/"+a.Slug, http.StatusMovedPermanently)
+			return c.Redirect(siteurl.ArticlePath(a.Slug), http.StatusMovedPermanently)
 		}
 		a, err = loadArticleRevision(c, a, uint(version))
 		if err != nil {
@@ -100,7 +107,7 @@ func article(c *fiber.Ctx) error {
 		"noindex":            isOldVersion || !a.Public() || pg.Page > 1 || thread != "",
 	}
 	if a.Public() {
-		data["canonical_path"] = "/" + a.Slug
+		data["canonical_path"] = siteurl.ArticlePath(a.Slug)
 		if !isOldVersion {
 			c.Set("Link", "<"+articleMarkdownURL(&a)+">; rel=\"alternate\"; type=\"text/markdown\", <"+publicBaseURL()+"/llms.txt>; rel=\"describedby\"")
 		}

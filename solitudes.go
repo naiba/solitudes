@@ -266,7 +266,7 @@ func initializeDatabase(db *gorm.DB) error {
 	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";").Error; err != nil {
 		return fmt.Errorf("failed to create uuid-ossp extension: %w", err)
 	}
-	if err := db.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.ExternalIdentity{}, &model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.OIDCClient{}, &model.OIDCConsent{}, &model.DatabaseMigration{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}, &model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.FeedVisit{}); err != nil {
+	if err := db.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.ExternalIdentity{}, &model.Passkey{}, &model.PasskeyCeremony{}, &model.OAuthAttempt{}, &model.OIDCClient{}, &model.OIDCConsent{}, &model.DatabaseMigration{}, &model.OIDCAuthRequest{}, &model.OIDCAccessToken{}, &model.OIDCRefreshToken{}, &model.OIDCSigningKey{}, &model.OIDCCryptoKey{}, &model.Article{}, &model.ArticleHistory{}, &model.RedirectRule{}, &model.Comment{}, &model.FeedVisit{}); err != nil {
 		return fmt.Errorf("failed to auto migrate models: %w", err)
 	}
 	if err := model.MigrateDatabasePolicy(db); err != nil {

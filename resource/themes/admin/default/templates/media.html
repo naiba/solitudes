@@ -1,5 +1,6 @@
 {{define "admin/media"}}
 {{template "admin/header" .}}
+{{/* Escape article URL path segments without changing raw slug display text. */}}
 
 <div class="admin-container">
     <div class="page-header">
@@ -25,7 +26,7 @@
                         <td data-label="{{$.Tr.T "filename"}}" class="font-mono text-sm"><a href="/upload/{{.Filename}}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">{{.Filename}}</a></td>
                         <td data-label="{{$.Tr.T "article"}}">
                             {{if .Article.ID}}
-                            <a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{.Article.Slug}}/v{{.Article.Version}}" class="text-blue-600 hover:underline">{{.Article.Title}}</a>
+                            <a target="_blank" rel="noopener noreferrer" href="//{{$.Conf.Site.Domain}}/{{pathEscape .Article.Slug}}/v{{.Article.Version}}" class="text-blue-600 hover:underline">{{.Article.Title}}</a>
                             {{else}}
                             <span class="text-gray-500">—</span>
                             {{end}}

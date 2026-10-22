@@ -15,6 +15,7 @@ import (
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/siteurl"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
@@ -263,7 +264,7 @@ func publicFeedItems(articles []model.Article) []*feeds.Item {
 		}
 		items = append(items, &feeds.Item{
 			Title:       articles[i].Title,
-			Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + "/" + articles[i].Slug},
+			Link:        &feeds.Link{Href: "https://" + solitudes.System.Config.Site.Domain + siteurl.ArticlePath(articles[i].Slug)},
 			Author:      &feeds.Author{Name: authorName},
 			Description: mdExcerpt(articles[i].Content, 200),
 			Content:     luteEngine.MarkdownStr(articles[i].GetIndexID(), articles[i].Content),

@@ -39,7 +39,7 @@
                             placeholder="my-article-slug" 
                             value="{{.Data.article.Slug}}"
                             autocomplete="off">
-                        <p class="text-xs text-gray-500 mt-1">{{.Tr.T "lowercase_hyphens_only"}}</p>
+                        <p class="text-xs text-gray-500 mt-1">{{.Tr.T "article_slug_hint"}}</p>
                 </div>
 
                 <div>
@@ -177,7 +177,8 @@
                 document.getElementById('publishStatus').textContent = '{{.Tr.T "publish_saved_new_changes"}}';
                 return;
             }
-            window.location.href = "/" + data.Slug
+            // Keep reserved URL characters inside the article's single path segment.
+            window.location.href = "/" + encodeURIComponent(data.Slug)
         }).fail((err) => {
             alert('{{.Tr.T "publish_failed"}} ' + err.responseText)
         }).always(() => {

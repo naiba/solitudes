@@ -14,6 +14,7 @@ import (
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/notify"
+	"github.com/naiba/solitudes/pkg/siteurl"
 )
 
 type commentForm struct {
@@ -66,7 +67,7 @@ func commentHandler(c *fiber.Ctx) error {
 			UserAgent:          string(c.Request().Header.UserAgent()),           // required
 			CommentType:        commentType,
 			Referrer:           string(c.Request().Header.Referer()),
-			Permalink:          "https://" + solitudes.System.Config.Site.Domain + "/" + cf.Slug,
+			Permalink:          "https://" + solitudes.System.Config.Site.Domain + siteurl.ArticlePath(cf.Slug),
 			CommentAuthor:      cf.Nickname,
 			CommentAuthorEmail: cf.Email,
 			CommentAuthorURL:   cf.Website,

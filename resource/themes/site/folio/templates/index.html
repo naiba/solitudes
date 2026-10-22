@@ -1,4 +1,5 @@
 {{define "site/index"}}
+{{/* Article slugs are single URL path segments, not query strings or fragments. */}}
 {{template "site/header" .}}
 {{$articles := .Queries.Articles "newest" 7 "without_tag" "Topic"}}
 {{$readers := .Queries.Users "newest" 4}}
@@ -54,20 +55,20 @@
     <section class="home-grid journal-front{{if not $picks}} journal-front-single{{end}}" aria-label="{{.Tr.T "folio_frontpage"}}" data-testid="folio-frontpage">
         <article class="hero-featured" data-testid="folio-story" data-story-slug="{{$featured.Slug}}">
             <span class="section-label">{{.Tr.T "folio_lead_story"}}</span>
-            <h2 class="hero-title"><a href="/{{$featured.Slug}}">{{$featured.Title}}</a></h2>
+            <h2 class="hero-title"><a href="/{{pathEscape $featured.Slug}}">{{$featured.Title}}</a></h2>
             <div class="hero-meta">
                 {{if $featured.Author.Nickname}}{{if $featured.Author.ID}}<a href="/users/{{$featured.Author.ID}}" rel="author" data-testid="article-author-link">{{$featured.Author.Nickname}}</a>{{else}}<span>{{$featured.Author.Nickname}}</span>{{end}}{{end}}
                 <time datetime="{{iso8601 $featured.CreatedAt}}">{{tf $featured.CreatedAt (.Tr.T "date_format")}}</time>
             </div>
             {{if $featured.Content}}<p class="hero-excerpt">{{mdExcerpt $featured.Content 240}}</p>{{end}}
-            <a class="journal-read-link" href="/{{$featured.Slug}}">{{.Tr.T "folio_read_story"}} <span aria-hidden="true">↗</span></a>
+            <a class="journal-read-link" href="/{{pathEscape $featured.Slug}}">{{.Tr.T "folio_read_story"}} <span aria-hidden="true">↗</span></a>
         </article>
         {{if $picks}}
         <div class="journal-front-secondary" data-testid="folio-recommendations">
             <span class="section-label">{{.Tr.T "folio_also_read"}}</span>
             {{range $picks}}{{$article := index $pool .}}
             <article class="journal-secondary-story" data-testid="folio-recommendation" data-story-slug="{{$article.Slug}}">
-                <h2><a href="/{{$article.Slug}}">{{$article.Title}}</a></h2>
+                <h2><a href="/{{pathEscape $article.Slug}}">{{$article.Title}}</a></h2>
                 {{template "site/article_list_byline" (dict "article" $article "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}
                 {{if $article.Content}}<p class="article-card-excerpt">{{mdExcerpt $article.Content 120}}</p>{{end}}
             </article>
@@ -106,7 +107,7 @@
                     <h3 id="journal-comments-title" class="section-label">{{.Tr.T "recent_comments"}}</h3>
                     <ul class="home-comments-list" role="list">{{range $comments}}<li data-testid="home-recent-comment">
                         <div class="home-comment-byline">{{if .AccountID}}<a href="/users/{{.AccountID}}" data-testid="home-comment-author">{{.Nickname}}</a>{{else}}<span>{{.Nickname}}</span>{{end}}<span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else if eq .Role "user"}}{{$.Tr.T "role_user"}}{{else}}{{$.Tr.T "role_guest"}}{{end}}</span><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></div>
-                        <a class="home-comment-excerpt" href="/{{.ArticleSlug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="home-comment-link">{{substr .Content 0 160}}</a>
+                        <a class="home-comment-excerpt" href="/{{pathEscape .ArticleSlug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="home-comment-link">{{substr .Content 0 160}}</a>
                         <span class="home-comment-context">{{$.Tr.T "comment_on"}} {{.ArticleTitle}}</span>
                     </li>{{end}}</ul>
                 </section>

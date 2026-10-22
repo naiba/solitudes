@@ -72,7 +72,7 @@ func newPostgresIdentityTestDB(t testing.TB) *gorm.DB {
 	if err := db.Exec(`CREATE FUNCTION uuid_generate_v4() RETURNS uuid LANGUAGE SQL AS 'SELECT gen_random_uuid()'`).Error; err != nil {
 		t.Fatal(err)
 	}
-	if err := db.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.AuditEvent{}, &model.LoginSummary{}); err != nil {
+	if err := db.AutoMigrate(&model.Account{}, &model.LoginSession{}, &model.EmailAction{}, &model.AuditEvent{}, &model.LoginSummary{}, &model.RedirectRule{}); err != nil {
 		t.Fatal(err)
 	}
 	return db

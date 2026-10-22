@@ -15,11 +15,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"golang.org/x/net/html"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/content"
 	"github.com/naiba/solitudes/pkg/pagination"
+	"github.com/naiba/solitudes/pkg/siteurl"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
@@ -97,6 +99,12 @@ func deleteArticle(c *fiber.Ctx) error {
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		if err := lockRedirectRules(tx); err != nil {
+			return err
+		}
+		if err := tx.Where("article_id = ?", a.ID).Delete(&model.RedirectRule{}).Error; err != nil {
+			return fmt.Errorf("delete article redirects: %w", err)
+		}
 		// 删除文章
 		if err := tx.Delete(&model.Article{}, "id = ?", a.ID).Error; err != nil {
 			return fmt.Errorf("failed to delete article: %w", err)
@@ -201,6 +209,12 @@ func publishHandler(c *fiber.Ctx) error {
 		}
 	}
 
+	// A valid URL segment is required before any lookup or write: otherwise a
+	// reserved slug can publish an article hidden behind a system endpoint.
+	if err := siteurl.ValidateArticleSlug(newArticle.Slug); err != nil {
+		return fiber.NewError(http.StatusBadRequest, err.Error())
+	}
+
 	if newArticle.ID == "" {
 		var existed model.Article
 		if err := solitudes.System.DB.Select("id, author_id").Order("created_at DESC").Take(&existed, "slug = ?", newArticle.Slug).Error; err == nil {
@@ -231,6 +245,24 @@ func publishHandler(c *fiber.Ctx) error {
 	}
 
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		if err := lockRedirectRules(tx); err != nil {
+			return err
+		}
+		if originalArticle.ID != "" {
+			// Re-read under the same lock used by redirect management: concurrent
+			// renames must register the actual previous slug, not a stale snapshot.
+			if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&originalArticle, "id = ?", newArticle.ID).Error; err != nil {
+				return err
+			}
+			if !mayEditArticle(account, &originalArticle) {
+				return fiber.ErrForbidden
+			}
+			newArticle.Version = originalArticle.Version
+			if pa.NewVersion == 1 {
+				newArticle.Version++
+			}
+			newArticle.ReadNum, newArticle.CommentNum = originalArticle.ReadNum, originalArticle.CommentNum
+		}
 		if pa.NewVersion == 1 && originalArticle.ID != "" {
 			history := model.ArticleHistory{
 				EditorID:    &account.ID,
@@ -251,7 +283,7 @@ func publishHandler(c *fiber.Ctx) error {
 			return fmt.Errorf("failed to save article: %w", err)
 		}
 
-		return nil
+		return syncArticleRedirects(tx, &originalArticle, newArticle)
 	})
 
 	if err != nil {

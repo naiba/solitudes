@@ -25,6 +25,7 @@
                 {{if .Account.Role.IsAdmin}}
                 <a href="/admin/comments" class="sidebar-link {{if hasPrefix .Path "/admin/comments"}}active{{end}}" {{if hasPrefix .Path "/admin/comments"}}aria-current="page"{{end}}><i class="fa-regular fa-comments" aria-hidden="true"></i>{{.Tr.T "comments"}}</a>
                 <a href="/admin/media" class="sidebar-link {{if hasPrefix .Path "/admin/media"}}active{{end}}" {{if hasPrefix .Path "/admin/media"}}aria-current="page"{{end}}><i class="fa-regular fa-image" aria-hidden="true"></i>{{.Tr.T "media"}}</a>
+                <a href="/admin/redirects" data-testid="admin-nav-redirects" class="sidebar-link {{if hasPrefix .Path "/admin/redirects"}}active{{end}}" {{if hasPrefix .Path "/admin/redirects"}}aria-current="page"{{end}}><i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>{{.Tr.T "manage_redirects"}}</a>
                 <a href="/admin/tags" class="sidebar-link {{if hasPrefix .Path "/admin/tags"}}active{{end}}" {{if hasPrefix .Path "/admin/tags"}}aria-current="page"{{end}}><i class="fa-solid fa-tags" aria-hidden="true"></i>{{.Tr.T "tags"}}</a>
                 {{end}}
             </section>

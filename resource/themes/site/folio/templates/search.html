@@ -1,4 +1,5 @@
 {{define "site/search"}}
+{{/* Article slugs are single URL path segments, not query strings or fragments. */}}
 {{template "site/header" .}}
 
 <main id="main-content">
@@ -21,7 +22,7 @@
             <ul class="search-result-list">
                 {{range .Data.results}}
                 <li class="search-result-item">
-                    <a href="/{{.Slug}}" class="search-result-title">{{.Title}}</a>
+                    <a href="/{{pathEscape .Slug}}" class="search-result-title">{{.Title}}</a>
                     {{if .Content}}
                     <p class="search-result-excerpt">{{.Content|unsafe}}</p>
                     {{end}}
