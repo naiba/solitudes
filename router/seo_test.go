@@ -2,10 +2,9 @@ package router
 
 import (
 	"encoding/json"
+	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -29,13 +28,13 @@ func TestSiteMetadataUsesMeaningfulTextWithoutKeywordPadding(t *testing.T) {
 			config.Site.SpaceDesc = tc.siteDesc
 			config.Site.SpaceKeywords = "keyword-padding-must-not-appear"
 			solitudes.System = &solitudes.SysVariable{Config: config}
-			app := fiber.New()
-			app.Get("/", func(c *fiber.Ctx) error {
-				c.Locals(solitudes.CtxTranslator, &translator.Translator{})
-				data := injectSiteData(c, fiber.Map{"title": tc.title, "desc": tc.desc})
-				return c.JSON(fiber.Map{"title": data["Title"], "desc": data["Desc"], "path": data["Path"]})
+			app := newTestRouter()
+			app.Get("/", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				requestValue(httpRequest, solitudes.CtxTranslator, &translator.Translator{})
+				data := injectSiteData(writer, httpRequest, viewData{"title": tc.title, "desc": tc.desc})
+				return writeJSON(writer, http.StatusOK, viewData{"title": data["Title"], "desc": data["Desc"], "path": data["Path"]})
 			})
-			resp, err := app.Test(httptest.NewRequest("GET", "/?utm_source=newsletter", nil))
+			resp, err := testRequest(app, httptest.NewRequest("GET", "/?utm_source=newsletter", nil))
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"gopkg.in/yaml.v3"
 
 	"github.com/naiba/solitudes"
@@ -16,18 +15,18 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func settings(c *fiber.Ctx) error {
+func settings(writer http.ResponseWriter, httpRequest *http.Request) error {
 	themesRoot := "resource/themes"
 	availableThemes, err := theme.LoadThemes(themesRoot)
 	if err != nil {
 		availableThemes = &theme.ThemeList{}
 	}
-	c.Status(http.StatusOK).Render("admin/settings", injectSiteData(c, fiber.Map{
-		"title":          c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("site_settings"),
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/settings", injectSiteData(writer, httpRequest, viewData{
+		"title":          requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator).T("site_settings"),
 		"themeListSite":  availableThemes.Site,
 		"themeListAdmin": availableThemes.Admin,
 	}))
-	return nil
+
 }
 
 type settingsRequest struct {
@@ -48,9 +47,9 @@ type settingsRequest struct {
 	ThemeConfig  *string `json:"theme_config,omitempty" form:"theme_config"`
 }
 
-func settingsHandler(c *fiber.Ctx) error {
+func settingsHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
 	var sr settingsRequest
-	if err := c.BodyParser(&sr); err != nil {
+	if err := decodeRequestBody(httpRequest, &sr); err != nil {
 		return err
 	}
 
@@ -58,7 +57,7 @@ func settingsHandler(c *fiber.Ctx) error {
 	themesRoot := "resource/themes"
 	availableThemes, err := theme.LoadThemes(themesRoot)
 	if err != nil {
-		return fiber.NewError(http.StatusInternalServerError, "Failed to load themes: "+err.Error())
+		return newHTTPError(http.StatusInternalServerError, "Failed to load themes: "+err.Error())
 	}
 
 	// Validate on an isolated copy: invalid input must never change the running config.
@@ -98,14 +97,14 @@ func settingsHandler(c *fiber.Ctx) error {
 	if sr.ThemeConfig != nil {
 		var newConfig map[string]interface{}
 		if err := yaml.Unmarshal([]byte(*sr.ThemeConfig), &newConfig); err != nil {
-			return fiber.NewError(http.StatusBadRequest, "Invalid theme config YAML: "+err.Error())
+			return newHTTPError(http.StatusBadRequest, "Invalid theme config YAML: "+err.Error())
 		}
 		candidate.Site.ThemeConfig = newConfig
 	}
 	model.SyncThemeConfig(&candidate, availableThemes)
 
 	if err := model.ValidateThemeConfig(&candidate, availableThemes); err != nil {
-		return fiber.NewError(http.StatusBadRequest, "Theme config validation failed: "+err.Error())
+		return newHTTPError(http.StatusBadRequest, "Theme config validation failed: "+err.Error())
 	}
 
 	for _, fileInput := range []struct {
@@ -115,15 +114,15 @@ func settingsHandler(c *fiber.Ctx) error {
 		{"logo", "data/upload/logo.png", 5 * 1024 * 1024},
 		{"favicon", "data/upload/favicon.ico", 1 * 1024 * 1024},
 	} {
-		file, err := c.FormFile(fileInput.field)
+		file, err := uploadedFile(httpRequest, fileInput.field)
 		if err != nil {
 			continue
 		}
 		contentType := file.Header.Get("Content-Type")
 		if file.Size > fileInput.limit || (!strings.HasPrefix(contentType, "image/") && contentType != "application/octet-stream") {
-			return fiber.NewError(fiber.StatusBadRequest, "invalid "+fileInput.field+" file")
+			return newHTTPError(http.StatusBadRequest, "invalid "+fileInput.field+" file")
 		}
-		if err := c.SaveFile(file, fileInput.destination); err != nil {
+		if err := saveUploadedFile(file, fileInput.destination); err != nil {
 			return err
 		}
 	}

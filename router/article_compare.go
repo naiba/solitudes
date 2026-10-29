@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -28,7 +27,7 @@ func comparisonVersion(value string, maximum uint) (uint, bool) {
 	return uint(version), true
 }
 
-func loadArticleRevision(c *fiber.Ctx, latest model.Article, version uint) (model.Article, error) {
+func loadArticleRevision(writer http.ResponseWriter, httpRequest *http.Request, latest model.Article, version uint) (model.Article, error) {
 	if version == latest.Version {
 		return latest, nil
 	}
@@ -44,7 +43,7 @@ func loadArticleRevision(c *fiber.Ctx, latest model.Article, version uint) (mode
 	}
 	latest.UpdatedByID, latest.UpdatedBy = history.UpdatedByID, model.Account{}
 	if latest.Title == "" {
-		latest.Title = c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("revision_title_unavailable")
+		latest.Title = requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator).T("revision_title_unavailable")
 	}
 	if latest.UpdatedByID != nil {
 		if err := solitudes.System.DB.Take(&latest.UpdatedBy, "id = ?", *latest.UpdatedByID).Error; err != nil {
@@ -54,78 +53,78 @@ func loadArticleRevision(c *fiber.Ctx, latest model.Article, version uint) (mode
 	return latest, nil
 }
 
-func articleCompare(c *fiber.Ctx) error {
+func articleCompare(writer http.ResponseWriter, httpRequest *http.Request) error {
 	// Personalized fragments must never be shared through caches or indexed.
-	c.Set(fiber.HeaderCacheControl, "private, no-store")
-	c.Set(fiber.HeaderXRobotsTag, "noindex, follow")
-	slug, err := siteurl.DecodeArticleSlug(c.Params("slug"))
+	writer.Header().Set("Cache-Control", "private, no-store")
+	writer.Header().Set("X-Robots-Tag", "noindex, follow")
+	slug, err := siteurl.DecodeArticleSlug(routeParam(httpRequest, "slug"))
 	if err != nil {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	var latest model.Article
 	if err := solitudes.System.DB.Preload("Author").Preload("UpdatedBy").Where("slug = ?", slug).Take(&latest).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return page404(c)
+			return page404(writer, httpRequest)
 		}
 		return err
 	}
-	if !canReadArticle(currentAccount(c), &latest) {
-		return page404(c)
+	if !canReadArticle(currentAccount(writer, httpRequest), &latest) {
+		return page404(writer, httpRequest)
 	}
 	if !latest.Public() {
-		c.Set(fiber.HeaderXRobotsTag, "noindex, nofollow")
+		writer.Header().Set("X-Robots-Tag", "noindex, nofollow")
 	}
-	if c.Params("versions") == "" {
-		from, to := c.Query("from"), c.Query("to")
+	if routeParam(httpRequest, "versions") == "" {
+		from, to := queryValue(httpRequest, "from"), queryValue(httpRequest, "to")
 		if from == "" && to == "" {
 			if latest.Version < 2 {
-				return page404(c)
+				return page404(writer, httpRequest)
 			}
 			from, to = strconv.FormatUint(uint64(latest.Version-1), 10), strconv.FormatUint(uint64(latest.Version), 10)
 		}
 		if _, ok := comparisonVersion("v"+from, latest.Version); !ok {
-			return page404(c)
+			return page404(writer, httpRequest)
 		}
 		if _, ok := comparisonVersion("v"+to, latest.Version); !ok {
-			return page404(c)
+			return page404(writer, httpRequest)
 		}
-		return c.Redirect(siteurl.ArticlePath(latest.Slug)+"/compare/v"+from+"...v"+to, http.StatusSeeOther)
+		return redirectResponse(writer, httpRequest, siteurl.ArticlePath(latest.Slug)+"/compare/v"+from+"...v"+to, http.StatusSeeOther)
 	}
-	pair := strings.Split(c.Params("versions"), "...")
+	pair := strings.Split(routeParam(httpRequest, "versions"), "...")
 	if len(pair) != 2 {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	from, ok := comparisonVersion(pair[0], latest.Version)
 	if !ok {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	to, ok := comparisonVersion(pair[1], latest.Version)
 	if !ok {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
-	before, err := loadArticleRevision(c, latest, from)
+	before, err := loadArticleRevision(writer, httpRequest, latest, from)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	if err != nil {
 		return err
 	}
-	after, err := loadArticleRevision(c, latest, to)
+	after, err := loadArticleRevision(writer, httpRequest, latest, to)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	if err != nil {
 		return err
 	}
 	// Apply each revision's own fragment policy BEFORE rendering or comparison.
 	if len(before.Content) > content.MaxDiffBytes || len(after.Content) > content.MaxDiffBytes {
-		return fiber.ErrRequestEntityTooLarge
+		return newHTTPError(http.StatusRequestEntityTooLarge)
 	}
-	before.Content = before.ContentFor(currentAccount(c), accessNoticeFor(c))
-	after.Content = after.ContentFor(currentAccount(c), accessNoticeFor(c))
+	before.Content = before.ContentFor(currentAccount(writer, httpRequest), accessNoticeFor(writer, httpRequest))
+	after.Content = after.ContentFor(currentAccount(writer, httpRequest), accessNoticeFor(writer, httpRequest))
 	rows, err := content.CompareHTML(mdRender(before.GetIndexID(), before.Content), mdRender(after.GetIndexID(), after.Content))
 	if errors.Is(err, content.ErrDiffTooLarge) {
-		return fiber.ErrRequestEntityTooLarge
+		return newHTTPError(http.StatusRequestEntityTooLarge)
 	}
 	if err != nil {
 		return err
@@ -137,7 +136,7 @@ func articleCompare(c *fiber.Ctx) error {
 	// Templates get revision metadata and sanitized changes, never another
 	// path to raw source or the latest article's unfiltered fragments.
 	latest.Content, before.Content, after.Content = "", "", ""
-	data := fiber.Map{
+	data := viewData{
 		"title": fmt.Sprintf("%s · v%d ↔ v%d", latest.Title, from, to), "noindex": true,
 		"article": latest, "before": before, "after": after, "changes": rows, "changed": changed,
 		"comparison": true,
@@ -145,5 +144,5 @@ func articleCompare(c *fiber.Ctx) error {
 	if latest.Public() {
 		data["canonical_path"] = siteurl.ArticlePath(latest.Slug)
 	}
-	return c.Render("site/article_compare", injectSiteData(c, data))
+	return renderPage(writer, httpRequest, http.StatusOK, "site/article_compare", injectSiteData(writer, httpRequest, data))
 }

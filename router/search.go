@@ -12,7 +12,6 @@ import (
 	"github.com/blevesearch/bleve/v2"
 	blevesearch "github.com/blevesearch/bleve/v2/search"
 	blevequery "github.com/blevesearch/bleve/v2/search/query"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -94,16 +93,16 @@ func buildSearchResponses(hits blevesearch.DocumentMatchCollection, articles map
 	return results
 }
 
-func search(c *fiber.Ctx) error {
-	ctx, cancel := context.WithTimeout(c.UserContext(), 5*time.Second)
+func search(writer http.ResponseWriter, httpRequest *http.Request) error {
+	ctx, cancel := context.WithTimeout(httpRequest.Context(), 5*time.Second)
 	defer cancel()
-	page, err := listPage(c.Query("page"))
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
-	keywords := strings.TrimSpace(c.Query("w"))
+	keywords := strings.TrimSpace(queryValue(httpRequest, "w"))
 	if len(keywords) > 300 {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
 	more := false
 	var result []searchResp
@@ -114,7 +113,7 @@ func search(c *fiber.Ctx) error {
 		batchSize := min(maxSearchCandidates, skip+maxSearchResults+1)
 		for offset := 0; ; {
 			if ctx.Err() != nil {
-				return fiber.ErrServiceUnavailable
+				return newHTTPError(http.StatusServiceUnavailable)
 			}
 			searchRequest := bleve.NewSearchRequestOptions(query, batchSize, offset, false)
 			searchRequest.SortBy([]string{"-_score", "_id"})
@@ -123,7 +122,7 @@ func search(c *fiber.Ctx) error {
 			searchResult, err := solitudes.System.Search.SearchInContext(ctx, searchRequest)
 			if err != nil {
 				log.Printf("failed to perform search: %v", err)
-				return fiber.ErrInternalServerError
+				return newHTTPError(http.StatusInternalServerError)
 			}
 
 			articleIDs := make([]string, 0, len(searchResult.Hits))
@@ -159,7 +158,7 @@ func search(c *fiber.Ctx) error {
 				defer liveIndex.Close()
 				batch := liveIndex.NewBatch()
 				for i := range articles {
-					if !articles[i].CanRead(currentAccount(c)) {
+					if !articles[i].CanRead(currentAccount(writer, httpRequest)) {
 						continue
 					}
 					articlesByID[articles[i].ID] = articles[i]
@@ -217,11 +216,11 @@ func search(c *fiber.Ctx) error {
 		}
 	}
 
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("site/search", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	return renderPage(writer, httpRequest, http.StatusOK, "site/search", injectSiteData(writer, httpRequest, viewData{
 		"title":      tr.T("search_result_title", "#SOL.9527.WORD#"),
 		"results":    result,
 		"noindex":    true,
-		"navigation": pageNavigationFor(c, "page", page, more, "search"),
+		"navigation": pageNavigationFor(writer, httpRequest, "page", page, more, "search"),
 	}))
 }

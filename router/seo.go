@@ -4,26 +4,23 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/utils"
 )
 
-func canonicalURLRedirect(c *fiber.Ctx) error {
+func canonicalURLRedirect(writer http.ResponseWriter, httpRequest *http.Request) error {
 	// SEO redirects are for reads only: a 301 on a form/API write can discard
 	// the method and body. Let the normal routing and CSRF checks handle writes.
-	if c.Method() != fiber.MethodGet && c.Method() != fiber.MethodHead {
-		return c.Next()
+	if httpRequest.Method != http.MethodGet && httpRequest.Method != http.MethodHead {
+		return nil
 	}
-	path := c.Path()
+	path := requestPath(httpRequest)
 	target := canonicalPath(path)
 	if target != path {
-		if query := string(c.Request().URI().QueryString()); query != "" {
+		if query := string(httpRequest.URL.RawQuery); query != "" {
 			target += "?" + query
 		}
-		return c.Redirect(target, http.StatusMovedPermanently)
+		return redirectResponse(writer, httpRequest, target, http.StatusMovedPermanently)
 	}
-	return c.Next()
+	return nil
 }
 
 // Mirror the GET route shapes in router.go, preserving registration order where
@@ -50,10 +47,10 @@ var canonicalSystemRoutePatterns = [][]string{
 }
 
 func canonicalSystemPathParts(parts []string) {
-	// Fiber matches route literals case-insensitively, but crawlers do not.
+	// System route literals match case-insensitively, but crawlers do not.
 	// Lowercasing the whole path would corrupt case-sensitive slugs, tags,
 	// identity tokens and asset names; normalize only a matched route's literals.
-	// Use Fiber's ASCII folding, not Unicode folding (e.g. ſ must not become s).
+	// Use ASCII folding, not Unicode folding (e.g. ſ must not become s).
 	for _, pattern := range canonicalSystemRoutePatterns {
 		if len(parts) > len(pattern) && pattern[len(pattern)-1] != "*" {
 			continue
@@ -72,7 +69,7 @@ func canonicalSystemPathParts(parts []string) {
 					matched = false
 					break
 				}
-			} else if !utils.EqualFold(parts[i], segment) {
+			} else if !equalFoldRouteLiteral(parts[i], segment) {
 				matched = false
 				break
 			}

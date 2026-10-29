@@ -1,9 +1,9 @@
 package router
 
 import (
+	"net/http"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -19,20 +19,20 @@ type commenterInfo struct {
 	Website  string `json:"website"`
 }
 
-func commenterInfoHandler(c *fiber.Ctx) error {
-	nickname := c.Query("nickname")
-	email := c.Query("email")
-	website := c.Query("website")
+func commenterInfoHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	nickname := queryValue(httpRequest, "nickname")
+	email := queryValue(httpRequest, "email")
+	website := queryValue(httpRequest, "website")
 
 	if nickname == "" && email == "" && website == "" {
-		return c.JSON(commenterInfoResponse{
+		return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 			Success: false,
 			Message: "at least one field is required",
 		})
 	}
 
 	if nickname != "" && email != "" && website != "" {
-		return c.JSON(commenterInfoResponse{
+		return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 			Success: false,
 			Message: "all fields are filled",
 		})
@@ -55,13 +55,13 @@ func commenterInfoHandler(c *fiber.Ctx) error {
 		err := query.Order("created_at DESC").First(&comment).Error
 
 		if err != nil {
-			return c.JSON(commenterInfoResponse{
+			return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 				Success: false,
 				Message: "no matching comment found",
 			})
 		}
 
-		return c.JSON(commenterInfoResponse{
+		return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 			Success: true,
 			Data: commenterInfo{
 				Nickname: comment.Nickname,
@@ -83,13 +83,13 @@ func commenterInfoHandler(c *fiber.Ctx) error {
 		err := query.Order("created_at DESC").First(&comment).Error
 
 		if err != nil {
-			return c.JSON(commenterInfoResponse{
+			return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 				Success: false,
 				Message: "no matching comment found",
 			})
 		}
 
-		return c.JSON(commenterInfoResponse{
+		return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 			Success: true,
 			Data: commenterInfo{
 				Nickname: comment.Nickname,
@@ -108,21 +108,21 @@ func commenterInfoHandler(c *fiber.Ctx) error {
 			Find(&comments).Error
 
 		if err != nil {
-			return c.JSON(commenterInfoResponse{
+			return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 				Success: false,
 				Message: "database error",
 			})
 		}
 
 		if len(comments) == 0 {
-			return c.JSON(commenterInfoResponse{
+			return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 				Success: false,
 				Message: "no comments found for this nickname",
 			})
 		}
 
 		if len(comments) == 1 {
-			return c.JSON(commenterInfoResponse{
+			return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 				Success: true,
 				Data: commenterInfo{
 					Nickname: comments[0].Nickname,
@@ -143,7 +143,7 @@ func commenterInfoHandler(c *fiber.Ctx) error {
 		}
 
 		if allSame {
-			return c.JSON(commenterInfoResponse{
+			return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 				Success: true,
 				Data: commenterInfo{
 					Nickname: comments[0].Nickname,
@@ -152,13 +152,13 @@ func commenterInfoHandler(c *fiber.Ctx) error {
 			})
 		}
 
-		return c.JSON(commenterInfoResponse{
+		return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 			Success: false,
 			Message: "multiple commenters found, please provide email",
 		})
 	}
 
-	return c.JSON(commenterInfoResponse{
+	return writeJSON(writer, http.StatusOK, commenterInfoResponse{
 		Success: false,
 		Message: "invalid request",
 	})

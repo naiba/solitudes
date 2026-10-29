@@ -4,12 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/88250/lute"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/microcosm-cc/bluemonday"
 	nethtml "golang.org/x/net/html"
@@ -117,39 +117,39 @@ func machineMarkdown(raw, canonical string) (string, error) {
 	return engine.HTML2Markdown(body)
 }
 
-func machineHeaders(c *fiber.Ctx) {
+func machineHeaders(writer http.ResponseWriter, httpRequest *http.Request) {
 	// Recheck visibility on every request. Never let an old ETag return a 304 for
 	// an article that was just made private, and never share authenticated bodies.
-	c.Set("Cache-Control", "no-store")
-	c.Set("X-Content-Type-Options", "nosniff")
-	c.Set("Content-Type", "text/markdown; charset=utf-8")
+	writer.Header().Set("Cache-Control", "no-store")
+	writer.Header().Set("X-Content-Type-Options", "nosniff")
+	writer.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 }
 
 func articleMarkdownURL(a *model.Article) string {
 	return publicBaseURL() + "/read/" + url.PathEscape(a.ID) + "/article.md"
 }
 
-func articleMachineContent(c *fiber.Ctx) error {
-	machineHeaders(c)
-	c.Set("X-Robots-Tag", "noindex, follow")
-	id, err := uuid.Parse(c.Params("id"))
+func articleMachineContent(writer http.ResponseWriter, httpRequest *http.Request) error {
+	machineHeaders(writer, httpRequest)
+	writer.Header().Set("X-Robots-Tag", "noindex, follow")
+	id, err := uuid.Parse(routeParam(httpRequest, "id"))
 	if err != nil {
-		return c.Status(404).SendString("Not found")
+		return writeText(writer, 404, "Not found")
 	}
 	var a model.Article
 	// A stable ID avoids collisions with user-controlled slugs and .md articles.
 	if err := solitudes.System.DB.Preload("Author").Where("id = ? AND visibility = ?", id.String(), model.VisibilityPublic).Take(&a).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return c.Status(404).SendString("Not found")
+			return writeText(writer, 404, "Not found")
 		}
 		return err
 	}
 	canonical := publicBaseURL() + "/" + url.PathEscape(a.Slug)
 	body, err := machineMarkdown(a.Content, canonical)
 	if err != nil {
-		return c.Status(500).SendString("Content unavailable")
+		return writeText(writer, 500, "Content unavailable")
 	}
-	c.Set("Link", "<"+canonical+">; rel=\"canonical\", <"+publicBaseURL()+"/llms.txt>; rel=\"describedby\"")
+	writer.Header().Set("Link", "<"+canonical+">; rel=\"canonical\", <"+publicBaseURL()+"/llms.txt>; rel=\"describedby\"")
 	var out strings.Builder
 	fmt.Fprintf(&out, "# %s\n\nOriginal: <%s>\n\n", markdownText(a.Title), canonical)
 	if a.Author.ID != "" {
@@ -162,22 +162,22 @@ func articleMachineContent(c *fiber.Ctx) error {
 		fmt.Fprintf(&out, "Updated: %s\n\n", a.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z"))
 	}
 	fmt.Fprintf(&out, "Version: %d\n\n%s", a.Version, body)
-	return c.SendString(out.String())
+	return writeText(writer, http.StatusOK, out.String())
 }
 
-func llmsDirectory(c *fiber.Ctx) error {
-	machineHeaders(c)
-	c.Set("X-Robots-Tag", "noindex, follow")
-	page, err := listPage(c.Query("page"))
+func llmsDirectory(writer http.ResponseWriter, httpRequest *http.Request) error {
+	machineHeaders(writer, httpRequest)
+	writer.Header().Set("X-Robots-Tag", "noindex, follow")
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
-		return c.Status(400).SendString("Invalid page")
+		return writeText(writer, 400, "Invalid page")
 	}
 	var articles []model.Article
 	if err := solitudes.System.DB.Select("id,title,slug,content,is_book").Where("visibility = ?", model.VisibilityPublic).Order("created_at DESC,id DESC").Offset((page - 1) * machinePageSize).Limit(machinePageSize + 1).Find(&articles).Error; err != nil {
 		return err
 	}
 	if page > 1 && len(articles) == 0 {
-		return c.Status(404).SendString("Not found")
+		return writeText(writer, 404, "Not found")
 	}
 	more := len(articles) > machinePageSize
 	if more {
@@ -204,5 +204,5 @@ func llmsDirectory(c *fiber.Ctx) error {
 	if page > 1 {
 		fmt.Fprintf(&out, "- [Previous page](%s/llms.txt?page=%d)\n", base, page-1)
 	}
-	return c.SendString(out.String())
+	return writeText(writer, http.StatusOK, out.String())
 }

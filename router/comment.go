@@ -5,10 +5,10 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/adtac/go-akismet/akismet"
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -27,22 +27,22 @@ type commentForm struct {
 	Email    string  `json:"email" validate:"omitempty,email"`
 }
 
-func commentHandler(c *fiber.Ctx) error {
-	account := currentAccount(c)
+func commentHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
 	isAdmin := account != nil && account.Role.IsAdmin()
 	var cf commentForm
-	if err := c.BodyParser(&cf); err != nil {
+	if err := decodeRequestBody(httpRequest, &cf); err != nil {
 		return fmt.Errorf("failed to parse comment form: %w", err)
 	}
 	if account != nil {
 		// Ignore all client-supplied identity fields for a signed-in commenter.
 		cf.Nickname, cf.Email, cf.Website = account.Nickname, account.Email, ""
 	}
-	if err := validator.StructCtx(c.Context(), &cf); err != nil {
+	if err := validator.StructCtx(httpRequest.Context(), &cf); err != nil {
 		return fmt.Errorf("comment form validation failed: %w", err)
 	}
 	if account == nil && (strings.TrimSpace(cf.Nickname) == "" || len([]rune(cf.Nickname)) > 64) {
-		return fiber.NewError(fiber.StatusBadRequest, "guest nickname must be 1–64 characters")
+		return newHTTPError(http.StatusBadRequest, "guest nickname must be 1–64 characters")
 	}
 
 	article, err := verifyArticle(&cf)
@@ -50,7 +50,7 @@ func commentHandler(c *fiber.Ctx) error {
 		return fmt.Errorf("article verification failed: %w", err)
 	}
 	if !canReadArticle(account, article) {
-		return fiber.ErrNotFound
+		return newHTTPError(http.StatusNotFound)
 	}
 
 	commentType, replyTo, err := getCommentType(&cf, article.ID)
@@ -63,10 +63,10 @@ func commentHandler(c *fiber.Ctx) error {
 	if solitudes.System.Config.Akismet != "" && !isAdmin {
 		isSpam, err = akismet.Check(&akismet.Comment{
 			Blog:               "https://" + solitudes.System.Config.Site.Domain, // required
-			UserIP:             c.IP(),                                           // required
-			UserAgent:          string(c.Request().Header.UserAgent()),           // required
+			UserIP:             requestIP(httpRequest),                           // required
+			UserAgent:          string(httpRequest.UserAgent()),                  // required
 			CommentType:        commentType,
-			Referrer:           string(c.Request().Header.Referer()),
+			Referrer:           string(httpRequest.Referer()),
 			Permalink:          "https://" + solitudes.System.Config.Site.Domain + siteurl.ArticlePath(cf.Slug),
 			CommentAuthor:      cf.Nickname,
 			CommentAuthorEmail: cf.Email,
@@ -79,7 +79,7 @@ func commentHandler(c *fiber.Ctx) error {
 	}
 
 	var cm model.Comment
-	if err := fillCommentEntry(c, &cm, &cf, article); err != nil {
+	if err := fillCommentEntry(writer, httpRequest, &cm, &cf, article); err != nil {
 		return err
 	}
 	cm.IsSpam = isSpam
@@ -104,7 +104,7 @@ func commentHandler(c *fiber.Ctx) error {
 		return err
 	}
 	if cm.IsSpam {
-		return c.JSON(fiber.Map{"pending": true})
+		return writeJSON(writer, http.StatusOK, viewData{"pending": true})
 	}
 
 	// Email notify and update email read status
@@ -130,7 +130,7 @@ func commentHandler(c *fiber.Ctx) error {
 	}()
 	// Return only the new identifier, so paginated clients can navigate to the
 	// posted comment without echoing email, IP or notification tracking data.
-	return c.JSON(fiber.Map{"id": cm.ID})
+	return writeJSON(writer, http.StatusOK, viewData{"id": cm.ID})
 }
 
 func generateTrackingToken() (string, error) {
@@ -163,7 +163,7 @@ func getCommentType(cf *commentForm, articleID string) (string, *model.Comment, 
 	return "comment", nil, nil
 }
 
-func fillCommentEntry(c *fiber.Ctx, cm *model.Comment, cf *commentForm, article *model.Article) error {
+func fillCommentEntry(writer http.ResponseWriter, httpRequest *http.Request, cm *model.Comment, cf *commentForm, article *model.Article) error {
 	cm.ReplyTo = cf.ReplyTo
 	cm.Content = cf.Content
 	cm.ArticleID = &article.ID
@@ -172,7 +172,7 @@ func fillCommentEntry(c *fiber.Ctx, cm *model.Comment, cf *commentForm, article 
 		return fmt.Errorf("failed to generate tracking token: %w", err)
 	}
 	cm.EmailTrackingToken = &token
-	if account := currentAccount(c); account != nil {
+	if account := currentAccount(writer, httpRequest); account != nil {
 		cm.AccountID = &account.ID
 		cm.Account = account
 		cm.Nickname = account.Nickname
@@ -181,8 +181,8 @@ func fillCommentEntry(c *fiber.Ctx, cm *model.Comment, cf *commentForm, article 
 		cm.Nickname = strings.TrimSpace(cf.Nickname)
 		cm.Email = cf.Email
 		cm.Website = cf.Website
-		cm.IP = c.IP()
-		cm.UserAgent = string(c.Request().Header.UserAgent())
+		cm.IP = requestIP(httpRequest)
+		cm.UserAgent = string(httpRequest.UserAgent())
 	}
 	cm.Version = cf.Version
 	return nil

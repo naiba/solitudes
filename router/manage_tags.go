@@ -6,34 +6,32 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func tagsManagePage(c *fiber.Ctx) error {
-	data, err := pagedTags(c, solitudes.System.DB)
+func tagsManagePage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	data, err := pagedTags(writer, httpRequest, solitudes.System.DB)
 	if err != nil {
 		return err
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
 	data["title"] = tr.T("manage_tags")
-	return c.Status(http.StatusOK).Render("admin/tags", injectSiteData(c, data))
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/tags", injectSiteData(writer, httpRequest, data))
 }
 
-func deleteTag(c *fiber.Ctx) error {
-	tagName := c.Query("tagName")
+func deleteTag(writer http.ResponseWriter, httpRequest *http.Request) error {
+	tagName := queryValue(httpRequest, "tagName")
 	if err := solitudes.System.DB.Exec("UPDATE articles SET tags = array_remove(tags, ?);", tagName).Error; err != nil {
 		return fmt.Errorf("failed to delete tag: %w", err)
 	}
 	return nil
 }
 
-func renameTag(c *fiber.Ctx) error {
-	oldTagName := c.Query("oldTagName")
-	newTagName := strings.TrimSpace(c.Query("newTagName"))
+func renameTag(writer http.ResponseWriter, httpRequest *http.Request) error {
+	oldTagName := queryValue(httpRequest, "oldTagName")
+	newTagName := strings.TrimSpace(queryValue(httpRequest, "newTagName"))
 	if newTagName == "" {
 		return errors.New("empty tag name")
 	}
@@ -44,9 +42,9 @@ func renameTag(c *fiber.Ctx) error {
 }
 
 // searchTags 搜索标签
-func searchTags(c *fiber.Ctx) error {
-	account := currentAccount(c)
-	query := strings.TrimSpace(c.Query("q"))
+func searchTags(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
+	query := strings.TrimSpace(queryValue(httpRequest, "q"))
 	var tags []string
 	rows, err := readableArticles(solitudes.System.DB, account).Model(&model.Article{}).
 		Select("DISTINCT unnest(tags) AS tag").Where("array_to_string(tags, ',') ILIKE ?", "%"+query+"%").Order("tag").Limit(20).Rows()
@@ -61,14 +59,14 @@ func searchTags(c *fiber.Ctx) error {
 		}
 		tags = append(tags, tag)
 	}
-	return c.JSON(tags)
+	return writeJSON(writer, http.StatusOK, tags)
 }
 
 // searchBooks 搜索专栏
-func searchBooks(c *fiber.Ctx) error {
-	query := strings.TrimSpace(c.Query("q"))
+func searchBooks(writer http.ResponseWriter, httpRequest *http.Request) error {
+	query := strings.TrimSpace(queryValue(httpRequest, "q"))
 	var books []model.Article
-	if err := readableArticles(solitudes.System.DB, currentAccount(c)).Where("is_book = ? AND (title ILIKE ? OR slug ILIKE ?)", true, "%"+query+"%", "%"+query+"%").
+	if err := readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest)).Where("is_book = ? AND (title ILIKE ? OR slug ILIKE ?)", true, "%"+query+"%", "%"+query+"%").
 		Select("id", "title", "slug").
 		Order("created_at DESC").
 		Limit(20).
@@ -89,5 +87,5 @@ func searchBooks(c *fiber.Ctx) error {
 			Slug:  book.Slug,
 		}
 	}
-	return c.JSON(results)
+	return writeJSON(writer, http.StatusOK, results)
 }

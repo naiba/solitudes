@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 	html "github.com/gofiber/template/html/v2"
 
 	"github.com/naiba/solitudes/internal/model"
@@ -47,7 +46,7 @@ func TestRedirectTemplates(t *testing.T) {
 		translated := &translator.Translator{Translator: tr, Trans: tr}
 		render := func(t *testing.T, rows []redirectTemplateRule, role model.Role) *goquery.Document {
 			t.Helper()
-			data := fiber.Map{"Tr": translated, "Conf": &model.Config{}, "Account": &model.Account{ID: "admin", Role: role}, "Path": "/admin/redirects", "Data": fiber.Map{
+			data := viewData{"Tr": translated, "Conf": &model.Config{}, "Account": &model.Account{ID: "admin", Role: role}, "Path": "/admin/redirects", "Data": viewData{
 				"rules": rows, "q": maliciousPath, "total": int64(len(rows)),
 				"navigation": pageNavigation{Page: 2, Previous: "/admin/redirects?q=old&page=1", Next: "/admin/redirects?q=old&page=3"},
 			}}

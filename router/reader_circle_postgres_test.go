@@ -6,8 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -95,9 +93,9 @@ func TestPostgresReaderCirclePrivacyAndActivity(t *testing.T) {
 		activity[0].Excerpt != good.Content || activity[1].Kind != "article" || activity[1].ArticleSlug != public.Slug {
 		t.Fatalf("only public activity should reach feed: %+v err=%v", activity, err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Get("/readers/", readerCircle)
-	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/readers/?page=1001", nil))
+	resp, err := testRequest(app, httptest.NewRequest(http.MethodGet, "/readers/?page=1001", nil))
 	if err != nil {
 		t.Fatal(err)
 	}

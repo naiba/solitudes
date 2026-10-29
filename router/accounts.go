@@ -5,7 +5,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -14,9 +13,9 @@ import (
 	"github.com/naiba/solitudes/internal/model"
 )
 
-func accountPage(c *fiber.Ctx) error {
-	account := currentAccount(c)
-	page, err := listPage(c.Query("passkeys_page"))
+func accountPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
+	page, err := listPage(queryValue(httpRequest, "passkeys_page"))
 	if err != nil {
 		return err
 	}
@@ -43,27 +42,27 @@ func accountPage(c *fiber.Ctx) error {
 			Enabled: externalProviderEnabled(identity.Provider)})
 		linked[identity.Provider] = true
 	}
-	c.Set("Cache-Control", "private, no-store")
-	return c.Status(http.StatusOK).Render("site/account", injectSiteData(c, fiber.Map{
+	writer.Header().Set("Cache-Control", "private, no-store")
+	return renderPage(writer, httpRequest, http.StatusOK, "site/account", injectSiteData(writer, httpRequest, viewData{
 		"title": "Account", "noindex": true, "passkeys": keys, "identities": connected,
 		"linked_github": linked["github"], "linked_google": linked["google"], "linked_oidc": linked["oidc"],
-		"password_changed":    c.Query("password_changed") == "1",
-		"profile_updated":     c.Query("profile_updated") == "1",
-		"passkeys_navigation": pageNavigationFor(c, "passkeys_page", page, more, "passkeys"),
+		"password_changed":    queryValue(httpRequest, "password_changed") == "1",
+		"profile_updated":     queryValue(httpRequest, "profile_updated") == "1",
+		"passkeys_navigation": pageNavigationFor(writer, httpRequest, "passkeys_page", page, more, "passkeys"),
 	}))
 }
 
-func updateAccountProfile(c *fiber.Ctx) error {
-	account := currentAccount(c)
-	nickname := strings.TrimSpace(c.FormValue("nickname"))
-	bio := strings.TrimSpace(c.FormValue("bio"))
-	visible := c.FormValue("directory_visible")
+func updateAccountProfile(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
+	nickname := strings.TrimSpace(formValue(httpRequest, "nickname"))
+	bio := strings.TrimSpace(formValue(httpRequest, "bio"))
+	visible := formValue(httpRequest, "directory_visible")
 	if visible != "" && visible != "on" {
-		return fiber.NewError(http.StatusBadRequest, "invalid reader circle preference")
+		return newHTTPError(http.StatusBadRequest, "invalid reader circle preference")
 	}
 	if nickname == "" || utf8.RuneCountInString(nickname) > 80 || utf8.RuneCountInString(bio) > 500 ||
 		strings.ContainsAny(nickname, "\r\n\x00") || strings.ContainsRune(bio, '\x00') {
-		return fiber.NewError(http.StatusBadRequest, "invalid public profile")
+		return newHTTPError(http.StatusBadRequest, "invalid public profile")
 	}
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		var stored model.Account
@@ -77,24 +76,24 @@ func updateAccountProfile(c *fiber.Ctx) error {
 		if err := tx.Model(&stored).Updates(map[string]interface{}{"nickname": nickname, "bio": bio, "directory_hidden": visible != "on"}).Error; err != nil {
 			return err
 		}
-		return auditMutation(c, tx, "account.profile.update", account.ID, "", "")
+		return auditMutation(writer, httpRequest, tx, "account.profile.update", account.ID, "", "")
 	})
 	if err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
-	return c.Redirect("/account?profile_updated=1", http.StatusSeeOther)
+	requestValue(httpRequest, "audit_recorded", true)
+	return redirectResponse(writer, httpRequest, "/account?profile_updated=1", http.StatusSeeOther)
 }
 
-func changeAccountPassword(c *fiber.Ctx) error {
-	account := currentAccount(c)
-	oldPassword := c.FormValue("old_password")
-	newPassword := c.FormValue("new_password")
+func changeAccountPassword(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
+	oldPassword := formValue(httpRequest, "old_password")
+	newPassword := formValue(httpRequest, "new_password")
 	if account.PasswordHash == "" || bcrypt.CompareHashAndPassword([]byte(account.PasswordHash), []byte(oldPassword)) != nil {
-		return fiber.NewError(http.StatusForbidden, "incorrect current password")
+		return newHTTPError(http.StatusForbidden, "incorrect current password")
 	}
 	if len(newPassword) < 12 || len(newPassword) > 72 {
-		return fiber.NewError(http.StatusBadRequest, "new password must be 12–72 characters")
+		return newHTTPError(http.StatusBadRequest, "new password must be 12–72 characters")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
@@ -105,7 +104,7 @@ func changeAccountPassword(c *fiber.Ctx) error {
 			return err
 		}
 		if err := tx.Where("account_id = ? AND token_hash <> ?", account.ID,
-			secretHash(c.Cookies(solitudes.AuthCookie))).Delete(&model.LoginSession{}).Error; err != nil {
+			secretHash(requestCookie(httpRequest, solitudes.AuthCookie))).Delete(&model.LoginSession{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("account_id = ?", account.ID).Delete(&model.OIDCRefreshToken{}).Error; err != nil {
@@ -115,16 +114,16 @@ func changeAccountPassword(c *fiber.Ctx) error {
 	}); err != nil {
 		return err
 	}
-	return c.Redirect("/account?password_changed=1", http.StatusSeeOther)
+	return redirectResponse(writer, httpRequest, "/account?password_changed=1", http.StatusSeeOther)
 }
 
 // An OAuth-only account must retain at least one usable sign-in method.
-func unlinkAccountIdentity(c *fiber.Ctx) error {
-	provider := c.Params("provider")
+func unlinkAccountIdentity(writer http.ResponseWriter, httpRequest *http.Request) error {
+	provider := routeParam(httpRequest, "provider")
 	if provider != "github" && provider != "google" && provider != "oidc" {
-		return fiber.ErrNotFound
+		return newHTTPError(http.StatusNotFound)
 	}
-	account := currentAccount(c)
+	account := currentAccount(writer, httpRequest)
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		var owner model.Account
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&owner, "id = ?", account.ID).Error; err != nil {
@@ -139,21 +138,21 @@ func unlinkAccountIdentity(c *fiber.Ctx) error {
 			return err
 		}
 		if owner.PasswordHash == "" && keys == 0 && !usableIdentity {
-			return fiber.NewError(http.StatusConflict, "cannot remove the last sign-in method")
+			return newHTTPError(http.StatusConflict, "cannot remove the last sign-in method")
 		}
 		result := tx.Where("account_id = ? AND provider = ?", account.ID, provider).Delete(&model.ExternalIdentity{})
 		if result.Error != nil {
 			return result.Error
 		}
 		if result.RowsAffected == 0 {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
 		return nil
 	})
 	if err != nil {
 		return err
 	}
-	return c.Redirect("/account", http.StatusSeeOther)
+	return redirectResponse(writer, httpRequest, "/account", http.StatusSeeOther)
 }
 
 func hasUsableExternalIdentity(tx *gorm.DB, accountID, exceptProvider string) (bool, error) {
@@ -184,18 +183,18 @@ func externalProviderEnabled(provider string) bool {
 	}
 }
 
-func usersPage(c *fiber.Ctx) error {
-	return adminUsersPage(c)
+func usersPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	return adminUsersPage(writer, httpRequest)
 }
 
-func setUserRole(c *fiber.Ctx) error {
-	id := c.Params("id")
-	role := model.Role(strings.TrimSpace(c.FormValue("role")))
+func setUserRole(writer http.ResponseWriter, httpRequest *http.Request) error {
+	id := routeParam(httpRequest, "id")
+	role := model.Role(strings.TrimSpace(formValue(httpRequest, "role")))
 	if role != model.RoleAdmin && role != model.RoleEditor && role != model.RoleUser {
-		return fiber.NewError(http.StatusBadRequest, "invalid role")
+		return newHTTPError(http.StatusBadRequest, "invalid role")
 	}
-	if id == currentAccount(c).ID {
-		return fiber.NewError(http.StatusForbidden, "cannot change your own role")
+	if id == currentAccount(writer, httpRequest).ID {
+		return newHTTPError(http.StatusForbidden, "cannot change your own role")
 	}
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		var account model.Account
@@ -210,11 +209,11 @@ func setUserRole(c *fiber.Ctx) error {
 		if err := tx.Model(&account).Update("role", role).Error; err != nil {
 			return err
 		}
-		return auditMutation(c, tx, "user.role.update", account.ID, "", string(previous)+" -> "+string(role))
+		return auditMutation(writer, httpRequest, tx, "user.role.update", account.ID, "", string(previous)+" -> "+string(role))
 	})
 	if err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
-	return c.Redirect("/admin/users", http.StatusSeeOther)
+	requestValue(httpRequest, "audit_recorded", true)
+	return redirectResponse(writer, httpRequest, "/admin/users", http.StatusSeeOther)
 }

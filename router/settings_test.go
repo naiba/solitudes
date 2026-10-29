@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -36,16 +35,16 @@ func TestCactusSettings(t *testing.T) {
 		},
 	}
 
-	app := fiber.New()
+	app := newTestRouter()
 	// Mock config save
 	solitudes.System.Config.ConfigFilePath = "settings.yml"
-	app.Post("/settings", func(c *fiber.Ctx) error {
+	app.Post("/settings", func(writer http.ResponseWriter, httpRequest *http.Request) error {
 		// Ensure theme directories exist for validation
 		os.MkdirAll("resource/themes/site/cactus", 0755)
 		os.WriteFile("resource/themes/site/cactus/metadata.json", []byte(`{"name":"Cactus","id":"cactus","config":{"cactus.customcode":"string","cactus.headermenus":"array","cactus.footermenus":"array"}}`), 0644)
 		os.MkdirAll("resource/themes/admin/default", 0755)
 		os.WriteFile("resource/themes/admin/default/metadata.json", []byte(`{"name":"Default","id":"default"}`), 0644)
-		return settingsHandler(c)
+		return settingsHandler(writer, httpRequest)
 	})
 
 	// Mock request payload
@@ -70,7 +69,7 @@ func TestCactusSettings(t *testing.T) {
 	req := httptest.NewRequest("POST", "/settings", strings.NewReader(string(body)))
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := app.Test(req)
+	resp, err := testRequest(app, req)
 	assert.Nil(t, err)
 	if resp.StatusCode != http.StatusOK {
 		buf := new(strings.Builder)
@@ -112,7 +111,7 @@ func TestInvalidSettingsDoNotChangeConfigOrSave(t *testing.T) {
 	cfg.Site.SpaceName = "Original title"
 	cfg.Site.ThemeConfig = map[string]interface{}{"keep": "unchanged"}
 	solitudes.System = &solitudes.SysVariable{Config: cfg}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Post("/settings", settingsHandler)
 
 	for _, payload := range []string{
@@ -122,8 +121,8 @@ func TestInvalidSettingsDoNotChangeConfigOrSave(t *testing.T) {
 		`{"site_title":"Tampered","site_theme":"cactus","theme_config":"[not a map]"}`,
 	} {
 		req := httptest.NewRequest(http.MethodPost, "/settings", strings.NewReader(payload))
-		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-		resp, err := app.Test(req, -1)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}

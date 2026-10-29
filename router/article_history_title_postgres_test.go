@@ -9,7 +9,6 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/blevesearch/bleve/v2"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -43,10 +42,10 @@ func TestPostgresPublishSnapshotsTitleWithContent(t *testing.T) {
 		t.Fatal(err)
 	}
 	viewer := &owner
-	app := fiber.New()
-	app.Post("/admin/publish", func(c *fiber.Ctx) error {
-		c.Locals(solitudes.CtxAccount, viewer)
-		return publishHandler(c)
+	app := newTestRouter()
+	app.Post("/admin/publish", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, viewer)
+		return publishHandler(writer, httpRequest)
 	})
 	save := func(title, body, slug, newVersion string) int {
 		t.Helper()
@@ -54,8 +53,8 @@ func TestPostgresPublishSnapshotsTitleWithContent(t *testing.T) {
 		form.Set("author_id", reader.ID)
 		form.Set("updated_by_id", reader.ID)
 		req := httptest.NewRequest(http.MethodPost, "/admin/publish", strings.NewReader(form.Encode()))
-		req.Header.Set("Content-Type", fiber.MIMEApplicationForm)
-		resp, err := app.Test(req, -1)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -185,7 +184,7 @@ func TestPostgresHistoricalTitleRenderingAndMissingTitle(t *testing.T) {
 		if err := LoadTemplates(); err != nil {
 			t.Fatal(err)
 		}
-		app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+		app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 		app.Use(trans)
 		app.Get("/:slug/:version?", article)
 		for _, template := range []byte{solitudes.ArticleTemplateID, solitudes.PageTemplateID} {
@@ -198,7 +197,7 @@ func TestPostgresHistoricalTitleRenderingAndMissingTitle(t *testing.T) {
 				} {
 					req := httptest.NewRequest(http.MethodGet, "/"+a.Slug+version.path, nil)
 					req.Header.Set("Accept-Language", locale.language)
-					resp, err := app.Test(req, -1)
+					resp, err := testRequest(app, req)
 					if err != nil {
 						t.Fatal(err)
 					}

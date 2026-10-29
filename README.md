@@ -4,7 +4,7 @@
 
 [中文](README_zh.md)
 
-A multi-user blog built with Go and Fiber, with full-text search, nested series, revisions, short posts, comments, a reader circle, feeds and switchable themes. It also serves as an OIDC provider for other applications.
+A multi-user blog built with Go and chi, with full-text search, nested series, revisions, short posts, comments, a reader circle, feeds and switchable themes. It also serves as an OIDC provider for other applications.
 
 ## Installation
 

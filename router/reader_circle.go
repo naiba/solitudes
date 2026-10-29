@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -134,8 +133,8 @@ func recentReaderActivity() ([]readerCircleActivity, error) {
 	return activity, err
 }
 
-func readerCircle(c *fiber.Ctx) error {
-	page, err := profilePageNumber(c, "page")
+func readerCircle(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := profilePageNumber(writer, httpRequest, "page")
 	if err != nil {
 		return err
 	}
@@ -157,9 +156,9 @@ func readerCircle(c *fiber.Ctx) error {
 	}
 	noindex := len(latest) == 0 || page > 1
 	if noindex {
-		c.Set("X-Robots-Tag", "noindex, follow")
+		writer.Header().Set("X-Robots-Tag", "noindex, follow")
 	}
-	return c.Status(http.StatusOK).Render("site/reader_circle", injectSiteData(c, fiber.Map{
+	return renderPage(writer, httpRequest, http.StatusOK, "site/reader_circle", injectSiteData(writer, httpRequest, viewData{
 		"title": "Reader circle", "noindex": noindex,
 		"active": active, "latest": latest, "activity": activity, "page": page,
 		"previous": page > 1, "more": more,

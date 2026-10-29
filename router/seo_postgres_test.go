@@ -3,8 +3,6 @@ package router
 import (
 	"encoding/json"
 	"encoding/xml"
-	"github.com/PuerkitoBio/goquery"
-	"github.com/naiba/solitudes/pkg/translator"
 	"io"
 	"net/http/httptest"
 	"net/url"
@@ -12,7 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/PuerkitoBio/goquery"
+	"github.com/naiba/solitudes/pkg/translator"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -40,11 +39,11 @@ func TestPostgresSitemapOnlyIncludesPublicURLsAndEscapesXML(t *testing.T) {
 	if err := db.Model(&public).UpdateColumn("updated_at", nil).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Get("/sitemap.xml", sitemapHandler)
 	readLocations := func() map[string]string {
 		t.Helper()
-		resp, err := app.Test(httptest.NewRequest("GET", "/sitemap.xml", nil), -1)
+		resp, err := testRequest(app, httptest.NewRequest("GET", "/sitemap.xml", nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -126,7 +125,7 @@ func TestPostgresArchiveSEOAndArticleTagLinks(t *testing.T) {
 			if err := LoadTemplates(); err != nil {
 				t.Fatal(err)
 			}
-			app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+			app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 			app.Use(trans)
 			app.Get("/posts/:page?/", posts)
 			app.Get("/books/:page?/", book)
@@ -138,7 +137,7 @@ func TestPostgresArchiveSEOAndArticleTagLinks(t *testing.T) {
 			}{
 				{"/posts/", 200}, {"/books/", 200}, {"/posts/2/", 404}, {"/books/2/", 404}, {"/tags/" + url.PathEscape(tag) + "/2/", 404},
 			} {
-				resp, err := app.Test(httptest.NewRequest("GET", tc.path, nil), -1)
+				resp, err := testRequest(app, httptest.NewRequest("GET", tc.path, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -147,7 +146,7 @@ func TestPostgresArchiveSEOAndArticleTagLinks(t *testing.T) {
 					t.Errorf("%s status=%d want %d", tc.path, resp.StatusCode, tc.status)
 				}
 			}
-			resp, err := app.Test(httptest.NewRequest("GET", "/seo-story", nil), -1)
+			resp, err := testRequest(app, httptest.NewRequest("GET", "/seo-story", nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -169,7 +168,7 @@ func TestPostgresArchiveSEOAndArticleTagLinks(t *testing.T) {
 				t.Errorf("tag link=%q want %q", href, want)
 			}
 			if href == want {
-				tagResp, err := app.Test(httptest.NewRequest("GET", strings.TrimPrefix(href, "https://example.test"), nil), -1)
+				tagResp, err := testRequest(app, httptest.NewRequest("GET", strings.TrimPrefix(href, "https://example.test"), nil))
 				if err != nil {
 					t.Fatal(err)
 				}

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"gorm.io/gorm"
@@ -22,13 +21,13 @@ import (
 type oidcBrowserKey struct{}
 type oidcBrowserIdentity struct{ sessionHash string }
 
-func oidcBrowser(c *fiber.Ctx) oidcBrowserIdentity {
-	if c.Cookies(solitudes.AuthCookie) == "" {
+func oidcBrowser(writer http.ResponseWriter, httpRequest *http.Request) oidcBrowserIdentity {
+	if requestCookie(httpRequest, solitudes.AuthCookie) == "" {
 		return oidcBrowserIdentity{}
 	}
 	// Protocol routes precede the site's auth middleware. Resolve the cookie
 	// against live sessions below, never trust request parameters or ID hints.
-	return oidcBrowserIdentity{secretHash(c.Cookies(solitudes.AuthCookie))}
+	return oidcBrowserIdentity{secretHash(requestCookie(httpRequest, solitudes.AuthCookie))}
 }
 
 type oidcConsentDecision string
@@ -122,10 +121,10 @@ func evaluateOIDCConsent(db *gorm.DB, request *oidcAuthRequest, browser oidcBrow
 	return oidcConsentReady, nil
 }
 
-func completeOIDCConsent(c *fiber.Ctx, original *oidcAuthRequest, explicit bool) (*oidcAuthRequest, oidcConsentDecision, error) {
+func completeOIDCConsent(writer http.ResponseWriter, httpRequest *http.Request, original *oidcAuthRequest, explicit bool) (*oidcAuthRequest, oidcConsentDecision, error) {
 	var request *oidcAuthRequest
 	var decision oidcConsentDecision
-	err := solitudes.System.DB.WithContext(c.UserContext()).Transaction(func(tx *gorm.DB) error {
+	err := solitudes.System.DB.WithContext(httpRequest.Context()).Transaction(func(tx *gorm.DB) error {
 		if _, err := lockOIDCClient(tx, original.ClientID, true); err != nil {
 			return err
 		}
@@ -134,14 +133,14 @@ func completeOIDCConsent(c *fiber.Ctx, original *oidcAuthRequest, explicit bool)
 			return err
 		}
 		if explicit && row.Approved {
-			return fiber.ErrBadRequest
+			return newHTTPError(http.StatusBadRequest)
 		}
 		var err error
 		request, err = oidcRequestFromRow(row)
 		if err != nil {
 			return err
 		}
-		decision, err = evaluateOIDCConsent(tx, request, oidcBrowser(c), explicit, time.Now())
+		decision, err = evaluateOIDCConsent(tx, request, oidcBrowser(writer, httpRequest), explicit, time.Now())
 		if err != nil {
 			return err
 		}
@@ -176,7 +175,7 @@ func completeOIDCConsent(c *fiber.Ctx, original *oidcAuthRequest, explicit bool)
 			// Approval expands durable authority: its success audit must commit
 			// with the grant and request, not in the middleware's best-effort
 			// fallback. A later request-update failure rolls this event back too.
-			if err := saveAudit(c.UserContext(), tx, model.AuditEvent{
+			if err := saveAudit(httpRequest.Context(), tx, model.AuditEvent{
 				Action: "oidc.consent", Outcome: "success", ActorID: *request.AccountID,
 				ClientID: request.ClientID, TargetID: request.ID,
 				Method: http.MethodPost, Route: "/oidc/consent", Status: http.StatusFound,
@@ -188,20 +187,20 @@ func completeOIDCConsent(c *fiber.Ctx, original *oidcAuthRequest, explicit bool)
 	})
 	if err == nil && explicit && decision == oidcConsentReady {
 		// Suppress duplicate middleware success events only after commit.
-		c.Locals("audit_recorded", true)
+		requestValue(httpRequest, "audit_recorded", true)
 	}
 	return request, decision, err
 }
 
-func oidcConsentResponse(c *fiber.Ctx, request *oidcAuthRequest, decision oidcConsentDecision) error {
+func oidcConsentResponse(writer http.ResponseWriter, httpRequest *http.Request, request *oidcAuthRequest, decision oidcConsentDecision) error {
 	if slices.Contains(request.req.Prompt, oidc.PromptNone) {
 		return oidcHTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			op.AuthRequestError(w, r, &request.req, decision.protocolError(), activeOIDCProvider)
-		}))(c)
+		}))(writer, httpRequest)
 	}
-	return c.Redirect("/login?return_to="+url.QueryEscape("/oidc/consent?authRequestID="+request.ID), http.StatusFound)
+	return redirectResponse(writer, httpRequest, "/login?return_to="+url.QueryEscape("/oidc/consent?authRequestID="+request.ID), http.StatusFound)
 }
 
-func oidcBrowserContext(c *fiber.Ctx) context.Context {
-	return context.WithValue(c.UserContext(), oidcBrowserKey{}, oidcBrowser(c))
+func oidcBrowserContext(writer http.ResponseWriter, httpRequest *http.Request) context.Context {
+	return context.WithValue(httpRequest.Context(), oidcBrowserKey{}, oidcBrowser(writer, httpRequest))
 }

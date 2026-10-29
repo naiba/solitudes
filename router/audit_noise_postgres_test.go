@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -67,22 +65,22 @@ func TestPostgresAuditRoutineRequestsDoNotHideSecurityEvents(t *testing.T) {
 		{"POST", "/admin/settings", "", "", "request.error", 500, true},
 	} {
 		t.Run(tc.method+tc.path+"/"+http.StatusText(tc.status)+"/"+tc.reason, func(t *testing.T) {
-			app := fiber.New()
+			app := newTestRouter()
 			app.Use(auditMiddleware)
-			app.Add(tc.method, tc.path, func(c *fiber.Ctx) error {
-				c.Locals(solitudes.CtxAccount, &admin)
+			app.Add(tc.method, tc.path, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				requestValue(httpRequest, solitudes.CtxAccount, &admin)
 				if tc.reason != "" {
-					c.Locals("audit_reason", tc.reason)
+					requestValue(httpRequest, "audit_reason", tc.reason)
 				}
 				if tc.outcome != "" {
-					c.Locals("audit_outcome", tc.outcome)
+					requestValue(httpRequest, "audit_outcome", tc.outcome)
 				}
-				c.Locals("audit_recorded", tc.recorded)
-				return c.SendStatus(tc.status)
+				requestValue(httpRequest, "audit_recorded", tc.recorded)
+				return writeStatus(writer, tc.status)
 			})
 			req := httptest.NewRequest(tc.method, tc.path+"?page=2&token=never-record", nil)
 			req.Header.Set("Authorization", "Bearer never-record")
-			resp, err := app.Test(req)
+			resp, err := testRequest(app, req)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -124,15 +122,15 @@ func TestPostgresAuditSessionLoginRemainsExactlyOnce(t *testing.T) {
 		{"POST", "/auth/passkey/login/finish", "passkey"},
 		{"GET", "/auth/github/callback", "oauth"},
 	} {
-		app := fiber.New()
+		app := newTestRouter()
 		app.Use(auditMiddleware)
-		app.Add(tc.method, tc.path, func(c *fiber.Ctx) error {
-			if err := issueLoginSession(c, &admin, false); err != nil {
+		app.Add(tc.method, tc.path, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+			if err := issueLoginSession(writer, httpRequest, &admin, false); err != nil {
 				return err
 			}
-			return c.SendStatus(http.StatusOK)
+			return writeStatus(writer, http.StatusOK)
 		})
-		resp, err := app.Test(httptest.NewRequest(tc.method, tc.path, nil))
+		resp, err := testRequest(app, httptest.NewRequest(tc.method, tc.path, nil))
 		if err != nil {
 			t.Fatal(err)
 		}

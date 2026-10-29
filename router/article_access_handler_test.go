@@ -7,18 +7,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
 
 func TestPublishRejectsInvalidAudienceAndMalformedAccessBeforeWriting(t *testing.T) {
 	for _, role := range []model.Role{model.RoleAdmin, model.RoleEditor} {
-		app := fiber.New()
-		app.Use(func(c *fiber.Ctx) error {
-			c.Locals(solitudes.CtxAccount, &model.Account{ID: "author", Role: role})
-			return c.Next()
+		app := newTestRouter()
+		app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+			requestValue(httpRequest, solitudes.CtxAccount, &model.Account{ID: "author", Role: role})
+			return nil
 		})
 		app.Post("/publish", publishHandler)
 		for _, tc := range []struct{ visibility, content string }{
@@ -29,7 +27,7 @@ func TestPublishRejectsInvalidAudienceAndMalformedAccessBeforeWriting(t *testing
 			form := url.Values{"visibility": {tc.visibility}, "content": {tc.content}, "slug": {"test"}, "title": {"Test"}, "template": {"1"}}
 			req := httptest.NewRequest(http.MethodPost, "/publish", strings.NewReader(form.Encode()))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			resp, err := app.Test(req)
+			resp, err := testRequest(app, req)
 			if err != nil {
 				t.Fatal(err)
 			}

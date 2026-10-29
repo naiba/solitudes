@@ -13,7 +13,7 @@ import (
 const MaxPathLength = 2048
 
 func IsSystemPath(path string) bool {
-	// Match Fiber's ASCII-only route folding, not Unicode lookalikes (for
+	// Match the system routes' ASCII-only folding, not Unicode lookalikes (for
 	// example Kelvin sign K is not the fixed route letter K).
 	path = strings.Map(func(r rune) rune {
 		if r >= 'A' && r <= 'Z' {
@@ -54,7 +54,7 @@ func ValidateArticleSlug(slug string) error {
 
 // DecodeArticleSlug applies exactly one path decoding, never query decoding:
 // '+' is a literal plus, and a stored '%2F' must not become a slash on a second
-// decode. Fiber's UnescapePath remains disabled to preserve route boundaries.
+// decode. The HTTP router preserves escaped segments to retain route boundaries.
 func DecodeArticleSlug(raw string) (string, error) {
 	slug, err := url.PathUnescape(raw)
 	if err != nil {

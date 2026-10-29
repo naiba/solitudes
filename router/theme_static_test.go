@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
@@ -24,7 +23,7 @@ func (themeStaticTestViews) Render(w io.Writer, name string, _ interface{}, _ ..
 	return err
 }
 
-func newThemeStaticTestApp(t *testing.T) *fiber.App {
+func newThemeStaticTestApp(t *testing.T) *testHTTPRouter {
 	t.Helper()
 
 	cfg := &model.Config{}
@@ -34,7 +33,7 @@ func newThemeStaticTestApp(t *testing.T) *fiber.App {
 	solitudes.System = &solitudes.SysVariable{Config: cfg}
 	translator.Init()
 
-	app := fiber.New(fiber.Config{Views: themeStaticTestViews{}})
+	app := newTestRouter(testHTTPOptions{Views: themeStaticTestViews{}})
 	app.Use(trans, auth)
 	app.Get("/static/:kind/:theme/*", themeStaticHandler)
 	return app
@@ -56,7 +55,7 @@ func TestThemeStaticHandlerServesThemeAsset(t *testing.T) {
 
 	app := newThemeStaticTestApp(t)
 	req := httptest.NewRequest(http.MethodGet, "/static/site/cactus/css/main.css", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatalf("request theme asset: %v", err)
 	}
@@ -88,7 +87,7 @@ func TestThemeStaticHandlerBlocksTraversalOutsideThemeRoot(t *testing.T) {
 
 	app := newThemeStaticTestApp(t)
 	req := httptest.NewRequest(http.MethodGet, "/static/site/cactus/../../../../../data/conf.yml", nil)
-	resp, err := app.Test(req, -1)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatalf("request traversal path: %v", err)
 	}
@@ -121,7 +120,7 @@ func TestThemeStaticHandlerRejectsInvalidThemeNameAndSymlink(t *testing.T) {
 		"/static/admin/%2e%2e/css/main.css",
 	} {
 		t.Run(requestPath, func(t *testing.T) {
-			resp, err := app.Test(httptest.NewRequest(http.MethodGet, requestPath, nil), -1)
+			resp, err := testRequest(app, httptest.NewRequest(http.MethodGet, requestPath, nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -138,14 +137,14 @@ func TestThemePreviewRejectsTraversalAndSymlink(t *testing.T) {
 	t.Chdir(t.TempDir())
 	writeThemeStaticTestFile(t, "resource/themes/site/cactus/screenshot.png", "preview")
 	writeThemeStaticTestFile(t, "data/conf.yml", "secret config")
-	app := fiber.New()
+	app := newTestRouter()
 	app.Get("/admin/theme/preview/:kind/:name", themePreview)
 	for _, requestPath := range []string{
 		"/admin/theme/preview/site/cactus",
 		"/admin/theme/preview/site/%2e%2e",
 		"/admin/theme/preview/site/%2e%2e%2f%2e%2e",
 	} {
-		resp, err := app.Test(httptest.NewRequest(http.MethodGet, requestPath, nil), -1)
+		resp, err := testRequest(app, httptest.NewRequest(http.MethodGet, requestPath, nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -164,7 +163,7 @@ func TestThemePreviewRejectsTraversalAndSymlink(t *testing.T) {
 		"resource/themes/site/cactus/screenshot.png"); err != nil {
 		t.Fatal(err)
 	}
-	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/admin/theme/preview/site/cactus", nil), -1)
+	resp, err := testRequest(app, httptest.NewRequest(http.MethodGet, "/admin/theme/preview/site/cactus", nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +175,7 @@ func TestThemePreviewRejectsTraversalAndSymlink(t *testing.T) {
 
 func TestThemePreviewUsesSameRootResourceForBothKinds(t *testing.T) {
 	t.Chdir(t.TempDir())
-	app := fiber.New()
+	app := newTestRouter()
 	app.Get("/preview/:kind/:name", themePreview)
 	writeThemeStaticTestFile(t, "data/conf.yml", "private configuration")
 	for _, kind := range []string{"site", "admin"} {
@@ -184,7 +183,7 @@ func TestThemePreviewUsesSameRootResourceForBothKinds(t *testing.T) {
 			root := filepath.Join("resource", "themes", kind, "sample")
 			writeThemeStaticTestFile(t, filepath.Join(root, "screenshot.png"), kind+" preview")
 			for _, name := range []string{"sample", "missing", "%2e%2e", "%2e%2e%2fsample"} {
-				response, err := app.Test(httptest.NewRequest(http.MethodGet, "/preview/"+kind+"/"+name, nil), -1)
+				response, err := testRequest(app, httptest.NewRequest(http.MethodGet, "/preview/"+kind+"/"+name, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -205,7 +204,7 @@ func TestThemePreviewUsesSameRootResourceForBothKinds(t *testing.T) {
 			if err := os.Symlink(filepath.Join("..", "..", "..", "..", "data", "conf.yml"), file); err != nil {
 				t.Fatal(err)
 			}
-			response, err := app.Test(httptest.NewRequest(http.MethodGet, "/preview/"+kind+"/sample", nil), -1)
+			response, err := testRequest(app, httptest.NewRequest(http.MethodGet, "/preview/"+kind+"/sample", nil))
 			if err != nil {
 				t.Fatal(err)
 			}

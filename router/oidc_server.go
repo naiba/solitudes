@@ -15,7 +15,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/go-chi/chi/v5"
 	googleuuid "github.com/google/uuid"
 	"github.com/hashicorp/go-uuid"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
@@ -52,24 +52,26 @@ func newOIDCProvider() (*op.Provider, error) {
 	return op.NewOpenIDProvider(issuer, config, &oidcStorage{db: solitudes.System.DB}, options...)
 }
 
-func oidcHTTPHandler(provider http.Handler) fiber.Handler {
-	return func(c *fiber.Ctx) error {
-		if len(c.Body()) > 1<<20 {
-			return fiber.ErrRequestEntityTooLarge
-		}
-		address := publicBaseURL() + c.OriginalURL()
-		metadata := c.Path() == "/.well-known/openid-configuration" || c.Path() == "/.well-known/oauth-authorization-server"
-		if c.Path() == "/.well-known/oauth-authorization-server" {
-			address = publicBaseURL() + "/.well-known/openid-configuration"
-		}
-		r, err := http.NewRequestWithContext(oidcBrowserContext(c), c.Method(), address, bytes.NewReader(c.Body()))
+func oidcHTTPHandler(provider http.Handler) endpointHandler {
+	return func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		// Keep a replayable, bounded body because protocol audit also reads client_id.
+		body, err := io.ReadAll(http.MaxBytesReader(writer, httpRequest.Body, 1<<20))
 		if err != nil {
-			return err
+			return newHTTPError(http.StatusRequestEntityTooLarge)
 		}
-		c.Request().Header.VisitAll(func(key, value []byte) { r.Header.Add(string(key), string(value)) })
-		r.Host = c.Hostname()
+		httpRequest.Body = io.NopCloser(bytes.NewReader(body))
+		// The provider owns another chi router. Isolate its route context so
+		// aliases and protocol patterns cannot reuse or overwrite the outer route.
+		protocolContext := context.WithValue(oidcBrowserContext(writer, httpRequest), chi.RouteCtxKey, (*chi.Context)(nil))
+		r := httpRequest.Clone(protocolContext)
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		metadata := requestPath(httpRequest) == "/.well-known/openid-configuration" || requestPath(httpRequest) == "/.well-known/oauth-authorization-server"
+		if requestPath(httpRequest) == "/.well-known/oauth-authorization-server" {
+			r.URL.Path = "/.well-known/openid-configuration"
+			r.URL.RawPath = ""
+		}
 		var revocationFormError error
-		if c.Method() == http.MethodPost && c.Path() == "/revoke" {
+		if httpRequest.Method == http.MethodPost && requestPath(httpRequest) == "/revoke" {
 			revocationFormError = r.ParseForm()
 			if revocationFormError == nil {
 				// RFC 7009 hints only optimize lookup; a wrong hint must not
@@ -106,18 +108,18 @@ func oidcHTTPHandler(provider http.Handler) fiber.Handler {
 			// These authorization responses ask the browser to interact, not report
 			// failed credentials. Mark even HTTP 400 responses; status alone cannot
 			// distinguish a normal guest login prompt from a security failure.
-			if c.Method() == http.MethodGet && (c.Path() == "/authorize" || c.Path() == "/authorize/callback") &&
+			if httpRequest.Method == http.MethodGet && (requestPath(httpRequest) == "/authorize" || requestPath(httpRequest) == "/authorize/callback") &&
 				(result.StatusCode == http.StatusBadRequest || (result.StatusCode >= 300 && result.StatusCode < 400)) {
-				c.Locals("audit_interaction_required", true)
+				requestValue(httpRequest, "audit_interaction_required", true)
 			}
 		case "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "invalid_scope", "unsupported_grant_type", "access_denied", "server_error", "temporarily_unavailable", "invalid_token", "insufficient_scope", "unsupported_response_type":
-			c.Locals("audit_reason", protocolError.Error)
-			c.Locals("audit_outcome", "failure")
+			requestValue(httpRequest, "audit_reason", protocolError.Error)
+			requestValue(httpRequest, "audit_outcome", "failure")
 			// This is the targeted application, not proof of authentication.
 			// The library may reject a code before looking up its client.
-			claimed := c.FormValue("client_id")
-			if c.Method() == http.MethodGet {
-				claimed = c.Query("client_id")
+			claimed := formValue(httpRequest, "client_id")
+			if httpRequest.Method == http.MethodGet {
+				claimed = queryValue(httpRequest, "client_id")
 			}
 			if id, _, ok := r.BasicAuth(); ok {
 				claimed = id
@@ -125,7 +127,7 @@ func oidcHTTPHandler(provider http.Handler) fiber.Handler {
 			if claimed != "" && auditIdentifier(claimed) != "" {
 				var target model.OIDCClient
 				if err := solitudes.System.DB.Select("id").Where("id = ?", claimed).Take(&target).Error; err == nil {
-					c.Locals("audit_client", target.ID)
+					requestValue(httpRequest, "audit_client", target.ID)
 				}
 			}
 		}
@@ -147,63 +149,63 @@ func oidcHTTPHandler(provider http.Handler) fiber.Handler {
 			delete(document, "revocation_endpoint_auth_signing_alg_values_supported")
 			delete(document, "introspection_endpoint_auth_signing_alg_values_supported")
 			delete(document, "device_authorization_endpoint")
-			c.Set("Content-Type", "application/json")
-			c.Set("Cache-Control", "public, max-age=300")
-			c.Set("Access-Control-Allow-Origin", "*")
-			return c.Status(http.StatusOK).JSON(document)
+			writer.Header().Set("Content-Type", "application/json")
+			writer.Header().Set("Cache-Control", "public, max-age=300")
+			writer.Header().Set("Access-Control-Allow-Origin", "*")
+			return writeJSON(writer, http.StatusOK, document)
 		}
 		for header, values := range result.Header {
-			// Replace Fiber's defaults (notably text/plain Content-Type) and
+			// Preserve the provider's Content-Type and
 			// retain separate values such as Set-Cookie instead of comma-joining.
-			c.Response().Header.Del(header)
+			writer.Header().Del(header)
 			for _, value := range values {
-				c.Response().Header.Add(header, value)
+				writer.Header().Add(header, value)
 			}
 		}
-		c.Set(fiber.HeaderCacheControl, "no-store")
-		c.Status(result.StatusCode)
-		_, err = io.Copy(c, result.Body)
+		writer.Header().Set("Cache-Control", "no-store")
+		writer.WriteHeader(result.StatusCode)
+		_, err = io.Copy(writer, result.Body)
 		return err
 	}
 }
 
-func consentPage(c *fiber.Ctx) error {
-	c.Set(fiber.HeaderCacheControl, "private, no-store")
+func consentPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	writer.Header().Set("Cache-Control", "private, no-store")
 	provider := activeOIDCProvider
 	if provider == nil {
-		return fiber.ErrServiceUnavailable
+		return newHTTPError(http.StatusServiceUnavailable)
 	}
-	id := c.Query("authRequestID")
+	id := queryValue(httpRequest, "authRequestID")
 	if _, err := googleuuid.Parse(id); err != nil {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
-	request, err := provider.Storage().AuthRequestByID(c.UserContext(), id)
+	request, err := provider.Storage().AuthRequestByID(httpRequest.Context(), id)
 	if err != nil {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
-	client, err := provider.Storage().GetClientByClientID(c.UserContext(), request.GetClientID())
+	client, err := provider.Storage().GetClientByClientID(httpRequest.Context(), request.GetClientID())
 	if err != nil {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
 	pending, ok := request.(*oidcAuthRequest)
 	if !ok {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
-	resolved, decision, err := completeOIDCConsent(c, pending, false)
+	resolved, decision, err := completeOIDCConsent(writer, httpRequest, pending, false)
 	if err != nil {
 		return err
 	}
 	if decision == oidcNeedsLogin || (decision == oidcNeedsConsent && slices.Contains(resolved.req.Prompt, oidc.PromptNone)) {
-		return oidcConsentResponse(c, resolved, decision)
+		return oidcConsentResponse(writer, httpRequest, resolved, decision)
 	}
 	if decision == oidcConsentReady {
-		return c.Redirect("/authorize/callback?id="+url.QueryEscape(id), http.StatusFound)
+		return redirectResponse(writer, httpRequest, "/authorize/callback?id="+url.QueryEscape(id), http.StatusFound)
 	}
-	info, err := oidcClientInfo(c.UserContext(), client)
+	info, err := oidcClientInfo(httpRequest.Context(), client)
 	if err != nil {
 		return err
 	}
-	return c.Status(http.StatusOK).Render("site/consent", injectSiteData(c, fiber.Map{
+	return renderPage(writer, httpRequest, http.StatusOK, "site/consent", injectSiteData(writer, httpRequest, viewData{
 		"title": "Authorize application", "noindex": true, "oidc_client": info, "scopes": request.GetScopes(), "request_id": id,
 	}))
 }
@@ -235,7 +237,7 @@ func oidcClientInfo(ctx context.Context, client op.Client) (oidcApplicationInfo,
 
 // Only a server-created authorization request can supply application details
 // to the sign-in page. A user-supplied return_to cannot assert an app name.
-func loginOIDCApplication(c *fiber.Ctx, returnTo string) (*oidcApplicationInfo, error) {
+func loginOIDCApplication(writer http.ResponseWriter, httpRequest *http.Request, returnTo string) (*oidcApplicationInfo, error) {
 	if activeOIDCProvider == nil || returnTo == "" {
 		return nil, nil
 	}
@@ -247,79 +249,79 @@ func loginOIDCApplication(c *fiber.Ctx, returnTo string) (*oidcApplicationInfo, 
 	if _, err := googleuuid.Parse(id); err != nil {
 		return nil, nil
 	}
-	request, err := activeOIDCProvider.Storage().AuthRequestByID(c.UserContext(), id)
+	request, err := activeOIDCProvider.Storage().AuthRequestByID(httpRequest.Context(), id)
 	if err != nil || request.Done() {
 		return nil, nil
 	}
-	client, err := activeOIDCProvider.Storage().GetClientByClientID(c.UserContext(), request.GetClientID())
+	client, err := activeOIDCProvider.Storage().GetClientByClientID(httpRequest.Context(), request.GetClientID())
 	if err != nil {
 		return nil, nil
 	}
-	info, err := oidcClientInfo(c.UserContext(), client)
+	info, err := oidcClientInfo(httpRequest.Context(), client)
 	if err != nil {
 		return nil, err
 	}
 	return &info, nil
 }
 
-func consentHandler(c *fiber.Ctx) error {
+func consentHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
 	if activeOIDCProvider == nil {
-		return fiber.ErrServiceUnavailable
+		return newHTTPError(http.StatusServiceUnavailable)
 	}
-	account := currentAccount(c)
+	account := currentAccount(writer, httpRequest)
 	if account == nil {
-		return fiber.ErrUnauthorized
+		return newHTTPError(http.StatusUnauthorized)
 	}
-	id := c.FormValue("request_id")
-	request, err := activeOIDCProvider.Storage().AuthRequestByID(c.UserContext(), id)
+	id := formValue(httpRequest, "request_id")
+	request, err := activeOIDCProvider.Storage().AuthRequestByID(httpRequest.Context(), id)
 	if err != nil || request.Done() {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
-	if _, err := activeOIDCProvider.Storage().GetClientByClientID(c.UserContext(), request.GetClientID()); err != nil {
-		return fiber.ErrBadRequest
+	if _, err := activeOIDCProvider.Storage().GetClientByClientID(httpRequest.Context(), request.GetClientID()); err != nil {
+		return newHTTPError(http.StatusBadRequest)
 	}
-	if c.FormValue("allow") != "yes" {
-		c.Locals("audit_reason", "consent_declined")
-		c.Locals("audit_client", request.GetClientID())
+	if formValue(httpRequest, "allow") != "yes" {
+		requestValue(httpRequest, "audit_reason", "consent_declined")
+		requestValue(httpRequest, "audit_client", request.GetClientID())
 		// The redirect URI was checked against the registered client before the
 		// authorization request was saved by the OIDC library.
 		target, err := url.Parse(request.GetRedirectURI())
 		if err != nil {
-			return fiber.ErrBadRequest
+			return newHTTPError(http.StatusBadRequest)
 		}
 		query := target.Query()
 		query.Set("error", "access_denied")
 		query.Set("state", request.GetState())
 		target.RawQuery = query.Encode()
-		_ = activeOIDCProvider.Storage().DeleteAuthRequest(c.UserContext(), id)
-		return c.Redirect(target.String(), http.StatusFound)
+		_ = activeOIDCProvider.Storage().DeleteAuthRequest(httpRequest.Context(), id)
+		return redirectResponse(writer, httpRequest, target.String(), http.StatusFound)
 	}
 	pending, ok := request.(*oidcAuthRequest)
 	if !ok {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
-	resolved, decision, err := completeOIDCConsent(c, pending, true)
+	resolved, decision, err := completeOIDCConsent(writer, httpRequest, pending, true)
 	if err != nil {
 		return err
 	}
 	if decision != oidcConsentReady {
-		return oidcConsentResponse(c, resolved, decision)
+		return oidcConsentResponse(writer, httpRequest, resolved, decision)
 	}
-	return c.Redirect("/authorize/callback?id="+url.QueryEscape(id), http.StatusFound)
+	return redirectResponse(writer, httpRequest, "/authorize/callback?id="+url.QueryEscape(id), http.StatusFound)
 }
 
 var activeOIDCProvider *op.Provider
 
-func oidcClientsPage(c *fiber.Ctx) error {
-	if !strings.HasPrefix(c.Path(), "/account/") {
-		return adminClientsPage(c)
+func oidcClientsPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if !strings.HasPrefix(requestPath(httpRequest), "/account/") {
+		return adminClientsPage(writer, httpRequest)
 	}
 	var clients []model.OIDCClient
-	page, err := listPage(c.Query("page"))
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
-	query := solitudes.System.DB.Where("owner_id = ?", currentAccount(c).ID).
+	query := solitudes.System.DB.Where("owner_id = ?", currentAccount(writer, httpRequest).ID).
 		Order("created_at DESC, id DESC").Limit(21).Offset((page - 1) * 20)
 	if err := query.Find(&clients).Error; err != nil {
 		return err
@@ -339,7 +341,7 @@ func oidcClientsPage(c *fiber.Ctx) error {
 	for i := range clients {
 		ids[i] = clients[i].ID
 	}
-	usage, err := ownedClientUsage(solitudes.System.DB.WithContext(c.UserContext()), currentAccount(c).ID, ids, time.Now())
+	usage, err := ownedClientUsage(solitudes.System.DB.WithContext(httpRequest.Context()), currentAccount(writer, httpRequest).ID, ids, time.Now())
 	if err != nil {
 		return err
 	}
@@ -354,10 +356,10 @@ func oidcClientsPage(c *fiber.Ctx) error {
 		_ = json.Unmarshal([]byte(client.PostLogoutURIsJSON), &logoutURIs)
 		views = append(views, clientView{OIDCClient: client, RedirectURIs: strings.Join(redirects, "\n"), LogoutURIs: strings.Join(logoutURIs, "\n"), LoginUsers: usage[client.ID].LoginUsers, ActiveUsers: usage[client.ID].ActiveUsers})
 	}
-	c.Set("Cache-Control", "private, no-store")
-	return c.Status(http.StatusOK).Render("site/account_oidc_clients", injectSiteData(c, fiber.Map{
+	writer.Header().Set("Cache-Control", "private, no-store")
+	return renderPage(writer, httpRequest, http.StatusOK, "site/account_oidc_clients", injectSiteData(writer, httpRequest, viewData{
 		"title": "OIDC clients", "noindex": true, "clients": views, "issuer": publicBaseURL(),
-		"navigation": pageNavigationFor(c, "page", page, more, "clients"),
+		"navigation": pageNavigationFor(writer, httpRequest, "page", page, more, "clients"),
 	}))
 }
 
@@ -397,25 +399,25 @@ type oidcClientMetadata struct {
 	logoutURIs  string
 }
 
-func oidcClientMetadataFromForm(c *fiber.Ctx) (oidcClientMetadata, error) {
+func oidcClientMetadataFromForm(writer http.ResponseWriter, httpRequest *http.Request) (oidcClientMetadata, error) {
 	var metadata oidcClientMetadata
-	name := strings.TrimSpace(c.FormValue("name"))
+	name := strings.TrimSpace(formValue(httpRequest, "name"))
 	if name == "" || !utf8.ValidString(name) || utf8.RuneCountInString(name) > 100 || strings.ContainsAny(name, "\r\n\x00") {
-		return metadata, fiber.ErrBadRequest
+		return metadata, newHTTPError(http.StatusBadRequest)
 	}
-	description := strings.TrimSpace(c.FormValue("description"))
-	homepage := strings.TrimSpace(c.FormValue("homepage_url"))
+	description := strings.TrimSpace(formValue(httpRequest, "description"))
+	homepage := strings.TrimSpace(formValue(httpRequest, "homepage_url"))
 	if !utf8.ValidString(description) || utf8.RuneCountInString(description) > 300 || strings.ContainsAny(description, "\x00") || !validClientHomepage(homepage) {
-		return metadata, fiber.NewError(http.StatusBadRequest, "invalid application description or homepage URL")
+		return metadata, newHTTPError(http.StatusBadRequest, "invalid application description or homepage URL")
 	}
-	redirects := strings.Fields(c.FormValue("redirect_uris"))
+	redirects := strings.Fields(formValue(httpRequest, "redirect_uris"))
 	if len(redirects) == 0 || len(redirects) > 10 {
-		return metadata, fiber.ErrBadRequest
+		return metadata, newHTTPError(http.StatusBadRequest)
 	}
 	seen := make(map[string]bool, len(redirects))
 	for _, redirect := range redirects {
 		if !validClientRedirect(redirect) || seen[redirect] {
-			return metadata, fiber.NewError(http.StatusBadRequest, "invalid or duplicate redirect URI")
+			return metadata, newHTTPError(http.StatusBadRequest, "invalid or duplicate redirect URI")
 		}
 		seen[redirect] = true
 	}
@@ -423,14 +425,14 @@ func oidcClientMetadataFromForm(c *fiber.Ctx) (oidcClientMetadata, error) {
 	if err != nil {
 		return metadata, err
 	}
-	logoutURIs := strings.Fields(c.FormValue("post_logout_uris"))
+	logoutURIs := strings.Fields(formValue(httpRequest, "post_logout_uris"))
 	if len(logoutURIs) > 10 {
-		return metadata, fiber.ErrBadRequest
+		return metadata, newHTTPError(http.StatusBadRequest)
 	}
 	seen = make(map[string]bool, len(logoutURIs))
 	for _, redirect := range logoutURIs {
 		if !validClientRedirect(redirect) || seen[redirect] {
-			return metadata, fiber.NewError(http.StatusBadRequest, "invalid or duplicate post-logout URI")
+			return metadata, newHTTPError(http.StatusBadRequest, "invalid or duplicate post-logout URI")
 		}
 		seen[redirect] = true
 	}
@@ -442,8 +444,8 @@ func oidcClientMetadataFromForm(c *fiber.Ctx) (oidcClientMetadata, error) {
 		redirects: string(encoded), logoutURIs: string(logoutEncoded)}, nil
 }
 
-func createOIDCClient(c *fiber.Ctx) error {
-	metadata, err := oidcClientMetadataFromForm(c)
+func createOIDCClient(writer http.ResponseWriter, httpRequest *http.Request) error {
+	metadata, err := oidcClientMetadataFromForm(writer, httpRequest)
 	if err != nil {
 		return err
 	}
@@ -451,7 +453,7 @@ func createOIDCClient(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	public := c.FormValue("public") == "on"
+	public := formValue(httpRequest, "public") == "on"
 	secret := ""
 	hash := ""
 	if !public {
@@ -465,46 +467,46 @@ func createOIDCClient(c *fiber.Ctx) error {
 		}
 		hash = string(bytes)
 	}
-	ownerID := currentAccount(c).ID
+	ownerID := currentAccount(writer, httpRequest).ID
 	client := model.OIDCClient{ID: clientID, OwnerID: &ownerID, Name: metadata.name, Description: metadata.description, HomepageURL: metadata.homepage, SecretHash: hash,
 		Public: public, RedirectURIsJSON: metadata.redirects, PostLogoutURIsJSON: metadata.logoutURIs}
-	c.Locals("audit_client", clientID)
+	requestValue(httpRequest, "audit_client", clientID)
 	if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&client).Error; err != nil {
 			return err
 		}
-		return auditMutation(c, tx, "client.create", clientID, clientID, "")
+		return auditMutation(writer, httpRequest, tx, "client.create", clientID, clientID, "")
 	}); err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
-	c.Set("Cache-Control", "private, no-store")
+	requestValue(httpRequest, "audit_recorded", true)
+	writer.Header().Set("Cache-Control", "private, no-store")
 	templateName := "admin/oidc_client_created"
-	if strings.HasPrefix(c.Path(), "/account/") {
+	if strings.HasPrefix(requestPath(httpRequest), "/account/") {
 		templateName = "site/account_oidc_client_created"
 	}
-	return c.Status(http.StatusCreated).Render(templateName, injectSiteData(c, fiber.Map{
+	return renderPage(writer, httpRequest, http.StatusCreated, templateName, injectSiteData(writer, httpRequest, viewData{
 		"title": "OIDC client created", "noindex": true, "client_id": clientID, "secret": secret,
 	}))
 }
 
-func updateOIDCClient(c *fiber.Ctx) error {
-	metadata, err := oidcClientMetadataFromForm(c)
+func updateOIDCClient(writer http.ResponseWriter, httpRequest *http.Request) error {
+	metadata, err := oidcClientMetadataFromForm(writer, httpRequest)
 	if err != nil {
 		return err
 	}
-	account := currentAccount(c)
-	c.Locals("audit_client", c.Params("id"))
+	account := currentAccount(writer, httpRequest)
+	requestValue(httpRequest, "audit_client", routeParam(httpRequest, "id"))
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		query := tx.Model(&model.OIDCClient{}).
-			Where("id = ? AND disabled_at IS NULL", c.Params("id"))
+			Where("id = ? AND disabled_at IS NULL", routeParam(httpRequest, "id"))
 		if !account.Role.IsAdmin() {
 			query = query.Where("owner_id = ?", account.ID)
 		}
 		var stored model.OIDCClient
 		if err := query.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&stored).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return fiber.ErrNotFound
+				return newHTTPError(http.StatusNotFound)
 			}
 			return err
 		}
@@ -521,37 +523,37 @@ func updateOIDCClient(c *fiber.Ctx) error {
 			return result.Error
 		}
 		if result.RowsAffected != 1 {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
-		return auditMutation(c, tx, "client.update", c.Params("id"), c.Params("id"), "name,description,homepage,redirects,logout_uris")
+		return auditMutation(writer, httpRequest, tx, "client.update", routeParam(httpRequest, "id"), routeParam(httpRequest, "id"), "name,description,homepage,redirects,logout_uris")
 	})
 	if err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
-	if strings.HasPrefix(c.Path(), "/account/") {
-		return c.Redirect("/account/oidc/clients", http.StatusSeeOther)
+	requestValue(httpRequest, "audit_recorded", true)
+	if strings.HasPrefix(requestPath(httpRequest), "/account/") {
+		return redirectResponse(writer, httpRequest, "/account/oidc/clients", http.StatusSeeOther)
 	}
-	return c.Redirect("/admin/oidc/clients", http.StatusSeeOther)
+	return redirectResponse(writer, httpRequest, "/admin/oidc/clients", http.StatusSeeOther)
 }
 
-func disableOIDCClient(c *fiber.Ctx) error {
-	id := c.Params("id")
-	c.Locals("audit_client", id)
-	account := currentAccount(c)
+func disableOIDCClient(writer http.ResponseWriter, httpRequest *http.Request) error {
+	id := routeParam(httpRequest, "id")
+	requestValue(httpRequest, "audit_client", id)
+	account := currentAccount(writer, httpRequest)
 	if account == nil {
-		return fiber.ErrUnauthorized
+		return newHTTPError(http.StatusUnauthorized)
 	}
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		client, err := lockOIDCClient(tx, id, true)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
 		if err != nil {
 			return err
 		}
 		if !account.Role.IsAdmin() && (client.OwnerID == nil || *client.OwnerID != account.ID) {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
 		if err := tx.Model(client).Update("disabled_at", time.Now()).Error; err != nil {
 			return err
@@ -559,27 +561,27 @@ func disableOIDCClient(c *fiber.Ctx) error {
 		if err := deleteOIDCCredentials(tx, id, ""); err != nil {
 			return err
 		}
-		return auditMutation(c, tx, "client.disable", id, id, "")
+		return auditMutation(writer, httpRequest, tx, "client.disable", id, id, "")
 	})
 	if err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
-	if strings.HasPrefix(c.Path(), "/account/") {
-		return c.Redirect("/account/oidc/clients", http.StatusSeeOther)
+	requestValue(httpRequest, "audit_recorded", true)
+	if strings.HasPrefix(requestPath(httpRequest), "/account/") {
+		return redirectResponse(writer, httpRequest, "/account/oidc/clients", http.StatusSeeOther)
 	}
-	return c.Redirect("/admin/oidc/clients", http.StatusSeeOther)
+	return redirectResponse(writer, httpRequest, "/admin/oidc/clients", http.StatusSeeOther)
 }
 
-func rotateOIDCKeys(c *fiber.Ctx) error {
+func rotateOIDCKeys(writer http.ResponseWriter, httpRequest *http.Request) error {
 	if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if err := generateSigningKey(tx); err != nil {
 			return err
 		}
-		return auditMutation(c, tx, "oidc.keys.rotate", "", "", "")
+		return auditMutation(writer, httpRequest, tx, "oidc.keys.rotate", "", "", "")
 	}); err != nil {
 		return fmt.Errorf("rotate OIDC signing keys: %w", err)
 	}
-	c.Locals("audit_recorded", true)
-	return c.Redirect("/admin/oidc/clients", http.StatusSeeOther)
+	requestValue(httpRequest, "audit_recorded", true)
+	return redirectResponse(writer, httpRequest, "/admin/oidc/clients", http.StatusSeeOther)
 }

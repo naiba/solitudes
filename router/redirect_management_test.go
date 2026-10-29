@@ -44,7 +44,7 @@ func TestRedirectManagementCSRFAndAuditFailureDoNotMutateRules(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Cookie", solitudes.AuthCookie+"=admin")
 		req.Header.Set("Origin", origin)
-		response, err := app.Test(req, -1)
+		response, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}

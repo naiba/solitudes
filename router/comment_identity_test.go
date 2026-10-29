@@ -5,8 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -25,14 +23,14 @@ func TestFillCommentEntryTrustsAuthenticatedAccount(t *testing.T) {
 		{"admin", &model.Account{ID: "account-admin", Role: model.RoleAdmin, Nickname: "Admin", Email: "admin@example.test"}, true, "Admin", "admin@example.test", "", true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			app := fiber.New()
-			app.Post("/comment", func(c *fiber.Ctx) error {
+			app := newTestRouter()
+			app.Post("/comment", func(writer http.ResponseWriter, httpRequest *http.Request) error {
 				if tt.account != nil {
-					c.Locals(solitudes.CtxAccount, tt.account)
+					requestValue(httpRequest, solitudes.CtxAccount, tt.account)
 				}
 				cm := &model.Comment{}
 				form := &commentForm{Nickname: "Visitor", Email: "visitor@example.test", Website: "https://example.test", Content: "Hello", Version: 1}
-				if err := fillCommentEntry(c, cm, form, &model.Article{ID: "article-id"}); err != nil {
+				if err := fillCommentEntry(writer, httpRequest, cm, form, &model.Article{ID: "article-id"}); err != nil {
 					return err
 				}
 				if (cm.AccountID != nil) != tt.wantID || cm.Nickname != tt.wantName || cm.Email != tt.wantEmail || cm.Website != tt.wantWebsite || (cm.PublicRole() == string(model.RoleAdmin)) != tt.wantAdmin {
@@ -41,9 +39,9 @@ func TestFillCommentEntryTrustsAuthenticatedAccount(t *testing.T) {
 				if cm.AccountID != nil && *cm.AccountID != tt.account.ID {
 					t.Errorf("account id = %q, want %q", *cm.AccountID, tt.account.ID)
 				}
-				return c.SendStatus(http.StatusOK)
+				return writeStatus(writer, http.StatusOK)
 			})
-			resp, err := app.Test(httptest.NewRequest(http.MethodPost, "/comment", nil))
+			resp, err := testRequest(app, httptest.NewRequest(http.MethodPost, "/comment", nil))
 			if err != nil {
 				t.Fatal(err)
 			}

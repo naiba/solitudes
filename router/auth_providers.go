@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/translator"
@@ -26,11 +24,11 @@ type loginProviderForm struct {
 	OIDCDisable   bool   `form:"oidc_disable"`
 }
 
-func loginProvidersPage(c *fiber.Ctx) error {
-	return c.Status(http.StatusOK).Render("admin/login_providers", injectSiteData(c, fiber.Map{
-		"title":         c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("login_providers"),
+func loginProvidersPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/login_providers", injectSiteData(writer, httpRequest, viewData{
+		"title":         requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator).T("login_providers"),
 		"callback_base": publicBaseURL(),
-		"saved":         c.Query("saved") == "1",
+		"saved":         queryValue(httpRequest, "saved") == "1",
 	}))
 }
 
@@ -39,18 +37,17 @@ func updateLoginCredentials(id, secret *string, newID, newSecret string, disable
 		*id, *secret = "", ""
 		return nil
 	}
-	// Fiber may borrow request buffers for parsed strings; persistent config
-	// must own its strings across subsequent requests.
+	// Keep persistent credentials independent of the parsed form strings.
 	newID, newSecret = strings.Clone(strings.TrimSpace(newID)), strings.Clone(strings.TrimSpace(newSecret))
 	if newID == "" {
 		if newSecret != "" {
-			return fiber.NewError(http.StatusBadRequest, "client ID is required with a new secret")
+			return newHTTPError(http.StatusBadRequest, "client ID is required with a new secret")
 		}
 		*id, *secret = "", ""
 		return nil
 	}
 	if newSecret == "" && (newID != *id || *secret == "") {
-		return fiber.NewError(http.StatusBadRequest, "new client ID requires a client secret")
+		return newHTTPError(http.StatusBadRequest, "new client ID requires a client secret")
 	}
 	if newSecret != "" {
 		*secret = newSecret
@@ -62,15 +59,15 @@ func updateLoginCredentials(id, secret *string, newID, newSecret string, disable
 func applyLoginProviderForm(config *model.Config, form loginProviderForm) error {
 	if err := updateLoginCredentials(&config.Auth.GitHub.ClientID, &config.Auth.GitHub.ClientSecret,
 		form.GitHubID, form.GitHubSecret, form.GitHubDisable); err != nil {
-		return fiber.NewError(http.StatusBadRequest, "GitHub: "+err.Error())
+		return newHTTPError(http.StatusBadRequest, "GitHub: "+err.Error())
 	}
 	if err := updateLoginCredentials(&config.Auth.Google.ClientID, &config.Auth.Google.ClientSecret,
 		form.GoogleID, form.GoogleSecret, form.GoogleDisable); err != nil {
-		return fiber.NewError(http.StatusBadRequest, "Google: "+err.Error())
+		return newHTTPError(http.StatusBadRequest, "Google: "+err.Error())
 	}
 	if err := updateLoginCredentials(&config.Auth.OIDC.ClientID, &config.Auth.OIDC.ClientSecret,
 		form.OIDCID, form.OIDCSecret, form.OIDCDisable); err != nil {
-		return fiber.NewError(http.StatusBadRequest, "OIDC: "+err.Error())
+		return newHTTPError(http.StatusBadRequest, "OIDC: "+err.Error())
 	}
 	if config.Auth.OIDC.ClientID == "" {
 		config.Auth.OIDC.Issuer = ""
@@ -79,15 +76,15 @@ func applyLoginProviderForm(config *model.Config, form loginProviderForm) error 
 	issuer := strings.Clone(strings.TrimRight(strings.TrimSpace(form.OIDCIssuer), "/"))
 	u, err := url.Parse(issuer)
 	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" {
-		return fiber.NewError(http.StatusBadRequest, "OIDC issuer must be a valid HTTPS URL")
+		return newHTTPError(http.StatusBadRequest, "OIDC issuer must be a valid HTTPS URL")
 	}
 	config.Auth.OIDC.Issuer = issuer
 	return nil
 }
 
-func saveLoginProviders(c *fiber.Ctx) error {
+func saveLoginProviders(writer http.ResponseWriter, httpRequest *http.Request) error {
 	var form loginProviderForm
-	if err := c.BodyParser(&form); err != nil {
+	if err := decodeRequestBody(httpRequest, &form); err != nil {
 		return err
 	}
 	candidate := *solitudes.System.Config
@@ -98,5 +95,5 @@ func saveLoginProviders(c *fiber.Ctx) error {
 		return fmt.Errorf("save login providers: %w", err)
 	}
 	*solitudes.System.Config = candidate
-	return c.Redirect("/admin/auth/providers?saved=1", http.StatusSeeOther)
+	return redirectResponse(writer, httpRequest, "/admin/auth/providers?saved=1", http.StatusSeeOther)
 }

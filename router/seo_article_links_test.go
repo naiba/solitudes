@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 	html "github.com/gofiber/template/html/v2"
 
 	"github.com/naiba/solitudes"
@@ -73,11 +72,11 @@ func TestThemeArticleSlugLinks(t *testing.T) {
 			topic := *story
 			topic.RawTags = "Topic"
 			queries := articleLinkQueries{article: story, topic: &topic, comment: comment}
-			render := func(t *testing.T, name string, data fiber.Map) *goquery.Document {
+			render := func(t *testing.T, name string, data viewData) *goquery.Document {
 				t.Helper()
 				data["navigation"] = pageNavigation{}
 				data["comment_navigation"] = pageNavigation{}
-				binding := fiber.Map{"Tr": tr, "Conf": conf, "Theme": fiber.Map{}, "Path": articlePath, "Data": data, "Queries": queries, "article": story, "tr": tr}
+				binding := viewData{"Tr": tr, "Conf": conf, "Theme": viewData{}, "Path": articlePath, "Data": data, "Queries": queries, "article": story, "tr": tr}
 				if name == "article" {
 					binding["OgType"] = "article"
 				}
@@ -111,7 +110,7 @@ func TestThemeArticleSlugLinks(t *testing.T) {
 			}
 			for _, name := range []string{"article", "page"} {
 				t.Run(name, func(t *testing.T) {
-					doc := render(t, name, fiber.Map{"article": story, "can_read_history": true})
+					doc := render(t, name, viewData{"article": story, "can_read_history": true})
 					for _, auth := range []string{"sign-in", "register"} {
 						link := doc.Find(`[data-testid="comment-` + auth + `"]`)
 						if link.Length() != 1 {
@@ -200,14 +199,14 @@ func TestThemeArticleSlugLinks(t *testing.T) {
 			t.Run("old_revision", func(t *testing.T) {
 				story.NewVersion = 4
 				defer func() { story.NewVersion = 0 }()
-				doc := render(t, "article", fiber.Map{"article": story})
+				doc := render(t, "article", viewData{"article": story})
 				checkLinks(t, doc, `[data-testid="article-latest-version"]`, "", "", "")
 				checkLinks(t, doc, `[data-testid="article-compare-link"]`, "/compare/v3...v4", "", "")
 			})
 			t.Run("siblings", func(t *testing.T) {
 				story.Book = nil
 				defer func() { story.Book = &neighbor }()
-				doc := render(t, "article", fiber.Map{"article": story})
+				doc := render(t, "article", viewData{"article": story})
 				selector := ".sibling-prev, .sibling-next"
 				if theme == "cactus" {
 					selector = `[data-testid="article-previous"], [data-testid="article-next"]`
@@ -216,25 +215,25 @@ func TestThemeArticleSlugLinks(t *testing.T) {
 			})
 			for _, tc := range []struct {
 				name, selector, suffix, query, fragment string
-				data                                    fiber.Map
+				data                                    viewData
 			}{
-				{"article_compare", `[data-testid="compare-article-link"]`, "", "", "", fiber.Map{"article": story, "before": story, "after": story}},
-				{"article_compare", `[data-testid="compare-form"]`, "/compare", "", "", fiber.Map{"article": story, "before": story, "after": story}},
-				{"article_compare", `.compare-titles a`, "/v3", "", "", fiber.Map{"article": story, "before": story, "after": story}},
-				{"article_list_entry", `[data-testid="article-list-link"]`, "", "", "", fiber.Map{}},
-				{"search", `.search-result-title`, "", "", "", fiber.Map{"results": []*model.Article{story}}},
-				{"user_profile", `[data-testid="public-profile-article"]`, "", "", "", fiber.Map{"profile": model.Account{Nickname: "Reader"}, "articles": []*model.Article{story}, "comments": []*model.Comment{comment}}},
-				{"user_profile", `[data-testid="public-profile-comment-article"]`, "", "thread=comment", "comment-comment", fiber.Map{"profile": model.Account{Nickname: "Reader"}, "comments": []*model.Comment{comment}}},
-				{"index", `[data-testid="home-comment-link"], [data-testid="topic-comment-link"]`, "", "thread=comment", "comment-comment", fiber.Map{}},
-				{"index", `[data-testid="topic-reply-link"]`, "", "", "", fiber.Map{}},
-				{"reader_circle", `[data-testid="reader-circle-activity-link"]`, "", "thread=comment", "comment-comment", fiber.Map{"page": 1, "activity": []fiber.Map{{"Kind": "comment", "ArticleSlug": slug, "CommentID": "comment", "HappenedAt": time.Time{}}}}},
+				{"article_compare", `[data-testid="compare-article-link"]`, "", "", "", viewData{"article": story, "before": story, "after": story}},
+				{"article_compare", `[data-testid="compare-form"]`, "/compare", "", "", viewData{"article": story, "before": story, "after": story}},
+				{"article_compare", `.compare-titles a`, "/v3", "", "", viewData{"article": story, "before": story, "after": story}},
+				{"article_list_entry", `[data-testid="article-list-link"]`, "", "", "", viewData{}},
+				{"search", `.search-result-title`, "", "", "", viewData{"results": []*model.Article{story}}},
+				{"user_profile", `[data-testid="public-profile-article"]`, "", "", "", viewData{"profile": model.Account{Nickname: "Reader"}, "articles": []*model.Article{story}, "comments": []*model.Comment{comment}}},
+				{"user_profile", `[data-testid="public-profile-comment-article"]`, "", "thread=comment", "comment-comment", viewData{"profile": model.Account{Nickname: "Reader"}, "comments": []*model.Comment{comment}}},
+				{"index", `[data-testid="home-comment-link"], [data-testid="topic-comment-link"]`, "", "thread=comment", "comment-comment", viewData{}},
+				{"index", `[data-testid="topic-reply-link"]`, "", "", "", viewData{}},
+				{"reader_circle", `[data-testid="reader-circle-activity-link"]`, "", "thread=comment", "comment-comment", viewData{"page": 1, "activity": []viewData{{"Kind": "comment", "ArticleSlug": slug, "CommentID": "comment", "HappenedAt": time.Time{}}}}},
 			} {
 				t.Run(tc.name+"/"+tc.selector, func(t *testing.T) {
 					checkLinks(t, render(t, tc.name, tc.data), tc.selector, tc.suffix, tc.query, tc.fragment)
 				})
 			}
 			t.Run("index_article_attributes", func(t *testing.T) {
-				doc := render(t, "index", fiber.Map{})
+				doc := render(t, "index", viewData{})
 				selector := `[data-testid="article-list-link"]`
 				if theme == "folio" {
 					selector = `.hero-title a, .journal-read-link, .journal-secondary-story h2 a`
@@ -272,15 +271,15 @@ func TestAdminArticleSlugLinks(t *testing.T) {
 	conf.Site.Domain = "example.test"
 	for _, name := range []string{"articles", "comments", "media", "index"} {
 		t.Run(name, func(t *testing.T) {
-			data := fiber.Map{
+			data := viewData{
 				"articles":   []*model.Article{story},
 				"comments":   []*model.Comment{{ID: "comment", Article: story, Version: 2}},
-				"medias":     []fiber.Map{{"Article": story, "Filename": "image.png", "UploadedAt": time.Time{}}},
-				"page":       fiber.Map{"Page": 1, "PrevPage": 0, "NextPage": 0},
+				"medias":     []viewData{{"Article": story, "Filename": "image.png", "UploadedAt": time.Time{}}},
+				"page":       viewData{"Page": 1, "PrevPage": 0, "NextPage": 0},
 				"navigation": pageNavigation{},
 			}
 			var output bytes.Buffer
-			if err := engine.Render(&output, "admin/"+name, fiber.Map{"Path": "/admin/" + name, "Tr": tr, "Conf": conf, "Account": &model.Account{Role: model.RoleAdmin}, "Data": data}); err != nil {
+			if err := engine.Render(&output, "admin/"+name, viewData{"Path": "/admin/" + name, "Tr": tr, "Conf": conf, "Account": &model.Account{Role: model.RoleAdmin}, "Data": data}); err != nil {
 				t.Fatal(err)
 			}
 			doc, err := goquery.NewDocumentFromReader(&output)
@@ -327,7 +326,7 @@ func TestPublishArticleSlugHint(t *testing.T) {
 			tr := &translator.Translator{Translator: catalog, Trans: catalog}
 			var output bytes.Buffer
 			const slug = "中文 C#? % & +"
-			if err := engine.Render(&output, "admin/publish", fiber.Map{"Path": "/admin/publish", "Tr": tr, "Conf": &model.Config{}, "Account": &model.Account{Role: model.RoleAdmin}, "Data": fiber.Map{"article": &model.Article{Slug: slug}}}); err != nil {
+			if err := engine.Render(&output, "admin/publish", viewData{"Path": "/admin/publish", "Tr": tr, "Conf": &model.Config{}, "Account": &model.Account{Role: model.RoleAdmin}, "Data": viewData{"article": &model.Article{Slug: slug}}}); err != nil {
 				t.Fatal(err)
 			}
 			doc, err := goquery.NewDocumentFromReader(&output)

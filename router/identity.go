@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -54,12 +53,12 @@ func findLoginSession(token string) (*model.Account, error) {
 // live database session and fails closed when storage is unavailable.
 var sessionLookup = findLoginSession
 
-func currentAccount(c *fiber.Ctx) *model.Account {
-	account, _ := c.Locals(solitudes.CtxAccount).(*model.Account)
+func currentAccount(writer http.ResponseWriter, httpRequest *http.Request) *model.Account {
+	account, _ := requestValue(httpRequest, solitudes.CtxAccount).(*model.Account)
 	return account
 }
 
-func issueLoginSession(c *fiber.Ctx, account *model.Account, remember bool) error {
+func issueLoginSession(writer http.ResponseWriter, httpRequest *http.Request, account *model.Account, remember bool) error {
 	token, err := newSecret()
 	if err != nil {
 		return err
@@ -77,20 +76,20 @@ func issueLoginSession(c *fiber.Ctx, account *model.Account, remember bool) erro
 			return err
 		}
 		reason := "password"
-		if strings.Contains(c.Path(), "/passkey/") {
+		if strings.Contains(requestPath(httpRequest), "/passkey/") {
 			reason = "passkey"
-		} else if strings.HasPrefix(c.Path(), "/auth/") {
+		} else if strings.HasPrefix(requestPath(httpRequest), "/auth/") {
 			reason = "oauth"
 		}
-		return saveAudit(c.UserContext(), tx, model.AuditEvent{Action: "session.login", Outcome: "success", ActorID: account.ID,
-			Method: c.Method(), Route: c.Route().Path, Status: http.StatusOK, Reason: reason})
+		return saveAudit(httpRequest.Context(), tx, model.AuditEvent{Action: "session.login", Outcome: "success", ActorID: account.ID,
+			Method: httpRequest.Method, Route: requestRoute(httpRequest).Path, Status: http.StatusOK, Reason: reason})
 	}); err != nil {
 		return fmt.Errorf("create login session: %w", err)
 	}
-	c.Locals("audit_recorded", true)
-	c.Cookie(&fiber.Cookie{
+	requestValue(httpRequest, "audit_recorded", true)
+	http.SetCookie(writer, &http.Cookie{
 		Name: solitudes.AuthCookie, Value: token, Path: "/", Expires: expires,
-		HTTPOnly: true, SameSite: fiber.CookieSameSiteLaxMode, Secure: c.Protocol() == "https",
+		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: requestScheme(httpRequest) == "https",
 	})
 	return nil
 }
@@ -141,19 +140,19 @@ func validSiteDomain() bool {
 	return err == nil && u.Host == host && u.Hostname() != "" && u.User == nil
 }
 
-func requireAdmin(c *fiber.Ctx) error {
-	if account := currentAccount(c); account == nil || !account.Role.IsAdmin() {
-		return fiber.NewError(http.StatusForbidden, "administrator required")
+func requireAdmin(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if account := currentAccount(writer, httpRequest); account == nil || !account.Role.IsAdmin() {
+		return newHTTPError(http.StatusForbidden, "administrator required")
 	}
-	return c.Next()
+	return nil
 }
 
-func requireAccount(c *fiber.Ctx) error {
-	if currentAccount(c) == nil {
-		if c.Method() == fiber.MethodGet {
-			return c.Redirect("/login?return_to="+url.QueryEscape(c.OriginalURL()), http.StatusFound)
+func requireAccount(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if currentAccount(writer, httpRequest) == nil {
+		if httpRequest.Method == http.MethodGet {
+			return redirectResponse(writer, httpRequest, "/login?return_to="+url.QueryEscape(requestTarget(httpRequest)), http.StatusFound)
 		}
-		return c.Redirect("/login", http.StatusFound)
+		return redirectResponse(writer, httpRequest, "/login", http.StatusFound)
 	}
-	return c.Next()
+	return nil
 }

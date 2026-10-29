@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
@@ -98,7 +97,7 @@ func BenchmarkPostgresReading(b *testing.B) {
 			if err := LoadTemplates(); err != nil {
 				b.Fatal(err)
 			}
-			app := fiber.New(fiber.Config{Views: globalDynamicEngine, DisableStartupMessage: true})
+			app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 			app.Use(trans)
 			app.Get("/", index)
 			app.Get("/books/", book)
@@ -107,7 +106,7 @@ func BenchmarkPostgresReading(b *testing.B) {
 			for _, route := range []struct{ name, path string }{{"Home", "/"}, {"Books", "/books/"}, {"Book", "/perf-book-00"}, {"Article", "/perf-chapter-00-00-00"}, {"Search", "/search/?w=performance"}} {
 				b.Run(route.name, func(b *testing.B) {
 					request := func() {
-						response, err := app.Test(httptest.NewRequest("GET", route.path, nil), -1)
+						response, err := testRequest(app, httptest.NewRequest("GET", route.path, nil))
 						if err != nil {
 							b.Fatal(err)
 						}

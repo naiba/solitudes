@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"gorm.io/gorm"
 
@@ -33,7 +32,7 @@ func auditIdentifier(value string) string {
 	return value
 }
 
-// Group authorization can reject a request before Fiber matches its leaf
+// Group authorization can reject a request before chi matches its leaf
 // route. Recover only known route shapes, never the raw URL or query string.
 func auditResource(path string) (route, target, client string) {
 	for _, prefix := range []string{"/admin/users/", "/admin/oidc/clients/", "/account/oidc/clients/", "/account/oidc/authorizations/", "/account/passkeys/"} {
@@ -214,102 +213,113 @@ func routineAuditSuccess(method, path string, status int) bool {
 	return false
 }
 
-func auditStatus(c *fiber.Ctx, err error) int {
-	if err == nil {
-		return c.Response().StatusCode()
+func auditStatus(writer http.ResponseWriter, httpRequest *http.Request, err error) int {
+	// A late socket write failure cannot change an already committed status;
+	// auditing it as 500 would turn ordinary client disconnects into failures.
+	if responseCommitted(httpRequest) || err == nil {
+		return responseStatus(httpRequest)
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return http.StatusNotFound
 	}
-	var fe *fiber.Error
+	var fe *httpError
 	if errors.As(err, &fe) {
 		return fe.Code
 	}
 	return http.StatusInternalServerError
 }
 
-func auditMiddleware(c *fiber.Ctx) error {
+func auditMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(writer http.ResponseWriter, httpRequest *http.Request) {
+		if err := auditRequestOutcome(writer, httpRequest, next); err != nil {
+			respondError(writer, httpRequest, err)
+		}
+	})
+}
+
+func auditRequestOutcome(writer http.ResponseWriter, httpRequest *http.Request, next http.Handler) error {
 	id, err := uuid.GenerateUUID()
 	if err != nil {
 		return err
 	}
 	ip := ""
-	if parsed := net.ParseIP(c.IP()); parsed != nil {
+	if parsed := net.ParseIP(requestIP(httpRequest)); parsed != nil {
 		ip = parsed.String()
 	}
-	c.Set("X-Request-ID", id) // Never trust a client-supplied correlation ID.
-	c.SetUserContext(context.WithValue(c.UserContext(), auditContextKey{}, &auditRequest{ID: id, IP: ip}))
-	err = c.Next()
-	status := auditStatus(c, err)
-	reason, _ := c.Locals("audit_reason").(string)
+	writer.Header().Set("X-Request-ID", id) // Never trust a client-supplied correlation ID.
+	setRequestContext(httpRequest, context.WithValue(httpRequest.Context(), auditContextKey{}, &auditRequest{ID: id, IP: ip}))
+	next.ServeHTTP(writer, httpRequest)
+	err = stateFor(httpRequest).err
+	status := auditStatus(writer, httpRequest, err)
+	reason, _ := requestValue(httpRequest, "audit_reason").(string)
 	// Only the protocol adapter may identify expected interaction responses.
 	// Never let that marker hide middleware errors or explicit denials.
-	if c.Locals("audit_interaction_required") == true && err == nil && reason == "" &&
-		c.Locals("audit_outcome") != "failure" && c.Locals("audit_outcome") != "denied" &&
+	if requestValue(httpRequest, "audit_interaction_required") == true && err == nil && reason == "" &&
+		requestValue(httpRequest, "audit_outcome") != "failure" && requestValue(httpRequest, "audit_outcome") != "denied" &&
 		(status == http.StatusBadRequest || (status >= 300 && status < 400)) {
 		return nil
 	}
-	failed := err != nil || status >= 400 || reason != "" || c.Locals("audit_outcome") == "failure" || c.Locals("audit_outcome") == "denied"
-	if !failed && (c.Locals("audit_no_change") == true || routineAuditSuccess(c.Method(), c.Path(), status)) {
+	failed := err != nil || status >= 400 || reason != "" || requestValue(httpRequest, "audit_outcome") == "failure" || requestValue(httpRequest, "audit_outcome") == "denied"
+	if !failed && (requestValue(httpRequest, "audit_no_change") == true || routineAuditSuccess(httpRequest.Method, requestPath(httpRequest), status)) {
 		return nil
 	}
-	location := c.GetRespHeader("Location")
-	protectedPage := c.Path() == "/admin" || strings.HasPrefix(c.Path(), "/admin/") || c.Path() == "/account" || strings.HasPrefix(c.Path(), "/account/")
-	authenticationRedirect := currentAccount(c) == nil && status >= 300 && status < 400 &&
+	location := writer.Header().Get("Location")
+	protectedPage := requestPath(httpRequest) == "/admin" || strings.HasPrefix(requestPath(httpRequest), "/admin/") || requestPath(httpRequest) == "/account" || strings.HasPrefix(requestPath(httpRequest), "/account/")
+	authenticationRedirect := currentAccount(writer, httpRequest) == nil && status >= 300 && status < 400 &&
 		(location == "/login" || strings.HasPrefix(location, "/login?")) && protectedPage
 	// Browsing with no usable session (including expired cookies) is not a
 	// login attempt. Keep auditing mutations, permission failures and errors.
-	if !failed && authenticationRedirect && (c.Method() == http.MethodGet || c.Method() == http.MethodHead) {
+	if !failed && authenticationRedirect && (httpRequest.Method == http.MethodGet || httpRequest.Method == http.MethodHead) {
 		return nil
 	}
-	action := auditAction(c.Method(), c.Path())
+	action := auditAction(httpRequest.Method, requestPath(httpRequest))
 	if status >= 500 {
 		action = "request.error"
 	}
 	// Missing pages are not permission denials. Explicit operations still retain
 	// their failure event when a target is missing (for example client deletion).
 	if action == "" && status >= 400 && status != http.StatusNotFound &&
-		(protectedPage || c.Path() == "/authorize" || strings.HasPrefix(c.Path(), "/authorize/")) {
+		(protectedPage || requestPath(httpRequest) == "/authorize" || strings.HasPrefix(requestPath(httpRequest), "/authorize/")) {
 		action = "access.denied"
 	}
 	if action == "" && authenticationRedirect {
 		action = "access.denied"
 	}
-	if action == "" || (!failed && c.Locals("audit_recorded") == true) {
+	if action == "" || (!failed && requestValue(httpRequest, "audit_recorded") == true) {
 		return err
 	}
-	event := model.AuditEvent{Action: action, Outcome: "success", Method: c.Method(), Status: status}
-	event.TargetID = auditIdentifier(c.Params("id"))
+	event := model.AuditEvent{Action: action, Outcome: "success", Method: httpRequest.Method, Status: status}
+	event.TargetID = auditIdentifier(routeParam(httpRequest, "id"))
 	if strings.HasPrefix(action, "client.") {
 		event.ClientID = event.TargetID
 	}
 	if len(event.Method) > 16 {
 		event.Method = "OTHER"
 	}
-	if route := c.Route(); route != nil {
+	if route := requestRoute(httpRequest); route != nil {
 		event.Route = route.Path
 	}
-	if route, target, client := auditResource(c.Path()); route != "" {
+	if route, target, client := auditResource(requestPath(httpRequest)); route != "" {
 		event.Route, event.TargetID = route, target
 		if client != "" {
 			event.ClientID = client
 		}
 	}
-	switch c.Path() {
+	switch requestPath(httpRequest) {
 	case "/oauth/token", "/oauth/introspect", "/revoke", "/userinfo", "/authorize", "/authorize/callback", "/end_session":
-		event.Route = c.Path()
+		event.Route = requestPath(httpRequest)
 	}
 	// Protocol routes are mounted as prefixes, not as their query-bearing URLs.
 	if len(event.Route) > 128 {
 		event.Route = ""
 	}
-	if account := currentAccount(c); account != nil {
+	if account := currentAccount(writer, httpRequest); account != nil {
 		event.ActorID = account.ID
 	}
-	if target, ok := c.Locals("audit_target").(string); ok {
+	if target, ok := requestValue(httpRequest, "audit_target").(string); ok {
 		event.TargetID = target
 	}
-	if client, ok := c.Locals("audit_client").(string); ok {
+	if client, ok := requestValue(httpRequest, "audit_client").(string); ok {
 		event.ClientID = client
 	}
 	if status >= 400 {
@@ -328,10 +338,10 @@ func auditMiddleware(c *fiber.Ctx) error {
 			}
 		}
 	}
-	if reason, ok := c.Locals("audit_reason").(string); ok {
+	if reason, ok := requestValue(httpRequest, "audit_reason").(string); ok {
 		event.Reason = reason
 	}
-	if outcome, ok := c.Locals("audit_outcome").(string); ok {
+	if outcome, ok := requestValue(httpRequest, "audit_outcome").(string); ok {
 		event.Outcome = outcome
 	}
 	if authenticationRedirect {
@@ -340,7 +350,11 @@ func auditMiddleware(c *fiber.Ctx) error {
 	if event.Reason == "consent_declined" {
 		event.Outcome = "denied"
 	}
-	if saveErr := saveAudit(c.UserContext(), solitudes.System.DB, event); saveErr != nil {
+	// A client disconnect cancels request work, but must not erase the final
+	// security event. Preserve request identity and bound the independent write.
+	auditContext, cancelAudit := context.WithTimeout(context.WithoutCancel(httpRequest.Context()), 5*time.Second)
+	defer cancelAudit()
+	if saveErr := saveAudit(auditContext, solitudes.System.DB, event); saveErr != nil {
 		// The database may be down: preserve a secret-free fallback for diagnosis.
 		log.Printf("audit_write_failed request_id=%s action=%s status=%d", id, action, status)
 	}
@@ -350,11 +364,11 @@ func auditMiddleware(c *fiber.Ctx) error {
 	return err
 }
 
-func auditMutation(c *fiber.Ctx, tx *gorm.DB, action, targetID, clientID, details string) error {
+func auditMutation(writer http.ResponseWriter, httpRequest *http.Request, tx *gorm.DB, action, targetID, clientID, details string) error {
 	event := model.AuditEvent{Action: action, Outcome: "success", TargetID: targetID, ClientID: clientID,
-		Method: c.Method(), Route: c.Route().Path, Details: details, Status: http.StatusOK}
-	if account := currentAccount(c); account != nil {
+		Method: httpRequest.Method, Route: requestRoute(httpRequest).Path, Details: details, Status: http.StatusOK}
+	if account := currentAccount(writer, httpRequest); account != nil {
 		event.ActorID = account.ID
 	}
-	return saveAudit(c.UserContext(), tx, event)
+	return saveAudit(httpRequest.Context(), tx, event)
 }

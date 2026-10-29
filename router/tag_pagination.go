@@ -1,15 +1,16 @@
 package router
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"net/http"
+
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
 
-func pagedTags(c *fiber.Ctx, articles *gorm.DB) (fiber.Map, error) {
-	page, err := listPage(c.Query("page"))
+func pagedTags(writer http.ResponseWriter, httpRequest *http.Request, articles *gorm.DB) (viewData, error) {
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return nil, err
 	}
@@ -32,5 +33,5 @@ func pagedTags(c *fiber.Ctx, articles *gorm.DB) (fiber.Map, error) {
 		tags = append(tags, row.Tag)
 		counts = append(counts, row.Count)
 	}
-	return fiber.Map{"tags": tags, "counts": counts, "navigation": pageNavigationFor(c, "page", page, more, ""), "noindex": page > 1}, nil
+	return viewData{"tags": tags, "counts": counts, "navigation": pageNavigationFor(writer, httpRequest, "page", page, more, ""), "noindex": page > 1}, nil
 }

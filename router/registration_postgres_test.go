@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/blevesearch/bleve/v2"
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
@@ -169,7 +168,7 @@ func TestPostgresRegistrationSMTPAndVerifiedLogin(t *testing.T) {
 	solitudes.System.Config.Email.Port = port
 	solitudes.System.Config.Email.User = "test@localhost"
 	t.Setenv("SOLITUDES_E2E", "1")
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Post("/register", guestRequired, registerHandler)
 	app.Post("/login", guestRequired, loginHandler)
@@ -181,7 +180,7 @@ func TestPostgresRegistrationSMTPAndVerifiedLogin(t *testing.T) {
 		req.Header.Set("Host", "localhost:8080")
 		req.Header.Set("Origin", "http://localhost:8080")
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -229,7 +228,7 @@ func TestPostgresRegistrationSMTPAndVerifiedLogin(t *testing.T) {
 		t.Fatalf("verification token persisted in plaintext: %v", err)
 	}
 	req := httptest.NewRequest(http.MethodGet, parsed.RequestURI(), nil)
-	resp, err = app.Test(req, -1)
+	resp, err = testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -237,7 +236,7 @@ func TestPostgresRegistrationSMTPAndVerifiedLogin(t *testing.T) {
 	if resp.StatusCode != http.StatusFound {
 		t.Fatalf("verification status: %d", resp.StatusCode)
 	}
-	resp, err = app.Test(req, -1)
+	resp, err = testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +290,7 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 	if err := db.Create(&article).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Get("/admin/publish", loginRequired, publish)
 	app.Post("/admin/publish", loginRequired, publishHandler)
@@ -312,7 +311,7 @@ func TestPostgresEditorCannotAlterAnotherAuthorsArticle(t *testing.T) {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		}
 		req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: string(role)})
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -473,7 +472,7 @@ func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Post("/account/oidc/clients/:id/disable", requireAccount, disableOIDCClient)
 	call := func(email, id string) int {
@@ -483,7 +482,7 @@ func TestPostgresOIDCClientOwnersCannotDisableOtherApplications(t *testing.T) {
 		req.Header.Set("Host", "localhost:8080")
 		req.Header.Set("Origin", "http://localhost:8080")
 		req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: email})
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -571,13 +570,13 @@ func TestPostgresOIDCProviderAuthorizationAndTokenRotation(t *testing.T) {
 		!strings.Contains(resp.Body.String(), `"issuer":"http://localhost:8080"`) {
 		t.Fatalf("discovery failed: %d %s", resp.Code, resp.Body.String())
 	}
-	metadataApp := fiber.New()
+	metadataApp := newTestRouter()
 	metadataApp.Use("/.well-known", oidcHTTPHandler(provider))
 	for _, path := range []string{"/.well-known/openid-configuration", "/.well-known/oauth-authorization-server"} {
 		metadataRequest := httptest.NewRequest(http.MethodGet, path, nil)
 		metadataRequest.Host = "localhost:8080"
 		metadataRequest.Header.Set("Host", "localhost:8080")
-		response, err := metadataApp.Test(metadataRequest)
+		response, err := testRequest(metadataApp, metadataRequest)
 		if err != nil {
 			t.Fatal(err)
 		}

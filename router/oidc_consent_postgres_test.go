@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
@@ -29,7 +28,7 @@ import (
 
 type consentFixture struct {
 	db            *gorm.DB
-	app           *fiber.App
+	app           *testHTTPRouter
 	owner, reader model.Account
 	client        model.OIDCClient
 	now           time.Time
@@ -58,17 +57,24 @@ func newConsentFixture(t *testing.T) *consentFixture {
 	previous := activeOIDCProvider
 	activeOIDCProvider = provider
 	t.Cleanup(func() { activeOIDCProvider = previous })
-	f.app = fiber.New(fiber.Config{Views: &paginationView{}})
+	f.app = newTestRouter(testHTTPOptions{Views: &paginationView{}})
 	f.app.Use(auditMiddleware)
 	// Match production: protocol endpoints precede browser auth middleware.
 	for _, path := range []string{"/authorize", "/oauth/token"} {
 		f.app.Use(path, oidcHTTPHandler(provider))
 	}
-	f.app.Use(auth, csrfGuard, func(c *fiber.Ctx) error { c.Locals(solitudes.CtxTranslator, &translator.Translator{}); return c.Next() })
+	f.app.Use(auth, csrfGuard, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxTranslator, &translator.Translator{})
+		return nil
+	})
 	f.app.Get("/oidc/consent", consentPage)
 	f.app.Post("/oidc/consent", requireAccount, consentHandler)
-	f.app.Get("/login", guestRequired, func(c *fiber.Ctx) error { return c.SendString("sign-in") })
-	f.app.Post("/login", guestRequired, func(c *fiber.Ctx) error { return c.SendString("sign-in") })
+	f.app.Get("/login", guestRequired, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeText(writer, http.StatusOK, "sign-in")
+	})
+	f.app.Post("/login", guestRequired, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeText(writer, http.StatusOK, "sign-in")
+	})
 	return f
 }
 
@@ -87,7 +93,7 @@ func (f *consentFixture) request(t *testing.T, method, target, cookie string, fo
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Set("Origin", "http://localhost:8080")
 	}
-	resp, err := f.app.Test(req, -1)
+	resp, err := testRequest(f.app, req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -726,7 +732,7 @@ func TestPostgresOIDCDurableConsentApprovalWaitsForRevocation(t *testing.T) {
 			req.Header.Set("Origin", "http://localhost:8080")
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "reader-session"})
-			go func() { response, err := f.app.Test(req, -1); result <- approvalResult{response, err} }()
+			go func() { response, err := testRequest(f.app, req); result <- approvalResult{response, err} }()
 			// Observe a real PostgreSQL lock wait, not a goroutine scheduling delay.
 			deadline := time.Now().Add(5 * time.Second)
 			waiting := false
@@ -1043,7 +1049,7 @@ func TestPostgresOIDCConcurrentExplicitApprovalsMergeScopes(t *testing.T) {
 		req.Header.Set("Origin", "http://localhost:8080")
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "reader-session"})
-		go func() { response, err := f.app.Test(req, -1); results <- approvalResult{response, err} }()
+		go func() { response, err := testRequest(f.app, req); results <- approvalResult{response, err} }()
 	}
 	waitForQuery := func(fragment string, blockedBy int) int {
 		t.Helper()

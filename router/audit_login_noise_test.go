@@ -7,7 +7,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes/internal/model"
 )
 
@@ -33,9 +32,11 @@ func TestAuditLoginNavigationAndProtocolInteractions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			db := newIdentityTestDB(t)
 			withIdentityDB(t, db)
-			app := fiber.New()
+			app := newTestRouter()
 			app.Use(auditMiddleware)
-			handler := func(c *fiber.Ctx) error { return c.Redirect("/account", tc.status) }
+			handler := func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				return redirectResponse(writer, httpRequest, "/account", tc.status)
+			}
 			if tc.protocolError != "" {
 				handler = oidcHTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					if tc.status == 302 {
@@ -47,7 +48,7 @@ func TestAuditLoginNavigationAndProtocolInteractions(t *testing.T) {
 				}))
 			}
 			app.Add(tc.method, tc.path, handler)
-			resp, err := app.Test(httptest.NewRequest(tc.method, tc.path, nil))
+			resp, err := testRequest(app, httptest.NewRequest(tc.method, tc.path, nil))
 			if err != nil {
 				t.Fatal(err)
 			}

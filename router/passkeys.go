@@ -1,17 +1,14 @@
 package router
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -46,13 +43,13 @@ func (u passkeyUser) WebAuthnCredentials() []webauthn.Credential {
 func passkeyProvider() (*webauthn.WebAuthn, error) {
 	cfg := solitudes.System.Config.Auth.WebAuthn
 	if cfg.RPID == "" || cfg.Origin == "" {
-		return nil, fiber.NewError(http.StatusServiceUnavailable, "WebAuthn is not configured")
+		return nil, newHTTPError(http.StatusServiceUnavailable, "WebAuthn is not configured")
 	}
 	u, err := url.Parse(cfg.Origin)
 	if err != nil || u.Hostname() == "" || u.User != nil ||
 		(u.Scheme != "https" && !(u.Scheme == "http" && u.Hostname() == "localhost")) ||
 		!strings.EqualFold(u.Hostname(), cfg.RPID) {
-		return nil, fiber.NewError(http.StatusServiceUnavailable, "invalid WebAuthn RP ID or origin")
+		return nil, newHTTPError(http.StatusServiceUnavailable, "invalid WebAuthn RP ID or origin")
 	}
 	return webauthn.New(&webauthn.Config{
 		RPID: cfg.RPID, RPDisplayName: solitudes.System.Config.Site.SpaceName,
@@ -67,7 +64,7 @@ func loadPasskeyUser(account *model.Account) (passkeyUser, error) {
 	return passkeyUser{account: account, keys: keys}, err
 }
 
-func savePasskeyCeremony(c *fiber.Ctx, accountID, purpose string, session *webauthn.SessionData) error {
+func savePasskeyCeremony(writer http.ResponseWriter, httpRequest *http.Request, accountID, purpose string, session *webauthn.SessionData) error {
 	raw, err := json.Marshal(session)
 	if err != nil {
 		return err
@@ -86,18 +83,18 @@ func savePasskeyCeremony(c *fiber.Ctx, accountID, purpose string, session *webau
 	}).Error; err != nil {
 		return err
 	}
-	c.Cookie(&fiber.Cookie{Name: passkeyCookie, Value: secret, Path: "/", MaxAge: 300,
-		HTTPOnly: true, SameSite: fiber.CookieSameSiteStrictMode, Secure: c.Protocol() == "https"})
+	http.SetCookie(writer, &http.Cookie{Name: passkeyCookie, Value: secret, Path: "/", MaxAge: 300,
+		HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: requestScheme(httpRequest) == "https"})
 	return nil
 }
 
-func consumePasskeyCeremony(c *fiber.Ctx, purpose string) (*model.PasskeyCeremony, webauthn.SessionData, error) {
-	secret := c.Cookies(passkeyCookie)
+func consumePasskeyCeremony(writer http.ResponseWriter, httpRequest *http.Request, purpose string) (*model.PasskeyCeremony, webauthn.SessionData, error) {
+	secret := requestCookie(httpRequest, passkeyCookie)
 	if len(secret) != 64 {
-		return nil, webauthn.SessionData{}, fiber.ErrBadRequest
+		return nil, webauthn.SessionData{}, newHTTPError(http.StatusBadRequest)
 	}
-	c.Cookie(&fiber.Cookie{Name: passkeyCookie, Path: "/", MaxAge: -1,
-		HTTPOnly: true, SameSite: fiber.CookieSameSiteStrictMode, Secure: c.Protocol() == "https"})
+	http.SetCookie(writer, &http.Cookie{Name: passkeyCookie, Path: "/", MaxAge: -1,
+		HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: requestScheme(httpRequest) == "https"})
 	var record model.PasskeyCeremony
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("cookie_hash = ? AND purpose = ? AND expires_at > ?",
@@ -107,7 +104,7 @@ func consumePasskeyCeremony(c *fiber.Ctx, purpose string) (*model.PasskeyCeremon
 		return tx.Delete(&record).Error
 	})
 	if err != nil {
-		return nil, webauthn.SessionData{}, fiber.ErrBadRequest
+		return nil, webauthn.SessionData{}, newHTTPError(http.StatusBadRequest)
 	}
 	var session webauthn.SessionData
 	if err := json.Unmarshal(record.SessionJSON, &session); err != nil {
@@ -116,18 +113,12 @@ func consumePasskeyCeremony(c *fiber.Ctx, purpose string) (*model.PasskeyCeremon
 	return &record, session, nil
 }
 
-func credentialRequest(c *fiber.Ctx) *http.Request {
-	req := httptest.NewRequest(http.MethodPost, publicBaseURL()+c.Path(), bytes.NewReader(c.Body()))
-	req.Header.Set("Content-Type", "application/json")
-	return req
-}
-
-func beginPasskeyRegistration(c *fiber.Ctx) error {
+func beginPasskeyRegistration(writer http.ResponseWriter, httpRequest *http.Request) error {
 	provider, err := passkeyProvider()
 	if err != nil {
 		return err
 	}
-	account := currentAccount(c)
+	account := currentAccount(writer, httpRequest)
 	user, err := loadPasskeyUser(account)
 	if err != nil {
 		return err
@@ -142,32 +133,32 @@ func beginPasskeyRegistration(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := savePasskeyCeremony(c, account.ID, "register", session); err != nil {
+	if err := savePasskeyCeremony(writer, httpRequest, account.ID, "register", session); err != nil {
 		return err
 	}
-	return c.JSON(options)
+	return writeJSON(writer, http.StatusOK, options)
 }
 
-func finishPasskeyRegistration(c *fiber.Ctx) error {
+func finishPasskeyRegistration(writer http.ResponseWriter, httpRequest *http.Request) error {
 	provider, err := passkeyProvider()
 	if err != nil {
 		return err
 	}
-	record, session, err := consumePasskeyCeremony(c, "register")
+	record, session, err := consumePasskeyCeremony(writer, httpRequest, "register")
 	if err != nil {
 		return err
 	}
-	account := currentAccount(c)
+	account := currentAccount(writer, httpRequest)
 	if account.ID != record.AccountID {
-		return fiber.ErrForbidden
+		return newHTTPError(http.StatusForbidden)
 	}
 	user, err := loadPasskeyUser(account)
 	if err != nil {
 		return err
 	}
-	key, err := provider.FinishRegistration(user, session, credentialRequest(c))
+	key, err := provider.FinishRegistration(user, session, httpRequest)
 	if err != nil {
-		return fiber.NewError(http.StatusBadRequest, "invalid passkey registration")
+		return newHTTPError(http.StatusBadRequest, "invalid passkey registration")
 	}
 	if err := solitudes.System.DB.Create(&model.Passkey{
 		AccountID: account.ID, CredentialID: key.ID, PublicKey: key.PublicKey,
@@ -178,10 +169,10 @@ func finishPasskeyRegistration(c *fiber.Ctx) error {
 	}).Error; err != nil {
 		return err
 	}
-	return c.SendStatus(http.StatusCreated)
+	return writeStatus(writer, http.StatusCreated)
 }
 
-func beginPasskeyLogin(c *fiber.Ctx) error {
+func beginPasskeyLogin(writer http.ResponseWriter, httpRequest *http.Request) error {
 	provider, err := passkeyProvider()
 	if err != nil {
 		return err
@@ -189,74 +180,74 @@ func beginPasskeyLogin(c *fiber.Ctx) error {
 	var input struct {
 		Email string `json:"email"`
 	}
-	if err := c.BodyParser(&input); err != nil {
-		return fiber.ErrBadRequest
+	if err := decodeRequestBody(httpRequest, &input); err != nil {
+		return newHTTPError(http.StatusBadRequest)
 	}
 	var account model.Account
 	if err := solitudes.System.DB.Where("email = ? AND email_verified_at IS NOT NULL AND disabled_at IS NULL", strings.ToLower(strings.TrimSpace(input.Email))).Take(&account).Error; err != nil {
-		return fiber.NewError(http.StatusBadRequest, "no passkeys available")
+		return newHTTPError(http.StatusBadRequest, "no passkeys available")
 	}
 	user, err := loadPasskeyUser(&account)
 	if err != nil {
 		return err
 	}
 	if len(user.keys) == 0 {
-		return fiber.NewError(http.StatusBadRequest, "no passkeys available")
+		return newHTTPError(http.StatusBadRequest, "no passkeys available")
 	}
 	options, session, err := provider.BeginLogin(user, webauthn.WithUserVerification(protocol.VerificationRequired))
 	if err != nil {
 		return err
 	}
-	if err := savePasskeyCeremony(c, account.ID, "login", session); err != nil {
+	if err := savePasskeyCeremony(writer, httpRequest, account.ID, "login", session); err != nil {
 		return err
 	}
-	return c.JSON(options)
+	return writeJSON(writer, http.StatusOK, options)
 }
 
-func finishPasskeyLogin(c *fiber.Ctx) error {
+func finishPasskeyLogin(writer http.ResponseWriter, httpRequest *http.Request) error {
 	provider, err := passkeyProvider()
 	if err != nil {
 		return err
 	}
-	record, session, err := consumePasskeyCeremony(c, "login")
+	record, session, err := consumePasskeyCeremony(writer, httpRequest, "login")
 	if err != nil {
 		return err
 	}
 	var account model.Account
 	if err := solitudes.System.DB.Where("id = ? AND email_verified_at IS NOT NULL AND disabled_at IS NULL", record.AccountID).Take(&account).Error; err != nil {
-		return fiber.ErrUnauthorized
+		return newHTTPError(http.StatusUnauthorized)
 	}
 	user, err := loadPasskeyUser(&account)
 	if err != nil {
 		return err
 	}
-	key, err := provider.FinishLogin(user, session, credentialRequest(c))
+	key, err := provider.FinishLogin(user, session, httpRequest)
 	if err != nil {
-		return fiber.NewError(http.StatusUnauthorized, "invalid passkey assertion")
+		return newHTTPError(http.StatusUnauthorized, "invalid passkey assertion")
 	}
 	if key.Authenticator.CloneWarning {
-		return fiber.NewError(http.StatusUnauthorized, "passkey counter regression")
+		return newHTTPError(http.StatusUnauthorized, "passkey counter regression")
 	}
 	if err := solitudes.System.DB.Model(&model.Passkey{}).Where("account_id = ? AND credential_id = ?", account.ID, key.ID).
 		Updates(map[string]interface{}{"sign_count": key.Authenticator.SignCount,
 			"backup_state": key.Flags.BackupState, "user_verified": key.Flags.UserVerified}).Error; err != nil {
 		return err
 	}
-	if err := issueLoginSession(c, &account, false); err != nil {
+	if err := issueLoginSession(writer, httpRequest, &account, false); err != nil {
 		return err
 	}
 	var input struct {
 		ReturnTo string `json:"return_to"`
 	}
-	_ = json.Unmarshal(c.Body(), &input)
+	_ = json.Unmarshal(requestBody(httpRequest), &input)
 	if target := safeReturnPath(input.ReturnTo); target != "" {
-		return c.JSON(fiber.Map{"redirect": target})
+		return writeJSON(writer, http.StatusOK, viewData{"redirect": target})
 	}
-	return c.JSON(fiber.Map{"redirect": "/account"})
+	return writeJSON(writer, http.StatusOK, viewData{"redirect": "/account"})
 }
 
-func deletePasskey(c *fiber.Ctx) error {
-	account := currentAccount(c)
+func deletePasskey(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		var owner model.Account
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&owner, "id = ?", account.ID).Error; err != nil {
@@ -271,19 +262,19 @@ func deletePasskey(c *fiber.Ctx) error {
 			return err
 		}
 		if owner.PasswordHash == "" && !usableIdentity && keys <= 1 {
-			return fiber.NewError(http.StatusConflict, "cannot remove the last sign-in method")
+			return newHTTPError(http.StatusConflict, "cannot remove the last sign-in method")
 		}
-		result := tx.Where("account_id = ? AND id = ?", account.ID, c.Params("id")).Delete(&model.Passkey{})
+		result := tx.Where("account_id = ? AND id = ?", account.ID, routeParam(httpRequest, "id")).Delete(&model.Passkey{})
 		if result.Error != nil {
 			return result.Error
 		}
 		if result.RowsAffected == 0 {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
 		return nil
 	})
 	if err != nil {
 		return err
 	}
-	return c.SendStatus(http.StatusNoContent)
+	return writeStatus(writer, http.StatusNoContent)
 }

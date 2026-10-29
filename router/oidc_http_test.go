@@ -8,8 +8,6 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -30,11 +28,11 @@ func TestOIDCHTTPResponseHeaders(t *testing.T) {
 		{"redirect", "text/html; charset=utf-8", "redirect", http.StatusFound},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			app := fiber.New()
-			app.Use(func(c *fiber.Ctx) error {
-				c.Set("X-Content-Type-Options", "nosniff")
-				c.Set("Cache-Control", "public, max-age=600")
-				return c.Next()
+			app := newTestRouter()
+			app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				writer.Header().Set("X-Content-Type-Options", "nosniff")
+				writer.Header().Set("Cache-Control", "public, max-age=600")
+				return nil
 			})
 			app.Use(oidcHTTPHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", tc.contentType)
@@ -49,7 +47,7 @@ func TestOIDCHTTPResponseHeaders(t *testing.T) {
 				w.WriteHeader(tc.status)
 				_, _ = io.WriteString(w, tc.body)
 			})))
-			resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/oauth/token", nil))
+			resp, err := testRequest(app, httptest.NewRequest(http.MethodGet, "/oauth/token", nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -59,7 +57,7 @@ func TestOIDCHTTPResponseHeaders(t *testing.T) {
 				t.Fatalf("status/body changed: status=%d error=%v", resp.StatusCode, err)
 			}
 			if values := resp.Header.Values("Content-Type"); len(values) != 1 || values[0] != tc.contentType {
-				t.Errorf("Content-Type must replace Fiber's default: %q", values)
+				t.Errorf("Content-Type must preserve the provider value: %q", values)
 			}
 			if _, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type")); err != nil {
 				t.Errorf("invalid media type: %v", err)

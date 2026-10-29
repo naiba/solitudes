@@ -3,6 +3,7 @@
 package router
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -19,8 +20,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/blevesearch/bleve/v2"
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/bcrypt"
@@ -31,7 +33,7 @@ import (
 	"github.com/naiba/solitudes/internal/theme"
 )
 
-// TestBrowserThemeMatrix serves the real Fiber application on an ephemeral
+// TestBrowserThemeMatrix serves the real chi application on an ephemeral
 // port, using an isolated PostgreSQL schema and the actual Playwright browser.
 // No production config, database, or port 8080 is modified.
 func TestBrowserThemeMatrix(t *testing.T) {
@@ -310,13 +312,13 @@ func TestBrowserThemeMatrix(t *testing.T) {
 				} else {
 					t.Chdir(repoRoot)
 				}
-				app := newAppWithRoutes(func(app *fiber.App) {
+				app := newAppWithRoutes(func(app chi.Router) {
 					// Only this in-process E2E server exposes captured test mail. The
 					// production router has no mail inspection endpoint.
-					app.Get("/__e2e/server-error", func(c *fiber.Ctx) error {
+					app.Get("/__e2e/server-error", serveEndpoint(func(writer http.ResponseWriter, httpRequest *http.Request) error {
 						return errors.New("private-database-token-must-not-leak")
-					})
-					app.Get("/__e2e/verification-mail", func(c *fiber.Ctx) error {
+					}))
+					app.Get("/__e2e/verification-mail", serveEndpoint(func(writer http.ResponseWriter, httpRequest *http.Request) error {
 						select {
 						case message := <-mailMessages:
 							decoded, err := io.ReadAll(quotedprintable.NewReader(strings.NewReader(message)))
@@ -325,18 +327,21 @@ func TestBrowserThemeMatrix(t *testing.T) {
 							}
 							link := regexp.MustCompile(`http://localhost:\d+/verify-email\?token=[a-f0-9]{64}(&return_to=[^\s"<>]*)?`).FindString(string(decoded))
 							if link == "" {
-								return fiber.ErrInternalServerError
+								return newHTTPError(http.StatusInternalServerError)
 							}
-							return c.SendString(link)
+							return writeText(writer, http.StatusOK, link)
 						default:
-							return c.SendStatus(http.StatusNoContent)
+							return writeStatus(writer, http.StatusNoContent)
 						}
-					})
+					}))
 				})
 				serverDone := make(chan error, 1)
-				go func() { serverDone <- app.Listener(listener) }()
+				server := &http.Server{Handler: app, ReadHeaderTimeout: 5 * time.Second}
+				go func() { serverDone <- server.Serve(listener) }()
 				t.Cleanup(func() {
-					_ = app.ShutdownWithTimeout(5 * time.Second)
+					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+					defer cancel()
+					_ = server.Shutdown(ctx)
 					_ = listener.Close()
 					<-serverDone
 				})
@@ -359,12 +364,26 @@ func TestBrowserThemeMatrix(t *testing.T) {
 				// The full role/layout matrix now includes more than 90 browser
 				// cases per theme. Leave room for slower CI hosts without retries.
 				testTimeout := 9 * time.Minute
+				if configured := os.Getenv("SOLITUDES_E2E_TIMEOUT"); configured != "" {
+					duration, err := time.ParseDuration(configured)
+					if err != nil || duration <= 0 {
+						t.Fatalf("invalid SOLITUDES_E2E_TIMEOUT: %q", configured)
+					}
+					testTimeout = duration
+				}
 				ctx, cancel := context.WithTimeout(context.Background(), testTimeout)
 				defer cancel()
 				root := repoRoot
 				args := []string{"test", "--config", "playwright.config.ts", "theme-contract.spec.ts"}
 				if os.Getenv("SOLITUDES_VISUAL_AUDIT") != "" {
 					args = []string{"test", "--config", "visual-audit.config.ts", "visual-audit.spec.ts"}
+				}
+				if configured := os.Getenv("SOLITUDES_E2E_CASE_TIMEOUT"); configured != "" {
+					duration, err := time.ParseDuration(configured)
+					if err != nil || duration < time.Millisecond {
+						t.Fatalf("invalid SOLITUDES_E2E_CASE_TIMEOUT: %q", configured)
+					}
+					args = append(args, "--timeout", fmt.Sprintf("%d", duration.Milliseconds()))
 				}
 				if focus := os.Getenv("SOLITUDES_E2E_GREP"); focus != "" {
 					args = append(args, "--grep", focus)
@@ -390,11 +409,13 @@ func TestBrowserThemeMatrix(t *testing.T) {
 					"E2E_ARTICLE_SLUG="+article.Slug,
 					"E2E_ARTICLE_TITLE="+article.Title,
 				)
-				output, err := cmd.CombinedOutput()
+				var output bytes.Buffer
+				cmd.Stdout = io.MultiWriter(os.Stdout, &output)
+				cmd.Stderr = cmd.Stdout
+				err = cmd.Run()
 				if err != nil {
-					t.Fatalf("Playwright failed for %s/%s: %v\n%s", site, adminTheme, err, output)
+					t.Fatalf("Playwright failed for %s/%s: %v\n%s", site, adminTheme, err, output.String())
 				}
-				t.Logf("%s/%s: %s", site, adminTheme, output)
 			})
 		}
 	}

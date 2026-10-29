@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -135,25 +134,25 @@ func adminClientsPageQuery(base *gorm.DB, page int) *gorm.DB {
 	return adminClientsQuery(base.Session(&gorm.Session{NewDB: true})).Table("(?) AS c", selected).Order("c.created_at DESC, c.id")
 }
 
-func identityPage(c *fiber.Ctx) (int, error) {
-	return listPage(c.Query("page"))
+func identityPage(writer http.ResponseWriter, httpRequest *http.Request) (int, error) {
+	return listPage(queryValue(httpRequest, "page"))
 }
 
-func identitySearch(c *fiber.Ctx) (string, error) {
-	q := strings.TrimSpace(c.Query("q"))
+func identitySearch(writer http.ResponseWriter, httpRequest *http.Request) (string, error) {
+	q := strings.TrimSpace(queryValue(httpRequest, "q"))
 	if len(q) > 100 || strings.ContainsRune(q, '\x00') {
-		return "", fiber.ErrBadRequest
+		return "", newHTTPError(http.StatusBadRequest)
 	}
 	return q, nil
 }
 
-func paginationLinks(c *fiber.Ctx, page int, total int64) fiber.Map {
+func paginationLinks(writer http.ResponseWriter, httpRequest *http.Request, page int, total int64) viewData {
 	link := func(p int) string {
-		values, _ := url.ParseQuery(string(c.Request().URI().QueryString()))
+		values, _ := url.ParseQuery(string(httpRequest.URL.RawQuery))
 		values.Set("page", strconv.Itoa(p))
-		return c.Path() + "?" + values.Encode()
+		return requestPath(httpRequest) + "?" + values.Encode()
 	}
-	data := fiber.Map{"page": page, "total": total}
+	data := viewData{"page": page, "total": total}
 	if page > 1 {
 		data["previous"] = link(page - 1)
 	}
@@ -163,18 +162,18 @@ func paginationLinks(c *fiber.Ctx, page int, total int64) fiber.Map {
 	return data
 }
 
-func adminIdentityRender(c *fiber.Ctx, template string, data fiber.Map) error {
-	c.Set("Cache-Control", "private, no-store")
+func adminIdentityRender(writer http.ResponseWriter, httpRequest *http.Request, template string, data viewData) error {
+	writer.Header().Set("Cache-Control", "private, no-store")
 	data["noindex"] = true
-	return c.Status(http.StatusOK).Render(template, injectSiteData(c, data))
+	return renderPage(writer, httpRequest, http.StatusOK, template, injectSiteData(writer, httpRequest, data))
 }
 
-func adminUsersPage(c *fiber.Ctx) error {
-	page, err := identityPage(c)
+func adminUsersPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := identityPage(writer, httpRequest)
 	if err != nil {
 		return err
 	}
-	q, err := identitySearch(c)
+	q, err := identitySearch(writer, httpRequest)
 	if err != nil {
 		return err
 	}
@@ -182,10 +181,10 @@ func adminUsersPage(c *fiber.Ctx) error {
 	if q != "" {
 		query = query.Where("LOWER(a.nickname) LIKE ? OR LOWER(a.email) LIKE ?", "%"+strings.ToLower(q)+"%", "%"+strings.ToLower(q)+"%")
 	}
-	role := c.Query("role")
+	role := queryValue(httpRequest, "role")
 	if role != "" {
 		if role != "admin" && role != "editor" && role != "user" {
-			return fiber.ErrBadRequest
+			return newHTTPError(http.StatusBadRequest)
 		}
 		query = query.Where("a.role = ?", role)
 	}
@@ -201,15 +200,15 @@ func adminUsersPage(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	data := paginationLinks(c, page, total)
+	data := paginationLinks(writer, httpRequest, page, total)
 	data["users"], data["overview"], data["q"], data["role"] = users, overview, q, role
 	data["title"] = "Users"
-	return adminIdentityRender(c, "admin/users", data)
+	return adminIdentityRender(writer, httpRequest, "admin/users", data)
 }
 
-func adminUserDetail(c *fiber.Ctx) error {
+func adminUserDetail(writer http.ResponseWriter, httpRequest *http.Request) error {
 	var user adminUserView
-	query := adminUsersQuery(solitudes.System.DB).Where("CAST(a.id AS TEXT) = ?", c.Params("id"))
+	query := adminUsersQuery(solitudes.System.DB).Where("CAST(a.id AS TEXT) = ?", routeParam(httpRequest, "id"))
 	if err := query.Take(&user).Error; err != nil {
 		return err
 	}
@@ -217,22 +216,22 @@ func adminUserDetail(c *fiber.Ctx) error {
 	if err := adminClientsQuery(solitudes.System.DB).Where("c.owner_id = ?", user.ID).Order("c.created_at DESC, c.id").Limit(identityPageSize).Scan(&clients).Error; err != nil {
 		return err
 	}
-	return adminIdentityRender(c, "admin/user_detail", fiber.Map{"title": "User details", "user": user, "clients": clients})
+	return adminIdentityRender(writer, httpRequest, "admin/user_detail", viewData{"title": "User details", "user": user, "clients": clients})
 }
 
-func adminClientsPage(c *fiber.Ctx) error {
-	page, err := identityPage(c)
+func adminClientsPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := identityPage(writer, httpRequest)
 	if err != nil {
 		return err
 	}
-	q, err := identitySearch(c)
+	q, err := identitySearch(writer, httpRequest)
 	if err != nil {
 		return err
 	}
 	query := solitudes.System.DB.Table("o_id_c_clients AS c")
-	owner := c.Query("owner_id")
+	owner := queryValue(httpRequest, "owner_id")
 	if len(owner) > 64 {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
 	if owner != "" {
 		query = query.Where("CAST(c.owner_id AS TEXT) = ?", owner)
@@ -240,7 +239,7 @@ func adminClientsPage(c *fiber.Ctx) error {
 	if q != "" {
 		query = query.Where("LOWER(c.name) LIKE ? OR c.id = ?", "%"+strings.ToLower(q)+"%", q)
 	}
-	status := c.Query("status")
+	status := queryValue(httpRequest, "status")
 	switch status {
 	case "":
 	case "active":
@@ -248,7 +247,7 @@ func adminClientsPage(c *fiber.Ctx) error {
 	case "disabled":
 		query = query.Where("c.disabled_at IS NOT NULL")
 	default:
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
 	var total int64
 	if err := query.Session(&gorm.Session{}).Count(&total).Error; err != nil {
@@ -262,22 +261,22 @@ func adminClientsPage(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	data := paginationLinks(c, page, total)
+	data := paginationLinks(writer, httpRequest, page, total)
 	data["clients"], data["overview"], data["q"], data["owner_id"], data["status"] = clients, overview, q, owner, status
 	for i := range clients {
 		clients[i].prepare()
 	}
 	data["title"], data["issuer"] = "OIDC clients", publicBaseURL()
-	return adminIdentityRender(c, "admin/oidc_clients", data)
+	return adminIdentityRender(writer, httpRequest, "admin/oidc_clients", data)
 }
 
-func adminClientDetail(c *fiber.Ctx) error {
-	page, err := listPage(c.Query("page"))
+func adminClientDetail(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
 	var client adminClientView
-	if err := adminClientsQuery(solitudes.System.DB).Where("c.id = ?", c.Params("id")).Take(&client).Error; err != nil {
+	if err := adminClientsQuery(solitudes.System.DB).Where("c.id = ?", routeParam(httpRequest, "id")).Take(&client).Error; err != nil {
 		return err
 	}
 	client.prepare()
@@ -298,54 +297,54 @@ func adminClientDetail(c *fiber.Ctx) error {
 	if more {
 		users = users[:identityPageSize]
 	}
-	return adminIdentityRender(c, "admin/client_detail", fiber.Map{"title": "Application details", "client": client, "login_users": users, "navigation": pageNavigationFor(c, "page", page, more, "login-users")})
+	return adminIdentityRender(writer, httpRequest, "admin/client_detail", viewData{"title": "Application details", "client": client, "login_users": users, "navigation": pageNavigationFor(writer, httpRequest, "page", page, more, "login-users")})
 }
 
 // Shared with the translation contract: audit actions are translated dynamically.
 var auditActionNames = []string{"oidc.login", "session.login", "session.attempt", "session.logout", "account.register", "account.verify", "account.verification.send", "identity.callback", "oidc.authorize", "oidc.consent", "oidc.logout", "oidc.request", "client.create", "client.update", "client.disable", "client.delete", "grant.revoke", "user.role.update", "account.password.update", "account.profile.update", "account.operation", "passkey.operation", "provider.update", "settings.update", "oidc.keys.rotate", "article.save", "article.delete", "redirect.save", "redirect.delete", "comment.create", "admin.operation", "access.denied", "request.error", "audit.view", "audit.enabled", "account.initialized"}
 
-func auditPage(c *fiber.Ctx) error {
-	page, err := identityPage(c)
+func auditPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := identityPage(writer, httpRequest)
 	if err != nil {
 		return err
 	}
 	query := solitudes.System.DB.Model(&model.AuditEvent{})
-	data := fiber.Map{"title": "Security audit", "retention_days": solitudes.System.Config.AuditRetentionDays}
+	data := viewData{"title": "Security audit", "retention_days": solitudes.System.Config.AuditRetentionDays}
 	data["actions"] = auditActionNames
-	ip := c.Query("ip")
+	ip := queryValue(httpRequest, "ip")
 	if ip != "" {
 		parsed := net.ParseIP(ip)
 		if parsed == nil {
-			return fiber.ErrBadRequest
+			return newHTTPError(http.StatusBadRequest)
 		}
 		ip = parsed.String()
 		query = query.Where("ip = ?", ip)
 	}
 	data["ip"] = ip
 	for key, column := range map[string]string{"action": "action", "outcome": "outcome", "client_id": "client_id", "request_id": "request_id"} {
-		value := strings.TrimSpace(c.Query(key))
+		value := strings.TrimSpace(queryValue(httpRequest, key))
 		if len(value) > 64 {
-			return fiber.ErrBadRequest
+			return newHTTPError(http.StatusBadRequest)
 		}
 		if value != "" {
 			query = query.Where(column+" = ?", value)
 		}
 		data[key] = value
 	}
-	userID := c.Query("user_id")
+	userID := queryValue(httpRequest, "user_id")
 	if len(userID) > 64 {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
 	if userID != "" {
 		query = query.Where("actor_id = ? OR target_id = ?", userID, userID)
 	}
 	data["user_id"] = userID
 	for _, key := range []string{"since", "until"} {
-		value := c.Query(key)
+		value := queryValue(httpRequest, key)
 		if value != "" {
 			date, err := time.Parse("2006-01-02", value)
 			if err != nil {
-				return fiber.ErrBadRequest
+				return newHTTPError(http.StatusBadRequest)
 			}
 			if key == "since" {
 				query = query.Where("created_at >= ?", date)
@@ -363,7 +362,7 @@ func auditPage(c *fiber.Ctx) error {
 	if err := query.Order("created_at DESC, id DESC").Limit(identityPageSize).Offset((page - 1) * identityPageSize).Find(&events).Error; err != nil {
 		return err
 	}
-	for k, v := range paginationLinks(c, page, total) {
+	for k, v := range paginationLinks(writer, httpRequest, page, total) {
 		data[k] = v
 	}
 	data["events"] = events
@@ -384,5 +383,5 @@ func auditPage(c *fiber.Ctx) error {
 		}
 	}
 	data["actor_names"] = names
-	return adminIdentityRender(c, "admin/audit", data)
+	return adminIdentityRender(writer, httpRequest, "admin/audit", data)
 }

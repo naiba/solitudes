@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -71,11 +70,11 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 				t.Fatal(err)
 			}
 			var viewer *model.Account
-			app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+			app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 			app.Use(trans)
-			app.Use(func(c *fiber.Ctx) error {
-				c.Locals(solitudes.CtxAccount, viewer)
-				return c.Next()
+			app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				requestValue(httpRequest, solitudes.CtxAccount, viewer)
+				return nil
 			})
 			app.Get("/:slug/compare/:versions?", articleCompare)
 			app.Get("/:slug/:version?", article)
@@ -84,7 +83,7 @@ func TestPostgresHistoryInheritsLatestAudienceAndHistoricalFragments(t *testing.
 				t.Helper()
 				req := httptest.NewRequest(http.MethodGet, "/"+a.Slug+suffix, nil)
 				req.Header.Set("Accept-Language", language)
-				resp, err := app.Test(req, -1)
+				resp, err := testRequest(app, req)
 				if err != nil {
 					t.Fatal(err)
 				}

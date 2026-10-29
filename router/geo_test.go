@@ -7,7 +7,6 @@ import (
 
 	"github.com/88250/lute"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 	html "github.com/gofiber/template/html/v2"
 
 	"github.com/naiba/solitudes"
@@ -59,12 +58,12 @@ func TestRedirectPageNeverReflectsRequestTarget(t *testing.T) {
 		if err := engine.Load(); err != nil {
 			t.Fatal(err)
 		}
-		app := fiber.New(fiber.Config{Views: engine})
+		app := newTestRouter(testHTTPOptions{Views: engine})
 		app.Use(trans)
 		app.Get("/r/go", goRedirect)
 		for _, target := range []string{"https://outside.test/report?x=1&y=2", "https://例子.测试/文章", "javascript:alert(1)"} {
 			t.Run(theme+"/"+target, func(t *testing.T) {
-				resp, err := app.Test(httptest.NewRequest("GET", externalLink(target), nil))
+				resp, err := testRequest(app, httptest.NewRequest("GET", externalLink(target), nil))
 				if err != nil {
 					t.Fatal(err)
 				}

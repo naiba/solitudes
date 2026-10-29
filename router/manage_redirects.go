@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -28,17 +27,17 @@ type redirectRuleView struct {
 
 // Handler-level authorization must not call requireAdmin: that middleware calls
 // Next and would fall through to article routing before this handler completes.
-func redirectManagement(c *fiber.Ctx) error {
-	if account := currentAccount(c); account == nil || !account.Role.IsAdmin() {
-		return fiber.ErrForbidden
+func redirectManagement(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if account := currentAccount(writer, httpRequest); account == nil || !account.Role.IsAdmin() {
+		return newHTTPError(http.StatusForbidden)
 	}
-	page, err := listPage(c.Query("page"))
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
-	q := strings.TrimSpace(c.Query("q"))
+	q := strings.TrimSpace(queryValue(httpRequest, "q"))
 	if len(q) > 200 {
-		return fiber.ErrBadRequest
+		return newHTTPError(http.StatusBadRequest)
 	}
 	base := solitudes.System.DB.Table("redirect_rules AS redirects").Joins("LEFT JOIN articles ON articles.id = redirects.article_id")
 	if q != "" {
@@ -50,7 +49,7 @@ func redirectManagement(c *fiber.Ctx) error {
 		return err
 	}
 	if page > 1 && int64((page-1)*redirectPageSize) >= total {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	var rows []struct {
 		model.RedirectRule
@@ -71,25 +70,25 @@ func redirectManagement(c *fiber.Ctx) error {
 		}
 		rules = append(rules, redirectRuleView{ID: row.ID, SourcePath: row.SourcePath, TargetPath: target, ArticleID: row.ArticleID, ArticleTitle: row.ArticleTitle, CreatedAt: row.CreatedAt})
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	c.Set(fiber.HeaderCacheControl, "private, no-store")
-	return c.Render("admin/redirects", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	writer.Header().Set("Cache-Control", "private, no-store")
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/redirects", injectSiteData(writer, httpRequest, viewData{
 		"title": tr.T("manage_redirects"), "noindex": true, "rules": rules, "q": q, "total": total,
-		"navigation": pageNavigationFor(c, "page", page, int64(page*redirectPageSize) < total, ""),
+		"navigation": pageNavigationFor(writer, httpRequest, "page", page, int64(page*redirectPageSize) < total, ""),
 	}))
 }
 
-func saveRedirect(c *fiber.Ctx) error {
-	if account := currentAccount(c); account == nil || !account.Role.IsAdmin() {
-		return fiber.ErrForbidden
+func saveRedirect(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if account := currentAccount(writer, httpRequest); account == nil || !account.Role.IsAdmin() {
+		return newHTTPError(http.StatusForbidden)
 	}
 	var input struct {
 		ID         uint64 `json:"id"`
 		SourcePath string `json:"source_path"`
 		TargetPath string `json:"target_path"`
 	}
-	if err := c.BodyParser(&input); err != nil {
-		return fiber.ErrBadRequest
+	if err := decodeRequestBody(httpRequest, &input); err != nil {
+		return newHTTPError(http.StatusBadRequest)
 	}
 	source, err := normalizedRedirectURL(input.SourcePath, true)
 	if err != nil {
@@ -101,7 +100,7 @@ func saveRedirect(c *fiber.Ctx) error {
 	}
 	targetPath := strings.SplitN(strings.SplitN(target, "#", 2)[0], "?", 2)[0]
 	if source == targetPath {
-		return fiber.NewError(400, "a redirect cannot target itself")
+		return newHTTPError(400, "a redirect cannot target itself")
 	}
 	rule := model.RedirectRule{ID: input.ID, SourcePath: source, TargetPath: target}
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
@@ -114,7 +113,7 @@ func saveRedirect(c *fiber.Ctx) error {
 				return err
 			}
 			if previous.ArticleID != nil {
-				return fiber.NewError(400, "automatic redirects follow the article; delete the rule to replace it manually")
+				return newHTTPError(400, "automatic redirects follow the article; delete the rule to replace it manually")
 			}
 			rule.CreatedAt = previous.CreatedAt
 		}
@@ -123,7 +122,7 @@ func saveRedirect(c *fiber.Ctx) error {
 			return err
 		}
 		if duplicate != 0 {
-			return fiber.NewError(409, "redirect source already exists")
+			return newHTTPError(409, "redirect source already exists")
 		}
 		if input.ID == 0 {
 			if err := tx.Create(&rule).Error; err != nil {
@@ -137,36 +136,36 @@ func saveRedirect(c *fiber.Ctx) error {
 		if err := validateRedirectGraph(tx); err != nil {
 			return err
 		}
-		return auditMutation(c, tx, "redirect.save", strconv.FormatUint(rule.ID, 10), "", "")
+		return auditMutation(writer, httpRequest, tx, "redirect.save", strconv.FormatUint(rule.ID, 10), "", "")
 	})
 	if err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
+	requestValue(httpRequest, "audit_recorded", true)
 	status := http.StatusCreated
 	if input.ID != 0 {
 		status = http.StatusOK
 	}
-	return c.Status(status).JSON(rule)
+	return writeJSON(writer, status, rule)
 }
 
-func deleteRedirects(c *fiber.Ctx) error {
-	if account := currentAccount(c); account == nil || !account.Role.IsAdmin() {
-		return fiber.ErrForbidden
+func deleteRedirects(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if account := currentAccount(writer, httpRequest); account == nil || !account.Role.IsAdmin() {
+		return newHTTPError(http.StatusForbidden)
 	}
 	var input struct {
 		IDs []uint64 `json:"ids"`
 	}
-	if err := c.BodyParser(&input); err != nil {
-		return fiber.ErrBadRequest
+	if err := decodeRequestBody(httpRequest, &input); err != nil {
+		return newHTTPError(http.StatusBadRequest)
 	}
 	if len(input.IDs) == 0 || len(input.IDs) > 100 {
-		return fiber.NewError(400, "select between 1 and 100 redirect rules")
+		return newHTTPError(400, "select between 1 and 100 redirect rules")
 	}
 	seen := make(map[uint64]bool, len(input.IDs))
 	for _, id := range input.IDs {
 		if id == 0 || seen[id] {
-			return fiber.ErrBadRequest
+			return newHTTPError(http.StatusBadRequest)
 		}
 		seen[id] = true
 	}
@@ -190,18 +189,18 @@ func deleteRedirects(c *fiber.Ctx) error {
 			return err
 		}
 		for _, row := range rows {
-			if err := auditMutation(c, tx, "redirect.delete", strconv.FormatUint(row.ID, 10), "", ""); err != nil {
+			if err := auditMutation(writer, httpRequest, tx, "redirect.delete", strconv.FormatUint(row.ID, 10), "", ""); err != nil {
 				return err
 			}
 		}
 		return nil
 	})
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return fiber.ErrNotFound
+		return newHTTPError(http.StatusNotFound)
 	}
 	if err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
-	return c.SendStatus(http.StatusNoContent)
+	requestValue(httpRequest, "audit_recorded", true)
+	return writeStatus(writer, http.StatusNoContent)
 }

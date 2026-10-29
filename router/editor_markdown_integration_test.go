@@ -9,8 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -26,8 +24,11 @@ func TestEditorPublishHandlerRejectsExecutableMarkdown(t *testing.T) {
 	if err := db.Exec(`INSERT INTO articles (id, author_id, slug, title, content, template_id, version) VALUES (?, ?, ?, ?, ?, ?, ?)`, articleID, account.ID, "owned", "Owned", "original", 1, 1).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &account); return c.Next() })
+	app := newTestRouter()
+	app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, &account)
+		return nil
+	})
 	app.Post("/admin/publish", publishHandler)
 	for _, tc := range []struct{ name, id, slug, content string }{
 		{"new article", "", "new-article", `<script>alert(1)</script>`},
@@ -37,7 +38,7 @@ func TestEditorPublishHandlerRejectsExecutableMarkdown(t *testing.T) {
 			fields := url.Values{"id": {tc.id}, "slug": {tc.slug}, "title": {"Owned"}, "content": {tc.content}, "template": {"1"}}
 			req := httptest.NewRequest(http.MethodPost, "/admin/publish", strings.NewReader(fields.Encode()))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-			resp, err := app.Test(req)
+			resp, err := testRequest(app, req)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -54,7 +55,7 @@ func TestEditorPublishHandlerRejectsExecutableMarkdown(t *testing.T) {
 		"content": {"before <script>alert(2)</script> after"}, "template": {"1"}}
 	req := httptest.NewRequest(http.MethodPost, "/admin/publish", strings.NewReader(fields.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := app.Test(req)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,15 +6,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
 )
 
-func newCSRFGuardTestApp() *fiber.App {
-	app := fiber.New()
+func newCSRFGuardTestApp() *testHTTPRouter {
+	app := newTestRouter()
 	app.Use(csrfGuard)
-	handler := func(c *fiber.Ctx) error {
-		return c.SendString("ok")
+	handler := func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeText(writer, http.StatusOK, "ok")
 	}
 	app.Get("/ok", handler)
 	app.Post("/ok", handler)
@@ -30,8 +29,8 @@ func performCSRFRequest(t *testing.T, method string, headers map[string]string) 
 		req.Header.Set(k, v)
 	}
 	req.Host = "example.com"
-	req.Header.Set(fiber.HeaderHost, "example.com")
-	resp, err := app.Test(req, -1)
+	req.Header.Set("Host", "example.com")
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatalf("app.Test error: %v", err)
 	}
@@ -52,7 +51,7 @@ func TestCSRFGuardRejectsMissingOriginAndReferer(t *testing.T) {
 
 func TestCSRFGuardRejectsCrossOriginPost(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
-		fiber.HeaderOrigin: "https://attacker.example",
+		"Origin": "https://attacker.example",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -60,7 +59,7 @@ func TestCSRFGuardRejectsCrossOriginPost(t *testing.T) {
 
 func TestCSRFGuardRejectsCrossOriginRefererWhenOriginMissing(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
-		fiber.HeaderReferer: "https://attacker.example/admin",
+		"Referer": "https://attacker.example/admin",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -68,8 +67,8 @@ func TestCSRFGuardRejectsCrossOriginRefererWhenOriginMissing(t *testing.T) {
 
 func TestCSRFGuardAllowsSameOriginPost(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
-		fiber.HeaderOrigin:  "http://example.com",
-		fiber.HeaderReferer: "http://example.com/admin",
+		"Origin":  "http://example.com",
+		"Referer": "http://example.com/admin",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -77,7 +76,7 @@ func TestCSRFGuardAllowsSameOriginPost(t *testing.T) {
 
 func TestCSRFGuardAllowsSameOriginRefererOnly(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
-		fiber.HeaderReferer: "http://example.com/admin/settings",
+		"Referer": "http://example.com/admin/settings",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -85,7 +84,7 @@ func TestCSRFGuardAllowsSameOriginRefererOnly(t *testing.T) {
 
 func TestCSRFGuardRejectsCrossOriginDelete(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodDelete, map[string]string{
-		fiber.HeaderOrigin: "https://attacker.example",
+		"Origin": "https://attacker.example",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -93,7 +92,7 @@ func TestCSRFGuardRejectsCrossOriginDelete(t *testing.T) {
 
 func TestCSRFGuardRejectsSameHostDifferentScheme(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
-		fiber.HeaderOrigin: "https://example.com",
+		"Origin": "https://example.com",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -101,7 +100,7 @@ func TestCSRFGuardRejectsSameHostDifferentScheme(t *testing.T) {
 
 func TestCSRFGuardRejectsSameHostDifferentPort(t *testing.T) {
 	resp := performCSRFRequest(t, http.MethodPost, map[string]string{
-		fiber.HeaderOrigin: "http://example.com:444",
+		"Origin": "http://example.com:444",
 	})
 	defer resp.Body.Close()
 	assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -111,9 +110,9 @@ func TestCSRFGuardAllowsSameOriginWithPort(t *testing.T) {
 	app := newCSRFGuardTestApp()
 	req := httptest.NewRequest(http.MethodPost, "/ok", nil)
 	req.Host = "example.com:8080"
-	req.Header.Set(fiber.HeaderHost, "example.com:8080")
-	req.Header.Set(fiber.HeaderOrigin, "http://example.com:8080")
-	resp, err := app.Test(req, -1)
+	req.Header.Set("Host", "example.com:8080")
+	req.Header.Set("Origin", "http://example.com:8080")
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

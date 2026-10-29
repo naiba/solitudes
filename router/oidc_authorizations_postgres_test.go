@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"gorm.io/gorm"
 
@@ -64,14 +63,17 @@ func TestPostgresOIDCAuthorizationRevocationAndClientDeletion(t *testing.T) {
 			}
 			authorizedRequestFixture(t, db, other.ID, reader.ID)
 			var actor *model.Account = &reader
-			app := fiber.New()
-			app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, actor); return c.Next() })
+			app := newTestRouter()
+			app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				requestValue(httpRequest, solitudes.CtxAccount, actor)
+				return nil
+			})
 			app.Post("/account/oidc/authorizations/:id/revoke", requireAccount, revokeApplicationGrant)
 			app.Post("/account/oidc/clients/:id/delete", requireAccount, deleteOIDCClient)
 			app.Post("/account/oidc/clients/:id/disable", requireAccount, disableOIDCClient)
 			post := func(path string, status int) {
 				t.Helper()
-				resp, err := app.Test(httptest.NewRequest("POST", path, nil), -1)
+				resp, err := testRequest(app, httptest.NewRequest("POST", path, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -168,12 +170,15 @@ func TestPostgresOIDCAuthorizationScopesPaginationAndRollback(t *testing.T) {
 		if err := LoadTemplates(); err != nil {
 			t.Fatal(err)
 		}
-		app := fiber.New(fiber.Config{Views: globalDynamicEngine})
-		app.Use(trans, func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &reader); return c.Next() })
+		app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
+		app.Use(trans, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+			requestValue(httpRequest, solitudes.CtxAccount, &reader)
+			return nil
+		})
 		app.Get("/account/oidc/authorizations", requireAccount, authorizedApplicationsPage)
 		app.Post("/account/oidc/clients/:id/delete", requireAccount, deleteOIDCClient)
 		for page, expected := range []int{20, 3, 0} {
-			resp, err := app.Test(httptest.NewRequest("GET", fmt.Sprintf("/account/oidc/authorizations?page=%d", page+1), nil), -1)
+			resp, err := testRequest(app, httptest.NewRequest("GET", fmt.Sprintf("/account/oidc/authorizations?page=%d", page+1), nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -196,7 +201,7 @@ func TestPostgresOIDCAuthorizationScopesPaginationAndRollback(t *testing.T) {
 		}); err != nil {
 			t.Fatal(err)
 		}
-		resp, err := app.Test(httptest.NewRequest("POST", "/account/oidc/clients/client-00/delete", nil), -1)
+		resp, err := testRequest(app, httptest.NewRequest("POST", "/account/oidc/clients/client-00/delete", nil))
 		db.Callback().Create().Remove("grant_audit_failure")
 		if err != nil {
 			t.Fatal(err)
@@ -300,8 +305,11 @@ func TestPostgresOIDCDurableAuthorizationAuditRollback(t *testing.T) {
 				if err := db.Order("account_id").Find(&before).Error; err != nil {
 					t.Fatal(err)
 				}
-				app := fiber.New()
-				app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &reader); return c.Next() })
+				app := newTestRouter()
+				app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+					requestValue(httpRequest, solitudes.CtxAccount, &reader)
+					return nil
+				})
 				app.Post("/revoke/:id", revokeApplicationGrant)
 				app.Post("/delete/:id", deleteOIDCClient)
 				if err := db.Callback().Create().Before("gorm:create").Register("durable_grant_audit_failure", func(tx *gorm.DB) {
@@ -311,7 +319,7 @@ func TestPostgresOIDCDurableAuthorizationAuditRollback(t *testing.T) {
 				}); err != nil {
 					t.Fatal(err)
 				}
-				response, err := app.Test(httptest.NewRequest("POST", "/"+operation+"/"+client.ID, nil), -1)
+				response, err := testRequest(app, httptest.NewRequest("POST", "/"+operation+"/"+client.ID, nil))
 				db.Callback().Create().Remove("durable_grant_audit_failure")
 				if err != nil {
 					t.Fatal(err)
@@ -376,10 +384,13 @@ func TestPostgresOIDCLegacyCredentialsRemainRevocableWithoutConsent(t *testing.T
 			if err := db.Create(row).Error; err != nil {
 				t.Fatal(err)
 			}
-			app := fiber.New()
-			app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &reader); return c.Next() })
+			app := newTestRouter()
+			app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				requestValue(httpRequest, solitudes.CtxAccount, &reader)
+				return nil
+			})
 			app.Post("/:id/revoke", requireAccount, revokeApplicationGrant)
-			response, err := app.Test(httptest.NewRequest("POST", "/"+client.ID+"/revoke", nil), -1)
+			response, err := testRequest(app, httptest.NewRequest("POST", "/"+client.ID+"/revoke", nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -474,7 +485,7 @@ func TestPostgresOIDCAuthorizationManagementRequiresActiveSessionAndSameOrigin(t
 	if err := db.Create(&model.LoginSession{AccountID: reader.ID, TokenHash: secretHash("grant-session"), ExpiresAt: time.Now().Add(time.Hour)}).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Get("/account/oidc/authorizations", requireAccount, authorizedApplicationsPage)
 	app.Post("/account/oidc/authorizations/:id/revoke", requireAccount, revokeApplicationGrant)
@@ -512,7 +523,7 @@ func TestPostgresOIDCAuthorizationManagementRequiresActiveSessionAndSameOrigin(t
 				if tc.token != "" {
 					req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: tc.token})
 				}
-				resp, err := app.Test(req, -1)
+				resp, err := testRequest(app, req)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -529,7 +540,7 @@ func TestPostgresOIDCAuthorizationManagementRequiresActiveSessionAndSameOrigin(t
 	req.Header.Set("Host", "localhost:8080")
 	req.Header.Set("Origin", "http://localhost:8080")
 	req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "grant-session"})
-	resp, err := app.Test(req, -1)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

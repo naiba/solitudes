@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"golang.org/x/sync/errgroup"
 
@@ -23,7 +22,7 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func manager(c *fiber.Ctx) error {
+func manager(writer http.ResponseWriter, httpRequest *http.Request) error {
 	overview, err := cachedIdentityOverview()
 	if err != nil {
 		return err
@@ -79,9 +78,9 @@ func manager(c *fiber.Ctx) error {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
 
-	c.Status(http.StatusOK).Render("admin/index", injectSiteData(c, fiber.Map{
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/index", injectSiteData(writer, httpRequest, viewData{
 		"overview":           overview,
-		"title":              c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("dashboard"),
+		"title":              requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator).T("dashboard"),
 		"articleNum":         articleNum,
 		"commentNum":         commentNum,
 		"lastArticlePublish": fmt.Sprintf("%.2f", time.Since(lastArticle.CreatedAt).Hours()/24),
@@ -94,7 +93,7 @@ func manager(c *fiber.Ctx) error {
 		"gcNum":       m.NumGC,
 		"routineNum":  runtime.NumGoroutine(),
 	}))
-	return nil
+
 }
 
 func bToMb(b uint64) uint64 {
@@ -229,13 +228,13 @@ type uploadResp struct {
 	} `json:"data,omitempty"`
 }
 
-func upload(c *fiber.Ctx) error {
-	if err := requirePublishRole(c); err != nil {
+func upload(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if err := requirePublishRole(writer, httpRequest); err != nil {
 		return err
 	}
-	form, err := c.MultipartForm()
+	form, err := multipartForm(httpRequest)
 	if err != nil {
-		c.Status(http.StatusOK).JSON(uploadResp{
+		writeJSON(writer, http.StatusOK, uploadResp{
 			Msg:  err.Error(),
 			Code: http.StatusBadRequest,
 		})
@@ -272,13 +271,13 @@ func upload(c *fiber.Ctx) error {
 			return err
 		}
 		savePath := fmt.Sprintf("/upload/%s.%s", fid, extName)
-		if err := c.SaveFile(f, "data"+savePath); err != nil {
+		if err := saveUploadedFile(f, "data"+savePath); err != nil {
 			errfiles = append(errfiles, f.Filename)
 		} else {
 			succMap[f.Filename] = savePath
 		}
 	}
-	c.Status(http.StatusOK).JSON(uploadResp{
+	return writeJSON(writer, http.StatusOK, uploadResp{
 		Code: 0,
 		Data: struct {
 			ErrFiles []string          "json:\"errFiles,omitempty\""
@@ -288,7 +287,7 @@ func upload(c *fiber.Ctx) error {
 			SuccMap:  succMap,
 		},
 	})
-	return nil
+
 }
 
 type fetchRequest struct {
@@ -304,17 +303,17 @@ type fetchResp struct {
 	} `json:"data,omitempty"`
 }
 
-func fetch(c *fiber.Ctx) error {
+func fetch(writer http.ResponseWriter, httpRequest *http.Request) error {
 	var fr fetchRequest
-	if err := c.BodyParser(&fr); err != nil {
-		c.Status(http.StatusOK).JSON(fetchResp{
+	if err := decodeRequestBody(httpRequest, &fr); err != nil {
+		writeJSON(writer, http.StatusOK, fetchResp{
 			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		})
 		return err
 	}
-	if err := validator.StructCtx(c.Context(), &fr); err != nil {
-		c.Status(http.StatusOK).JSON(fetchResp{
+	if err := validator.StructCtx(httpRequest.Context(), &fr); err != nil {
+		writeJSON(writer, http.StatusOK, fetchResp{
 			Code: http.StatusBadRequest,
 			Msg:  err.Error(),
 		})
@@ -326,16 +325,16 @@ func fetch(c *fiber.Ctx) error {
 		return err
 	}
 
-	data, ext, err := fetchImage(c.UserContext(), fr.URL)
+	data, ext, err := fetchImage(httpRequest.Context(), fr.URL)
 	if err != nil {
-		return fiber.NewError(http.StatusBadRequest, err.Error())
+		return newHTTPError(http.StatusBadRequest, err.Error())
 	}
 	filename := fmt.Sprintf("/upload/%s.%s", fid, ext)
 	if err := os.WriteFile("data"+filename, data, 0o644); err != nil {
 		return err
 	}
 
-	c.Status(http.StatusOK).JSON(fetchResp{
+	return writeJSON(writer, http.StatusOK, fetchResp{
 		Code: 0,
 		Data: struct {
 			OriginalURL string "json:\"originalURL,omitempty\""
@@ -345,10 +344,10 @@ func fetch(c *fiber.Ctx) error {
 			filename,
 		},
 	})
-	return nil
+
 }
 
-func rebuildFullTextSearch(c *fiber.Ctx) error {
+func rebuildFullTextSearch(writer http.ResponseWriter, httpRequest *http.Request) error {
 	solitudes.BuildArticleIndex()
 	return nil
 }

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
@@ -23,81 +22,81 @@ type loginForm struct {
 	ReturnTo  string `form:"return_to"`
 }
 
-func loginHandler(c *fiber.Ctx) error {
+func loginHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
 	var lf loginForm
-	if err := c.BodyParser(&lf); err != nil {
+	if err := decodeRequestBody(httpRequest, &lf); err != nil {
 		return err
 	}
-	if err := validator.StructCtx(c.Context(), &lf); err != nil {
+	if err := validator.StructCtx(httpRequest.Context(), &lf); err != nil {
 		return err
 	}
 	// Verify captcha first
 	if !verifyCaptcha(lf.CaptchaID, lf.Captcha) {
-		c.Locals("audit_reason", "invalid_captcha")
-		return fiber.NewError(http.StatusBadRequest, "invalid captcha")
+		requestValue(httpRequest, "audit_reason", "invalid_captcha")
+		return newHTTPError(http.StatusBadRequest, "invalid captcha")
 	}
 	var account model.Account
 	if err := solitudes.System.DB.Where("email = ? AND disabled_at IS NULL", strings.ToLower(strings.TrimSpace(lf.Email))).Take(&account).Error; err != nil ||
 		bcrypt.CompareHashAndPassword([]byte(account.PasswordHash), []byte(lf.Password)) != nil {
-		c.Locals("audit_reason", "invalid_credentials")
-		return fiber.NewError(http.StatusUnauthorized, "invalid email or password")
+		requestValue(httpRequest, "audit_reason", "invalid_credentials")
+		return newHTTPError(http.StatusUnauthorized, "invalid email or password")
 	}
 	if account.EmailVerifiedAt == nil {
-		c.Locals("audit_reason", "email_unverified")
-		return fiber.NewError(http.StatusForbidden, "verify your email before signing in")
+		requestValue(httpRequest, "audit_reason", "email_unverified")
+		return newHTTPError(http.StatusForbidden, "verify your email before signing in")
 	}
-	if err := issueLoginSession(c, &account, lf.Remember == "on"); err != nil {
+	if err := issueLoginSession(writer, httpRequest, &account, lf.Remember == "on"); err != nil {
 		return err
 	}
 	if ret := safeReturnPath(lf.ReturnTo); ret != "" {
-		return c.Redirect(ret, http.StatusFound)
+		return redirectResponse(writer, httpRequest, ret, http.StatusFound)
 	}
-	return c.Redirect("/account", http.StatusFound)
+	return redirectResponse(writer, httpRequest, "/account", http.StatusFound)
 }
 
-func login(c *fiber.Ctx) error {
-	c.Set("Cache-Control", "no-store")
-	returnTo := safeReturnPath(c.Query("return_to"))
-	client, err := loginOIDCApplication(c, returnTo)
+func login(writer http.ResponseWriter, httpRequest *http.Request) error {
+	writer.Header().Set("Cache-Control", "no-store")
+	returnTo := safeReturnPath(queryValue(httpRequest, "return_to"))
+	client, err := loginOIDCApplication(writer, httpRequest, returnTo)
 	if err != nil {
 		return err
 	}
 	if client != nil {
-		c.Set("Cache-Control", "private, no-store")
+		writer.Header().Set("Cache-Control", "private, no-store")
 	}
-	return c.Status(http.StatusOK).Render("site/login", injectSiteData(c, fiber.Map{
-		"title":   c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("sign_in"),
+	return renderPage(writer, httpRequest, http.StatusOK, "site/login", injectSiteData(writer, httpRequest, viewData{
+		"title":   requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator).T("sign_in"),
 		"noindex": true, "return_to": returnTo, "oidc_client": client,
-		"verified": c.Query("verified") == "1",
+		"verified": queryValue(httpRequest, "verified") == "1",
 	}))
 }
 
-func logoutHandler(c *fiber.Ctx) error {
-	if token := c.Cookies(solitudes.AuthCookie); token != "" {
+func logoutHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if token := requestCookie(httpRequest, solitudes.AuthCookie); token != "" {
 		if err := solitudes.System.DB.Where("token_hash = ?", secretHash(token)).Delete(&model.LoginSession{}).Error; err != nil {
 			return err
 		}
 	}
-	c.Cookie(&fiber.Cookie{
+	http.SetCookie(writer, &http.Cookie{
 		Name:     solitudes.AuthCookie,
 		Value:    "",
 		Path:     "/",
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,
-		HTTPOnly: true,
-		SameSite: fiber.CookieSameSiteLaxMode,
-		Secure:   c.Protocol() == "https",
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode,
+		Secure:   requestScheme(httpRequest) == "https",
 	})
-	c.Redirect("/", http.StatusFound)
-	return nil
+	return redirectResponse(writer, httpRequest, "/", http.StatusFound)
+
 }
 
-func index(c *fiber.Ctx) error {
-	return c.Render("site/index", injectSiteData(c, fiber.Map{}))
+func index(writer http.ResponseWriter, httpRequest *http.Request) error {
+	return renderPage(writer, httpRequest, http.StatusOK, "site/index", injectSiteData(writer, httpRequest, viewData{}))
 }
 
-func count(c *fiber.Ctx) error {
-	if c.Query("slug") == "" {
+func count(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if queryValue(httpRequest, "slug") == "" {
 		return nil
 	}
 	// FIXME 允许刷新增加计数
@@ -107,9 +106,9 @@ func count(c *fiber.Ctx) error {
 	// }
 	// solitudes.System.Cache.Set(key, nil, time.Hour*20)
 	var latestArticle model.Article
-	if err := readableArticles(solitudes.System.DB, currentAccount(c)).Select("id").
+	if err := readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest)).Select("id").
 		Order("created_at DESC").
-		Take(&latestArticle, "slug = ?", c.Query("slug")).Error; err != nil {
+		Take(&latestArticle, "slug = ?", queryValue(httpRequest, "slug")).Error; err != nil {
 		return nil
 	}
 

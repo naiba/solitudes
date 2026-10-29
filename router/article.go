@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -14,17 +13,17 @@ import (
 	"github.com/naiba/solitudes/pkg/siteurl"
 )
 
-func article(c *fiber.Ctx) error {
+func article(writer http.ResponseWriter, httpRequest *http.Request) error {
 	// Route parameters are escaped path segments; decode once before lookup so
 	// sitemap, browser and canonical URLs all identify the same stored slug.
-	slug, err := siteurl.DecodeArticleSlug(c.Params("slug"))
+	slug, err := siteurl.DecodeArticleSlug(routeParam(httpRequest, "slug"))
 	if err != nil {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	var a model.Article
 	if err := solitudes.System.DB.Preload("Author").Preload("UpdatedBy").Order("created_at DESC").Take(&a, "slug = ?", slug).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return page404(c)
+			return page404(writer, httpRequest)
 		}
 		return fmt.Errorf("failed to fetch article: %w", err)
 	}
@@ -37,28 +36,28 @@ func article(c *fiber.Ctx) error {
 	}
 	// Every revision inherits the latest article's audience. Authorize before
 	// querying history or redirecting a request for the current version.
-	if !canReadArticle(currentAccount(c), &a) {
-		return page404(c)
+	if !canReadArticle(currentAccount(writer, httpRequest), &a) {
+		return page404(writer, httpRequest)
 	}
 
 	var title string
 	// load history
-	if c.Params("version") != "" {
-		versionParam := c.Params("version")
+	if routeParam(httpRequest, "version") != "" {
+		versionParam := routeParam(httpRequest, "version")
 		if len(versionParam) < 2 || versionParam[0] != 'v' {
-			return page404(c)
+			return page404(writer, httpRequest)
 		}
 		version, err := strconv.ParseUint(versionParam[1:], 10, strconv.IntSize)
 		if err != nil || version == 0 {
-			return page404(c)
+			return page404(writer, httpRequest)
 		}
 		if uint(version) == a.Version {
-			return c.Redirect(siteurl.ArticlePath(a.Slug), http.StatusMovedPermanently)
+			return redirectResponse(writer, httpRequest, siteurl.ArticlePath(a.Slug), http.StatusMovedPermanently)
 		}
-		a, err = loadArticleRevision(c, a, uint(version))
+		a, err = loadArticleRevision(writer, httpRequest, a, uint(version))
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return page404(c)
+				return page404(writer, httpRequest)
 			}
 			return fmt.Errorf("failed to fetch article history: %w", err)
 		}
@@ -68,33 +67,33 @@ func article(c *fiber.Ctx) error {
 	}
 
 	// Apply the selected revision's own fragment rules, not the latest body's.
-	a.Content = a.ContentFor(currentAccount(c), accessNoticeFor(c))
+	a.Content = a.ContentFor(currentAccount(writer, httpRequest), accessNoticeFor(writer, httpRequest))
 	if !a.Public() {
-		c.Set(fiber.HeaderXRobotsTag, "noindex, nofollow")
-		c.Set(fiber.HeaderCacheControl, "private, no-store")
+		writer.Header().Set("X-Robots-Tag", "noindex, nofollow")
+		writer.Header().Set("Cache-Control", "private, no-store")
 	}
 
 	// Keep model data available to custom templates; each theme chooses its UI.
-	if err := a.LoadChapters(readableArticles(solitudes.System.DB, currentAccount(c))); err != nil {
+	if err := a.LoadChapters(readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest))); err != nil {
 		return err
 	}
-	relatedBook(&a, currentAccount(c))
-	relatedSiblingArticle(&a, currentAccount(c))
+	relatedBook(&a, currentAccount(writer, httpRequest))
+	relatedSiblingArticle(&a, currentAccount(writer, httpRequest))
 	a.GenTOC()
 
-	pg, navigation, thread, err := articleComments(c, &a)
+	pg, navigation, thread, err := articleComments(writer, httpRequest, &a)
 	if err != nil {
 		return err
 	}
 
 	desc := mdExcerpt(a.Content, 150)
-	isOldVersion := c.Params("version") != ""
+	isOldVersion := routeParam(httpRequest, "version") != ""
 	ogType := "article"
 	if a.TemplateID == solitudes.PageTemplateID {
 		ogType = "website"
 	}
 
-	data := fiber.Map{
+	data := viewData{
 		"title":              title,
 		"desc":               desc,
 		"og_type":            ogType,
@@ -109,10 +108,10 @@ func article(c *fiber.Ctx) error {
 	if a.Public() {
 		data["canonical_path"] = siteurl.ArticlePath(a.Slug)
 		if !isOldVersion {
-			c.Set("Link", "<"+articleMarkdownURL(&a)+">; rel=\"alternate\"; type=\"text/markdown\", <"+publicBaseURL()+"/llms.txt>; rel=\"describedby\"")
+			writer.Header().Set("Link", "<"+articleMarkdownURL(&a)+">; rel=\"alternate\"; type=\"text/markdown\", <"+publicBaseURL()+"/llms.txt>; rel=\"describedby\"")
 		}
 	}
-	return c.Status(http.StatusOK).Render("site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(c, data))
+	return renderPage(writer, httpRequest, http.StatusOK, "site/"+solitudes.TemplateIndex[a.TemplateID], injectSiteData(writer, httpRequest, data))
 }
 
 func relatedSiblingArticle(p *model.Article, account *model.Account) (prev model.Article, next model.Article) {

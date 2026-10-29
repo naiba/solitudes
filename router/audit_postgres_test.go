@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/sync/singleflight"
@@ -106,10 +105,13 @@ func TestPostgresAuditStatisticsSurviveRefreshAndRevocation(t *testing.T) {
 		t.Fatal(err)
 	}
 	check()
-	app := fiber.New()
-	app.Use(auditMiddleware, func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &admin); return c.Next() })
+	app := newTestRouter()
+	app.Use(auditMiddleware, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, &admin)
+		return nil
+	})
 	app.Post("/admin/oidc/clients/:id/disable", requireAdmin, disableOIDCClient)
-	resp, err := app.Test(httptest.NewRequest("POST", "/admin/oidc/clients/"+client.ID+"/disable", nil))
+	resp, err := testRequest(app, httptest.NewRequest("POST", "/admin/oidc/clients/"+client.ID+"/disable", nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,14 +178,14 @@ func TestPostgresAuditStatisticsSurviveCompaction(t *testing.T) {
 			t.Fatalf("overview %+v %v", overview, err)
 		}
 		view := &paginationView{}
-		app := fiber.New(fiber.Config{Views: view})
-		app.Use(func(c *fiber.Ctx) error {
-			c.Locals(solitudes.CtxAccount, &admin)
-			c.Locals(solitudes.CtxTranslator, &translator.Translator{})
-			return c.Next()
+		app := newTestRouter(testHTTPOptions{Views: view})
+		app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+			requestValue(httpRequest, solitudes.CtxAccount, &admin)
+			requestValue(httpRequest, solitudes.CtxTranslator, &translator.Translator{})
+			return nil
 		})
 		app.Get("/admin/oidc/clients/:id", adminClientDetail)
-		resp, err := app.Test(httptest.NewRequest("GET", "/admin/oidc/clients/"+client.ID, nil))
+		resp, err := testRequest(app, httptest.NewRequest("GET", "/admin/oidc/clients/"+client.ID, nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -238,8 +240,11 @@ func TestPostgresAuditStatisticsSurviveCompaction(t *testing.T) {
 
 func TestPostgresAuditRoleChangeIsAtomicAndSecretFree(t *testing.T) {
 	db, admin, reader := auditTestDB(t)
-	app := fiber.New()
-	app.Use(auditMiddleware, func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &admin); return c.Next() })
+	app := newTestRouter()
+	app.Use(auditMiddleware, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, &admin)
+		return nil
+	})
 	app.Post("/admin/users/:id/role", requireAdmin, setUserRole)
 	post := func(role string) int {
 		t.Helper()
@@ -249,7 +254,7 @@ func TestPostgresAuditRoleChangeIsAtomicAndSecretFree(t *testing.T) {
 		req.Header.Set("Cookie", "other=secret-cookie")
 		req.Header.Set("User-Agent", "secret-agent")
 		req.Header.Set("X-Request-ID", "secret-untrusted-id")
-		resp, err := app.Test(req)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -295,13 +300,19 @@ func TestPostgresAuditRecordsDeniedAndFailedRequests(t *testing.T) {
 	db, _, reader := auditTestDB(t)
 	for _, role := range []model.Role{model.RoleUser, model.RoleEditor} {
 		reader.Role = role
-		app := fiber.New()
-		app.Use(auditMiddleware, func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &reader); return c.Next() })
+		app := newTestRouter()
+		app.Use(auditMiddleware, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+			requestValue(httpRequest, solitudes.CtxAccount, &reader)
+			return nil
+		})
 		for _, route := range []string{"/admin/audit", "/admin/users/:id", "/admin/oidc/clients/:id"} {
-			app.Get(route, requireAdmin, func(c *fiber.Ctx) error { t.Fatal("non-admin reached management data"); return nil })
+			app.Get(route, requireAdmin, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				t.Fatal("non-admin reached management data")
+				return nil
+			})
 		}
 		for _, route := range []string{"/admin/audit", "/admin/users/private", "/admin/oidc/clients/private"} {
-			resp, err := app.Test(httptest.NewRequest("GET", route+"?token=never-record", nil))
+			resp, err := testRequest(app, httptest.NewRequest("GET", route+"?token=never-record", nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -321,13 +332,13 @@ func TestPostgresAuditRecordsDeniedAndFailedRequests(t *testing.T) {
 			t.Fatalf("bad event: %+v", e)
 		}
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auditMiddleware)
-	app.Post("/login", func(c *fiber.Ctx) error {
-		c.Locals("audit_reason", "invalid_credentials")
-		return fiber.ErrUnauthorized
+	app.Post("/login", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, "audit_reason", "invalid_credentials")
+		return newHTTPError(http.StatusUnauthorized)
 	})
-	resp, err := app.Test(httptest.NewRequest("POST", "/login", strings.NewReader("password=not-saved")))
+	resp, err := testRequest(app, httptest.NewRequest("POST", "/login", strings.NewReader("password=not-saved")))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -366,15 +377,21 @@ func TestPostgresAuditManagementPages(t *testing.T) {
 			if err := LoadTemplates(); err != nil {
 				t.Fatal(err)
 			}
-			app := fiber.New(fiber.Config{Views: globalDynamicEngine, ErrorHandler: func(c *fiber.Ctx, err error) error { t.Errorf("%s: %v", c.Path(), err); return c.SendStatus(500) }})
-			app.Use(trans, func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &admin); return c.Next() })
+			app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine, ErrorHandler: func(writer http.ResponseWriter, httpRequest *http.Request, err error) error {
+				t.Errorf("%s: %v", requestPath(httpRequest), err)
+				return writeStatus(writer, 500)
+			}})
+			app.Use(trans, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				requestValue(httpRequest, solitudes.CtxAccount, &admin)
+				return nil
+			})
 			app.Get("/admin/users", requireAdmin, usersPage)
 			app.Get("/admin/users/:id", requireAdmin, adminUserDetail)
 			app.Get("/admin/oidc/clients", requireAdmin, oidcClientsPage)
 			app.Get("/admin/oidc/clients/:id", requireAdmin, adminClientDetail)
 			app.Get("/admin/audit", requireAdmin, auditPage)
 			for _, route := range []string{"/admin/users", "/admin/users?q=Reader", "/admin/users/" + reader.ID, "/admin/oidc/clients?owner_id=" + reader.ID, "/admin/oidc/clients/" + client.ID, "/admin/audit", "/admin/oidc/clients?page=2&owner_id=" + reader.ID} {
-				response, err := app.Test(httptest.NewRequest("GET", route, nil))
+				response, err := testRequest(app, httptest.NewRequest("GET", route, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -412,23 +429,33 @@ func TestPostgresAuditSkipsAnonymousPageRedirectsButKeepsSecurityEvents(t *testi
 			t.Fatal(err)
 		}
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auditMiddleware, auth)
-	ok := func(c *fiber.Ctx) error { return c.SendStatus(http.StatusOK) }
+	ok := func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeStatus(writer, http.StatusOK)
+	}
 	adminRoutes := app.Group("/admin", loginRequired)
 	adminRoutes.Get("/", ok)
 	adminRoutes.Get("/audit", requireAdmin, ok)
 	adminRoutes.Post("/settings", requireAdmin, ok)
 	app.Get("/account", requireAccount, ok)
 	app.Post("/account/password", requireAccount, ok)
-	app.Get("/account/forbidden", func(c *fiber.Ctx) error { return fiber.ErrForbidden })
-	app.Get("/account/unauthorized", func(c *fiber.Ctx) error { return fiber.ErrUnauthorized })
-	app.Get("/account/error", func(c *fiber.Ctx) error { return fiber.ErrInternalServerError })
-	app.Post("/login", func(c *fiber.Ctx) error {
-		c.Locals("audit_reason", "invalid_credentials")
-		return fiber.ErrUnauthorized
+	app.Get("/account/forbidden", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return newHTTPError(http.StatusForbidden)
 	})
-	app.Get("/authorize", func(c *fiber.Ctx) error { return c.Redirect("/login") })
+	app.Get("/account/unauthorized", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return newHTTPError(http.StatusUnauthorized)
+	})
+	app.Get("/account/error", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return newHTTPError(http.StatusInternalServerError)
+	})
+	app.Post("/login", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, "audit_reason", "invalid_credentials")
+		return newHTTPError(http.StatusUnauthorized)
+	})
+	app.Get("/authorize", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return redirectResponse(writer, httpRequest, "/login")
+	})
 
 	for _, token := range []string{"", "invalid-session", "expired-session"} {
 		for _, method := range []string{http.MethodGet, http.MethodHead} {
@@ -437,7 +464,7 @@ func TestPostgresAuditSkipsAnonymousPageRedirectsButKeepsSecurityEvents(t *testi
 				if token != "" {
 					req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: token})
 				}
-				resp, err := app.Test(req, -1)
+				resp, err := testRequest(app, req)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -469,7 +496,7 @@ func TestPostgresAuditSkipsAnonymousPageRedirectsButKeepsSecurityEvents(t *testi
 		if tc.token != "" {
 			req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: tc.token})
 		}
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -509,9 +536,11 @@ func TestPostgresAuditFailureRollsBackNewSessionsAndTokens(t *testing.T) {
 	if _, _, _, err := storage.CreateAccessAndRefreshTokens(t.Context(), request, ""); err == nil {
 		t.Fatal("refresh issued without audit")
 	}
-	app := fiber.New()
-	app.Post("/login", func(c *fiber.Ctx) error { return issueLoginSession(c, &reader, false) })
-	resp, err := app.Test(httptest.NewRequest("POST", "/login", nil))
+	app := newTestRouter()
+	app.Post("/login", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return issueLoginSession(writer, httpRequest, &reader, false)
+	})
+	resp, err := testRequest(app, httptest.NewRequest("POST", "/login", nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -543,7 +572,7 @@ func TestPostgresOIDCFailureAuditKeepsOnlyStandardErrorCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auditMiddleware)
 	app.Use("/oauth", oidcHTTPHandler(provider))
 	form := url.Values{"grant_type": {"authorization_code"}, "client_id": {client.ID}, "code": {"secret-code-not-logged"}, "code_verifier": {strings.Repeat("s", 64)}, "redirect_uri": {"http://localhost/callback"}}
@@ -551,7 +580,7 @@ func TestPostgresOIDCFailureAuditKeepsOnlyStandardErrorCode(t *testing.T) {
 	req.Host = "localhost:8080"
 	req.Header.Set("Host", "localhost:8080")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := app.Test(req)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

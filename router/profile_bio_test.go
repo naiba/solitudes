@@ -3,13 +3,13 @@ package router
 import (
 	"bytes"
 	"encoding/base64"
-	"github.com/gofiber/fiber/v2"
-	html "github.com/gofiber/template/html/v2"
-	"github.com/naiba/solitudes/internal/model"
-	"github.com/naiba/solitudes/pkg/translator"
 	"net/url"
 	"strings"
 	"testing"
+
+	html "github.com/gofiber/template/html/v2"
+	"github.com/naiba/solitudes/internal/model"
+	"github.com/naiba/solitudes/pkg/translator"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -78,11 +78,11 @@ func TestProfileBioThemeRendering(t *testing.T) {
 		}
 		bio := `<img src=x onerror=alert(1)> Homepage: https://example.com/?a=1&b=2`
 		profile := model.Account{ID: "reader", Nickname: "Reader", Bio: bio, Role: model.RoleUser}
-		reader := fiber.Map{"ID": profile.ID, "Nickname": profile.Nickname, "Role": profile.Role, "Bio": bio, "CreatedAt": profile.CreatedAt, "ActivityCount": 1}
+		reader := viewData{"ID": profile.ID, "Nickname": profile.Nickname, "Role": profile.Role, "Bio": bio, "CreatedAt": profile.CreatedAt, "ActivityCount": 1}
 		for _, view := range []string{"site/user_profile", "site/reader_circle"} {
 			t.Run(theme+"/"+view, func(t *testing.T) {
 				var output bytes.Buffer
-				data := fiber.Map{"Tr": &translator.Translator{Translator: tr, Trans: tr}, "Conf": &model.Config{}, "Path": "/readers/", "Theme": fiber.Map{}, "Data": fiber.Map{"profile": profile, "active": []fiber.Map{reader}, "latest": []fiber.Map{reader}, "page": 1, "articles_page": 1, "comments_page": 1}}
+				data := viewData{"Tr": &translator.Translator{Translator: tr, Trans: tr}, "Conf": &model.Config{}, "Path": "/readers/", "Theme": viewData{}, "Data": viewData{"profile": profile, "active": []viewData{reader}, "latest": []viewData{reader}, "page": 1, "articles_page": 1, "comments_page": 1}}
 				if err := engine.Render(&output, view, data); err != nil {
 					t.Fatal(err)
 				}

@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -44,14 +43,14 @@ func TestPostgresCactusRecommendationsUsePopularVisiblePool(t *testing.T) {
 	if err := LoadTemplates(); err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+	app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 	app.Use(trans)
 	app.Get("/", index)
 	check := func(count int, allowed map[string]bool) {
 		t.Helper()
 		req := httptest.NewRequest("GET", "/", nil)
 		req.Header.Set("Accept-Language", "en")
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}

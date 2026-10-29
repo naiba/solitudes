@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/adtac/go-akismet/akismet"
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -32,12 +31,12 @@ func normalizeCommentStatus(status string) string {
 	}
 }
 
-func comments(c *fiber.Ctx) error {
-	page, err := listPage(c.Query("page"))
+func comments(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
-	status := normalizeCommentStatus(c.Query("status"))
+	status := normalizeCommentStatus(queryValue(httpRequest, "status"))
 	db := solitudes.System.DB.Preload("Article").Preload("Account")
 	switch status {
 	case commentStatusVisible:
@@ -62,8 +61,8 @@ func comments(c *fiber.Ctx) error {
 	if err := solitudes.System.DB.Model(&model.Comment{}).Where("is_spam = ?", true).Count(&spamCount).Error; err != nil {
 		return fmt.Errorf("failed to count spam comments: %w", err)
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("admin/comments", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/comments", injectSiteData(writer, httpRequest, viewData{
 		"title":         tr.T("manage_comments"),
 		"comments":      cs,
 		"page":          pg,
@@ -74,9 +73,9 @@ func comments(c *fiber.Ctx) error {
 	}))
 }
 
-func deleteComment(c *fiber.Ctx) error {
-	id := c.Query("id")
-	articleID := c.Query("aid")
+func deleteComment(writer http.ResponseWriter, httpRequest *http.Request) error {
+	id := queryValue(httpRequest, "id")
+	articleID := queryValue(httpRequest, "aid")
 
 	if len(id) < 10 || len(articleID) < 10 {
 		return errors.New("invalid id")
@@ -125,9 +124,9 @@ func deleteComment(c *fiber.Ctx) error {
 	return err
 }
 
-func reportSpam(c *fiber.Ctx) error {
-	id := c.Query("id")
-	articleID := c.Query("aid")
+func reportSpam(writer http.ResponseWriter, httpRequest *http.Request) error {
+	id := queryValue(httpRequest, "id")
+	articleID := queryValue(httpRequest, "aid")
 
 	if len(id) < 10 || len(articleID) < 10 {
 		return errors.New("invalid id")
@@ -170,13 +169,13 @@ func reportSpam(c *fiber.Ctx) error {
 		return nil
 	}
 
-	submitAkismetFeedback(cm, article, string(c.Request().Header.Referer()), true)
+	submitAkismetFeedback(cm, article, string(httpRequest.Referer()), true)
 	return nil
 }
 
-func restoreSpam(c *fiber.Ctx) error {
-	id := c.Query("id")
-	articleID := c.Query("aid")
+func restoreSpam(writer http.ResponseWriter, httpRequest *http.Request) error {
+	id := queryValue(httpRequest, "id")
+	articleID := queryValue(httpRequest, "aid")
 	if len(id) < 10 || len(articleID) < 10 {
 		return errors.New("invalid id")
 	}
@@ -218,7 +217,7 @@ func restoreSpam(c *fiber.Ctx) error {
 		return nil
 	}
 
-	submitAkismetFeedback(cm, article, string(c.Request().Header.Referer()), false)
+	submitAkismetFeedback(cm, article, string(httpRequest.Referer()), false)
 	return nil
 }
 

@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -86,7 +86,7 @@ type homeContractViews struct{}
 
 func (homeContractViews) Load() error { return nil }
 func (homeContractViews) Render(w io.Writer, _ string, binding interface{}, _ ...string) error {
-	q := binding.(fiber.Map)["Queries"].(*TemplateQueries)
+	q := binding.(viewData)["Queries"].(*TemplateQueries)
 	data, err := queryArticleFixture(q.db, q.account)
 	if err != nil {
 		return err
@@ -110,15 +110,15 @@ func TestPostgresHomeDataContractDoesNotDependOnThemeName(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	app := fiber.New(fiber.Config{Views: homeContractViews{}})
-	app.Use(func(c *fiber.Ctx) error {
-		c.Locals(solitudes.CtxTranslator, &translator.Translator{})
-		return c.Next()
+	app := newTestRouter(testHTTPOptions{Views: homeContractViews{}})
+	app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxTranslator, &translator.Translator{})
+		return nil
 	})
 	app.Get("/", index)
 	for _, name := range []string{"cactus", "folio", "my-independent-theme"} {
 		config.Site.Theme = name
-		response, err := app.Test(httptest.NewRequest("GET", "/", nil), -1)
+		response, err := testRequest(app, httptest.NewRequest("GET", "/", nil))
 		if err != nil {
 			t.Fatal(err)
 		}

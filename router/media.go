@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -28,10 +27,10 @@ func validateMediaFilename(name string) (string, error) {
 	return name, nil
 }
 
-func mediaHandler(c *fiber.Ctx) error {
-	cleanName, err := validateMediaFilename(c.Query("name"))
+func mediaHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	cleanName, err := validateMediaFilename(queryValue(httpRequest, "name"))
 	if err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+		return newHTTPError(http.StatusBadRequest, err.Error())
 	}
 	root, err := os.OpenRoot("data/upload")
 	if err != nil {
@@ -49,8 +48,8 @@ type mediaInfo struct {
 
 var errEnded = errors.New("file walk eneded")
 
-func media(c *fiber.Ctx) error {
-	page, err := listPage(c.Query("page"))
+func media(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
@@ -100,11 +99,11 @@ func media(c *fiber.Ctx) error {
 		}
 		innerMedias = append(innerMedias, item)
 	}
-	c.Status(http.StatusOK).Render("admin/media", injectSiteData(c, fiber.Map{
-		"title":      c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("manage_media"),
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/media", injectSiteData(writer, httpRequest, viewData{
+		"title":      requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator).T("manage_media"),
 		"medias":     innerMedias,
 		"page":       page,
-		"navigation": pageNavigationFor(c, "page", page, more, ""),
+		"navigation": pageNavigationFor(writer, httpRequest, "page", page, more, ""),
 	}))
-	return nil
+
 }

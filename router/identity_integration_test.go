@@ -15,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 	"github.com/zitadel/oidc/v3/pkg/op"
 	"golang.org/x/crypto/bcrypt"
@@ -105,12 +104,15 @@ func TestAccountSignInMethodsCannotBeCompletelyRemoved(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &owner); return c.Next() })
+	app := newTestRouter()
+	app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, &owner)
+		return nil
+	})
 	app.Post("/account/identities/:provider/unlink", unlinkAccountIdentity)
 	request := func(provider string) int {
 		t.Helper()
-		resp, err := app.Test(httptest.NewRequest(http.MethodPost, "/account/identities/"+provider+"/unlink", nil))
+		resp, err := testRequest(app, httptest.NewRequest(http.MethodPost, "/account/identities/"+provider+"/unlink", nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -148,7 +150,7 @@ func TestAccountSignInMethodsCannotBeCompletelyRemoved(t *testing.T) {
 		t.Fatal(err)
 	}
 	app.Delete("/account/passkeys/:id", deletePasskey)
-	resp, err := app.Test(httptest.NewRequest(http.MethodDelete, "/account/passkeys/key1", nil))
+	resp, err := testRequest(app, httptest.NewRequest(http.MethodDelete, "/account/passkeys/key1", nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,7 +164,7 @@ func TestAccountSignInMethodsCannotBeCompletelyRemoved(t *testing.T) {
 	if err := db.Model(&owner).Update("password_hash", "").Error; err != nil {
 		t.Fatal(err)
 	}
-	resp, err = app.Test(httptest.NewRequest(http.MethodDelete, "/account/passkeys/key2", nil))
+	resp, err = testRequest(app, httptest.NewRequest(http.MethodDelete, "/account/passkeys/key2", nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,7 +189,7 @@ func TestIdentityUnlinkRequiresOwnerSessionAndSameOrigin(t *testing.T) {
 		}
 		return nil, errNoAccount
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Post("/account/identities/:provider/unlink", requireAccount, unlinkAccountIdentity)
 	for _, trial := range []struct {
@@ -208,7 +210,7 @@ func TestIdentityUnlinkRequiresOwnerSessionAndSameOrigin(t *testing.T) {
 			if trial.origin != "" {
 				req.Header.Set("Origin", trial.origin)
 			}
-			resp, err := app.Test(req)
+			resp, err := testRequest(app, req)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -358,7 +360,7 @@ func TestAccountPasswordChangeRevokesOtherSessions(t *testing.T) {
 		ClientID: "app", AccountID: account.ID, AccessID: "access", ExpiresAt: time.Now().Add(time.Hour)}).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Post("/account/password", requireAccount, changeAccountPassword)
 	change := func(old string) int {
@@ -370,7 +372,7 @@ func TestAccountPasswordChangeRevokesOtherSessions(t *testing.T) {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Set("Origin", "http://localhost")
 		req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "current"})
-		response, err := app.Test(req, -1)
+		response, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -523,7 +525,7 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 		TokenHash: secretHash("consent-cookie"), ExpiresAt: time.Now().Add(time.Hour)}).Error; err != nil {
 		t.Fatal(err)
 	}
-	consentApp := fiber.New()
+	consentApp := newTestRouter()
 	consentApp.Use(auth, csrfGuard)
 	consentApp.Post("/oidc/consent", requireAccount, consentHandler)
 	approve := func(id string) {
@@ -535,7 +537,7 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 		req.Header.Set("Origin", "http://localhost:8080")
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "consent-cookie"})
-		resp, err := consentApp.Test(req, -1)
+		resp, err := testRequest(consentApp, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -557,7 +559,7 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		}
 		if strings.HasPrefix(target, "/authorize?") {
-			// This test calls the provider directly; production's Fiber adapter
+			// This test calls the provider directly; production's HTTP adapter
 			// resolves the cookie into this browser context before dispatch.
 			req = req.WithContext(context.WithValue(req.Context(), oidcBrowserKey{}, oidcBrowserIdentity{secretHash("consent-cookie")}))
 		}
@@ -665,15 +667,15 @@ func TestOIDCProviderAuthorizationFlow(t *testing.T) {
 	if response := request(http.MethodPost, "/oauth/token", bad); response.Code == http.StatusOK {
 		t.Fatal("PKCE mismatch accepted")
 	}
-	adminApp := fiber.New()
-	adminApp.Post("/admin/oidc/clients/:id/disable", func(c *fiber.Ctx) error {
+	adminApp := newTestRouter()
+	adminApp.Post("/admin/oidc/clients/:id/disable", func(writer http.ResponseWriter, httpRequest *http.Request) error {
 		administrator := account
 		administrator.Role = model.RoleAdmin
-		c.Locals(solitudes.CtxAccount, &administrator)
-		return disableOIDCClient(c)
+		requestValue(httpRequest, solitudes.CtxAccount, &administrator)
+		return disableOIDCClient(writer, httpRequest)
 	})
 	disableReq := httptest.NewRequest(http.MethodPost, "/admin/oidc/clients/"+client.ID+"/disable", nil)
-	disableResp, err := adminApp.Test(disableReq, -1)
+	disableResp, err := testRequest(adminApp, disableReq)
 	if err != nil {
 		t.Fatal(err)
 	}

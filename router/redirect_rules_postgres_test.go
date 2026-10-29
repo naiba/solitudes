@@ -3,13 +3,13 @@ package router
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/blevesearch/bleve/v2"
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -17,7 +17,7 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func articleRedirectFixture(t *testing.T) (*gorm.DB, *fiber.App, *model.Article) {
+func articleRedirectFixture(t *testing.T) (*gorm.DB, *testHTTPRouter, *model.Article) {
 	t.Helper()
 	db := newPostgresIdentityTestDB(t)
 	if err := db.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.RedirectRule{}); err != nil {
@@ -49,27 +49,29 @@ func articleRedirectFixture(t *testing.T) (*gorm.DB, *fiber.App, *model.Article)
 	if err := db.Create(article).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New(fiber.Config{Views: globalDynamicEngine})
-	app.Use(trans, func(c *fiber.Ctx) error {
-		if c.Get("X-Test-Admin") == "yes" {
-			c.Locals(solitudes.CtxAccount, &owner)
+	app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
+	app.Use(trans, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		if requestHeader(httpRequest, "X-Test-Admin") == "yes" {
+			requestValue(httpRequest, solitudes.CtxAccount, &owner)
 		}
-		return c.Next()
+		return nil
 	})
 	app.Post("/admin/publish", publishHandler)
 	app.Delete("/admin/articles", deleteArticle)
 	app.Use(canonicalURLRedirect, registeredRedirect)
-	app.Get("/:slug", func(c *fiber.Ctx) error { return c.SendString(c.Params("slug")) })
+	app.Get("/:slug", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeText(writer, http.StatusOK, routeParam(httpRequest, "slug"))
+	})
 	return db, app, article
 }
 
-func publishRedirectArticle(t *testing.T, app *fiber.App, article *model.Article, slug string) int {
+func publishRedirectArticle(t *testing.T, app *testHTTPRouter, article *model.Article, slug string) int {
 	t.Helper()
 	form := url.Values{"id": {article.ID}, "title": {article.Title}, "slug": {slug}, "content": {article.Content}, "template": {fmt.Sprint(article.TemplateID)}, "visibility": {string(article.Visibility)}, "new_version": {fmt.Sprint(article.NewVersion)}}
 	req := httptest.NewRequest("POST", "/admin/publish", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Test-Admin", "yes")
-	response, err := app.Test(req, -1)
+	response, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -89,7 +91,7 @@ func TestPostgresArticleRedirectLifecycle(t *testing.T) {
 		}
 	}
 	for _, old := range []string{"original-story", "second-story"} {
-		response, err := app.Test(httptest.NewRequest("GET", "/"+old+"?utm_source=archive", nil), -1)
+		response, err := testRequest(app, httptest.NewRequest("GET", "/"+old+"?utm_source=archive", nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -113,7 +115,7 @@ func TestPostgresArticleRedirectLifecycle(t *testing.T) {
 		if admin {
 			req.Header.Set("X-Test-Admin", "yes")
 		}
-		response, err := app.Test(req, -1)
+		response, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -128,7 +130,7 @@ func TestPostgresArticleRedirectLifecycle(t *testing.T) {
 	}
 	req := httptest.NewRequest("DELETE", "/admin/articles?id="+article.ID, nil)
 	req.Header.Set("X-Test-Admin", "yes")
-	response, err := app.Test(req, -1)
+	response, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -28,12 +27,12 @@ type registrationForm struct {
 	CaptchaID string `form:"captchaId"`
 }
 
-func registerPage(c *fiber.Ctx) error {
-	c.Set("Cache-Control", "no-store")
-	return c.Status(http.StatusOK).Render("site/register", injectSiteData(c, fiber.Map{
-		"title": c.Locals(solitudes.CtxTranslator).(*translator.Translator).T("create_account"), "noindex": true,
+func registerPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	writer.Header().Set("Cache-Control", "no-store")
+	return renderPage(writer, httpRequest, http.StatusOK, "site/register", injectSiteData(writer, httpRequest, viewData{
+		"title": requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator).T("create_account"), "noindex": true,
 		"registration_available": validSiteDomain() && solitudes.System.Config.Email.Host != "" && solitudes.System.Config.Email.User != "",
-		"return_to":              safeReturnPath(c.Query("return_to")),
+		"return_to":              safeReturnPath(queryValue(httpRequest, "return_to")),
 	}))
 }
 
@@ -42,24 +41,24 @@ func normalizeRegistration(form *registrationForm) error {
 	form.Nickname = strings.TrimSpace(form.Nickname)
 	address, err := mail.ParseAddress(form.Email)
 	if err != nil || address.Address != form.Email || len(form.Email) > 254 || len([]rune(form.Nickname)) > 80 || form.Nickname == "" || len(form.Password) < 12 || len(form.Password) > 72 {
-		return fiber.NewError(http.StatusBadRequest, "invalid email, nickname or password (12–72 characters)")
+		return newHTTPError(http.StatusBadRequest, "invalid email, nickname or password (12–72 characters)")
 	}
 	return nil
 }
 
-func registerHandler(c *fiber.Ctx) error {
+func registerHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
 	if !validSiteDomain() {
-		return fiber.NewError(http.StatusServiceUnavailable, "registration requires a public site domain")
+		return newHTTPError(http.StatusServiceUnavailable, "registration requires a public site domain")
 	}
 	if solitudes.System.Config.Email.Host == "" || solitudes.System.Config.Email.User == "" {
-		return fiber.NewError(http.StatusServiceUnavailable, "registration requires SMTP configuration")
+		return newHTTPError(http.StatusServiceUnavailable, "registration requires SMTP configuration")
 	}
 	var form registrationForm
-	if err := c.BodyParser(&form); err != nil {
+	if err := decodeRequestBody(httpRequest, &form); err != nil {
 		return err
 	}
 	if !verifyCaptcha(form.CaptchaID, form.Captcha) {
-		return fiber.NewError(http.StatusBadRequest, "invalid captcha")
+		return newHTTPError(http.StatusBadRequest, "invalid captcha")
 	}
 	if err := normalizeRegistration(&form); err != nil {
 		return err
@@ -78,15 +77,15 @@ func registerHandler(c *fiber.Ctx) error {
 		return err
 	}
 	if already != 0 {
-		return fiber.NewError(http.StatusConflict, "email already registered")
+		return newHTTPError(http.StatusConflict, "email already registered")
 	}
 	if err := solitudes.System.DB.Create(&account).Error; err != nil {
 		return fmt.Errorf("create account: %w", err)
 	}
-	if err := sendVerification(&account, safeReturnPath(c.FormValue("return_to"))); err != nil {
-		return fiber.NewError(http.StatusServiceUnavailable, "account created but verification email could not be sent; try resending")
+	if err := sendVerification(&account, safeReturnPath(formValue(httpRequest, "return_to"))); err != nil {
+		return newHTTPError(http.StatusServiceUnavailable, "account created but verification email could not be sent; try resending")
 	}
-	return c.Status(http.StatusAccepted).SendString("Check your email to verify your account before signing in.")
+	return writeText(writer, http.StatusAccepted, "Check your email to verify your account before signing in.")
 }
 
 func sendVerification(account *model.Account, returnTo string) error {
@@ -111,16 +110,16 @@ func sendVerification(account *model.Account, returnTo string) error {
 	return notify.SendVerificationEmail(account.Email, link)
 }
 
-func resendVerification(c *fiber.Ctx) error {
+func resendVerification(writer http.ResponseWriter, httpRequest *http.Request) error {
 	if !validSiteDomain() || solitudes.System.Config.Email.Host == "" || solitudes.System.Config.Email.User == "" {
-		return fiber.NewError(http.StatusServiceUnavailable, "email verification is not configured")
+		return newHTTPError(http.StatusServiceUnavailable, "email verification is not configured")
 	}
 	var form registrationForm
-	if err := c.BodyParser(&form); err != nil {
+	if err := decodeRequestBody(httpRequest, &form); err != nil {
 		return err
 	}
 	if !verifyCaptcha(form.CaptchaID, form.Captcha) {
-		return fiber.NewError(http.StatusBadRequest, "invalid captcha")
+		return newHTTPError(http.StatusBadRequest, "invalid captcha")
 	}
 	sent := false
 	var account model.Account
@@ -135,28 +134,28 @@ func resendVerification(c *fiber.Ctx) error {
 			return err
 		}
 		if recent < 3 {
-			if err := sendVerification(&account, safeReturnPath(c.FormValue("return_to"))); err != nil {
-				return fiber.NewError(http.StatusServiceUnavailable, "verification email unavailable")
+			if err := sendVerification(&account, safeReturnPath(formValue(httpRequest, "return_to"))); err != nil {
+				return newHTTPError(http.StatusServiceUnavailable, "verification email unavailable")
 			}
 			sent = true
 		}
 	}
 	// The enumeration-safe response also covers no delivery and throttling.
 	if !sent {
-		c.Locals("audit_no_change", true)
+		requestValue(httpRequest, "audit_no_change", true)
 	}
-	return c.SendString("If an unverified account exists, a confirmation link has been sent.")
+	return writeText(writer, http.StatusOK, "If an unverified account exists, a confirmation link has been sent.")
 }
 
-func verifyEmailHandler(c *fiber.Ctx) error {
-	c.Set("Referrer-Policy", "no-referrer")
-	c.Set("Cache-Control", "no-store")
-	if err := verifyAccountEmail(c.Query("token")); err != nil {
-		return fiber.NewError(http.StatusBadRequest, "invalid or expired verification link")
+func verifyEmailHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	writer.Header().Set("Referrer-Policy", "no-referrer")
+	writer.Header().Set("Cache-Control", "no-store")
+	if err := verifyAccountEmail(queryValue(httpRequest, "token")); err != nil {
+		return newHTTPError(http.StatusBadRequest, "invalid or expired verification link")
 	}
 	redirect := "/login?verified=1"
-	if target := safeReturnPath(c.Query("return_to")); target != "" {
+	if target := safeReturnPath(queryValue(httpRequest, "return_to")); target != "" {
 		redirect += "&return_to=" + url.QueryEscape(target)
 	}
-	return c.Redirect(redirect, http.StatusFound)
+	return redirectResponse(writer, httpRequest, redirect, http.StatusFound)
 }

@@ -2,13 +2,13 @@ package router
 
 import (
 	"context"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -19,8 +19,11 @@ func TestPostgresAuditUnchangedMutations(t *testing.T) {
 	if err := db.Create(&client).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
-	app.Use(auditMiddleware, func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &admin); return c.Next() })
+	app := newTestRouter()
+	app.Use(auditMiddleware, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, &admin)
+		return nil
+	})
 	app.Post("/admin/users/:id/role", setUserRole)
 	app.Post("/admin/oidc/clients/:id/metadata", updateOIDCClient)
 	app.Post("/account/profile", updateAccountProfile)
@@ -37,7 +40,7 @@ func TestPostgresAuditUnchangedMutations(t *testing.T) {
 				tc.form.Set(tc.field, value)
 				req := httptest.NewRequest("POST", tc.path, strings.NewReader(tc.form.Encode()))
 				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-				resp, err := app.Test(req)
+				resp, err := testRequest(app, req)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -140,15 +143,18 @@ func TestPostgresAuditVerificationDeliveryAndLinkStart(t *testing.T) {
 	if err := db.Create(&pending).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auditMiddleware)
 	app.Post("/resend-verification", resendVerification)
-	app.Post("/auth/:provider/link", func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &admin); return beginOAuthLink(c) })
+	app.Post("/auth/:provider/link", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, &admin)
+		return beginOAuthLink(writer, httpRequest)
+	})
 	post := func(path string, form url.Values, status int) string {
 		t.Helper()
 		req := httptest.NewRequest("POST", path, strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -243,13 +249,16 @@ func TestPostgresAuditUnchangedClientStillChecksOwnership(t *testing.T) {
 	if err := db.Create(&client).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
-	app.Use(auditMiddleware, func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, &reader); return c.Next() })
+	app := newTestRouter()
+	app.Use(auditMiddleware, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, &reader)
+		return nil
+	})
 	app.Post("/account/oidc/clients/:id/metadata", updateOIDCClient)
 	form := url.Values{"name": {client.Name}, "homepage_url": {client.HomepageURL}, "redirect_uris": {"https://example.com/callback"}}
 	req := httptest.NewRequest("POST", "/account/oidc/clients/"+client.ID+"/metadata", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := app.Test(req)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -51,7 +50,7 @@ func TestPostgresArticleComparisonSEOAndRenderedContent(t *testing.T) {
 		if err := LoadTemplates(); err != nil {
 			t.Fatal(err)
 		}
-		app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+		app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 		app.Use(trans)
 		app.Get("/:slug/compare/:versions?", articleCompare)
 		for _, tc := range []struct {
@@ -63,7 +62,7 @@ func TestPostgresArticleComparisonSEOAndRenderedContent(t *testing.T) {
 			{"/compare-story/compare?from=01&to=2", 404}, {"/compare-story/compare/v0...v2", 404}, {"/compare-story/compare/v1...v3", 404},
 			{"/compare-story/compare/v1..v2", 404}, {"/missing/compare/v1...v2", 404},
 		} {
-			resp, err := app.Test(httptest.NewRequest("GET", tc.path, nil), -1)
+			resp, err := testRequest(app, httptest.NewRequest("GET", tc.path, nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -113,9 +112,9 @@ func TestPostgresArticleComparisonSEOAndRenderedContent(t *testing.T) {
 	if err := db.Model(&a).Update("content", strings.Repeat("x", content.MaxDiffBytes+1)).Error; err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Get("/:slug/compare/:versions?", articleCompare)
-	resp, err := app.Test(httptest.NewRequest("GET", "/compare-story/compare/v2...v2", nil), -1)
+	resp, err := testRequest(app, httptest.NewRequest("GET", "/compare-story/compare/v2...v2", nil))
 	if err != nil {
 		t.Fatal(err)
 	}

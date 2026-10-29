@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/adaptor"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"gorm.io/gorm"
@@ -29,8 +27,8 @@ func TestPostgresOIDCHTTPStandardClient(t *testing.T) {
 	if err := db.AutoMigrate(&model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
-	server := httptest.NewServer(adaptor.FiberApp(app))
+	app := newTestRouter()
+	server := httptest.NewServer(app)
 	t.Cleanup(server.Close)
 	solitudes.System.Config.Site.Domain = strings.TrimPrefix(server.URL, "http://")
 	provider, err := newOIDCProvider()
@@ -163,8 +161,8 @@ func TestPostgresOIDCHTTPRevocationTokenHintsAndIsolation(t *testing.T) {
 	if err := db.AutoMigrate(&model.OIDCSigningKey{}, &model.OIDCCryptoKey{}); err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
-	server := httptest.NewServer(adaptor.FiberApp(app))
+	app := newTestRouter()
+	server := httptest.NewServer(app)
 	t.Cleanup(server.Close)
 	solitudes.System.Config.Site.Domain = strings.TrimPrefix(server.URL, "http://")
 	provider, err := newOIDCProvider()
@@ -345,7 +343,7 @@ func TestPostgresOIDCHTTPRevocationTokenHintsAndIsolation(t *testing.T) {
 func TestPostgresOIDCHTTPRefreshNarrowsWithoutExpandingConsent(t *testing.T) {
 	f := newConsentFixture(t)
 	f.app.Use("/userinfo", oidcHTTPHandler(activeOIDCProvider))
-	server := httptest.NewServer(adaptor.FiberApp(f.app))
+	server := httptest.NewServer(f.app)
 	defer server.Close()
 	client := server.Client()
 	client.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
@@ -356,7 +354,7 @@ func TestPostgresOIDCHTTPRefreshNarrowsWithoutExpandingConsent(t *testing.T) {
 			t.Fatal(err)
 		}
 		// The fixture's issuer is localhost:8080; use a real HTTP transport without
-		// changing that issuer or bypassing the production Fiber protocol adapter.
+		// changing that issuer or bypassing the production HTTP protocol adapter.
 		req.Host = "localhost:8080"
 		if form != nil {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

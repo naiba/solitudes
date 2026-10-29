@@ -12,16 +12,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"gopkg.in/yaml.v3"
 
 	"github.com/naiba/solitudes/internal/model"
 )
 
-func postThemeSettings(t *testing.T, app *fiber.App, encoding string, fields map[string]string) int {
+func postThemeSettings(t *testing.T, app *testHTTPRouter, encoding string, fields map[string]string) int {
 	t.Helper()
 	var body bytes.Buffer
-	contentType := fiber.MIMEApplicationJSON
+	contentType := "application/json"
 	switch encoding {
 	case "multipart":
 		writer := multipart.NewWriter(&body)
@@ -40,15 +39,15 @@ func postThemeSettings(t *testing.T, app *fiber.App, encoding string, fields map
 			values.Set(key, value)
 		}
 		body.WriteString(values.Encode())
-		contentType = fiber.MIMEApplicationForm
+		contentType = "application/x-www-form-urlencoded"
 	default:
 		if err := json.NewEncoder(&body).Encode(fields); err != nil {
 			t.Fatal(err)
 		}
 	}
 	req := httptest.NewRequest(http.MethodPost, "/admin/settings", &body)
-	req.Header.Set(fiber.HeaderContentType, contentType)
-	resp, err := app.Test(req, -1)
+	req.Header.Set("Content-Type", contentType)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -152,7 +151,7 @@ func TestThemeConfigDeletionRequiresAdministrator(t *testing.T) {
 			app, cfg, account := settingsAccountFixture(t)
 			account.Role = role
 			if role == "" {
-				app = fiber.New()
+				app = newTestRouter()
 				app.Post("/admin/settings", requireAdmin, settingsHandler)
 			}
 			cfg.Site.ThemeConfig = map[string]interface{}{"keep": "unchanged"}

@@ -20,15 +20,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/88250/lute"
 	"github.com/88250/lute/ast"
 	luteHtml "github.com/88250/lute/html"
 	luteRender "github.com/88250/lute/render"
 	luteUtil "github.com/88250/lute/util"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-playground/locales"
 	gv "github.com/go-playground/validator/v10"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	html "github.com/gofiber/template/html/v2"
 	"github.com/samber/lo"
 	"github.com/spf13/afero"
@@ -141,67 +142,67 @@ func ThemeStaticRoot(kind, name string) string {
 var themeNamePattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*$`)
 
 // themeStaticHandler handles static file requests dynamically based on kind and theme
-func themeStaticHandler(c *fiber.Ctx) error {
-	kind := c.Params("kind")
-	themeName := c.Params("theme")
-	relativePath := c.Params("*")
+func themeStaticHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	kind := routeParam(httpRequest, "kind")
+	themeName := routeParam(httpRequest, "theme")
+	relativePath := routeParam(httpRequest, "*")
 
 	if (kind != "site" && kind != "admin") || !themeNamePattern.MatchString(themeName) {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 
 	// 拒绝目录列表请求（如 /static/site/cactus/ 或 /static/site/cactus/css/）
 	if relativePath == "" || strings.HasSuffix(relativePath, "/") {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 
 	// URL wildcard 必须在主题静态目录内解析，不能再拼成宿主路径后 SendFile。
 	staticRoot, err := os.OpenRoot(ThemeStaticRoot(kind, themeName))
 	if err != nil {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	defer staticRoot.Close()
 
 	assetFile, err := staticRoot.Open(relativePath)
 	if err != nil {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 
 	assetInfo, err := assetFile.Stat()
 	if err != nil || assetInfo.IsDir() || assetInfo.Size() > int64(^uint(0)>>1) {
 		assetFile.Close()
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 
-	c.Set("Cache-Control", "public, max-age=2592000")
-	c.Type(filepath.Ext(relativePath))
-	return c.SendStream(assetFile, int(assetInfo.Size()))
+	writer.Header().Set("Cache-Control", "public, max-age=2592000")
+	setContentType(writer, filepath.Ext(relativePath))
+	return sendStream(writer, httpRequest, assetFile, int(assetInfo.Size()))
 }
 
 // uploadStaticHandler serves only files inside data/upload, including when
 // the directory contains an unexpected symlink.
-func uploadStaticHandler(c *fiber.Ctx) error {
-	relativePath := c.Params("*")
+func uploadStaticHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	relativePath := routeParam(httpRequest, "*")
 	if relativePath == "" || strings.HasSuffix(relativePath, "/") {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	root, err := os.OpenRoot("data/upload")
 	if err != nil {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	defer root.Close()
 	file, err := root.Open(relativePath)
 	if err != nil {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	info, err := file.Stat()
 	if err != nil || info.IsDir() || info.Size() > int64(^uint(0)>>1) {
 		file.Close()
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
-	c.Set("Cache-Control", "public, max-age=2592000")
-	c.Type(filepath.Ext(relativePath))
-	return c.SendStream(file, int(info.Size()))
+	writer.Header().Set("Cache-Control", "public, max-age=2592000")
+	setContentType(writer, filepath.Ext(relativePath))
+	return sendStream(writer, httpRequest, file, int(info.Size()))
 }
 
 // isExternalLink 判断是否为外部链接
@@ -380,11 +381,11 @@ func ReloadTemplates() error {
 
 // newApp builds the HTTP application so browser tests can serve the real
 // routes against an isolated database without modifying the production config.
-func newApp() *fiber.App {
+func newApp() *chi.Mux {
 	return newAppWithRoutes(nil)
 }
 
-func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
+func newAppWithRoutes(extraRoutes func(chi.Router)) *chi.Mux {
 	// 加载模板
 	if err := LoadTemplates(); err != nil {
 		log.Printf("Warning: Failed to load templates: %v", err)
@@ -396,282 +397,256 @@ func newAppWithRoutes(extraRoutes func(*fiber.App)) *fiber.App {
 		activeOIDCProvider = provider
 	}
 
-	app := fiber.New(fiber.Config{
-		EnableTrustedProxyCheck: solitudes.System.Config.EnableTrustedProxyCheck,
-		TrustedProxies:          solitudes.System.Config.TrustedProxies,
-		ProxyHeader:             solitudes.System.Config.ProxyHeader,
-		Views:                   globalDynamicEngine,
-		ErrorHandler: func(c *fiber.Ctx, e error) error {
-			// 404 页面
-			if errors.Is(e, gorm.ErrRecordNotFound) {
-				return page404(c)
-			}
-			tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-			title := tr.T("500_title")
-			errMsg := e.Error()
-			status := http.StatusInternalServerError
-			var fiberError *fiber.Error
-			if errors.As(e, &fiberError) {
-				status = fiberError.Code
-			}
-			if status >= http.StatusInternalServerError {
-				log.Printf("request failed request_id=%s status=%d error_type=%T", c.GetRespHeader("X-Request-ID"), status, e)
-				errMsg = tr.T("500_msg")
-			} else if status == http.StatusForbidden {
-				title, errMsg = tr.T("403_title"), tr.T("403_msg")
-			} else {
-				title = fmt.Sprintf("%d %s", status, http.StatusText(status))
-			}
-			c.Set(fiber.HeaderCacheControl, "no-store")
-			if strings.Contains(string(c.Request().Header.Peek("Accept")), "html") {
-				templateName := "site/error"
-				if isAdminPath(c.Path()) {
-					templateName = "admin/error"
-				}
-				return c.Status(status).Render(templateName, injectSiteData(c, fiber.Map{
-					"title":   title,
-					"msg":     errMsg,
-					"status":  status,
-					"noindex": true,
-				}))
-			}
-			_, e = c.Status(status).WriteString(errMsg)
-			return e
-		},
-	})
-
-	app.Use(canonicalURLRedirect)
-	app.Use(func(c *fiber.Ctx) error {
-		c.Set("X-Frame-Options", "SAMEORIGIN")
-		c.Set("X-Content-Type-Options", "nosniff")
-		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		c.Set("Content-Security-Policy", "frame-ancestors 'self'")
-		isHTML := strings.Contains(c.Get("Accept"), "html")
-		c.Set("Cache-Control", "no-store")
-		if isHTML && (c.Method() == fiber.MethodGet || c.Method() == fiber.MethodHead) {
-			// Audience changes must not leave stale publicly cached bodies.
-			c.Set("Cache-Control", "no-cache, must-revalidate")
-		} else if isHTML {
-			c.Set("Cache-Control", "no-store")
-		}
-		err := c.Next()
-		if currentAccount(c) != nil {
-			c.Set("Cache-Control", "private, no-store")
-		} else if isHTML {
-			if c.Response().StatusCode() >= http.StatusMultipleChoices ||
-				len(c.Response().Header.PeekAll(fiber.HeaderSetCookie)) > 0 {
-				c.Set("Cache-Control", "no-store")
-			}
-		}
-		return err
-	})
-	app.Use(auditMiddleware)
-	// Protocol endpoints authenticate clients with OAuth credentials and must
-	// not be subject to browser Origin/Referer CSRF checks.
-	if activeOIDCProvider != nil {
-		protocolHandler := oidcHTTPHandler(activeOIDCProvider)
-		for _, path := range []string{"/.well-known", "/authorize", "/oauth", "/userinfo", "/revoke", "/end_session", "/keys", "/healthz", "/ready"} {
-			app.Use(path, protocolHandler)
-		}
-	}
-	app.Use(trans, auth, csrfGuard)
-	app.Get("/", index)
-	app.Get("/favicon.ico", faviconHandler)
-	app.Get("/logo.png", logoHandler)
-	app.Get("/feed/:format?", feedHandler)
-	app.Get("/posts/:page?/", posts)
-	app.Get("/books/:page?/", book)
-	app.Get("/search/", search)
-	app.Get("/readers/", readerCircle)
-	app.Get("/users/:id", publicUserProfile)
-	app.Get("/tags/:tag/:page?/", tags)
-	app.Get("/tags/", tagsCloud)
-	app.Get("/r/go", goRedirect)
-	app.Get("/robots.txt", robotsHandler)
-	app.Get("/sitemap.xml", sitemapHandler)
-	app.Get("/llms.txt", llmsDirectory)
-	app.Get("/read/:id/article.md", articleMachineContent)
-	app.Post("/logout", requireAccount, logoutHandler)
-	app.Get("/captcha", generateCaptcha)
-	app.Post("/api/comment", commentHandler)
-	app.Post("/api/count", count)
-	app.Get("/api/commenter-info", commenterInfoHandler)
-
-	// Email tracking endpoints: redirect (primary) + pixel (backup), both use token lookup
-	app.Get("/r/:token", trackEmailReadRedirect)
-	app.Get("/static/i/:token", trackEmailRead)
-	app.Get("/static/:kind/:theme/*", themeStaticHandler)
-	app.Get("/upload/*", uploadStaticHandler)
-
-	app.Get("/login", guestRequired, login)
-	app.Post("/login", guestRequired, loginHandler)
-	app.Get("/register", guestRequired, registerPage)
-	app.Post("/register", guestRequired, registerHandler)
-	app.Post("/resend-verification", resendVerification)
-	app.Get("/verify-email", verifyEmailHandler)
-	app.Get("/account", requireAccount, accountPage)
-	app.Post("/account/profile", requireAccount, updateAccountProfile)
-	app.Post("/account/password", requireAccount, changeAccountPassword)
-	app.Post("/account/identities/:provider/unlink", requireAccount, unlinkAccountIdentity)
-	app.Get("/account/oidc/clients", requireAccount, oidcClientsPage)
-	app.Post("/account/oidc/clients", requireAccount, createOIDCClient)
-	app.Post("/account/oidc/clients/:id/metadata", requireAccount, updateOIDCClient)
-	app.Post("/account/oidc/clients/:id/disable", requireAccount, disableOIDCClient)
-	app.Post("/account/oidc/clients/:id/delete", requireAccount, deleteOIDCClient)
-	app.Get("/account/oidc/authorizations", requireAccount, authorizedApplicationsPage)
-	app.Post("/account/oidc/authorizations/:id/revoke", requireAccount, revokeApplicationGrant)
-	// Removed authentication URLs must not fall through to the /admin/
-	// authentication middleware, which would redirect instead of returning 404.
-	app.Use("/admin/", func(c *fiber.Ctx) error {
-		switch strings.TrimSuffix(c.Path(), "/") {
-		case "/admin/login", "/admin/register", "/admin/verify-email", "/admin/resend-verification":
-			return fiber.ErrNotFound
-		}
-		return c.Next()
-	})
-	app.Get("/oidc/consent", consentPage)
-	app.Post("/oidc/consent", requireAccount, consentHandler)
-	app.Get("/auth/:provider/callback", oauthCallback)
-	app.Post("/auth/:provider/link", requireAccount, beginOAuthLink)
-	app.Get("/auth/:provider", guestRequired, beginOAuthLogin)
-	app.Post("/auth/passkey/login/begin", beginPasskeyLogin)
-	app.Post("/auth/passkey/login/finish", finishPasskeyLogin)
-	app.Post("/account/passkeys/begin", requireAccount, beginPasskeyRegistration)
-	app.Post("/account/passkeys/finish", requireAccount, finishPasskeyRegistration)
-	app.Delete("/account/passkeys/:id", requireAccount, deletePasskey)
-
-	admin := app.Group("/admin/", loginRequired)
-	admin.Get("/", requireAdmin, manager)
-	admin.Get("/users", requireAdmin, usersPage)
-	admin.Get("/users/:id", requireAdmin, adminUserDetail)
-	admin.Get("/audit", requireAdmin, auditPage)
-	admin.Post("/users/:id/role", requireAdmin, setUserRole)
-	admin.Get("/auth/providers", requireAdmin, loginProvidersPage)
-	admin.Post("/auth/providers", requireAdmin, saveLoginProviders)
-	admin.Get("/oidc/clients", requireAdmin, oidcClientsPage)
-	admin.Get("/oidc/clients/:id", requireAdmin, adminClientDetail)
-	admin.Post("/oidc/clients", requireAdmin, createOIDCClient)
-	admin.Post("/oidc/clients/:id/metadata", requireAdmin, updateOIDCClient)
-	admin.Post("/oidc/clients/:id/disable", requireAdmin, disableOIDCClient)
-	admin.Post("/oidc/clients/:id/delete", requireAdmin, deleteOIDCClient)
-	admin.Post("/oidc/keys/rotate", requireAdmin, rotateOIDCKeys)
-	admin.Get("/publish", publish)
-	admin.Post("/publish", publishHandler)
-	admin.Post("/rebuild-full-text-search", requireAdmin, rebuildFullTextSearch)
-	admin.Post("/upload", upload)
-	admin.Post("/fetch", requireAdmin, fetch)
-	admin.Get("/comments", requireAdmin, comments)
-	admin.Delete("/comments", requireAdmin, deleteComment)
-	admin.Post("/report-spam", requireAdmin, reportSpam)
-	admin.Post("/restore-spam", requireAdmin, restoreSpam)
-	admin.Get("/articles", manageArticle)
-	admin.Delete("/articles", deleteArticle)
-	admin.Get("/media", requireAdmin, media)
-	admin.Delete("/media", requireAdmin, mediaHandler)
-	admin.Get("/settings", requireAdmin, settings)
-	admin.Post("/settings", requireAdmin, settingsHandler)
-	admin.Get("/redirects", requireAdmin, redirectManagement)
-	admin.Post("/redirects", requireAdmin, saveRedirect)
-	admin.Delete("/redirects", requireAdmin, deleteRedirects)
-	admin.Get("/tags", requireAdmin, tagsManagePage)
-	admin.Delete("/tags", requireAdmin, deleteTag)
-	admin.Patch("/tags", requireAdmin, renameTag)
-	admin.Get("/api/search-tags", searchTags)
-	admin.Get("/api/search-books", searchBooks)
-	admin.Get("/theme/preview/:kind/:name", themePreview)
-
-	if extraRoutes != nil {
-		extraRoutes(app)
-	}
-	// System routes (and canonical normalization above) win over managed
-	// redirects; managed redirects in turn win over article routes.
-	app.Use(registeredRedirect)
-	app.Get("/:slug/compare/:versions?", articleCompare)
-	app.Get("/:slug/:version?", article)
-	app.Use(page404)
-
+	app := chi.NewRouter()
+	app.Use(requestLifecycle(globalDynamicEngine, applicationError), prepareRoutePath, middleware.GetHead)
+	app.Use(before(canonicalURLRedirect), securityHeaders, auditMiddleware)
 	if solitudes.System.Config.Debug {
-		app.Use(logger.New())
+		app.Use(requestAccessLog)
 	}
+	// Protocol authentication is independent of browser sessions and CSRF checks.
+	if activeOIDCProvider != nil {
+		for _, path := range []string{"/.well-known", "/authorize", "/oauth", "/userinfo", "/revoke", "/end_session", "/keys", "/healthz", "/ready"} {
+			app.Handle(path, serveEndpoint(oidcHTTPHandler(activeOIDCProvider)))
+			app.Handle(path+"/*", serveEndpoint(oidcHTTPHandler(activeOIDCProvider)))
+		}
+	}
+	app.Group(func(site chi.Router) {
+		site.Use(before(trans), before(auth), before(csrfGuard))
+		site.Get("/", serveEndpoint(index))
+		site.Get("/favicon.ico", serveEndpoint(faviconHandler))
+		site.Get("/logo.png", serveEndpoint(logoHandler))
+		site.Get("/feed", serveEndpoint(feedHandler))
+		site.Get("/feed/{format}", serveEndpoint(feedHandler))
+		site.Get("/posts", serveEndpoint(posts))
+		site.Get("/posts/{page}", serveEndpoint(posts))
+		site.Get("/books", serveEndpoint(book))
+		site.Get("/books/{page}", serveEndpoint(book))
+		site.Get("/search", serveEndpoint(search))
+		site.Get("/readers", serveEndpoint(readerCircle))
+		site.Get("/users/{id}", serveEndpoint(publicUserProfile))
+		site.Get("/tags/{tag}", serveEndpoint(tags))
+		site.Get("/tags/{tag}/{page}", serveEndpoint(tags))
+		site.Get("/tags", serveEndpoint(tagsCloud))
+		site.Get("/r/go", serveEndpoint(goRedirect))
+		site.Get("/robots.txt", serveEndpoint(robotsHandler))
+		site.Get("/sitemap.xml", serveEndpoint(sitemapHandler))
+		site.Get("/llms.txt", serveEndpoint(llmsDirectory))
+		site.Get("/read/{id}/article.md", serveEndpoint(articleMachineContent))
+		site.Post("/logout", serveEndpoint(requireAccount, logoutHandler))
+		site.Get("/captcha", serveEndpoint(generateCaptcha))
+		site.Post("/api/comment", serveEndpoint(commentHandler))
+		site.Post("/api/count", serveEndpoint(count))
+		site.Get("/api/commenter-info", serveEndpoint(commenterInfoHandler))
+		site.Get("/r/{token}", serveEndpoint(trackEmailReadRedirect))
+		site.Get("/static/i/{token}", serveEndpoint(trackEmailRead))
+		site.Get("/static/{kind}/{theme}/*", serveEndpoint(themeStaticHandler))
+		site.Get("/upload/*", serveEndpoint(uploadStaticHandler))
+		site.Get("/login", serveEndpoint(guestRequired, login))
+		site.Post("/login", serveEndpoint(guestRequired, loginHandler))
+		site.Get("/register", serveEndpoint(guestRequired, registerPage))
+		site.Post("/register", serveEndpoint(guestRequired, registerHandler))
+		site.Post("/resend-verification", serveEndpoint(resendVerification))
+		site.Get("/verify-email", serveEndpoint(verifyEmailHandler))
+		site.Get("/account", serveEndpoint(requireAccount, accountPage))
+		site.Post("/account/profile", serveEndpoint(requireAccount, updateAccountProfile))
+		site.Post("/account/password", serveEndpoint(requireAccount, changeAccountPassword))
+		site.Post("/account/identities/{provider}/unlink", serveEndpoint(requireAccount, unlinkAccountIdentity))
+		site.Get("/account/oidc/clients", serveEndpoint(requireAccount, oidcClientsPage))
+		site.Post("/account/oidc/clients", serveEndpoint(requireAccount, createOIDCClient))
+		site.Post("/account/oidc/clients/{id}/metadata", serveEndpoint(requireAccount, updateOIDCClient))
+		site.Post("/account/oidc/clients/{id}/disable", serveEndpoint(requireAccount, disableOIDCClient))
+		site.Post("/account/oidc/clients/{id}/delete", serveEndpoint(requireAccount, deleteOIDCClient))
+		site.Get("/account/oidc/authorizations", serveEndpoint(requireAccount, authorizedApplicationsPage))
+		site.Post("/account/oidc/authorizations/{id}/revoke", serveEndpoint(requireAccount, revokeApplicationGrant))
+		site.Get("/oidc/consent", serveEndpoint(consentPage))
+		site.Post("/oidc/consent", serveEndpoint(requireAccount, consentHandler))
+		site.Get("/auth/{provider}/callback", serveEndpoint(oauthCallback))
+		site.Post("/auth/{provider}/link", serveEndpoint(requireAccount, beginOAuthLink))
+		site.Get("/auth/{provider}", serveEndpoint(guestRequired, beginOAuthLogin))
+		site.Post("/auth/passkey/login/begin", serveEndpoint(beginPasskeyLogin))
+		site.Post("/auth/passkey/login/finish", serveEndpoint(finishPasskeyLogin))
+		site.Post("/account/passkeys/begin", serveEndpoint(requireAccount, beginPasskeyRegistration))
+		site.Post("/account/passkeys/finish", serveEndpoint(requireAccount, finishPasskeyRegistration))
+		site.Delete("/account/passkeys/{id}", serveEndpoint(requireAccount, deletePasskey))
 
+		// Removed login endpoints must return 404 before the admin authentication guard.
+		for _, path := range []string{"/admin/login", "/admin/register", "/admin/verify-email", "/admin/resend-verification"} {
+			site.Handle(path, serveEndpoint(page404))
+		}
+		site.Route("/admin", func(admin chi.Router) {
+			admin.Use(before(loginRequired))
+			admin.Get("/", serveEndpoint(requireAdmin, manager))
+			admin.Get("/users", serveEndpoint(requireAdmin, usersPage))
+			admin.Get("/users/{id}", serveEndpoint(requireAdmin, adminUserDetail))
+			admin.Get("/audit", serveEndpoint(requireAdmin, auditPage))
+			admin.Post("/users/{id}/role", serveEndpoint(requireAdmin, setUserRole))
+			admin.Get("/auth/providers", serveEndpoint(requireAdmin, loginProvidersPage))
+			admin.Post("/auth/providers", serveEndpoint(requireAdmin, saveLoginProviders))
+			admin.Get("/oidc/clients", serveEndpoint(requireAdmin, oidcClientsPage))
+			admin.Get("/oidc/clients/{id}", serveEndpoint(requireAdmin, adminClientDetail))
+			admin.Post("/oidc/clients", serveEndpoint(requireAdmin, createOIDCClient))
+			admin.Post("/oidc/clients/{id}/metadata", serveEndpoint(requireAdmin, updateOIDCClient))
+			admin.Post("/oidc/clients/{id}/disable", serveEndpoint(requireAdmin, disableOIDCClient))
+			admin.Post("/oidc/clients/{id}/delete", serveEndpoint(requireAdmin, deleteOIDCClient))
+			admin.Post("/oidc/keys/rotate", serveEndpoint(requireAdmin, rotateOIDCKeys))
+			admin.Get("/publish", serveEndpoint(publish))
+			admin.Post("/publish", serveEndpoint(publishHandler))
+			admin.Post("/rebuild-full-text-search", serveEndpoint(requireAdmin, rebuildFullTextSearch))
+			admin.Post("/upload", serveEndpoint(upload))
+			admin.Post("/fetch", serveEndpoint(requireAdmin, fetch))
+			admin.Get("/comments", serveEndpoint(requireAdmin, comments))
+			admin.Delete("/comments", serveEndpoint(requireAdmin, deleteComment))
+			admin.Post("/report-spam", serveEndpoint(requireAdmin, reportSpam))
+			admin.Post("/restore-spam", serveEndpoint(requireAdmin, restoreSpam))
+			admin.Get("/articles", serveEndpoint(manageArticle))
+			admin.Delete("/articles", serveEndpoint(deleteArticle))
+			admin.Get("/media", serveEndpoint(requireAdmin, media))
+			admin.Delete("/media", serveEndpoint(requireAdmin, mediaHandler))
+			admin.Get("/settings", serveEndpoint(requireAdmin, settings))
+			admin.Post("/settings", serveEndpoint(requireAdmin, settingsHandler))
+			admin.Get("/redirects", serveEndpoint(requireAdmin, redirectManagement))
+			admin.Post("/redirects", serveEndpoint(requireAdmin, saveRedirect))
+			admin.Delete("/redirects", serveEndpoint(requireAdmin, deleteRedirects))
+			admin.Get("/tags", serveEndpoint(requireAdmin, tagsManagePage))
+			admin.Delete("/tags", serveEndpoint(requireAdmin, deleteTag))
+			admin.Patch("/tags", serveEndpoint(requireAdmin, renameTag))
+			admin.Get("/api/search-tags", serveEndpoint(searchTags))
+			admin.Get("/api/search-books", serveEndpoint(searchBooks))
+			admin.Get("/theme/preview/{kind}/{name}", serveEndpoint(themePreview))
+
+		})
+		if extraRoutes != nil {
+			extraRoutes(site)
+		}
+		// Fixed system routes win over redirects; only article routes consult them.
+		site.Group(func(articles chi.Router) {
+			articles.Use(before(registeredRedirect))
+			articles.Get("/{slug}/compare", serveEndpoint(articleCompare))
+			articles.Get("/{slug}/compare/{versions}", serveEndpoint(articleCompare))
+			articles.Get("/{slug}", serveEndpoint(article))
+			articles.Get("/{slug}/{version}", serveEndpoint(article))
+			articles.NotFound(serveEndpoint(registeredRedirect, page404))
+		})
+	})
 	return app
+}
+
+func applicationError(writer http.ResponseWriter, httpRequest *http.Request, e error) error {
+	// 404 页面
+	if errors.Is(e, gorm.ErrRecordNotFound) {
+		return page404(writer, httpRequest)
+	}
+	if requestValue(httpRequest, solitudes.CtxTranslator) == nil {
+		_ = trans(writer, httpRequest)
+	}
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	title := tr.T("500_title")
+	errMsg := e.Error()
+	status := http.StatusInternalServerError
+	var responseError *httpError
+	if errors.As(e, &responseError) {
+		status = responseError.Code
+	}
+	if status >= http.StatusInternalServerError {
+		log.Printf("request failed request_id=%s status=%d error_type=%T", writer.Header().Get("X-Request-ID"), status, e)
+		errMsg = tr.T("500_msg")
+	} else if status == http.StatusForbidden {
+		title, errMsg = tr.T("403_title"), tr.T("403_msg")
+	} else {
+		title = fmt.Sprintf("%d %s", status, http.StatusText(status))
+	}
+	writer.Header().Set("Cache-Control", "no-store")
+	if strings.Contains(string(requestHeader(httpRequest, "Accept")), "html") {
+		templateName := "site/error"
+		if isAdminPath(requestPath(httpRequest)) {
+			templateName = "admin/error"
+		}
+		return renderPage(writer, httpRequest, status, templateName, injectSiteData(writer, httpRequest, viewData{
+			"title":   title,
+			"msg":     errMsg,
+			"status":  status,
+			"noindex": true,
+		}))
+	}
+	_, e = writeResponseString(writer, status, errMsg)
+	return e
 }
 
 // Serve web service
 func Serve() {
-	if err := newApp().Listen(":8080"); err != nil {
+	if err := (&http.Server{Addr: ":8080", Handler: newApp(), ReadHeaderTimeout: 10 * time.Second}).ListenAndServe(); err != nil {
 		log.Printf("web server stopped: %v", err)
 	}
 }
 
-func themePreview(c *fiber.Ctx) error {
-	kind := c.Params("kind")
-	name := c.Params("name")
+func themePreview(writer http.ResponseWriter, httpRequest *http.Request) error {
+	kind := routeParam(httpRequest, "kind")
+	name := routeParam(httpRequest, "name")
 	if (kind != "site" && kind != "admin") || !themeNamePattern.MatchString(name) {
-		return c.SendStatus(http.StatusNotFound)
+		return writeStatus(writer, http.StatusNotFound)
 	}
 	root, err := os.OpenRoot(themeResourcePath(kind, name, ""))
 	if err != nil {
-		return c.SendStatus(http.StatusNotFound)
+		return writeStatus(writer, http.StatusNotFound)
 	}
 	defer root.Close()
 	file, err := root.Open("screenshot.png")
 	if err != nil {
-		return c.SendStatus(http.StatusNotFound)
+		return writeStatus(writer, http.StatusNotFound)
 	}
 	info, err := file.Stat()
 	if err != nil || info.IsDir() || info.Size() > int64(^uint(0)>>1) {
 		file.Close()
-		return c.SendStatus(http.StatusNotFound)
+		return writeStatus(writer, http.StatusNotFound)
 	}
-	c.Type("png")
-	return c.SendStream(file, int(info.Size()))
+	setContentType(writer, "png")
+	return sendStream(writer, httpRequest, file, int(info.Size()))
 }
 
-func serveUploadOrThemeFile(c *fiber.Ctx, uploadPath, themePath string) error {
-	if err := sendRootFile(c, "data/upload", filepath.Base(uploadPath)); err == nil {
+func serveUploadOrThemeFile(writer http.ResponseWriter, httpRequest *http.Request, uploadPath, themePath string) error {
+	if err := sendRootFile(writer, httpRequest, "data/upload", filepath.Base(uploadPath)); err == nil {
 		return nil
 	}
-	return sendRootFile(c, ThemeStaticRoot("site", solitudes.System.Config.Site.Theme), themePath)
+	return sendRootFile(writer, httpRequest, ThemeStaticRoot("site", solitudes.System.Config.Site.Theme), themePath)
 }
 
-func sendRootFile(c *fiber.Ctx, rootPath, relativePath string) error {
+func sendRootFile(writer http.ResponseWriter, httpRequest *http.Request, rootPath, relativePath string) error {
 	root, err := os.OpenRoot(rootPath)
 	if err != nil {
-		return fiber.ErrNotFound
+		return newHTTPError(http.StatusNotFound)
 	}
 	defer root.Close()
 	file, err := root.Open(relativePath)
 	if err != nil {
-		return fiber.ErrNotFound
+		return newHTTPError(http.StatusNotFound)
 	}
 	info, err := file.Stat()
 	if err != nil || info.IsDir() || info.Size() > int64(^uint(0)>>1) {
 		file.Close()
-		return fiber.ErrNotFound
+		return newHTTPError(http.StatusNotFound)
 	}
-	c.Type(filepath.Ext(relativePath))
-	return c.SendStream(file, int(info.Size()))
+	setContentType(writer, filepath.Ext(relativePath))
+	return sendStream(writer, httpRequest, file, int(info.Size()))
 }
 
-func faviconHandler(c *fiber.Ctx) error {
-	return serveUploadOrThemeFile(c, "data/upload/favicon.ico", "images/favicon.ico")
+func faviconHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	return serveUploadOrThemeFile(writer, httpRequest, "data/upload/favicon.ico", "images/favicon.ico")
 }
 
-func logoHandler(c *fiber.Ctx) error {
-	return serveUploadOrThemeFile(c, "data/upload/logo.png", "images/logo.png")
+func logoHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	return serveUploadOrThemeFile(writer, httpRequest, "data/upload/logo.png", "images/logo.png")
 }
 
 // goRedirect 处理外部链接跳转
-func goRedirect(c *fiber.Ctx) error {
-	encodedURL := c.Query("url")
+func goRedirect(writer http.ResponseWriter, httpRequest *http.Request) error {
+	encodedURL := queryValue(httpRequest, "url")
 	if encodedURL == "" {
-		return c.Status(http.StatusBadRequest).SendString("Missing url parameter")
+		return writeText(writer, http.StatusBadRequest, "Missing url parameter")
 	}
 
 	// 显示跳转提示页面，实际解析由前端 JS 完成
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Render("site/redirect", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	return renderPage(writer, httpRequest, http.StatusOK, "site/redirect", injectSiteData(writer, httpRequest, viewData{
 		"title":             tr.T("redirect_title"),
 		"msg":               tr.T("redirect_msg"),
 		"continue_text":     tr.T("redirect_continue"),
@@ -683,23 +658,23 @@ func goRedirect(c *fiber.Ctx) error {
 	}))
 }
 
-func page404(c *fiber.Ctx) error {
-	c.Set(fiber.HeaderCacheControl, "no-store")
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+func page404(writer http.ResponseWriter, httpRequest *http.Request) error {
+	writer.Header().Set("Cache-Control", "no-store")
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
 	templateName := "site/error"
-	if isAdminPath(c.Path()) {
+	if isAdminPath(requestPath(httpRequest)) {
 		templateName = "admin/error"
 	}
-	c.Status(http.StatusNotFound).Render(templateName, injectSiteData(c, fiber.Map{
+	return renderPage(writer, httpRequest, http.StatusNotFound, templateName, injectSiteData(writer, httpRequest, viewData{
 		"title":   tr.T("404_title"),
 		"msg":     tr.T("404_msg"),
 		"status":  http.StatusNotFound,
 		"noindex": true,
 	}))
-	return nil
+
 }
 
-func robotsHandler(c *fiber.Ctx) error {
+func robotsHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
 	domain := solitudes.System.Config.Site.Domain
 	robotsTxt := fmt.Sprintf(`User-agent: *
 Allow: /
@@ -711,12 +686,12 @@ Disallow: /captcha
 
 Sitemap: https://%s/sitemap.xml
 `, domain)
-	c.Set("Content-Type", "text/plain")
-	c.Status(http.StatusOK).SendString(robotsTxt)
-	return nil
+	writer.Header().Set("Content-Type", "text/plain")
+	return writeText(writer, http.StatusOK, robotsTxt)
+
 }
 
-func sitemapHandler(c *fiber.Ctx) error {
+func sitemapHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
 	type sitemapURL struct {
 		Location   string `xml:"loc"`
 		LastMod    string `xml:"lastmod,omitempty"`
@@ -767,8 +742,8 @@ func sitemapHandler(c *fiber.Ctx) error {
 	if err != nil {
 		return fmt.Errorf("encode sitemap: %w", err)
 	}
-	c.Set("Content-Type", "application/xml; charset=utf-8")
-	return c.Status(http.StatusOK).SendString(xml.Header + string(body))
+	writer.Header().Set("Content-Type", "application/xml; charset=utf-8")
+	return writeText(writer, http.StatusOK, xml.Header+string(body))
 }
 
 func setFuncMap(engine *html.Engine) {
@@ -869,32 +844,32 @@ func setFuncMap(engine *html.Engine) {
 	}
 }
 
-func auth(c *fiber.Ctx) error {
-	token := c.Cookies(solitudes.AuthCookie)
+func auth(writer http.ResponseWriter, httpRequest *http.Request) error {
+	token := requestCookie(httpRequest, solitudes.AuthCookie)
 	account, err := sessionLookup(token)
 	if err != nil {
 		account = nil
 	}
-	c.Locals(solitudes.CtxAccount, account)
-	return c.Next()
+	requestValue(httpRequest, solitudes.CtxAccount, account)
+	return nil
 }
 
-func loginRequired(c *fiber.Ctx) error {
-	account := currentAccount(c)
+func loginRequired(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
 	if account == nil {
-		if c.Method() == fiber.MethodGet {
-			return c.Redirect("/login?return_to="+url.QueryEscape(c.OriginalURL()), http.StatusFound)
+		if httpRequest.Method == http.MethodGet {
+			return redirectResponse(writer, httpRequest, "/login?return_to="+url.QueryEscape(requestTarget(httpRequest)), http.StatusFound)
 		}
-		return c.Redirect("/login", http.StatusFound)
+		return redirectResponse(writer, httpRequest, "/login", http.StatusFound)
 	}
 	if !account.Role.CanPublish() {
-		return fiber.ErrForbidden
+		return newHTTPError(http.StatusForbidden)
 	}
-	return c.Next()
+	return nil
 }
 
-func csrfSameOriginHeader(c *fiber.Ctx, header string) bool {
-	raw := c.Get(header)
+func csrfSameOriginHeader(writer http.ResponseWriter, httpRequest *http.Request, header string) bool {
+	raw := requestHeader(httpRequest, header)
 	if raw == "" {
 		return false
 	}
@@ -902,54 +877,54 @@ func csrfSameOriginHeader(c *fiber.Ctx, header string) bool {
 	if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "http" && u.Scheme != "https") {
 		return false
 	}
-	return strings.EqualFold(u.Host, c.Get(fiber.HeaderHost)) && strings.EqualFold(u.Scheme, c.Protocol())
+	return strings.EqualFold(u.Host, requestHeader(httpRequest, "Host")) && strings.EqualFold(u.Scheme, requestScheme(httpRequest))
 }
 
-func csrfGuard(c *fiber.Ctx) error {
-	switch c.Method() {
-	case fiber.MethodGet, fiber.MethodHead, fiber.MethodOptions:
-		return c.Next()
+func csrfGuard(writer http.ResponseWriter, httpRequest *http.Request) error {
+	switch httpRequest.Method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return nil
 	}
-	origin := c.Get(fiber.HeaderOrigin)
-	referer := c.Get(fiber.HeaderReferer)
+	origin := requestHeader(httpRequest, "Origin")
+	referer := requestHeader(httpRequest, "Referer")
 	if origin == "" && referer == "" {
-		return fiber.NewError(fiber.StatusForbidden, "missing Origin and Referer")
+		return newHTTPError(http.StatusForbidden, "missing Origin and Referer")
 	}
-	if origin != "" && !csrfSameOriginHeader(c, fiber.HeaderOrigin) {
-		return fiber.NewError(fiber.StatusForbidden, "cross-origin request blocked")
+	if origin != "" && !csrfSameOriginHeader(writer, httpRequest, "Origin") {
+		return newHTTPError(http.StatusForbidden, "cross-origin request blocked")
 	}
-	if origin == "" && !csrfSameOriginHeader(c, fiber.HeaderReferer) {
-		return fiber.NewError(fiber.StatusForbidden, "cross-origin request blocked")
+	if origin == "" && !csrfSameOriginHeader(writer, httpRequest, "Referer") {
+		return newHTTPError(http.StatusForbidden, "cross-origin request blocked")
 	}
-	return c.Next()
+	return nil
 }
 
-func guestRequired(c *fiber.Ctx) error {
-	if account := currentAccount(c); account != nil {
+func guestRequired(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if account := currentAccount(writer, httpRequest); account != nil {
 		// A validated pending OIDC flow may require a fresh sign-in. Do not
 		// redirect an already signed-in browser back into a max_age/login loop.
-		if c.Path() == "/login" || strings.HasPrefix(c.Path(), "/auth/") {
-			returnTo := c.Query("return_to")
-			if c.Method() == http.MethodPost {
-				returnTo = c.FormValue("return_to")
+		if requestPath(httpRequest) == "/login" || strings.HasPrefix(requestPath(httpRequest), "/auth/") {
+			returnTo := queryValue(httpRequest, "return_to")
+			if httpRequest.Method == http.MethodPost {
+				returnTo = formValue(httpRequest, "return_to")
 			}
-			application, err := loginOIDCApplication(c, safeReturnPath(returnTo))
+			application, err := loginOIDCApplication(writer, httpRequest, safeReturnPath(returnTo))
 			if err != nil {
 				return err
 			}
 			if application != nil {
-				return c.Next()
+				return nil
 			}
 		}
-		if target := safeReturnPath(c.Query("return_to")); target != "" {
-			return c.Redirect(target, http.StatusFound)
+		if target := safeReturnPath(queryValue(httpRequest, "return_to")); target != "" {
+			return redirectResponse(writer, httpRequest, target, http.StatusFound)
 		}
-		return c.Redirect("/account", http.StatusFound)
+		return redirectResponse(writer, httpRequest, "/account", http.StatusFound)
 	}
-	return c.Next()
+	return nil
 }
 
-func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
+func injectSiteData(writer http.ResponseWriter, httpRequest *http.Request, data viewData) viewData {
 	var title, keywords, desc string
 	siteName := solitudes.System.Config.Site.SpaceName
 	siteDesc := solitudes.System.Config.Site.SpaceDesc
@@ -1002,22 +977,22 @@ func injectSiteData(c *fiber.Ctx, data fiber.Map) fiber.Map {
 	if canonical, ok := data["canonical_path"].(string); ok {
 		soli["CanonicalPath"] = safeReturnPath(canonical)
 	}
-	account := currentAccount(c)
+	account := currentAccount(writer, httpRequest)
 	soli["Account"] = account
-	soli["Queries"] = &TemplateQueries{db: solitudes.System.DB, account: account, notice: accessNoticeFor(c)}
+	soli["Queries"] = &TemplateQueries{db: solitudes.System.DB, account: account, notice: accessNoticeFor(writer, httpRequest)}
 	soli["Login"] = account != nil && account.Role.CanPublish()
 	soli["Data"] = data
-	soli["Tr"] = c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	soli["Path"] = c.Path()
+	soli["Tr"] = requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	soli["Path"] = requestPath(httpRequest)
 	soli["Now"] = time.Now()
 
 	return soli
 }
 
-func trans(c *fiber.Ctx) error {
-	t, _ := translator.Trans.FindTranslator(getAcceptLanguages(c.Get("Accept-Language"))...)
-	c.Locals(solitudes.CtxTranslator, &translator.Translator{Trans: t, Translator: t.(locales.Translator)})
-	return c.Next()
+func trans(writer http.ResponseWriter, httpRequest *http.Request) error {
+	t, _ := translator.Trans.FindTranslator(getAcceptLanguages(requestHeader(httpRequest, "Accept-Language"))...)
+	requestValue(httpRequest, solitudes.CtxTranslator, &translator.Translator{Trans: t, Translator: t.(locales.Translator)})
+	return nil
 }
 
 func getAcceptLanguages(accepted string) []string {

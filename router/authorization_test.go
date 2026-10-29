@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -34,7 +32,7 @@ func TestMediaDeleteRequiresLoginAndSameOrigin(t *testing.T) {
 	}
 	cfg := &model.Config{}
 	solitudes.System = &solitudes.SysVariable{Config: cfg}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Delete("/admin/media", loginRequired, mediaHandler)
 
@@ -52,14 +50,14 @@ func TestMediaDeleteRequiresLoginAndSameOrigin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodDelete, "/admin/media?name=photo.jpg", nil)
 			req.Host = "example.com"
-			req.Header.Set(fiber.HeaderHost, "example.com")
+			req.Header.Set("Host", "example.com")
 			if tc.origin != "" {
-				req.Header.Set(fiber.HeaderOrigin, tc.origin)
+				req.Header.Set("Origin", tc.origin)
 			}
 			if tc.token != "" {
 				req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: tc.token})
 			}
-			resp, err := app.Test(req, -1)
+			resp, err := testRequest(app, req)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -83,14 +81,14 @@ func TestExpiredAdminTokenCannotDeleteMedia(t *testing.T) {
 	sessionLookup = func(token string) (*model.Account, error) { return nil, errNoAccount }
 	cfg := &model.Config{}
 	solitudes.System = &solitudes.SysVariable{Config: cfg}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth)
-	app.Delete("/admin/media", loginRequired, func(c *fiber.Ctx) error {
-		return c.SendStatus(http.StatusOK)
+	app.Delete("/admin/media", loginRequired, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeStatus(writer, http.StatusOK)
 	})
 	req := httptest.NewRequest(http.MethodDelete, "/admin/media", nil)
 	req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "expired"})
-	resp, err := app.Test(req, -1)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,10 +112,14 @@ func TestAccountRolesRestrictPublishingAndAdministration(t *testing.T) {
 		}
 		return nil, errNoAccount
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth)
-	app.Get("/admin/publish", loginRequired, func(c *fiber.Ctx) error { return c.SendStatus(http.StatusOK) })
-	app.Get("/admin/users", loginRequired, requireAdmin, func(c *fiber.Ctx) error { return c.SendStatus(http.StatusOK) })
+	app.Get("/admin/publish", loginRequired, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeStatus(writer, http.StatusOK)
+	})
+	app.Get("/admin/users", loginRequired, requireAdmin, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeStatus(writer, http.StatusOK)
+	})
 	for _, tc := range []struct {
 		role, path string
 		status     int
@@ -134,7 +136,7 @@ func TestAccountRolesRestrictPublishingAndAdministration(t *testing.T) {
 		if tc.role != "" {
 			req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: tc.role})
 		}
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -157,7 +159,7 @@ func TestArticleHandlersRejectMembersAndAnonymousRequests(t *testing.T) {
 		}
 		return nil, errNoAccount
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth)
 	admin := app.Group("/admin/", loginRequired)
 	admin.Get("/publish", publish)
@@ -190,7 +192,7 @@ func TestArticleHandlersRejectMembersAndAnonymousRequests(t *testing.T) {
 					if token != "" {
 						req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: token})
 					}
-					resp, err := app.Test(req, -1)
+					resp, err := testRequest(app, req)
 					if err != nil {
 						t.Fatal(err)
 					}

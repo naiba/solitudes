@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 	html "github.com/gofiber/template/html/v2"
 
 	"github.com/naiba/solitudes/internal/model"
@@ -39,7 +38,7 @@ func TestAdminEmailVerificationPresentation(t *testing.T) {
 				}
 				for _, view := range []string{"admin/users", "admin/user_detail"} {
 					t.Run(locale+"/"+view+"/"+map[bool]string{true: "verified", false: "unverified"}[verified]+"/"+map[bool]string{true: "disabled", false: "active"}[disabled], func(t *testing.T) {
-						data := fiber.Map{"Tr": translated, "Conf": &model.Config{}, "Account": &model.Account{ID: "admin", Role: model.RoleAdmin}, "Path": "/admin/users", "Data": fiber.Map{"users": []adminUserView{user}, "user": user, "overview": identityTotals{}}}
+						data := viewData{"Tr": translated, "Conf": &model.Config{}, "Account": &model.Account{ID: "admin", Role: model.RoleAdmin}, "Path": "/admin/users", "Data": viewData{"users": []adminUserView{user}, "user": user, "overview": identityTotals{}}}
 						var output bytes.Buffer
 						if err := engine.Render(&output, view, data); err != nil {
 							t.Fatal(err)

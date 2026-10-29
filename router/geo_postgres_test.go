@@ -3,12 +3,12 @@ package router
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -38,12 +38,12 @@ func TestPostgresMachineContentPrivacyAndPagination(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error {
-		if c.Get("X-Test-Admin") == "yes" {
-			c.Locals(solitudes.CtxAccount, &model.Account{Role: model.RoleAdmin})
+	app := newTestRouter()
+	app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		if requestHeader(httpRequest, "X-Test-Admin") == "yes" {
+			requestValue(httpRequest, solitudes.CtxAccount, &model.Account{Role: model.RoleAdmin})
 		}
-		return c.Next()
+		return nil
 	})
 	app.Get("/llms.txt", llmsDirectory)
 	app.Get("/read/:id/article.md", articleMachineContent)
@@ -54,7 +54,7 @@ func TestPostgresMachineContentPrivacyAndPagination(t *testing.T) {
 			req.Header.Set("X-Test-Admin", "yes")
 		}
 		req.Header.Set("If-None-Match", `"old-public-body"`)
-		resp, err := app.Test(req)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}

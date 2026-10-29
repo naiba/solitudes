@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
@@ -15,27 +14,27 @@ import (
 
 const profilePageSize = 12
 
-func profilePageNumber(c *fiber.Ctx, name string) (int, error) {
-	return listPage(c.Query(name))
+func profilePageNumber(writer http.ResponseWriter, httpRequest *http.Request, name string) (int, error) {
+	return listPage(queryValue(httpRequest, name))
 }
 
-func publicUserProfile(c *fiber.Ctx) error {
-	id, err := uuid.Parse(c.Params("id"))
+func publicUserProfile(writer http.ResponseWriter, httpRequest *http.Request) error {
+	id, err := uuid.Parse(routeParam(httpRequest, "id"))
 	if err != nil {
-		return fiber.ErrNotFound
+		return newHTTPError(http.StatusNotFound)
 	}
-	articlePage, err := profilePageNumber(c, "articles_page")
+	articlePage, err := profilePageNumber(writer, httpRequest, "articles_page")
 	if err != nil {
 		return err
 	}
-	commentPage, err := profilePageNumber(c, "comments_page")
+	commentPage, err := profilePageNumber(writer, httpRequest, "comments_page")
 	if err != nil {
 		return err
 	}
 	var account model.Account
 	if err := solitudes.System.DB.Select("id, nickname, bio, role, created_at").Take(&account, "id = ?", id.String()).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
 		return fmt.Errorf("load public profile: %w", err)
 	}
@@ -79,9 +78,9 @@ func publicUserProfile(c *fiber.Ctx) error {
 	noindex := articlePage > 1 || commentPage > 1 ||
 		len(articles) == 0 && len(comments) == 0
 	if noindex {
-		c.Set("X-Robots-Tag", "noindex, follow")
+		writer.Header().Set("X-Robots-Tag", "noindex, follow")
 	}
-	return c.Status(http.StatusOK).Render("site/user_profile", injectSiteData(c, fiber.Map{
+	return renderPage(writer, httpRequest, http.StatusOK, "site/user_profile", injectSiteData(writer, httpRequest, viewData{
 		"title": account.Nickname, "desc": account.Bio, "profile": account, "noindex": noindex,
 		"articles": articles, "comments": comments,
 		"articles_page": articlePage, "comments_page": commentPage,

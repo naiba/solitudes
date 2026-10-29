@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes/internal/model"
@@ -134,13 +133,13 @@ func validateRedirectGraph(tx *gorm.DB) error {
 			return 0, nil
 		}
 		if visiting[source] {
-			return 0, fiber.NewError(409, "redirect cycle detected")
+			return 0, newHTTPError(409, "redirect cycle detected")
 		}
 		if depth, ok := depths[source]; ok {
 			return depth, nil
 		}
 		if stackDepth >= maxRedirectHops {
-			return 0, fiber.NewError(409, "redirect chain exceeds limit")
+			return 0, newHTTPError(409, "redirect chain exceeds limit")
 		}
 		visiting[source] = true
 		depth, err := visit(target, stackDepth+1)
@@ -150,7 +149,7 @@ func validateRedirectGraph(tx *gorm.DB) error {
 		visiting[source] = false
 		depth++
 		if depth > maxRedirectHops {
-			return 0, fiber.NewError(409, "redirect chain exceeds limit")
+			return 0, newHTTPError(409, "redirect chain exceeds limit")
 		}
 		depths[source] = depth
 		return depth, nil

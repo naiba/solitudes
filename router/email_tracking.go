@@ -1,9 +1,9 @@
 package router
 
 import (
+	"net/http"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/naiba/solitudes/pkg/siteurl"
@@ -21,19 +21,19 @@ var trackingPixel = []byte{
 
 // trackEmailRead handles email read tracking via pixel tracking
 // Updates status only if token is valid
-func trackEmailRead(c *fiber.Ctx) error {
+func trackEmailRead(writer http.ResponseWriter, httpRequest *http.Request) error {
 	// Extract token from URL parameter (format: /static/i/{token}.gif)
-	fullToken := c.Params("token")
+	fullToken := routeParam(httpRequest, "token")
 	// Remove .gif extension if present
 	trackingToken := strings.TrimSuffix(fullToken, ".gif")
 
 	if trackingToken == "" {
 		// Still return pixel for privacy
-		c.Set("Content-Type", "image/gif")
-		c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
-		c.Set("Pragma", "no-cache")
-		c.Set("Expires", "0")
-		return c.Send(trackingPixel)
+		writer.Header().Set("Content-Type", "image/gif")
+		writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		writer.Header().Set("Pragma", "no-cache")
+		writer.Header().Set("Expires", "0")
+		return writeBytes(writer, http.StatusOK, trackingPixel)
 	}
 
 	// Query comment by token (token is unique in database)
@@ -49,21 +49,21 @@ func trackEmailRead(c *fiber.Ctx) error {
 
 	// Always return the tracking pixel, even if token is invalid
 	// We don't want to fail the email display
-	c.Set("Content-Type", "image/gif")
-	c.Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	c.Set("Pragma", "no-cache")
-	c.Set("Expires", "0")
-	return c.Send(trackingPixel)
+	writer.Header().Set("Content-Type", "image/gif")
+	writer.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	writer.Header().Set("Pragma", "no-cache")
+	writer.Header().Set("Expires", "0")
+	return writeBytes(writer, http.StatusOK, trackingPixel)
 }
 
 // trackEmailReadRedirect handles email read tracking via link redirect
 // This is more reliable than pixel tracking as it doesn't depend on image loading
-func trackEmailReadRedirect(c *fiber.Ctx) error {
+func trackEmailReadRedirect(writer http.ResponseWriter, httpRequest *http.Request) error {
 	// Extract tracking token from URL
-	trackingToken := c.Params("token")
+	trackingToken := routeParam(httpRequest, "token")
 
 	if trackingToken == "" {
-		return c.Redirect("/", fiber.StatusFound)
+		return redirectResponse(writer, httpRequest, "/", http.StatusFound)
 	}
 
 	// Query comment by token and load related article
@@ -71,7 +71,7 @@ func trackEmailReadRedirect(c *fiber.Ctx) error {
 	err := solitudes.System.DB.Preload("Article").Take(&comment, "email_tracking_token = ?", trackingToken).Error
 	if err != nil || comment.Article == nil {
 		// Invalid token or article not found, redirect to home
-		return c.Redirect("/", fiber.StatusFound)
+		return redirectResponse(writer, httpRequest, "/", http.StatusFound)
 	}
 
 	// Token is valid, update comment email read status to "read"
@@ -82,5 +82,5 @@ func trackEmailReadRedirect(c *fiber.Ctx) error {
 
 	// Redirect to the comment's article
 	// Use 302 (Found) instead of 301 (Permanent) to allow tracking on each visit
-	return c.Redirect(siteurl.ArticlePath(comment.Article.Slug), fiber.StatusFound)
+	return redirectResponse(writer, httpRequest, siteurl.ArticlePath(comment.Article.Slug), http.StatusFound)
 }

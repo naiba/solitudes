@@ -1,10 +1,9 @@
 package router
 
 import (
+	"net/http"
 	"net/url"
 	"strconv"
-
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes/pkg/pagination"
 )
@@ -12,7 +11,7 @@ import (
 func listPage(raw string) (int, error) {
 	page, err := pagination.Parse(raw)
 	if err != nil {
-		return 0, fiber.ErrBadRequest
+		return 0, newHTTPError(http.StatusBadRequest)
 	}
 	return page, nil
 }
@@ -24,11 +23,11 @@ type pageNavigation struct {
 	Previous, Next string
 }
 
-func pageNavigationFor(c *fiber.Ctx, key string, page int, more bool, fragment string) pageNavigation {
+func pageNavigationFor(writer http.ResponseWriter, httpRequest *http.Request, key string, page int, more bool, fragment string) pageNavigation {
 	link := func(n int) string {
-		values, _ := url.ParseQuery(string(c.Request().URI().QueryString()))
+		values, _ := url.ParseQuery(string(httpRequest.URL.RawQuery))
 		values.Set(key, strconv.Itoa(n))
-		return (&url.URL{Path: c.Path(), RawQuery: values.Encode(), Fragment: fragment}).String()
+		return (&url.URL{Path: requestPath(httpRequest), RawQuery: values.Encode(), Fragment: fragment}).String()
 	}
 	nav := pageNavigation{Page: page}
 	if page > 1 {
@@ -40,7 +39,7 @@ func pageNavigationFor(c *fiber.Ctx, key string, page int, more bool, fragment s
 	return nav
 }
 
-func archiveNavigation(c *fiber.Ctx, base string, pg *pagination.Paginator) pageNavigation {
+func archiveNavigation(writer http.ResponseWriter, httpRequest *http.Request, base string, pg *pagination.Paginator) pageNavigation {
 	nav := pageNavigation{Page: pg.Page}
 	link := func(n int) string {
 		if n == 1 {

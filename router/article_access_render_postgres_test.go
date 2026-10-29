@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve/v2"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -39,12 +38,12 @@ func TestPostgresTemplatesUseModelQueries(t *testing.T) {
 			if err := LoadTemplates(); err != nil {
 				t.Fatal(err)
 			}
-			app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+			app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 			app.Use(trans)
 			app.Get("/", index)
 			app.Get("/:slug", article)
 			for _, url := range []string{"/", "/story", "/topic"} {
-				resp, err := app.Test(httptest.NewRequest("GET", url, nil), -1)
+				resp, err := testRequest(app, httptest.NewRequest("GET", url, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -93,11 +92,11 @@ func TestPostgresSearchRevalidatesStaleRestrictedSnippets(t *testing.T) {
 	if err := LoadTemplates(); err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+	app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 	app.Use(trans)
 	app.Get("/search", search)
 	for _, term := range []string{"restrictedstaletoken", "visiblecurrenttoken"} {
-		resp, err := app.Test(httptest.NewRequest("GET", "/search?w="+term, nil), -1)
+		resp, err := testRequest(app, httptest.NewRequest("GET", "/search?w="+term, nil))
 		if err != nil {
 			t.Fatal(err)
 		}

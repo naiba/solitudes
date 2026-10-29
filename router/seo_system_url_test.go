@@ -6,8 +6,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 func TestCanonicalSystemURLRedirect(t *testing.T) {
@@ -71,19 +69,19 @@ func TestCanonicalSystemURLRedirect(t *testing.T) {
 		{"/MixedCaseArticle/AbCd/", "/MixedCaseArticle/AbCd", "/:slug/:version?", "MixedCaseArticle|AbCd"},
 	} {
 		t.Run(tc.path, func(t *testing.T) {
-			app := fiber.New()
+			app := newTestRouter()
 			app.Use(canonicalURLRedirect)
-			app.Get(tc.route, func(c *fiber.Ctx) error {
+			app.Get(tc.route, func(writer http.ResponseWriter, httpRequest *http.Request) error {
 				var values []string
-				for _, name := range c.Route().Params {
-					if value := c.Params(name); value != "" {
+				for _, name := range requestRoute(httpRequest).Params {
+					if value := routeParam(httpRequest, name); value != "" {
 						values = append(values, value)
 					}
 				}
-				return c.SendString(strings.Join(values, "|"))
+				return writeText(writer, http.StatusOK, strings.Join(values, "|"))
 			})
 			for _, method := range []string{http.MethodGet, http.MethodHead} {
-				response, err := app.Test(httptest.NewRequest(method, tc.path, nil))
+				response, err := testRequest(app, httptest.NewRequest(method, tc.path, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -91,7 +89,7 @@ func TestCanonicalSystemURLRedirect(t *testing.T) {
 				if response.StatusCode != http.StatusMovedPermanently || response.Header.Get("Location") != tc.target {
 					t.Fatalf("%s status=%d location=%q; want 301 %q", method, response.StatusCode, response.Header.Get("Location"), tc.target)
 				}
-				response, err = app.Test(httptest.NewRequest(method, tc.target, nil))
+				response, err = testRequest(app, httptest.NewRequest(method, tc.target, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -120,10 +118,12 @@ func TestCanonicalSystemURLPreservesDynamicCase(t *testing.T) {
 		"/PostsArticle", "/Unrelated/LOGIN", "/static/Site/MyTheme/Logo.PNG",
 	} {
 		t.Run(path, func(t *testing.T) {
-			app := fiber.New()
+			app := newTestRouter()
 			app.Use(canonicalURLRedirect)
-			app.Get("/*", func(c *fiber.Ctx) error { return c.SendString(c.Path()) })
-			response, err := app.Test(httptest.NewRequest(http.MethodGet, path, nil))
+			app.Get("/*", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				return writeText(writer, http.StatusOK, requestPath(httpRequest))
+			})
+			response, err := testRequest(app, httptest.NewRequest(http.MethodGet, path, nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -140,12 +140,12 @@ func TestCanonicalSystemURLPreservesDynamicCase(t *testing.T) {
 }
 
 func TestCanonicalSystemURLPreservesWriteMethodAndBody(t *testing.T) {
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(canonicalURLRedirect)
-	app.Post("/login", func(c *fiber.Ctx) error {
-		return c.SendString(c.Method() + "|" + c.Path() + "|" + string(c.Body()))
+	app.Post("/login", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeText(writer, http.StatusOK, httpRequest.Method+"|"+requestPath(httpRequest)+"|"+string(requestBody(httpRequest)))
 	})
-	response, err := app.Test(httptest.NewRequest(http.MethodPost, "/LOGIN/", strings.NewReader("password=MixedCase")))
+	response, err := testRequest(app, httptest.NewRequest(http.MethodPost, "/LOGIN/", strings.NewReader("password=MixedCase")))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +160,7 @@ func TestCanonicalSystemURLPreservesWriteMethodAndBody(t *testing.T) {
 }
 
 func TestCanonicalSystemPathPreservesNonASCIISlugs(t *testing.T) {
-	// Fiber folds ASCII only; Unicode lookalikes are article slugs, not routes.
+	// System routes fold ASCII only; Unicode lookalikes remain article slugs.
 	for _, path := range []string{"/Poſts", "/BOOKS", "/Regiſter"} {
 		if target := canonicalPath(path); target != path {
 			t.Errorf("article slug %q changed to %q", path, target)

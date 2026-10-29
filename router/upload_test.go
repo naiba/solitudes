@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 	"github.com/stretchr/testify/assert"
@@ -32,13 +31,13 @@ func TestLogoServing(t *testing.T) {
 		},
 	}
 
-	app := fiber.New()
+	app := newTestRouter()
 	app.Get("/logo.png", logoHandler)
 	app.Get("/favicon.ico", faviconHandler)
 
 	// Test serving logo
 	req := httptest.NewRequest("GET", "/logo.png", nil)
-	resp, err := app.Test(req)
+	resp, err := testRequest(app, req)
 	assert.Nil(t, err)
 	// We expect 404 because "data/upload/logo.png" does not exist in test env
 	// and theme fallback also fails because theme path doesn't exist.
@@ -70,7 +69,7 @@ func TestUploadStaticHandlerCannotReadOutsideUpload(t *testing.T) {
 		{"/upload/../conf.yml", http.StatusNotFound},
 		{"/upload/%2e%2e/conf.yml", http.StatusNotFound},
 	} {
-		resp, err := app.Test(httptest.NewRequest(http.MethodGet, tc.path, nil), -1)
+		resp, err := testRequest(app, httptest.NewRequest(http.MethodGet, tc.path, nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -98,9 +97,9 @@ func TestLogoHandlerCannotFollowUploadSymlink(t *testing.T) {
 	if err := os.Symlink(filepath.Join("..", "conf.yml"), "data/upload/logo.png"); err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Get("/logo.png", logoHandler)
-	resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/logo.png", nil), -1)
+	resp, err := testRequest(app, httptest.NewRequest(http.MethodGet, "/logo.png", nil))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -9,16 +9,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
 
 func TestPublicProfilePageNumbersAreBounded(t *testing.T) {
-	app := fiber.New()
-	app.Get("/users/:id", func(c *fiber.Ctx) error {
-		_, err := profilePageNumber(c, "comments_page")
+	app := newTestRouter()
+	app.Get("/users/:id", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		_, err := profilePageNumber(writer, httpRequest, "comments_page")
 		return err
 	})
 	for _, tc := range []struct {
@@ -27,7 +25,7 @@ func TestPublicProfilePageNumbersAreBounded(t *testing.T) {
 	}{
 		{"", 200}, {"1", 200}, {"1000", 200}, {"0", 400}, {"-1", 400}, {"1001", 400}, {"9999999999999999999999999", 400}, {"abc", 400},
 	} {
-		resp, err := app.Test(httptest.NewRequest(http.MethodGet, "/users/any?comments_page="+tc.value, nil))
+		resp, err := testRequest(app, httptest.NewRequest(http.MethodGet, "/users/any?comments_page="+tc.value, nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -54,7 +52,7 @@ func TestProfileUpdateRequiresOwnerAndSameOrigin(t *testing.T) {
 		}
 		return nil, errNoAccount
 	}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Post("/account/profile", requireAccount, updateAccountProfile)
 	request := func(token, origin, nickname, bio string) int {
@@ -69,7 +67,7 @@ func TestProfileUpdateRequiresOwnerAndSameOrigin(t *testing.T) {
 		if token != "" {
 			req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: token})
 		}
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}

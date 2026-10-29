@@ -8,7 +8,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -26,25 +25,25 @@ func redirectSystemPath(path string) bool {
 
 func normalizedRedirectURL(raw string, source bool) (string, error) {
 	if raw == "" || len(raw) > siteurl.MaxPathLength || strings.TrimSpace(raw) != raw || strings.ContainsAny(raw, "\\\r\n\t") {
-		return "", fiber.NewError(400, "invalid redirect path")
+		return "", newHTTPError(400, "invalid redirect path")
 	}
 	parsed, err := url.Parse(raw)
 	if err != nil || parsed.IsAbs() || parsed.Host != "" || parsed.User != nil || !strings.HasPrefix(parsed.Path, "/") || strings.HasPrefix(parsed.Path, "//") {
-		return "", fiber.NewError(400, "redirects require a site-relative path")
+		return "", newHTTPError(400, "redirects require a site-relative path")
 	}
 	if source && (parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" || strings.ContainsAny(raw, "?#")) {
-		return "", fiber.NewError(400, "redirect source must not contain a query or fragment")
+		return "", newHTTPError(400, "redirect source must not contain a query or fragment")
 	}
 	// Reject traversal, encoded separators and controls rather than depending on
-	// the differing normalization rules of browsers, proxies and Fiber.
+	// the differing normalization rules of browsers, proxies and the HTTP router.
 	for _, segment := range strings.Split(parsed.EscapedPath(), "/") {
 		decoded, err := url.PathUnescape(segment)
 		if err != nil || !utf8.ValidString(decoded) || decoded == "." || decoded == ".." || strings.ContainsAny(decoded, "/\\") || strings.ContainsFunc(decoded, unicode.IsControl) {
-			return "", fiber.NewError(400, "invalid redirect path segment")
+			return "", newHTTPError(400, "invalid redirect path segment")
 		}
 	}
 	if strings.Contains(parsed.Path, "//") {
-		return "", fiber.NewError(400, "invalid redirect path")
+		return "", newHTTPError(400, "invalid redirect path")
 	}
 	parts := strings.Split(parsed.Path, "/")
 	for i, part := range parts {
@@ -52,13 +51,13 @@ func normalizedRedirectURL(raw string, source bool) (string, error) {
 	}
 	path := canonicalPath(strings.Join(parts, "/"))
 	if source && redirectSystemPath(path) {
-		return "", fiber.NewError(400, "system paths cannot be redirected")
+		return "", newHTTPError(400, "system paths cannot be redirected")
 	}
 	if strings.ContainsFunc(parsed.Fragment, unicode.IsControl) {
-		return "", fiber.NewError(400, "invalid redirect fragment")
+		return "", newHTTPError(400, "invalid redirect fragment")
 	}
 	if _, err := url.ParseQuery(parsed.RawQuery); err != nil {
-		return "", fiber.NewError(400, "invalid redirect query")
+		return "", newHTTPError(400, "invalid redirect query")
 	}
 	target := path
 	if parsed.RawQuery != "" {
@@ -70,7 +69,7 @@ func normalizedRedirectURL(raw string, source bool) (string, error) {
 	// Percent-encoding expands Unicode; enforce the stored URL bound after
 	// normalization too, before PostgreSQL's source_path limit can reject it.
 	if len(target) > siteurl.MaxPathLength {
-		return "", fiber.NewError(400, "encoded redirect URL exceeds length limit")
+		return "", newHTTPError(400, "encoded redirect URL exceeds length limit")
 	}
 	return target, nil
 }
@@ -109,7 +108,7 @@ func mergeRedirectDestination(destination, incoming string) (string, error) {
 	}
 	values, err := url.ParseQuery(prior.RawQuery)
 	if err != nil {
-		return "", fiber.ErrBadRequest
+		return "", newHTTPError(http.StatusBadRequest)
 	}
 	for key, value := range dest.Query() {
 		values[key] = value
@@ -140,7 +139,7 @@ func resolveRedirect(db *gorm.DB, start string, viewer *model.Account, checkAcce
 			return current, matched, nil
 		}
 		if seen[path] {
-			return "", matched, fiber.NewError(409, "redirect cycle detected")
+			return "", matched, newHTTPError(409, "redirect cycle detected")
 		}
 		seen[path] = true
 		var rule model.RedirectRule
@@ -169,7 +168,7 @@ func resolveRedirect(db *gorm.DB, start string, viewer *model.Account, checkAcce
 		// A chain of exactly maxRedirectHops edges still needs one final lookup
 		// to prove the destination is terminal; do not reject that lookup.
 		if hops >= maxRedirectHops {
-			return "", matched, fiber.NewError(409, "redirect chain exceeds limit")
+			return "", matched, newHTTPError(409, "redirect chain exceeds limit")
 		}
 		matched = true
 		current, err = mergeRedirectDestination(target, current)
@@ -179,35 +178,35 @@ func resolveRedirect(db *gorm.DB, start string, viewer *model.Account, checkAcce
 	}
 }
 
-func registeredRedirect(c *fiber.Ctx) error {
-	if c.Method() != http.MethodGet && c.Method() != http.MethodHead {
-		return c.Next()
+func registeredRedirect(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if httpRequest.Method != http.MethodGet && httpRequest.Method != http.MethodHead {
+		return nil
 	}
-	if redirectSystemPath(c.Path()) {
-		return c.Next()
+	if redirectSystemPath(requestPath(httpRequest)) {
+		return nil
 	}
-	source, err := normalizedRedirectURL(c.Path(), true)
+	source, err := normalizedRedirectURL(requestPath(httpRequest), true)
 	if err != nil {
-		return c.Next()
+		return nil
 	}
 	// The system's URL normalization has already run; queries never form part of
 	// a source key and are merged only after resolving the path graph.
-	target, matched, err := resolveRedirect(solitudes.System.DB, source, currentAccount(c), true)
+	target, matched, err := resolveRedirect(solitudes.System.DB, source, currentAccount(writer, httpRequest), true)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
 	if err != nil {
 		return err
 	}
 	if !matched {
-		return c.Next()
+		return nil
 	}
-	target, err = mergeRedirectDestination(target, source+"?"+string(c.Request().URI().QueryString()))
+	target, err = mergeRedirectDestination(target, source+"?"+string(httpRequest.URL.RawQuery))
 	if err != nil {
 		return err
 	}
-	c.Set(fiber.HeaderCacheControl, "no-store")
-	return c.Redirect(target, http.StatusMovedPermanently)
+	writer.Header().Set("Cache-Control", "no-store")
+	return redirectResponse(writer, httpRequest, target, http.StatusMovedPermanently)
 }
 
 func syncArticleRedirects(tx *gorm.DB, previous, current *model.Article) error {
@@ -226,7 +225,7 @@ func syncArticleRedirects(tx *gorm.DB, previous, current *model.Article) error {
 	err = tx.Where("source_path = ?", destination).Take(&occupied).Error
 	if err == nil {
 		if occupied.ArticleID == nil || *occupied.ArticleID != current.ID {
-			return fiber.NewError(409, "new article URL is already a redirect source")
+			return newHTTPError(409, "new article URL is already a redirect source")
 		}
 		if err := tx.Delete(&occupied).Error; err != nil {
 			return err
@@ -245,7 +244,7 @@ func syncArticleRedirects(tx *gorm.DB, previous, current *model.Article) error {
 	err = tx.Where("source_path = ?", source).Take(&existing).Error
 	if err == nil {
 		if existing.ArticleID == nil || *existing.ArticleID != current.ID {
-			return fiber.NewError(409, "old article URL already has a redirect rule")
+			return newHTTPError(409, "old article URL already has a redirect rule")
 		}
 	} else if errors.Is(err, gorm.ErrRecordNotFound) {
 		rule := model.RedirectRule{SourcePath: source, ArticleID: &current.ID}

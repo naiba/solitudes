@@ -10,7 +10,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
 	"gopkg.in/yaml.v3"
 
 	"github.com/naiba/solitudes"
@@ -56,24 +55,26 @@ func TestAdminThemeSwitchReloadsTemplatesTranslationsAndPersists(t *testing.T) {
 		t.Fatal(err)
 	}
 	role := model.RoleAdmin
-	app := fiber.New(fiber.Config{Views: globalDynamicEngine})
-	app.Use(trans, func(c *fiber.Ctx) error {
-		c.Locals(solitudes.CtxAccount, &model.Account{Role: role})
-		return c.Next()
+	app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
+	app.Use(trans, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, &model.Account{Role: role})
+		return nil
 	})
 	app.Get("/admin/settings", requireAdmin, settings)
 	app.Post("/admin/settings", requireAdmin, settingsHandler)
-	app.Get("/admin/marker", requireAdmin, func(c *fiber.Ctx) error {
-		return c.Render("admin/marker", injectSiteData(c, fiber.Map{}))
+	app.Get("/admin/marker", requireAdmin, func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return renderPage(writer, httpRequest, http.StatusOK, "admin/marker", injectSiteData(writer, httpRequest, viewData{}))
 	})
-	app.Get("/site-marker", func(c *fiber.Ctx) error { return c.Render("site/marker", fiber.Map{}) })
+	app.Get("/site-marker", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return renderPage(writer, httpRequest, http.StatusOK, "site/marker", viewData{})
+	})
 	app.Get("/static/:kind/:theme/*", themeStaticHandler)
 	request := func(method, path, body, locale string, status int) string {
 		t.Helper()
 		req := httptest.NewRequest(method, path, strings.NewReader(body))
-		req.Header.Set(fiber.HeaderContentType, fiber.MIMEApplicationJSON)
-		req.Header.Set(fiber.HeaderAcceptLanguage, locale)
-		resp, err := app.Test(req, -1)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept-Language", locale)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}

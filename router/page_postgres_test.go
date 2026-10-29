@@ -2,12 +2,12 @@ package router
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -41,9 +41,12 @@ func TestPostgresStandalonePageSemanticsAndEditPermission(t *testing.T) {
 				t.Fatal(err)
 			}
 			var viewer *model.Account
-			app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+			app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 			app.Use(trans)
-			app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, viewer); return c.Next() })
+			app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				requestValue(httpRequest, solitudes.CtxAccount, viewer)
+				return nil
+			})
 			app.Get("/:slug", article)
 			for _, tc := range []struct {
 				name    string
@@ -59,7 +62,7 @@ func TestPostgresStandalonePageSemanticsAndEditPermission(t *testing.T) {
 			} {
 				t.Run(tc.name, func(t *testing.T) {
 					viewer = tc.account
-					resp, err := app.Test(httptest.NewRequest("GET", "/about", nil), -1)
+					resp, err := testRequest(app, httptest.NewRequest("GET", "/about", nil))
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -110,7 +113,7 @@ func TestPostgresStandalonePageSemanticsAndEditPermission(t *testing.T) {
 					if err := db.Model(&a).UpdateColumns(map[string]interface{}{"created_at": created, "updated_at": tc.updated}).Error; err != nil {
 						t.Fatal(err)
 					}
-					resp, err := app.Test(httptest.NewRequest("GET", "/about", nil), -1)
+					resp, err := testRequest(app, httptest.NewRequest("GET", "/about", nil))
 					if err != nil {
 						t.Fatal(err)
 					}

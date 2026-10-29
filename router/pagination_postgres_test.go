@@ -2,6 +2,7 @@ package router
 
 import (
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
@@ -9,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/blevesearch/bleve/v2"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -17,11 +17,11 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-type paginationView struct{ data fiber.Map }
+type paginationView struct{ data viewData }
 
 func (v *paginationView) Load() error { return nil }
 func (v *paginationView) Render(w io.Writer, name string, binding interface{}, layout ...string) error {
-	v.data = binding.(fiber.Map)["Data"].(fiber.Map)
+	v.data = binding.(viewData)["Data"].(viewData)
 	_, err := io.WriteString(w, "rendered")
 	return err
 }
@@ -106,21 +106,21 @@ func TestPostgresPaginationBoundariesAndPrivacy(t *testing.T) {
 	}
 	view := &paginationView{}
 	var actor *model.Account
-	app := fiber.New(fiber.Config{Views: view})
-	app.Use(trans, func(c *fiber.Ctx) error {
+	app := newTestRouter(testHTTPOptions{Views: view})
+	app.Use(trans, func(writer http.ResponseWriter, httpRequest *http.Request) error {
 		if actor != nil {
-			c.Locals(solitudes.CtxAccount, actor)
+			requestValue(httpRequest, solitudes.CtxAccount, actor)
 		}
-		return c.Next()
+		return nil
 	})
 	app.Get("/search", search)
 	app.Get("/account", requireAccount, accountPage)
 	app.Get("/account/oidc/clients", requireAccount, oidcClientsPage)
 	app.Get("/admin/media", requireAdmin, media)
 	app.Get("/:slug", article)
-	request := func(path string, status int) fiber.Map {
+	request := func(path string, status int) viewData {
 		t.Helper()
-		resp, err := app.Test(httptest.NewRequest("GET", path, nil), -1)
+		resp, err := testRequest(app, httptest.NewRequest("GET", path, nil))
 		if err != nil {
 			t.Fatal(err)
 		}

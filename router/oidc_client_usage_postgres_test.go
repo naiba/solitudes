@@ -2,13 +2,13 @@ package router
 
 import (
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -84,14 +84,17 @@ func TestPostgresOwnedClientUsageAndThemes(t *testing.T) {
 			t.Fatal(err)
 		}
 		viewer := &owner
-		app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+		app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 		app.Use(trans)
-		app.Use(func(c *fiber.Ctx) error { c.Locals(solitudes.CtxAccount, viewer); return c.Next() })
+		app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+			requestValue(httpRequest, solitudes.CtxAccount, viewer)
+			return nil
+		})
 		app.Get("/account/oidc/clients", requireAccount, oidcClientsPage)
 		for _, language := range []string{"zh", "en"} {
 			req := httptest.NewRequest("GET", "/account/oidc/clients?owner_id="+otherOwner.ID, nil)
 			req.Header.Set("Accept-Language", language)
-			resp, err := app.Test(req, -1)
+			resp, err := testRequest(app, req)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -121,7 +124,7 @@ func TestPostgresOwnedClientUsageAndThemes(t *testing.T) {
 			})
 		}
 		viewer = nil
-		resp, err := app.Test(httptest.NewRequest("GET", "/account/oidc/clients", nil), -1)
+		resp, err := testRequest(app, httptest.NewRequest("GET", "/account/oidc/clients", nil))
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -9,8 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
 )
@@ -77,7 +75,7 @@ func TestLoginProviderSettingsRestrictedToAdministrators(t *testing.T) {
 	}
 	path := filepath.Join(t.TempDir(), "conf.yml")
 	solitudes.System = &solitudes.SysVariable{Config: &model.Config{ConfigFilePath: path}}
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(auth, csrfGuard)
 	app.Post("/admin/auth/providers", loginRequired, requireAdmin, saveLoginProviders)
 	form := url.Values{"github_id": {"github-client"}, "github_secret": {"secret"}}
@@ -93,7 +91,7 @@ func TestLoginProviderSettingsRestrictedToAdministrators(t *testing.T) {
 		if tc.token != "" {
 			req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: tc.token})
 		}
-		resp, err := app.Test(req, -1)
+		resp, err := testRequest(app, req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -116,7 +114,7 @@ func TestLoginProviderSettingsRestrictedToAdministrators(t *testing.T) {
 	req.Header.Set("Origin", "http://blog.example.com")
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: "admin"})
-	resp, err := app.Test(req, -1)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

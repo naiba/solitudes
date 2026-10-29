@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 	html "github.com/gofiber/template/html/v2"
 
 	"github.com/naiba/solitudes"
@@ -47,22 +46,22 @@ func TestThemeBreadcrumbStructuredData(t *testing.T) {
 					storyPath := "/chapter%23%3F%25%2F%E4%B8%AD%E6%96%87"
 					for _, tc := range []struct {
 						name, path, ogType string
-						data               fiber.Map
+						data               viewData
 						names, paths       []string
 					}{
-						{"books", "/books/", "website", fiber.Map{"what": "books"}, []string{language.home, language.books}, []string{"/", "/books/"}},
+						{"books", "/books/", "website", viewData{"what": "books"}, []string{language.home, language.books}, []string{"/", "/books/"}},
 						{"readers", "/readers/", "website", nil, []string{language.home, language.readers}, []string{"/", "/readers/"}},
 						// publicUserProfile supplies the account in profile, not user or account.
-						{"profile", "/users/" + profile.ID, "website", fiber.Map{"profile": profile, "title": profile.Nickname}, []string{language.home, profile.Nickname}, []string{"/", "/users/" + profile.ID}},
-						{"unknown", "/unrecognized/", "website", fiber.Map{"title": "Not a known breadcrumb"}, nil, nil},
+						{"profile", "/users/" + profile.ID, "website", viewData{"profile": profile, "title": profile.Nickname}, []string{language.home, profile.Nickname}, []string{"/", "/users/" + profile.ID}},
+						{"unknown", "/unrecognized/", "website", viewData{"title": "Not a known breadcrumb"}, nil, nil},
 						{"profile_without_account", "/users/" + profile.ID, "website", nil, nil, nil},
 						{"home", "/", "website", nil, nil, nil},
 						{"tags", "/tags/", "website", nil, []string{language.home, language.tags}, []string{"/", "/tags/"}},
-						{"tag", "/tags/C%23%2FGo%3F/", "website", fiber.Map{"tag": "C#/Go?"}, []string{language.home, language.tags, "C#/Go?"}, []string{"/", "/tags/", "/tags/C%23%2FGo%3F/"}},
+						{"tag", "/tags/C%23%2FGo%3F/", "website", viewData{"tag": "C#/Go?"}, []string{language.home, language.tags, "C#/Go?"}, []string{"/", "/tags/", "/tags/C%23%2FGo%3F/"}},
 						{"posts", "/posts/", "website", nil, []string{language.home, language.posts}, []string{"/", "/posts/"}},
 						{"search", "/search/", "website", nil, []string{language.home, language.search}, []string{"/", "/search/"}},
-						{"article", storyPath, "article", fiber.Map{"article": story}, []string{language.home, language.posts, story.Title}, []string{"/", "/posts/", storyPath}},
-						{"article_page", storyPath, "website", fiber.Map{"article": story}, []string{language.home, story.Title}, []string{"/", storyPath}},
+						{"article", storyPath, "article", viewData{"article": story}, []string{language.home, language.posts, story.Title}, []string{"/", "/posts/", storyPath}},
+						{"article_page", storyPath, "website", viewData{"article": story}, []string{language.home, story.Title}, []string{"/", storyPath}},
 					} {
 						for _, noindex := range []bool{false, true} {
 							name := tc.name
@@ -71,8 +70,8 @@ func TestThemeBreadcrumbStructuredData(t *testing.T) {
 							}
 							t.Run(name, func(t *testing.T) {
 								var output bytes.Buffer
-								binding := fiber.Map{
-									"Tr": tr, "Conf": conf, "Theme": fiber.Map{},
+								binding := viewData{
+									"Tr": tr, "Conf": conf, "Theme": viewData{},
 									"Path": tc.path, "Noindex": noindex, "OgType": tc.ogType,
 									"Title": "Decorated page title - Community", "Data": tc.data,
 								}

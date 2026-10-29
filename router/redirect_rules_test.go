@@ -9,7 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/go-chi/chi/v5"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
@@ -18,7 +19,7 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func redirectTestApplication(t *testing.T) (*fiber.App, *gorm.DB) {
+func redirectTestApplication(t *testing.T) (*chi.Mux, *gorm.DB) {
 	t.Helper()
 	t.Chdir("..")
 	db, err := gorm.Open(sqlite.Open(filepath.Join(t.TempDir(), "redirect-management.sqlite")), &gorm.Config{})
@@ -58,12 +59,14 @@ func redirectTestApplication(t *testing.T) (*fiber.App, *gorm.DB) {
 		}
 		return nil, errNoAccount
 	}
-	return newAppWithRoutes(func(app *fiber.App) {
-		app.Get("/system-health", func(c *fiber.Ctx) error { return c.SendString("system") })
+	return newAppWithRoutes(func(app chi.Router) {
+		app.Get("/system-health", serveEndpoint(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+			return writeText(writer, http.StatusOK, "system")
+		}))
 	}), db
 }
 
-func redirectRequest(t *testing.T, app *fiber.App, method, path, body, token string) (int, http.Header, string) {
+func redirectRequest(t *testing.T, app *chi.Mux, method, path, body, token string) (int, http.Header, string) {
 	t.Helper()
 	req := httptest.NewRequest(method, path, strings.NewReader(body))
 	req.Host = "example.test"
@@ -72,7 +75,7 @@ func redirectRequest(t *testing.T, app *fiber.App, method, path, body, token str
 	if token != "" {
 		req.AddCookie(&http.Cookie{Name: solitudes.AuthCookie, Value: token})
 	}
-	response, err := app.Test(req, -1)
+	response, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,12 +3,11 @@ package router
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/gofiber/fiber/v2"
 
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -33,17 +32,17 @@ func TestFolioEditorialRendersLeadSixRecentAndIndependentRecommendations(t *test
 	if err := LoadTemplates(); err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+	app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 	var articles []*model.Article
 	app.Use(trans)
-	app.Get("/", func(c *fiber.Ctx) error {
+	app.Get("/", func(writer http.ResponseWriter, httpRequest *http.Request) error {
 		var recommendations []*model.Article
 		if len(articles) > 1 {
 			recommendations = articles[1:min(3, len(articles))]
 		}
-		binding := injectSiteData(c, fiber.Map{})
+		binding := injectSiteData(writer, httpRequest, viewData{})
 		binding["Queries"] = editorialFixtureQueries{articles: articles, pool: recommendations}
-		return c.Render("site/index", binding)
+		return renderPage(writer, httpRequest, http.StatusOK, "site/index", binding)
 	})
 	for _, count := range []int{0, 1, 2, 3, 4, 5, 6, 8, 9} {
 		t.Run(fmt.Sprint(count), func(t *testing.T) {
@@ -51,7 +50,7 @@ func TestFolioEditorialRendersLeadSixRecentAndIndependentRecommendations(t *test
 			for i := 0; i < count; i++ {
 				articles = append(articles, &model.Article{Slug: fmt.Sprintf("story-%d", i), Title: fmt.Sprintf("Story %d", i)})
 			}
-			resp, err := app.Test(httptest.NewRequest("GET", "/", nil))
+			resp, err := testRequest(app, httptest.NewRequest("GET", "/", nil))
 			if err != nil {
 				t.Fatal(err)
 			}

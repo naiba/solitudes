@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"golang.org/x/crypto/bcrypt"
 	"gopkg.in/yaml.v3"
 
@@ -21,7 +20,7 @@ import (
 	"github.com/naiba/solitudes/internal/model"
 )
 
-func settingsAccountFixture(t *testing.T) (*fiber.App, *model.Config, *model.Account) {
+func settingsAccountFixture(t *testing.T) (*testHTTPRouter, *model.Config, *model.Account) {
 	t.Helper()
 	t.Chdir(t.TempDir())
 	previous := solitudes.System
@@ -43,16 +42,16 @@ func settingsAccountFixture(t *testing.T) (*fiber.App, *model.Config, *model.Acc
 	cfg.Site.Theme, cfg.Admin.Theme = "cactus", "default"
 	account := &model.Account{Email: "actual-admin@example.test", Nickname: "Actual administrator", PasswordHash: string(hash), Role: model.RoleAdmin}
 	solitudes.System = &solitudes.SysVariable{Config: cfg}
-	app := fiber.New()
-	app.Use(func(c *fiber.Ctx) error {
-		c.Locals(solitudes.CtxAccount, account)
-		return c.Next()
+	app := newTestRouter()
+	app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		requestValue(httpRequest, solitudes.CtxAccount, account)
+		return nil
 	})
 	app.Post("/admin/settings", requireAdmin, settingsHandler)
 	return app, cfg, account
 }
 
-func submitSettingsWithAccountFields(t *testing.T, app *fiber.App, encoding string) {
+func submitSettingsWithAccountFields(t *testing.T, app *testHTTPRouter, encoding string) {
 	t.Helper()
 	fields := map[string]string{"site_title": "Saved site settings"}
 	if encoding != "without-account-fields" {
@@ -72,7 +71,7 @@ func submitSettingsWithAccountFields(t *testing.T, app *fiber.App, encoding stri
 			values.Set(key, value)
 		}
 		body.WriteString(values.Encode())
-		contentType = fiber.MIMEApplicationForm
+		contentType = "application/x-www-form-urlencoded"
 	case "multipart":
 		writer := multipart.NewWriter(&body)
 		for key, value := range fields {
@@ -88,11 +87,11 @@ func submitSettingsWithAccountFields(t *testing.T, app *fiber.App, encoding stri
 		if err := json.NewEncoder(&body).Encode(fields); err != nil {
 			t.Fatal(err)
 		}
-		contentType = fiber.MIMEApplicationJSON
+		contentType = "application/json"
 	}
 	req := httptest.NewRequest(http.MethodPost, "/admin/settings", &body)
-	req.Header.Set(fiber.HeaderContentType, contentType)
-	resp, err := app.Test(req, -1)
+	req.Header.Set("Content-Type", contentType)
+	resp, err := testRequest(app, req)
 	if err != nil {
 		t.Fatal(err)
 	}

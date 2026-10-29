@@ -11,7 +11,6 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 	"golang.org/x/sync/singleflight"
 	"gorm.io/gorm"
 
@@ -20,7 +19,7 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func articleURLFixture(t *testing.T) (*gorm.DB, *fiber.App) {
+func articleURLFixture(t *testing.T) (*gorm.DB, *testHTTPRouter) {
 	t.Helper()
 	db := newPostgresIdentityTestDB(t)
 	if err := db.AutoMigrate(&model.Article{}, &model.ArticleHistory{}, &model.Comment{}, &model.FeedVisit{}); err != nil {
@@ -39,7 +38,7 @@ func articleURLFixture(t *testing.T) (*gorm.DB, *fiber.App) {
 	if err := LoadTemplates(); err != nil {
 		t.Fatal(err)
 	}
-	app := fiber.New(fiber.Config{Views: globalDynamicEngine})
+	app := newTestRouter(testHTTPOptions{Views: globalDynamicEngine})
 	app.Use(canonicalURLRedirect, trans)
 	app.Get("/sitemap.xml", sitemapHandler)
 	app.Get("/feed/:format?", feedHandler)
@@ -67,7 +66,7 @@ func TestPostgresArticleEncodedURLsResolveAndMatchCanonical(t *testing.T) {
 				t.Fatal(err)
 			}
 			for _, path := range []string{tc.path, tc.path + "/v1", tc.path + "/compare/v1...v2"} {
-				resp, err := app.Test(httptest.NewRequest("GET", path, nil), -1)
+				resp, err := testRequest(app, httptest.NewRequest("GET", path, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -99,7 +98,7 @@ func TestPostgresArticleEncodedURLsResolveAndMatchCanonical(t *testing.T) {
 			}{
 				{"/v2", 301, tc.path}, {"/compare", 303, tc.path + "/compare/v1...v2"},
 			} {
-				resp, err := app.Test(httptest.NewRequest("GET", tc.path+route.suffix, nil), -1)
+				resp, err := testRequest(app, httptest.NewRequest("GET", tc.path+route.suffix, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -109,7 +108,7 @@ func TestPostgresArticleEncodedURLsResolveAndMatchCanonical(t *testing.T) {
 				}
 			}
 			// A machine representation must cite the same encoded human-facing URL.
-			resp, err := app.Test(httptest.NewRequest("GET", "/read/"+story.ID+"/article.md", nil), -1)
+			resp, err := testRequest(app, httptest.NewRequest("GET", "/read/"+story.ID+"/article.md", nil))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -119,7 +118,7 @@ func TestPostgresArticleEncodedURLsResolveAndMatchCanonical(t *testing.T) {
 			}
 		})
 	}
-	resp, err := app.Test(httptest.NewRequest("GET", "/sitemap.xml", nil), -1)
+	resp, err := testRequest(app, httptest.NewRequest("GET", "/sitemap.xml", nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +140,7 @@ func TestPostgresArticleEncodedURLsResolveAndMatchCanonical(t *testing.T) {
 		if strings.HasSuffix(target.Path, "/") {
 			continue
 		}
-		articleResp, err := app.Test(httptest.NewRequest("GET", target.EscapedPath(), nil), -1)
+		articleResp, err := testRequest(app, httptest.NewRequest("GET", target.EscapedPath(), nil))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -180,7 +179,7 @@ func TestPostgresEncodedArticleRenameRemainsReadableAndDetectsRevisionLoops(t *t
 	if status := publishRedirectArticle(t, app, story, "中文 C#?"); status != 200 {
 		t.Fatalf("rename failed: %d", status)
 	}
-	resp, err := app.Test(httptest.NewRequest("GET", "/original-story", nil), -1)
+	resp, err := testRequest(app, httptest.NewRequest("GET", "/original-story", nil))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -226,7 +225,7 @@ func TestPostgresFeedArticleLinksUseEncodedPaths(t *testing.T) {
 	if err := db.Create(&story).Error; err != nil {
 		t.Fatal(err)
 	}
-	resp, err := app.Test(httptest.NewRequest("GET", "/feed/json", nil), -1)
+	resp, err := testRequest(app, httptest.NewRequest("GET", "/feed/json", nil))
 	if err != nil {
 		t.Fatal(err)
 	}

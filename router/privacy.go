@@ -1,9 +1,9 @@
 package router
 
 import (
+	"net/http"
 	"net/url"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 
 	"github.com/naiba/solitudes"
@@ -36,9 +36,9 @@ func readableArticles(db *gorm.DB, account *model.Account, notices ...func(strin
 	return model.ReadableArticles(db, account, notice)
 }
 
-func accessNoticeFor(c *fiber.Ctx) func(string) string {
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	returnTo := url.QueryEscape(c.OriginalURL())
+func accessNoticeFor(writer http.ResponseWriter, httpRequest *http.Request) func(string) string {
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	returnTo := url.QueryEscape(requestTarget(httpRequest))
 	return func(level string) string {
 		if level == "members" {
 			return renderAccessNotice(tr.T("access_members", "/login?return_to="+returnTo, "/register?return_to="+returnTo))

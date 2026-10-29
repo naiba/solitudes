@@ -12,7 +12,6 @@ import (
 
 	"github.com/88250/lute/ast"
 	"github.com/88250/lute/parse"
-	"github.com/gofiber/fiber/v2"
 	"golang.org/x/net/html"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -25,17 +24,17 @@ import (
 	"github.com/naiba/solitudes/pkg/translator"
 )
 
-func manageArticle(c *fiber.Ctx) error {
-	if err := requirePublishRole(c); err != nil {
+func manageArticle(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if err := requirePublishRole(writer, httpRequest); err != nil {
 		return err
 	}
-	page, err := listPage(c.Query("page"))
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
 	var as []model.Article
 	db := solitudes.System.DB
-	if account := currentAccount(c); account != nil && !account.Role.IsAdmin() {
+	if account := currentAccount(writer, httpRequest); account != nil && !account.Role.IsAdmin() {
 		db = db.Where("author_id = ?", account.ID)
 	}
 	pg, err := pagination.Paging(&pagination.Param{
@@ -47,44 +46,44 @@ func manageArticle(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), as); err != nil {
+	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest)), as); err != nil {
 		return err
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("admin/articles", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/articles", injectSiteData(writer, httpRequest, viewData{
 		"title":    tr.T("manage_articles"),
 		"articles": as,
 		"page":     pg,
 	}))
 }
 
-func publish(c *fiber.Ctx) error {
-	if err := requirePublishRole(c); err != nil {
+func publish(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if err := requirePublishRole(writer, httpRequest); err != nil {
 		return err
 	}
-	id := c.Query("id")
+	id := queryValue(httpRequest, "id")
 	var article model.Article
 	if id != "" {
 		if err := solitudes.System.DB.Take(&article, "id = ?", id).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return fmt.Errorf("failed to fetch article for editing: %w", err)
 		}
-		if !mayEditArticle(currentAccount(c), &article) {
-			return fiber.ErrNotFound
+		if !mayEditArticle(currentAccount(writer, httpRequest), &article) {
+			return newHTTPError(http.StatusNotFound)
 		}
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("admin/publish", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	return renderPage(writer, httpRequest, http.StatusOK, "admin/publish", injectSiteData(writer, httpRequest, viewData{
 		"title":     tr.T("publish_article"),
 		"templates": solitudes.Templates,
 		"article":   article,
 	}))
 }
 
-func deleteArticle(c *fiber.Ctx) error {
-	if err := requirePublishRole(c); err != nil {
+func deleteArticle(writer http.ResponseWriter, httpRequest *http.Request) error {
+	if err := requirePublishRole(writer, httpRequest); err != nil {
 		return err
 	}
-	id := c.Query("id")
+	id := queryValue(httpRequest, "id")
 	if len(id) < 10 {
 		return errors.New("invalid article id")
 	}
@@ -92,10 +91,10 @@ func deleteArticle(c *fiber.Ctx) error {
 	if err := solitudes.System.DB.Select("id", "author_id").Preload("ArticleHistories").Take(&a, "id = ?", id).Error; err != nil {
 		return fmt.Errorf("failed to find article for deletion: %w", err)
 	}
-	if !mayEditArticle(currentAccount(c), &a) {
-		return fiber.ErrNotFound
+	if !mayEditArticle(currentAccount(writer, httpRequest), &a) {
+		return newHTTPError(http.StatusNotFound)
 	}
-	c.Locals("audit_target", a.ID)
+	requestValue(httpRequest, "audit_target", a.ID)
 	var indexIDs []string
 	indexIDs = append(indexIDs, a.GetIndexID())
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
@@ -149,33 +148,33 @@ type publishArticle struct {
 
 // Keep write and management handlers protected even if a route is moved out
 // of the authenticated /admin group in the future.
-func requirePublishRole(c *fiber.Ctx) error {
-	account := currentAccount(c)
+func requirePublishRole(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
 	if account == nil || !account.Role.CanPublish() {
-		return fiber.ErrForbidden
+		return newHTTPError(http.StatusForbidden)
 	}
 	return nil
 }
 
-func publishHandler(c *fiber.Ctx) error {
-	account := currentAccount(c)
+func publishHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	account := currentAccount(writer, httpRequest)
 	if account == nil || !account.Role.CanPublish() {
-		return fiber.ErrForbidden
+		return newHTTPError(http.StatusForbidden)
 	}
 	var pa publishArticle
-	if err := c.BodyParser(&pa); err != nil {
+	if err := decodeRequestBody(httpRequest, &pa); err != nil {
 		return fmt.Errorf("failed to parse publish form: %w", err)
 	}
 	if pa.Visibility == "" {
 		pa.Visibility = model.VisibilityPublic
 	}
 	if !pa.Visibility.Valid() {
-		return fiber.NewError(http.StatusBadRequest, "invalid article visibility")
+		return newHTTPError(http.StatusBadRequest, "invalid article visibility")
 	}
 	if err := content.Validate(pa.Content); err != nil {
-		return fiber.NewError(http.StatusBadRequest, err.Error())
+		return newHTTPError(http.StatusBadRequest, err.Error())
 	}
-	if err := validator.StructCtx(c.Context(), &pa); err != nil {
+	if err := validator.StructCtx(httpRequest.Context(), &pa); err != nil {
 		return fmt.Errorf("validation failed: %w", err)
 	}
 	var bookRefer *string
@@ -212,14 +211,14 @@ func publishHandler(c *fiber.Ctx) error {
 	// A valid URL segment is required before any lookup or write: otherwise a
 	// reserved slug can publish an article hidden behind a system endpoint.
 	if err := siteurl.ValidateArticleSlug(newArticle.Slug); err != nil {
-		return fiber.NewError(http.StatusBadRequest, err.Error())
+		return newHTTPError(http.StatusBadRequest, err.Error())
 	}
 
 	if newArticle.ID == "" {
 		var existed model.Article
 		if err := solitudes.System.DB.Select("id, author_id").Order("created_at DESC").Take(&existed, "slug = ?", newArticle.Slug).Error; err == nil {
 			if !mayEditArticle(account, &existed) {
-				return fiber.ErrForbidden
+				return newHTTPError(http.StatusForbidden)
 			}
 			newArticle.ID = existed.ID
 			newArticle.CreatedAt = time.Now()
@@ -232,16 +231,16 @@ func publishHandler(c *fiber.Ctx) error {
 		return fmt.Errorf("failed to fetch original article: %w", err)
 	}
 	if originalArticle.ID != "" {
-		c.Locals("audit_target", originalArticle.ID)
+		requestValue(httpRequest, "audit_target", originalArticle.ID)
 		if !mayEditArticle(account, &originalArticle) {
-			c.Locals("audit_reason", "article_owner_required")
-			return fiber.ErrForbidden
+			requestValue(httpRequest, "audit_reason", "article_owner_required")
+			return newHTTPError(http.StatusForbidden)
 		}
 		newArticle.AuthorID = originalArticle.AuthorID
 	}
 	if !account.Role.IsAdmin() && !editorContentAllowed(originalArticle.Content, newArticle.Content) {
-		c.Locals("audit_reason", "privileged_markdown_rejected")
-		return fiber.NewError(http.StatusForbidden, "only administrators may add or change executable Markdown content or raw HTML")
+		requestValue(httpRequest, "audit_reason", "privileged_markdown_rejected")
+		return newHTTPError(http.StatusForbidden, "only administrators may add or change executable Markdown content or raw HTML")
 	}
 
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
@@ -255,7 +254,7 @@ func publishHandler(c *fiber.Ctx) error {
 				return err
 			}
 			if !mayEditArticle(account, &originalArticle) {
-				return fiber.ErrForbidden
+				return newHTTPError(http.StatusForbidden)
 			}
 			newArticle.Version = originalArticle.Version
 			if pa.NewVersion == 1 {
@@ -290,13 +289,13 @@ func publishHandler(c *fiber.Ctx) error {
 		return err
 	}
 	// indexing serch engine
-	c.Locals("audit_target", newArticle.ID)
+	requestValue(httpRequest, "audit_target", newArticle.ID)
 	numBefore, _ := solitudes.System.Search.DocCount()
 	errIndex := solitudes.IndexArticle(newArticle)
 	numAfter, _ := solitudes.System.Search.DocCount()
 	log.Printf("Doc %s indexed %d --> %d %+v\n", newArticle.GetIndexID(), numBefore, numAfter, errIndex)
 
-	return c.Status(http.StatusOK).JSON(newArticle)
+	return writeJSON(writer, http.StatusOK, newArticle)
 }
 
 // Editors may update ordinary Markdown, but cannot introduce raw HTML (including

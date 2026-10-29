@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
@@ -66,13 +65,13 @@ func authorizedApplicationsQuery(db *gorm.DB, accountID string) *gorm.DB {
 		Where("consent.account_id = ?", accountID).Order("c.name ASC, c.id ASC")
 }
 
-func authorizedApplicationsPage(c *fiber.Ctx) error {
-	page, err := listPage(c.Query("page"))
+func authorizedApplicationsPage(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := listPage(queryValue(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
 	var applications []oidcAuthorization
-	err = authorizedApplicationsQuery(solitudes.System.DB.WithContext(c.UserContext()), currentAccount(c).ID).
+	err = authorizedApplicationsQuery(solitudes.System.DB.WithContext(httpRequest.Context()), currentAccount(writer, httpRequest).ID).
 		Limit(21).Offset((page - 1) * 20).Scan(&applications).Error
 	if err != nil {
 		return err
@@ -94,23 +93,23 @@ func authorizedApplicationsPage(c *fiber.Ctx) error {
 			applications[i].HomepageURL = ""
 		}
 	}
-	c.Set(fiber.HeaderCacheControl, "private, no-store")
-	return c.Render("site/account_authorizations", injectSiteData(c, fiber.Map{
+	writer.Header().Set("Cache-Control", "private, no-store")
+	return renderPage(writer, httpRequest, http.StatusOK, "site/account_authorizations", injectSiteData(writer, httpRequest, viewData{
 		"title": "Authorized applications", "noindex": true, "authorizations": applications,
-		"revoked": c.Query("revoked") == "1", "navigation": pageNavigationFor(c, "page", page, more, "authorizations"),
+		"revoked": queryValue(httpRequest, "revoked") == "1", "navigation": pageNavigationFor(writer, httpRequest, "page", page, more, "authorizations"),
 	}))
 }
 
-func revokeApplicationGrant(c *fiber.Ctx) error {
-	id := c.Params("id")
-	account := currentAccount(c)
+func revokeApplicationGrant(writer http.ResponseWriter, httpRequest *http.Request) error {
+	id := routeParam(httpRequest, "id")
+	account := currentAccount(writer, httpRequest)
 	if account == nil {
-		return fiber.ErrUnauthorized
+		return newHTTPError(http.StatusUnauthorized)
 	}
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if _, err := lockOIDCClient(tx, id, false); err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return fiber.ErrNotFound
+				return newHTTPError(http.StatusNotFound)
 			}
 			return err
 		}
@@ -126,36 +125,36 @@ UNION ALL SELECT 1 FROM o_id_c_auth_requests WHERE client_id = ? AND account_id 
 			return err
 		}
 		if !ownsCredentials {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
 		if err := deleteOIDCCredentials(tx, id, account.ID); err != nil {
 			return err
 		}
-		return auditMutation(c, tx, "grant.revoke", id, id, "")
+		return auditMutation(writer, httpRequest, tx, "grant.revoke", id, id, "")
 	})
 	if err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
-	return c.Redirect("/account/oidc/authorizations?revoked=1", http.StatusSeeOther)
+	requestValue(httpRequest, "audit_recorded", true)
+	return redirectResponse(writer, httpRequest, "/account/oidc/authorizations?revoked=1", http.StatusSeeOther)
 }
 
-func deleteOIDCClient(c *fiber.Ctx) error {
-	id := c.Params("id")
-	account := currentAccount(c)
+func deleteOIDCClient(writer http.ResponseWriter, httpRequest *http.Request) error {
+	id := routeParam(httpRequest, "id")
+	account := currentAccount(writer, httpRequest)
 	if account == nil {
-		return fiber.ErrUnauthorized
+		return newHTTPError(http.StatusUnauthorized)
 	}
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		client, err := lockOIDCClient(tx, id, false)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
 		if err != nil {
 			return err
 		}
 		if !account.Role.IsAdmin() && (client.OwnerID == nil || *client.OwnerID != account.ID) {
-			return fiber.ErrNotFound
+			return newHTTPError(http.StatusNotFound)
 		}
 		if err := deleteOIDCCredentials(tx, id, ""); err != nil {
 			return err
@@ -164,16 +163,16 @@ func deleteOIDCClient(c *fiber.Ctx) error {
 			return err
 		}
 		// Audit events and compacted login summaries intentionally survive deletion.
-		return auditMutation(c, tx, "client.delete", id, id, "")
+		return auditMutation(writer, httpRequest, tx, "client.delete", id, id, "")
 	})
 	if err != nil {
 		return err
 	}
-	c.Locals("audit_recorded", true)
-	if strings.HasPrefix(c.Path(), "/account/") {
-		return c.Redirect("/account/oidc/clients", http.StatusSeeOther)
+	requestValue(httpRequest, "audit_recorded", true)
+	if strings.HasPrefix(requestPath(httpRequest), "/account/") {
+		return redirectResponse(writer, httpRequest, "/account/oidc/clients", http.StatusSeeOther)
 	}
-	return c.Redirect("/admin/oidc/clients", http.StatusSeeOther)
+	return redirectResponse(writer, httpRequest, "/admin/oidc/clients", http.StatusSeeOther)
 }
 
 func lockOIDCTokenRequest(ctx context.Context, tx *gorm.DB, request interface{ GetSubject() string }, clientID string) error {

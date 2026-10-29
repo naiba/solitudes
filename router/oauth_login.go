@@ -13,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/hashicorp/go-uuid"
 	"github.com/zitadel/oidc/v3/pkg/client/rp"
 	"github.com/zitadel/oidc/v3/pkg/oidc"
@@ -57,32 +56,32 @@ func upstreamConfig(provider string) (*oauth2.Config, error) {
 			Endpoint: oauth2.Endpoint{AuthURL: "https://accounts.google.com/o/oauth2/v2/auth", TokenURL: "https://oauth2.googleapis.com/token"},
 		}, nil
 	}
-	return nil, fiber.ErrNotFound
+	return nil, newHTTPError(http.StatusNotFound)
 }
 
 func upstreamOIDC(ctx context.Context) (rp.RelyingParty, error) {
 	cfg := solitudes.System.Config.Auth.OIDC
 	u, err := url.Parse(cfg.Issuer)
 	if err != nil || u.Scheme != "https" || u.Host == "" || u.User != nil || cfg.ClientID == "" || cfg.ClientSecret == "" {
-		return nil, fiber.ErrNotFound
+		return nil, newHTTPError(http.StatusNotFound)
 	}
 	return rp.NewRelyingPartyOIDC(ctx, cfg.Issuer, cfg.ClientID, cfg.ClientSecret,
 		publicBaseURL()+"/auth/oidc/callback", []string{"openid", "email", "profile"})
 }
 
-func beginOAuthLogin(c *fiber.Ctx) error {
-	return startOAuthLogin(c, false)
+func beginOAuthLogin(writer http.ResponseWriter, httpRequest *http.Request) error {
+	return startOAuthLogin(writer, httpRequest, false)
 }
 
-func beginOAuthLink(c *fiber.Ctx) error {
-	return startOAuthLogin(c, true)
+func beginOAuthLink(writer http.ResponseWriter, httpRequest *http.Request) error {
+	return startOAuthLogin(writer, httpRequest, true)
 }
 
-func startOAuthLogin(c *fiber.Ctx, link bool) error {
+func startOAuthLogin(writer http.ResponseWriter, httpRequest *http.Request, link bool) error {
 	if !validSiteDomain() {
-		return fiber.NewError(http.StatusServiceUnavailable, "external login requires a public site domain")
+		return newHTTPError(http.StatusServiceUnavailable, "external login requires a public site domain")
 	}
-	provider := c.Params("provider")
+	provider := routeParam(httpRequest, "provider")
 	verifier := oauth2.GenerateVerifier()
 	state, err := newSecret()
 	if err != nil {
@@ -94,17 +93,17 @@ func startOAuthLogin(c *fiber.Ctx, link bool) error {
 	}
 	attempt := model.OAuthAttempt{
 		Provider: provider, StateHash: secretHash(state), Verifier: verifier, Nonce: nonce,
-		ExpiresAt: time.Now().Add(10 * time.Minute), ReturnTo: safeReturnPath(c.Query("return_to")),
+		ExpiresAt: time.Now().Add(10 * time.Minute), ReturnTo: safeReturnPath(queryValue(httpRequest, "return_to")),
 	}
 	if link {
-		if currentAccount(c) == nil {
-			return fiber.ErrUnauthorized
+		if currentAccount(writer, httpRequest) == nil {
+			return newHTTPError(http.StatusUnauthorized)
 		}
-		attempt.AccountID = &currentAccount(c).ID
+		attempt.AccountID = &currentAccount(writer, httpRequest).ID
 	}
 	var target string
 	if provider == "oidc" {
-		ctx, cancel := context.WithTimeout(c.UserContext(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(httpRequest.Context(), 10*time.Second)
 		defer cancel()
 		party, err := upstreamOIDC(ctx)
 		if err != nil {
@@ -122,68 +121,68 @@ func startOAuthLogin(c *fiber.Ctx, link bool) error {
 	if err := solitudes.System.DB.Create(&attempt).Error; err != nil {
 		return err
 	}
-	c.Cookie(&fiber.Cookie{
+	http.SetCookie(writer, &http.Cookie{
 		Name: oauthStateCookie, Value: state, Path: "/auth/", MaxAge: 600,
-		HTTPOnly: true, SameSite: fiber.CookieSameSiteLaxMode, Secure: c.Protocol() == "https",
+		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: requestScheme(httpRequest) == "https",
 	})
 	// Starting the flow does not mean an external identity was linked.
 	if link {
-		c.Locals("audit_no_change", true)
+		requestValue(httpRequest, "audit_no_change", true)
 	}
-	return c.Redirect(target, http.StatusFound)
+	return redirectResponse(writer, httpRequest, target, http.StatusFound)
 }
 
-func oauthCallback(c *fiber.Ctx) error {
-	state := c.Query("state")
-	if len(state) != 64 || state != c.Cookies(oauthStateCookie) {
-		return fiber.NewError(http.StatusBadRequest, "invalid OAuth state")
+func oauthCallback(writer http.ResponseWriter, httpRequest *http.Request) error {
+	state := queryValue(httpRequest, "state")
+	if len(state) != 64 || state != requestCookie(httpRequest, oauthStateCookie) {
+		return newHTTPError(http.StatusBadRequest, "invalid OAuth state")
 	}
-	c.Cookie(&fiber.Cookie{Name: oauthStateCookie, Value: "", Path: "/auth/", MaxAge: -1,
-		HTTPOnly: true, SameSite: fiber.CookieSameSiteLaxMode, Secure: c.Protocol() == "https"})
+	http.SetCookie(writer, &http.Cookie{Name: oauthStateCookie, Value: "", Path: "/auth/", MaxAge: -1,
+		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: requestScheme(httpRequest) == "https"})
 	var attempt model.OAuthAttempt
 	err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
-			Where("state_hash = ? AND provider = ? AND expires_at > ?", secretHash(state), c.Params("provider"), time.Now()).
+			Where("state_hash = ? AND provider = ? AND expires_at > ?", secretHash(state), routeParam(httpRequest, "provider"), time.Now()).
 			Take(&attempt).Error; err != nil {
 			return err
 		}
 		return tx.Delete(&attempt).Error
 	})
 	if err != nil {
-		return fiber.NewError(http.StatusBadRequest, "expired OAuth state")
+		return newHTTPError(http.StatusBadRequest, "expired OAuth state")
 	}
-	if c.Query("error") != "" || c.Query("code") == "" {
-		return fiber.NewError(http.StatusBadRequest, "OAuth authorization declined")
+	if queryValue(httpRequest, "error") != "" || queryValue(httpRequest, "code") == "" {
+		return newHTTPError(http.StatusBadRequest, "OAuth authorization declined")
 	}
-	ctx, cancel := context.WithTimeout(c.UserContext(), 12*time.Second)
+	ctx, cancel := context.WithTimeout(httpRequest.Context(), 12*time.Second)
 	defer cancel()
-	identity, err := exchangeUpstreamIdentity(ctx, attempt.Provider, c.Query("code"), attempt.Verifier, attempt.Nonce)
+	identity, err := exchangeUpstreamIdentity(ctx, attempt.Provider, queryValue(httpRequest, "code"), attempt.Verifier, attempt.Nonce)
 	if err != nil || !identity.Verified || identity.Subject == "" {
-		return fiber.NewError(http.StatusUnauthorized, "unable to verify external identity and email")
+		return newHTTPError(http.StatusUnauthorized, "unable to verify external identity and email")
 	}
-	account, err := findOrLinkExternalIdentity(&attempt, identity, currentAccount(c))
+	account, err := findOrLinkExternalIdentity(&attempt, identity, currentAccount(writer, httpRequest))
 	if err != nil {
 		return err
 	}
 	if attempt.AccountID == nil {
-		if err := issueLoginSession(c, account, false); err != nil {
+		if err := issueLoginSession(writer, httpRequest, account, false); err != nil {
 			return err
 		}
 	}
 	if attempt.ReturnTo != "" {
-		return c.Redirect(attempt.ReturnTo, http.StatusFound)
+		return redirectResponse(writer, httpRequest, attempt.ReturnTo, http.StatusFound)
 	}
-	return c.Redirect("/account", http.StatusFound)
+	return redirectResponse(writer, httpRequest, "/account", http.StatusFound)
 }
 
 func findOrLinkExternalIdentity(attempt *model.OAuthAttempt, identity upstreamIdentity, loggedIn *model.Account) (*model.Account, error) {
 	email := strings.ToLower(strings.TrimSpace(identity.Email))
 	addr, err := mail.ParseAddress(email)
 	if err != nil || addr.Address != email || len(email) > 254 {
-		return nil, fiber.ErrUnauthorized
+		return nil, newHTTPError(http.StatusUnauthorized)
 	}
 	if attempt.AccountID != nil && (loggedIn == nil || loggedIn.ID != *attempt.AccountID) {
-		return nil, fiber.ErrForbidden
+		return nil, newHTTPError(http.StatusForbidden)
 	}
 	var account model.Account
 	err = solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
@@ -191,7 +190,7 @@ func findOrLinkExternalIdentity(attempt *model.OAuthAttempt, identity upstreamId
 		err := tx.Where("provider = ? AND subject = ?", attempt.Provider, identity.Subject).Take(&linked).Error
 		if err == nil {
 			if attempt.AccountID != nil && linked.AccountID != *attempt.AccountID {
-				return fiber.ErrConflict
+				return newHTTPError(http.StatusConflict)
 			}
 			return tx.Take(&account, "id = ? AND disabled_at IS NULL AND email_verified_at IS NOT NULL", linked.AccountID).Error
 		}
@@ -203,7 +202,7 @@ func findOrLinkExternalIdentity(attempt *model.OAuthAttempt, identity upstreamId
 		} else {
 			err = tx.Where("email = ?", email).Take(&account).Error
 			if err == nil {
-				return fiber.NewError(http.StatusConflict, "email already registered; sign in and link this provider")
+				return newHTTPError(http.StatusConflict, "email already registered; sign in and link this provider")
 			}
 			if !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err

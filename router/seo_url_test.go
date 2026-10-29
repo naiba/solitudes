@@ -3,13 +3,13 @@ package router
 import (
 	"encoding/json"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/gofiber/fiber/v2"
 	html "github.com/gofiber/template/html/v2"
 	"github.com/naiba/solitudes"
 	"github.com/naiba/solitudes/internal/model"
@@ -17,9 +17,11 @@ import (
 )
 
 func TestCanonicalURLRedirect(t *testing.T) {
-	app := fiber.New()
+	app := newTestRouter()
 	app.Use(canonicalURLRedirect)
-	app.Use(func(c *fiber.Ctx) error { return c.SendString(c.Method() + ":" + string(c.Body())) })
+	app.Use(func(writer http.ResponseWriter, httpRequest *http.Request) error {
+		return writeText(writer, http.StatusOK, httpRequest.Method+":"+string(requestBody(httpRequest)))
+	})
 	for _, tc := range []struct {
 		method, path, target string
 		status               int
@@ -41,7 +43,7 @@ func TestCanonicalURLRedirect(t *testing.T) {
 		{"OPTIONS", "/api/comment/", "", 200},
 	} {
 		t.Run(tc.method+tc.path, func(t *testing.T) {
-			resp, err := app.Test(httptest.NewRequest(tc.method, tc.path, strings.NewReader("preserved-body")))
+			resp, err := testRequest(app, httptest.NewRequest(tc.method, tc.path, strings.NewReader("preserved-body")))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -59,7 +61,7 @@ func TestCanonicalURLRedirect(t *testing.T) {
 				}
 			}
 			if tc.target != "" {
-				next, err := app.Test(httptest.NewRequest(tc.method, tc.target, nil))
+				next, err := testRequest(app, httptest.NewRequest(tc.method, tc.target, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -87,15 +89,17 @@ func TestThemeCanonicalAndStructuredMetadata(t *testing.T) {
 			if err := engine.Load(); err != nil {
 				t.Fatal(err)
 			}
-			app := fiber.New(fiber.Config{Views: engine})
+			app := newTestRouter(testHTTPOptions{Views: engine})
 			app.Use(trans)
 			tag := "C#/Go? & 中文"
-			app.Get("/tags/:tag/", func(c *fiber.Ctx) error { return c.Render("site/header", injectSiteData(c, fiber.Map{"tag": tag})) })
-			app.Get("/story/v1", func(c *fiber.Ctx) error {
-				return c.Render("site/header", injectSiteData(c, fiber.Map{"noindex": true, "canonical_path": "/story"}))
+			app.Get("/tags/:tag/", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				return renderPage(writer, httpRequest, http.StatusOK, "site/header", injectSiteData(writer, httpRequest, viewData{"tag": tag}))
+			})
+			app.Get("/story/v1", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				return renderPage(writer, httpRequest, http.StatusOK, "site/header", injectSiteData(writer, httpRequest, viewData{"noindex": true, "canonical_path": "/story"}))
 			})
 			for _, path := range []string{"/tags/" + url.PathEscape(tag) + "/", "/story/v1"} {
-				resp, err := app.Test(httptest.NewRequest("GET", path, nil))
+				resp, err := testRequest(app, httptest.NewRequest("GET", path, nil))
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -168,17 +172,17 @@ func TestArticleCitationMetadataAndServerRenderedCaptions(t *testing.T) {
 				t.Fatal(err)
 			}
 			story := &model.Article{Title: `A "quoted" story`, Slug: "image-story", Content: `![Description](/photo.png "Caption & source")`, Version: 3, DisableComment: true, SibilingArticle: &model.SibilingArticle{}}
-			app := fiber.New(fiber.Config{Views: engine})
+			app := newTestRouter(testHTTPOptions{Views: engine})
 			app.Use(trans)
-			app.Get("/:slug", func(c *fiber.Ctx) error {
-				return c.Render("site/article", injectSiteData(c, fiber.Map{"article": story, "og_type": "article", "noindex": c.Query("private") == "true"}))
+			app.Get("/:slug", func(writer http.ResponseWriter, httpRequest *http.Request) error {
+				return renderPage(writer, httpRequest, http.StatusOK, "site/article", injectSiteData(writer, httpRequest, viewData{"article": story, "og_type": "article", "noindex": queryValue(httpRequest, "private") == "true"}))
 			})
 			for _, private := range []bool{false, true} {
 				target := "/image-story"
 				if private {
 					target += "?private=true"
 				}
-				resp, err := app.Test(httptest.NewRequest("GET", target, nil))
+				resp, err := testRequest(app, httptest.NewRequest("GET", target, nil))
 				if err != nil {
 					t.Fatal(err)
 				}

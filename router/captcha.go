@@ -1,16 +1,16 @@
 package router
 
 import (
+	"net/http"
 	"os"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/mojocn/base64Captcha"
 )
 
 var captchaStore = base64Captcha.DefaultMemStore
 
 // generateCaptcha generates a new captcha image and ID
-func generateCaptcha(c *fiber.Ctx) error {
+func generateCaptcha(writer http.ResponseWriter, httpRequest *http.Request) error {
 	// Create math captcha config (more secure than digits)
 	// Parameters: height=80, width=240, noiseCount=5, showLineOptions=hollow|slime|sine, use default bg color, fonts, and fonts storage
 	driver := base64Captcha.NewDriverMath(80, 240, 5, 2|4|8, nil, nil, nil)
@@ -21,7 +21,7 @@ func generateCaptcha(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(fiber.Map{
+	return writeJSON(writer, http.StatusOK, viewData{
 		"captchaId":    id,
 		"captchaImage": b64s,
 	})

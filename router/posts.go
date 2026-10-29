@@ -9,7 +9,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/gorilla/feeds"
 	"github.com/naiba/solitudes/pkg/pagination"
 
@@ -33,24 +32,24 @@ func validTagParam(tag string) bool {
 	return true
 }
 
-func tagsCloud(c *fiber.Ctx) error {
-	data, err := pagedTags(c, readableArticles(solitudes.System.DB, currentAccount(c)))
+func tagsCloud(writer http.ResponseWriter, httpRequest *http.Request) error {
+	data, err := pagedTags(writer, httpRequest, readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest)))
 	if err != nil {
 		return err
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
 	data["title"], data["desc"] = tr.T("tags_cloud"), tr.T("tags_all_the_tags")
-	return c.Status(http.StatusOK).Render("site/tags", injectSiteData(c, data))
+	return renderPage(writer, httpRequest, http.StatusOK, "site/tags", injectSiteData(writer, httpRequest, data))
 }
 
-func posts(c *fiber.Ctx) error {
-	page, err := listPage(c.Params("page"))
+func posts(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := listPage(routeParam(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
 	var articles []model.Article
 	pg, err := pagination.Paging(&pagination.Param{
-		DB:      readableArticles(solitudes.System.DB, currentAccount(c), accessNoticeFor(c)).Preload("Author").Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic"),
+		DB:      readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest), accessNoticeFor(writer, httpRequest)).Preload("Author").Where("(array_length(tags, 1) is null OR NOT tags @> ARRAY[?]::varchar[])", "Topic"),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC, id DESC"},
@@ -60,17 +59,17 @@ func posts(c *fiber.Ctx) error {
 	}
 	// Out-of-range archives are missing pages, not successful empty pages (soft 404s).
 	if page > pg.TotalPage {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
-	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), articles); err != nil {
+	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest)), articles); err != nil {
 		return err
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	return renderPage(writer, httpRequest, http.StatusOK, "site/posts", injectSiteData(writer, httpRequest, viewData{
 		"title":        tr.T("posts"),
 		"desc":         tr.T("posts_all_the_posts"),
 		"what":         "posts",
-		"navigation":   archiveNavigation(c, "/posts/", pg),
+		"navigation":   archiveNavigation(writer, httpRequest, "/posts/", pg),
 		"archive_base": "/posts/",
 		"articles":     listArticleByYear(articles),
 		"page":         pg,
@@ -78,14 +77,14 @@ func posts(c *fiber.Ctx) error {
 	}))
 }
 
-func book(c *fiber.Ctx) error {
-	page, err := listPage(c.Params("page"))
+func book(writer http.ResponseWriter, httpRequest *http.Request) error {
+	page, err := listPage(routeParam(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
 	var articles []model.Article
 	pg, err := pagination.Paging(&pagination.Param{
-		DB:      readableArticles(solitudes.System.DB, currentAccount(c), accessNoticeFor(c)).Preload("Author").Where("is_book is true"),
+		DB:      readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest), accessNoticeFor(writer, httpRequest)).Preload("Author").Where("is_book is true"),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC, id DESC"},
@@ -95,17 +94,17 @@ func book(c *fiber.Ctx) error {
 	}
 	// Out-of-range archives are missing pages, not successful empty pages (soft 404s).
 	if page > pg.TotalPage {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
-	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), articles); err != nil {
+	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest)), articles); err != nil {
 		return err
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	return renderPage(writer, httpRequest, http.StatusOK, "site/posts", injectSiteData(writer, httpRequest, viewData{
 		"title":        tr.T("books"),
 		"desc":         tr.T("books_all_the_books"),
 		"what":         "books",
-		"navigation":   archiveNavigation(c, "/books/", pg),
+		"navigation":   archiveNavigation(writer, httpRequest, "/books/", pg),
 		"archive_base": "/books/",
 		"articles":     listArticleByYear(articles),
 		"page":         pg,
@@ -133,12 +132,12 @@ var validFeedFormats = map[string]bool{
 	"atom": true,
 }
 
-func feedHandler(c *fiber.Ctx) error {
-	format := c.Params("format")
+func feedHandler(writer http.ResponseWriter, httpRequest *http.Request) error {
+	format := routeParam(httpRequest, "format")
 
 	// 仅合法 format 才计数
 	if validFeedFormats[format] {
-		ip := c.IP()
+		ip := requestIP(httpRequest)
 		if ip != "" {
 			threshold := time.Now().Add(-20 * time.Minute)
 			var recent model.FeedVisit
@@ -163,7 +162,7 @@ func feedHandler(c *fiber.Ctx) error {
 			subscriberCount = result.(int64)
 		}
 
-		return c.Status(http.StatusOK).JSON(map[string]interface{}{
+		return writeJSON(writer, http.StatusOK, map[string]interface{}{
 			"message":         "please spec a feed format",
 			"supportedFormat": []string{"json", "rss", "atom"},
 			"feedLink":        "https://" + solitudes.System.Config.Site.Domain + "/feed/:format",
@@ -172,7 +171,7 @@ func feedHandler(c *fiber.Ctx) error {
 	}
 
 	if !validFeedFormats[format] {
-		_, err := c.Status(http.StatusBadRequest).WriteString("Unknown feed type")
+		_, err := writeResponseString(writer, http.StatusBadRequest, "Unknown feed type")
 		return err
 	}
 
@@ -185,8 +184,8 @@ func feedHandler(c *fiber.Ctx) error {
 	}
 
 	feedResult := result.(*feedOutput)
-	c.Set("Content-Type", feedResult.contentType)
-	_, err = c.Status(http.StatusOK).WriteString(feedResult.body)
+	writer.Header().Set("Content-Type", feedResult.contentType)
+	_, err = writeResponseString(writer, http.StatusOK, feedResult.body)
 	return err
 }
 
@@ -276,18 +275,18 @@ func publicFeedItems(articles []model.Article) []*feeds.Item {
 	return items
 }
 
-func tags(c *fiber.Ctx) error {
-	tag, err := url.PathUnescape(c.Params("tag"))
+func tags(writer http.ResponseWriter, httpRequest *http.Request) error {
+	tag, err := url.PathUnescape(routeParam(httpRequest, "tag"))
 	if err != nil || !validTagParam(tag) {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
-	page, err := listPage(c.Params("page"))
+	page, err := listPage(routeParam(httpRequest, "page"))
 	if err != nil {
 		return err
 	}
 	var articles []model.Article
 	pg, err := pagination.Paging(&pagination.Param{
-		DB:      readableArticles(solitudes.System.DB, currentAccount(c), accessNoticeFor(c)).Preload("Author").Where("tags @> ARRAY[?]::varchar[]", tag),
+		DB:      readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest), accessNoticeFor(writer, httpRequest)).Preload("Author").Where("tags @> ARRAY[?]::varchar[]", tag),
 		Page:    int(page),
 		Limit:   20,
 		OrderBy: []string{"created_at DESC, id DESC"},
@@ -296,17 +295,17 @@ func tags(c *fiber.Ctx) error {
 		return err
 	}
 	if pg.TotalRecord == 0 || pg.Page > pg.TotalPage {
-		return page404(c)
+		return page404(writer, httpRequest)
 	}
-	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(c)), articles); err != nil {
+	if err := model.AggregateBookCounts(readableArticles(solitudes.System.DB, currentAccount(writer, httpRequest)), articles); err != nil {
 		return err
 	}
-	tr := c.Locals(solitudes.CtxTranslator).(*translator.Translator)
-	return c.Status(http.StatusOK).Render("site/posts", injectSiteData(c, fiber.Map{
+	tr := requestValue(httpRequest, solitudes.CtxTranslator).(*translator.Translator)
+	return renderPage(writer, httpRequest, http.StatusOK, "site/posts", injectSiteData(writer, httpRequest, viewData{
 		"title":        tr.T("articles_in", tag),
 		"desc":         tr.T("posts_with_tag", tag),
 		"what":         "tags",
-		"navigation":   archiveNavigation(c, "/tags/"+url.PathEscape(tag)+"/", pg),
+		"navigation":   archiveNavigation(writer, httpRequest, "/tags/"+url.PathEscape(tag)+"/", pg),
 		"archive_base": "/tags/" + url.PathEscape(tag) + "/",
 		"tag":          tag,
 		"articles":     listArticleByYear(articles),

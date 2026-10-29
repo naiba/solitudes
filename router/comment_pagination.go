@@ -2,8 +2,8 @@ package router
 
 import (
 	"errors"
+	"net/http"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
@@ -15,20 +15,20 @@ import (
 // Page direct replies, not an unbounded recursive tree. Every thread remains
 // navigable, including deep replies; ancestors must belong to this article and
 // be visible before any reply content is returned.
-func articleComments(c *fiber.Ctx, article *model.Article) (*pagination.Paginator, pageNavigation, string, error) {
-	page, err := listPage(c.Query("comment_page"))
+func articleComments(writer http.ResponseWriter, httpRequest *http.Request, article *model.Article) (*pagination.Paginator, pageNavigation, string, error) {
+	page, err := listPage(queryValue(httpRequest, "comment_page"))
 	if err != nil {
 		return nil, pageNavigation{}, "", err
 	}
-	thread := c.Query("thread")
+	thread := queryValue(httpRequest, "thread")
 	key := "comment_page"
 	query := visibleComments(solitudes.System.DB).Preload("Account", publicCommentAuthor).Where("article_id = ?", article.ID)
 	var parent model.Comment
 	if thread != "" {
 		if _, err := uuid.Parse(thread); err != nil {
-			return nil, pageNavigation{}, "", fiber.ErrBadRequest
+			return nil, pageNavigation{}, "", newHTTPError(http.StatusBadRequest)
 		}
-		page, err = listPage(c.Query("replies_page"))
+		page, err = listPage(queryValue(httpRequest, "replies_page"))
 		if err != nil {
 			return nil, pageNavigation{}, "", err
 		}
@@ -40,7 +40,7 @@ func articleComments(c *fiber.Ctx, article *model.Article) (*pagination.Paginato
 			) SELECT 1 FROM ancestors WHERE is_spam = true OR article_id <> ?
 		)`, thread, thread, article.ID).Take(&parent).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return nil, pageNavigation{}, "", fiber.ErrNotFound
+				return nil, pageNavigation{}, "", newHTTPError(http.StatusNotFound)
 			}
 			return nil, pageNavigation{}, "", err
 		}
@@ -111,5 +111,5 @@ func articleComments(c *fiber.Ctx, article *model.Article) (*pagination.Paginato
 		}
 	}
 	article.Comments = comments
-	return pg, pageNavigationFor(c, key, page, page < pg.TotalPage, "comments"), thread, nil
+	return pg, pageNavigationFor(writer, httpRequest, key, page, page < pg.TotalPage, "comments"), thread, nil
 }
