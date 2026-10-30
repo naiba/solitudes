@@ -3677,16 +3677,29 @@ test('admin navigation groups sign-in providers separately from external OIDC ap
     'provider-oidc-issuer', 'provider-oidc-secret', 'provider-settings-save']) {
     await expect(page.getByTestId(id)).toBeVisible();
   }
-  await page.getByTestId('provider-github-id').fill('browser-github-client');
-  await page.getByTestId('provider-github-secret').fill('browser-github-secret');
-  await page.getByTestId('provider-settings-save').click();
-  await expect(page).toHaveURL(/\/admin\/auth\/providers\?saved=1/);
-  await expect(page.getByTestId('provider-github-id')).toHaveValue('browser-github-client');
-  await expect(page.getByTestId('provider-github-secret')).toHaveValue('');
-  expect(await page.content()).not.toContain('browser-github-secret');
-  await page.getByTestId('provider-github-disable').check();
-  await page.getByTestId('provider-settings-save').click();
-  await expect(page.getByTestId('provider-github-id')).toHaveValue('');
+  try {
+    await page.getByTestId('provider-github-id').fill('browser-github-client');
+    await page.getByTestId('provider-github-secret').fill('browser-github-secret');
+    await page.getByTestId('provider-settings-save').click();
+    await expect(page).toHaveURL(/\/admin\/auth\/providers\?saved=1/);
+    await expect(page.getByTestId('provider-github-id')).toHaveValue('browser-github-client');
+    await expect(page.getByTestId('provider-github-secret')).toHaveValue('');
+    expect(await page.content()).not.toContain('browser-github-secret');
+    await page.getByTestId('provider-github-disable').check();
+    await page.getByTestId('provider-settings-save').click();
+    await expect(page.getByTestId('provider-github-id')).toHaveValue('');
+  } finally {
+    // Cases share the server configuration: restore the fixture credentials so
+    // disabling GitHub here cannot remove later OAuth registration entry points.
+    await page.goto('/admin/auth/providers');
+    await page.getByTestId('provider-github-disable').uncheck();
+    await page.getByTestId('provider-github-id').fill('browser-github-client');
+    await page.getByTestId('provider-github-secret').fill('browser-github-secret');
+    await page.getByTestId('provider-settings-save').click();
+    await expect(page).toHaveURL(/\/admin\/auth\/providers\?saved=1/);
+    await expect(page.getByTestId('provider-github-id')).toHaveValue('browser-github-client');
+    await expect(page.getByTestId('provider-github-secret')).toHaveValue('');
+  }
 });
 
 for (const role of ['user', 'editor', 'admin'] as const) {
