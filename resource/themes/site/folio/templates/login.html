@@ -22,12 +22,7 @@
       <button class="auth-primary" type="submit" data-testid="auth-submit">{{.Tr.T "sign_in"}}</button>
     </form>
     <p class="auth-switch">{{.Tr.T "auth_no_account"}} <a href="/register{{if .Data.return_to}}?return_to={{urlquery .Data.return_to}}{{end}}" data-testid="auth-register-link">{{.Tr.T "create_account"}}</a></p>
-    {{if or (and .Conf.Auth.GitHub.ClientID .Conf.Auth.GitHub.ClientSecret) (and .Conf.Auth.Google.ClientID .Conf.Auth.Google.ClientSecret) (and .Conf.Auth.OIDC.Issuer .Conf.Auth.OIDC.ClientID)}}
-    <div class="auth-providers"><p>{{.Tr.T "auth_other_methods"}}</p>
-      {{if and .Conf.Auth.GitHub.ClientID .Conf.Auth.GitHub.ClientSecret}}<a href="/auth/github?return_to={{urlquery .Data.return_to}}">GitHub</a>{{end}}
-      {{if and .Conf.Auth.Google.ClientID .Conf.Auth.Google.ClientSecret}}<a href="/auth/google?return_to={{urlquery .Data.return_to}}">Google</a>{{end}}
-      {{if and .Conf.Auth.OIDC.Issuer .Conf.Auth.OIDC.ClientID}}<a href="/auth/oidc?return_to={{urlquery .Data.return_to}}">{{.Tr.T "auth_sso"}}</a>{{end}}
-    </div>{{end}}
+    {{template "site/auth_providers" .}}
   </div>
 </main>
 <script src="/static/site/folio/js/auth.js" defer></script>

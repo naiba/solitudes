@@ -1,0 +1,9 @@
+{{define "site/auth_providers"}}
+    {{if or (and .Conf.Auth.GitHub.ClientID .Conf.Auth.GitHub.ClientSecret) (and .Conf.Auth.Google.ClientID .Conf.Auth.Google.ClientSecret) (and .Conf.Auth.OIDC.Issuer .Conf.Auth.OIDC.ClientID .Conf.Auth.OIDC.ClientSecret)}}
+    <div class="auth-providers"><p>{{.Tr.T "auth_other_methods"}}</p>
+      <p>{{.Tr.T "auth_provider_registration_hint"}}</p>
+      {{if and .Conf.Auth.GitHub.ClientID .Conf.Auth.GitHub.ClientSecret}}<a href="/auth/github?return_to={{urlquery .Data.return_to}}">GitHub</a>{{end}}
+      {{if and .Conf.Auth.Google.ClientID .Conf.Auth.Google.ClientSecret}}<a href="/auth/google?return_to={{urlquery .Data.return_to}}">Google</a>{{end}}
+      {{if and .Conf.Auth.OIDC.Issuer .Conf.Auth.OIDC.ClientID .Conf.Auth.OIDC.ClientSecret}}<a href="/auth/oidc?return_to={{urlquery .Data.return_to}}">{{.Tr.T "auth_sso"}}</a>{{end}}
+    </div>{{end}}
+{{end}}

@@ -69,7 +69,7 @@ Historical versions inherit the latest article's overall visibility but keep the
 
 ### Sign in to the blog with another provider
 
-Configure GitHub, Google or upstream OIDC at `/admin/auth/providers`. Register the callback `https://<host>/auth/{github,google,oidc}/callback`. If an account already uses that email, sign in first and link the provider from the account center.
+Configure GitHub, Google or upstream OIDC at `/admin/auth/providers`. Register the callback `https://<host>/auth/{github,google,oidc}/callback`. The first OAuth sign-in registers an account using the provider's verified email and connects that sign-in method, without a password. Users can set a password in the account center to enable email/password sign-in. If an account already uses that email, sign in first and link the provider from the account center.
 
 Passkeys require HTTPS. Set `auth.webauthn.rp_id` to the site's host and `auth.webauthn.origin` to its full HTTPS address.
 

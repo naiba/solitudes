@@ -8,6 +8,7 @@
     <p>{{.Tr.T "auth_register_intro"}}</p>
     <p class="auth-notice" data-testid="register-reader-circle-notice">{{.Tr.T "register_reader_circle_notice"}}</p>
     {{if not .Data.registration_available}}<p class="auth-notice" role="status">{{.Tr.T "auth_registration_unavailable"}}</p>{{end}}
+    {{template "site/auth_providers" .}}
     <form action="/register" method="post" data-testid="register-form">
       <input type="hidden" name="return_to" value="{{.Data.return_to}}">
       <label for="register-email">{{.Tr.T "email"}}</label><input id="register-email" name="email" type="email" autocomplete="email" data-testid="register-email" required>

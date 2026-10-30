@@ -69,7 +69,7 @@ docker compose up -d solitudes
 
 ### 第三方登录博客
 
-在 `/admin/auth/providers` 配置 GitHub、Google 或上游 OIDC，回调地址为 `https://<域名>/auth/{github,google,oidc}/callback`。已有同邮箱账户时，先登录，再从个人中心绑定。
+在 `/admin/auth/providers` 配置 GitHub、Google 或上游 OIDC，回调地址为 `https://<域名>/auth/{github,google,oidc}/callback`。首次 OAuth 登录会使用提供方已验证的邮箱注册并绑定该登录方式，无需密码。用户可在个人中心设置密码后启用邮箱密码登录。已有同邮箱账户时，先登录，再从个人中心绑定。
 
 通行密钥需 HTTPS；配置 `auth.webauthn.rp_id` 为站点域名、`auth.webauthn.origin` 为完整 HTTPS 地址。
 

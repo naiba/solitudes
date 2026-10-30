@@ -3832,6 +3832,32 @@ test('admin can trace a reader-owned application, its logins and security events
   await expect(page.getByTestId('audit-event')).toHaveCount(1);
 });
 
+test('OAuth reader can set a first password and retain the connected provider', async ({ page, context, baseURL }) => {
+  test.skip(!adminEmail, 'Requires isolated account fixtures.');
+  const email = process.env.E2E_OAUTH_EMAIL;
+  const session = process.env.E2E_OAUTH_SESSION;
+  expect(email).toBeTruthy();
+  expect(session).toBeTruthy();
+  expect(baseURL).toBeTruthy();
+  await page.goto('/register?return_to=%2Faccount');
+  await expect(page.locator('.auth-providers a[href^="/auth/github?"]')).toHaveAttribute('href', '/auth/github?return_to=%2Faccount');
+  await context.addCookies([{ name: 'i_like_solitude', value: session!, url: baseURL!, httpOnly: true, sameSite: 'Lax' }]);
+  await page.goto('/account');
+  await expect(page.getByTestId('account-summary')).toContainText(email!);
+  await expect(page.getByTestId('account-current-password')).toHaveCount(0);
+  await expect(page.getByTestId('account-password-submit')).toHaveText('Set password');
+  await page.getByTestId('account-new-password').fill('oauth-reader-password');
+  await page.getByTestId('account-password-submit').click();
+  await expect(page).toHaveURL(/\/account\?password_changed=1/);
+  await expect(page.getByTestId('account-current-password')).toBeVisible();
+  await expect(page.getByTestId('account-password-submit')).toHaveText('Change password');
+  await expect(page.getByTestId('account-oauth-unlink')).toHaveCount(1);
+  await page.getByTestId('account-logout').click();
+  await signIn(page, email!, 'oauth-reader-password', /\/account(?:\?|$)/);
+  await expect(page.getByTestId('account-summary')).toContainText(email!);
+  await expect(page.getByTestId('account-oauth-unlink')).toHaveCount(1);
+});
+
 test('reader can change their password in both account themes', async ({ page }) => {
   test.skip(!readerEmail || !readerPassword, 'Requires an isolated reader fixture.');
   await signIn(page, readerEmail!, readerPassword!, /\/account(?:\?|$)/);

@@ -89,9 +89,6 @@ func changeAccountPassword(writer http.ResponseWriter, httpRequest *http.Request
 	account := currentAccount(writer, httpRequest)
 	oldPassword := formValue(httpRequest, "old_password")
 	newPassword := formValue(httpRequest, "new_password")
-	if account.PasswordHash == "" || bcrypt.CompareHashAndPassword([]byte(account.PasswordHash), []byte(oldPassword)) != nil {
-		return newHTTPError(http.StatusForbidden, "incorrect current password")
-	}
 	if len(newPassword) < 12 || len(newPassword) > 72 {
 		return newHTTPError(http.StatusBadRequest, "new password must be 12–72 characters")
 	}
@@ -100,7 +97,20 @@ func changeAccountPassword(writer http.ResponseWriter, httpRequest *http.Request
 		return err
 	}
 	if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&model.Account{}).Where("id = ?", account.ID).Update("password_hash", string(hash)).Error; err != nil {
+		var stored model.Account
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&stored, "id = ?", account.ID).Error; err != nil {
+			return err
+		}
+		if stored.DisabledAt != nil || stored.EmailVerifiedAt == nil {
+			return newHTTPError(http.StatusForbidden)
+		}
+		// OAuth accounts can set their first password without an old one. Check
+		// locked database state so a stale passwordless request cannot overwrite
+		// a password that another request has just set.
+		if stored.PasswordHash != "" && bcrypt.CompareHashAndPassword([]byte(stored.PasswordHash), []byte(oldPassword)) != nil {
+			return newHTTPError(http.StatusForbidden, "incorrect current password")
+		}
+		if err := tx.Model(&stored).Update("password_hash", string(hash)).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("account_id = ? AND token_hash <> ?", account.ID,

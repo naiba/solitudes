@@ -275,6 +275,24 @@ func TestBrowserThemeMatrix(t *testing.T) {
 				config.Admin.Theme = adminTheme
 				config.Auth.GitHub.ClientID = "browser-github-client"
 				config.Auth.GitHub.ClientSecret = "browser-github-secret"
+				// Start the password-setup browser flow after a verified upstream
+				// identity exchange, without contacting a real OAuth provider.
+				oauthAccount, err := findOrLinkExternalIdentity(&model.OAuthAttempt{Provider: "github"}, upstreamIdentity{
+					Subject: "browser-oauth-" + site, Email: "oauth-" + site + "@example.com", Name: "OAuth reader", Verified: true,
+				}, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := db.Model(oauthAccount).Update("directory_hidden", true).Error; err != nil {
+					t.Fatal(err)
+				}
+				oauthSession, err := newSecret()
+				if err != nil {
+					t.Fatal(err)
+				}
+				if err := db.Create(&model.LoginSession{AccountID: oauthAccount.ID, TokenHash: secretHash(oauthSession), ExpiresAt: time.Now().Add(time.Hour)}).Error; err != nil {
+					t.Fatal(err)
+				}
 				model.SyncThemeConfig(config, themes)
 				if os.Getenv("SOLITUDES_HOMETOP_FIXTURE") == "1" {
 					content, err := os.ReadFile(filepath.Join("..", "e2e", "fixtures", "lifelonglearn-hometop.html"))
@@ -399,6 +417,8 @@ func TestBrowserThemeMatrix(t *testing.T) {
 					"E2E_ADMIN_PASSWORD=test-browser-password",
 					"E2E_READER_EMAIL="+reader.Email,
 					"E2E_READER_PASSWORD=test-browser-password",
+					"E2E_OAUTH_EMAIL="+oauthAccount.Email,
+					"E2E_OAUTH_SESSION="+oauthSession,
 					"E2E_EDITOR_EMAIL="+editor.Email,
 					"E2E_OIDC_CLIENT_ID="+client.ID,
 					"E2E_INVALID_OIDC_CLIENT_ID="+invalidClient.ID,
