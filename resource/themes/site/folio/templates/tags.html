@@ -10,8 +10,7 @@
     <section class="tag-cloud folio-container">
         {{range $i, $tag := .Data.tags}}
         {{ $count := index $.Data.counts $i }}
-        <a data-testid="tag-entry" href="/tags/{{pathEscape $tag}}/" class="tag-cloud-item"
-           style="font-size: {{ if gt $count 10 }}1.75rem{{ else if gt $count 5 }}1.35rem{{ else if gt $count 2 }}1.1rem{{ else }}0.9rem{{ end }};">
+        <a data-testid="tag-entry" href="/tags/{{pathEscape $tag}}/" class="tag-cloud-item">
             {{$tag}}<sup>{{$count}}</sup>
         </a>
         {{end}}

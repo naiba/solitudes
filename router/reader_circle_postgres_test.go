@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -84,13 +85,13 @@ func TestPostgresReaderCirclePrivacyAndActivity(t *testing.T) {
 		t.Fatalf("public identity lost: %+v", latest[1])
 	}
 	active, err := activeReaders()
-	if err != nil || len(active) != 1 || active[0].ID != accounts[0].ID || active[0].ActivityCount != 4 {
+	if err != nil || len(active) != 1 || active[0].ID != accounts[0].ID || active[0].ActivityCount != 5 {
 		t.Fatalf("only public post and clean comment count: %+v err=%v", active, err)
 	}
 	activity, err := recentReaderActivity()
-	if err != nil || len(activity) != 2 || activity[0].Kind != "comment" || activity[0].CommentID != good.ID ||
+	if err != nil || len(activity) != 3 || activity[0].Kind != "comment" || activity[0].CommentID != good.ID ||
 		activity[0].AccountID != accounts[0].ID || activity[0].ArticleSlug != public.Slug || activity[0].ArticleTitle != public.Title ||
-		activity[0].Excerpt != good.Content || activity[1].Kind != "article" || activity[1].ArticleSlug != public.Slug {
+		activity[0].Excerpt != good.Content || activity[1].Kind != "article" || activity[1].ArticleSlug != public.Slug || activity[2].CommentID != old.ID {
 		t.Fatalf("only public activity should reach feed: %+v err=%v", activity, err)
 	}
 	app := newTestRouter()
@@ -102,5 +103,58 @@ func TestPostgresReaderCirclePrivacyAndActivity(t *testing.T) {
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Fatalf("unbounded directory pagination status=%d", resp.StatusCode)
+	}
+}
+
+// Quiet communities must still show their latest contributions, even years later.
+func TestPostgresReaderCircleKeepsOlderActivityInLatestOrder(t *testing.T) {
+	db := newPostgresIdentityTestDB(t)
+	if err := db.AutoMigrate(&model.Article{}, &model.Comment{}); err != nil {
+		t.Fatal(err)
+	}
+	previous := solitudes.System
+	t.Cleanup(func() { solitudes.System = previous })
+	solitudes.System = &solitudes.SysVariable{DB: db}
+	verified := time.Now().AddDate(-2, 0, 0)
+	author := model.Account{Nickname: "Earlier author", Email: "earlier-author@example.test", Role: model.RoleEditor, EmailVerifiedAt: &verified}
+	reader := model.Account{Nickname: "Latest participant", Email: "latest-participant@example.test", Role: model.RoleUser, EmailVerifiedAt: &verified}
+	for _, account := range []*model.Account{&author, &reader} {
+		if err := db.Create(account).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	var posts []model.Article
+	for day := 0; day < 13; day++ {
+		post := model.Article{AuthorID: &author.ID, Title: fmt.Sprintf("Archive story %d", day), Slug: fmt.Sprintf("archive-story-%d", day), Content: "Public archive", CreatedAt: verified.AddDate(0, 0, day)}
+		if err := db.Create(&post).Error; err != nil {
+			t.Fatal(err)
+		}
+		posts = append(posts, post)
+	}
+	comment := model.Comment{AccountID: &reader.ID, ArticleID: &posts[0].ID, Content: "Latest public conversation", CreatedAt: verified.AddDate(0, 0, 14)}
+	if err := db.Create(&comment).Error; err != nil {
+		t.Fatal(err)
+	}
+	activity, err := recentReaderActivity()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(activity) != 12 {
+		t.Fatalf("expected latest 12 archived contributions, got %d", len(activity))
+	}
+	if activity[0].CommentID != comment.ID || activity[0].AccountID != reader.ID {
+		t.Fatalf("latest comment missing: %+v", activity[0])
+	}
+	for index, event := range activity[1:] {
+		if event.Kind != "article" || event.ArticleSlug != posts[12-index].Slug {
+			t.Fatalf("feed order at %d: %+v", index+1, event)
+		}
+	}
+	active, err := activeReaders()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(active) != 2 || active[0].ID != reader.ID || active[0].ActivityCount != 1 || active[1].ID != author.ID || active[1].ActivityCount != 39 {
+		t.Fatalf("members must follow latest participation, including old activity: %+v", active)
 	}
 }

@@ -55,11 +55,12 @@ func latestReaders(page, limit int) ([]readerCircleMember, bool, error) {
 	return readers, more, nil
 }
 
-// Count only recent, public contributions. Never derive popularity from
+// Count public contributions across all time. Never derive participation from
 // private posts, spam, replies under spam, or guest comments.
+// Sort by latest participation, without an age cutoff: quiet communities must
+// not lose all their members merely because the last conversation was long ago.
 func activeReaders() ([]readerCircleMember, error) {
 	var readers []readerCircleMember
-	cutoff := time.Now().AddDate(0, 0, -30)
 	err := solitudes.System.DB.Raw(`
 		SELECT a.id, a.nickname, a.bio, a.role, a.created_at,
 		       SUM(activity.weight) AS activity_count
@@ -67,12 +68,12 @@ func activeReaders() ([]readerCircleMember, error) {
 		JOIN (
 			SELECT author_id AS account_id, 3 AS weight, created_at AS happened_at
 			FROM articles
-			WHERE author_id IS NOT NULL AND visibility = 'public' AND created_at >= ?
+			WHERE author_id IS NOT NULL AND visibility = 'public'
 			UNION ALL
 			SELECT comments.account_id, 1 AS weight, comments.created_at AS happened_at
 			FROM comments JOIN articles ON articles.id = comments.article_id
 			WHERE comments.account_id IS NOT NULL AND comments.is_spam = false
-			  AND articles.visibility = 'public' AND comments.created_at >= ?
+			  AND articles.visibility = 'public'
 			  AND NOT EXISTS (
 				WITH RECURSIVE ancestors AS (
 					SELECT parent.id, parent.reply_to, parent.is_spam
@@ -86,16 +87,16 @@ func activeReaders() ([]readerCircleMember, error) {
 		) AS activity ON activity.account_id = a.id
 		WHERE a.directory_hidden = false AND a.email_verified_at IS NOT NULL AND a.disabled_at IS NULL
 		GROUP BY a.id, a.nickname, a.bio, a.role, a.created_at
-		ORDER BY activity_count DESC, MAX(activity.happened_at) DESC, a.id DESC
-		LIMIT 8`, cutoff, cutoff).Scan(&readers).Error
+		ORDER BY MAX(activity.happened_at) DESC, a.id DESC
+		LIMIT 8`).Scan(&readers).Error
 	return readers, err
 }
 
 // The feed links each public contribution to its author and the source post.
 // Comments underneath spam are excluded even when the reply itself is clean.
+// Limit the number of events, not their age, so the latest public data stays visible.
 func recentReaderActivity() ([]readerCircleActivity, error) {
 	var activity []readerCircleActivity
-	cutoff := time.Now().AddDate(0, 0, -30)
 	err := solitudes.System.DB.Raw(`
 		SELECT a.id AS account_id, a.nickname, a.role, feed.kind,
 		       feed.article_slug, feed.article_title, feed.comment_id,
@@ -107,7 +108,6 @@ func recentReaderActivity() ([]readerCircleActivity, error) {
 			       '' AS excerpt, articles.created_at AS happened_at
 			FROM articles
 			WHERE articles.author_id IS NOT NULL AND articles.visibility = 'public'
-			  AND articles.created_at >= ?
 			UNION ALL
 			SELECT comments.account_id, comments.id, 'comment',
 			       articles.slug, articles.title, comments.id::text,
@@ -115,7 +115,7 @@ func recentReaderActivity() ([]readerCircleActivity, error) {
 			       comments.created_at
 			FROM comments JOIN articles ON articles.id = comments.article_id
 			WHERE comments.account_id IS NOT NULL AND comments.is_spam = false
-			  AND articles.visibility = 'public' AND comments.created_at >= ?
+			  AND articles.visibility = 'public'
 			  AND NOT EXISTS (
 				WITH RECURSIVE ancestors AS (
 					SELECT parent.id, parent.reply_to, parent.is_spam
@@ -129,7 +129,7 @@ func recentReaderActivity() ([]readerCircleActivity, error) {
 		) AS feed JOIN accounts AS a ON a.id = feed.account_id
 		WHERE a.directory_hidden = false AND a.email_verified_at IS NOT NULL AND a.disabled_at IS NULL
 		ORDER BY feed.happened_at DESC, feed.event_id DESC
-		LIMIT 12`, cutoff, cutoff).Scan(&activity).Error
+		LIMIT 12`).Scan(&activity).Error
 	return activity, err
 }
 

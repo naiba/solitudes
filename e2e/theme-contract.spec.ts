@@ -579,9 +579,13 @@ test('real Vditor inserts and publishes restricted Markdown', async ({page, brow
   if (process.env.SOLITUDES_ACCESS_SCREENSHOTS) await page.screenshot({path:path.join(process.env.SOLITUDES_ACCESS_SCREENSHOTS, `${siteTheme}-access-editor.png`),fullPage:false});
   await page.getByTestId('access-insert').click();
   await expect(page.getByTestId('access-dialog')).not.toBeVisible();
-  for (const mode of ['wysiwyg','ir','sv']) {
-    await page.locator('[data-type="edit-mode"]').click();
-    await page.locator(`[data-mode="${mode}"]`).click();
+  // The transient mode dropdown can close during editor focus/render updates.
+  // Exercise the supported keyboard interaction and verify each mode before
+  // serializing, so a hidden menu cannot mask the nested-fence roundtrip check.
+  await source.focus();
+  for (const [mode, shortcut] of [['wysiwyg', '7'], ['ir', '8'], ['sv', '9']]) {
+    await page.keyboard.press(`Control+Alt+${shortcut}`);
+    await expect(page.locator(`[data-mode="${mode}"]`)).toHaveClass(/vditor-menu--current/);
     const roundtrip = await page.evaluate(() => eval('vditor.getValue()'));
     expect(roundtrip).toContain('access:members');
     expect(roundtrip.match(/selected-secret/g)).toHaveLength(1);
@@ -664,10 +668,18 @@ test('account columns remain compact across roles and screen widths', async ({pa
       const left = await page.getByTestId('account-profile-column').boundingBox();
       const right = await page.getByTestId('account-security-column').boundingBox();
       expect(left).not.toBeNull(); expect(right).not.toBeNull();
-      if (width > 767) {
+      if (width > 767 && siteTheme === 'folio') {
         expect(Math.abs(left!.y-right!.y)).toBeLessThan(2);
         expect(right!.x).toBeGreaterThan(left!.x+left!.width);
       } else expect(right!.y).toBeGreaterThanOrEqual(left!.y+left!.height);
+      if (width > 900) {
+        const index = (await page.locator('.account-section-nav').boundingBox())!;
+        if (siteTheme === 'cactus') {
+          expect(index.x + index.width, 'notebook settings index sits beside the forms').toBeLessThan(left!.x);
+        } else {
+          expect(index.y + index.height, 'journal section index sits above the service columns').toBeLessThanOrEqual(left!.y);
+        }
+      }
       for (const column of ['account-profile-column','account-security-column']) {
         const cards = await page.getByTestId(column).locator('.account-card').all();
         for (let i=1;i<cards.length;i++) {
@@ -1306,7 +1318,11 @@ test('public metadata is canonical and private drafts cannot be indexed or cache
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       expect(await page.evaluate(() => document.documentElement.scrollWidth), `${route} at ${width}px`).toBeLessThanOrEqual(width + 1);
       if (route === '/readers/' && width === 768) {
-        expect((await page.locator('.reader-circle-layout').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
+        expect((await page.locator('.reader-circle-layout').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(1);
+        expect((await page.locator('.reader-circle-members').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
+        const feed = (await page.locator('.circle-feed').boundingBox())!;
+        const members = (await page.locator('.reader-circle-members').boundingBox())!;
+        expect(members.y, 'tablet member discovery follows the full-width feed').toBeGreaterThanOrEqual(feed.y + feed.height);
       }
       if (route === '/' && width === 768) {
         expect((await page.locator(siteTheme === 'cactus' ? '.home-grid-layout' : '.home-grid').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
@@ -1805,15 +1821,15 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   await expect(page).toHaveURL(/\/readers\/$/);
   await expect(page.getByTestId('reader-circle-activity').first()).toBeVisible();
   expect((await page.locator('.reader-circle-layout').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
-  const layoutBox = await page.locator('.reader-circle-layout').boundingBox();
-  const feedBox = await page.locator('.circle-feed').boundingBox();
-  expect(layoutBox && feedBox && Math.abs(layoutBox.width - feedBox.width), 'activity uses the full available width').toBeLessThan(2);
-  const firstActivity = await page.getByTestId('reader-circle-activity').nth(0).boundingBox();
-  const secondActivity = await page.getByTestId('reader-circle-activity').nth(1).boundingBox();
-  expect(firstActivity && secondActivity && Math.abs(firstActivity.y - secondActivity.y), 'activity cards share one row').toBeLessThan(2);
-  const activeSection = await page.locator('section[aria-labelledby="circle-active-title"]').boundingBox();
-  const newSection = await page.locator('section[aria-labelledby="circle-new-title"]').boundingBox();
-  expect(activeSection && newSection && Math.abs(activeSection.y - newSection.y), 'active and new members share one row').toBeLessThan(2);
+  const feedBox = (await page.locator('.circle-feed').boundingBox())!;
+  const membersBox = (await page.locator('.reader-circle-members').boundingBox())!;
+  expect(membersBox.x, 'member discovery sits beside the chronological feed').toBeGreaterThan(feedBox.x + feedBox.width);
+  const firstActivity = (await page.getByTestId('reader-circle-activity').nth(0).boundingBox())!;
+  const secondActivity = (await page.getByTestId('reader-circle-activity').nth(1).boundingBox())!;
+  expect(secondActivity.y, 'chronology reads down one column').toBeGreaterThanOrEqual(firstActivity.y + firstActivity.height);
+  const activeSection = (await page.locator('section[aria-labelledby="circle-active-title"]').boundingBox())!;
+  const newSection = (await page.locator('section[aria-labelledby="circle-new-title"]').boundingBox())!;
+  expect(newSection.y, 'member sections stack in the sidebar').toBeGreaterThanOrEqual(activeSection.y + activeSection.height);
   await expect(page.locator('body')).not.toContainText('Spam comment content');
   await expect(page.locator('body')).not.toContainText('Private profile draft');
   await expect(page.getByTestId('reader-circle-active').filter({ hasText: 'Browser Editor' })).toHaveCount(1);
@@ -1896,7 +1912,10 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   await page.reload({ waitUntil: 'domcontentloaded' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(394);
   expect((await page.locator('.reader-circle-layout').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(1);
-  expect((await page.locator('.circle-feed-list').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(1);
+  await expect(page.locator('.circle-feed-list')).toHaveCSS('display', 'block');
+  const mobileFirst = (await page.getByTestId('reader-circle-activity').nth(0).boundingBox())!;
+  const mobileSecond = (await page.getByTestId('reader-circle-activity').nth(1).boundingBox())!;
+  expect(mobileSecond.y).toBeGreaterThanOrEqual(mobileFirst.y + mobileFirst.height);
   await page.goto('/account');
   await page.getByTestId('account-logout').click();
   await page.setViewportSize({ width: 1280, height: 900 });

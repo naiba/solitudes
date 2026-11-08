@@ -382,3 +382,60 @@ test('identity administration statistics and audit visual review', async ({ page
   await page.emulateMedia({colorScheme:'dark'});
   await capture(page, 'admin', '390-dark', 'identity-audit', '/admin/audit');
 });
+
+test.describe('community experience', () => {
+  test.use({ locale: 'zh-CN' });
+  test('reader circle profiles and account in light and dark themes', async ({ page }) => {
+    expect(outputRoot, 'community review requires an artifact directory').toBeTruthy();
+    mkdirSync(base, { recursive: true });
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+      for (const width of [1440, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        await capture(page, 'guest', `${width}-${colorScheme}`, 'community-readers', '/readers/');
+        await expect(page.getByTestId('reader-circle-activity').first()).toBeVisible();
+        await capture(page, 'guest', `${width}-${colorScheme}`, 'community-profile', `/users/${editorID}`);
+        await expect(page.getByTestId('public-profile-article').first()).toBeVisible();
+        const identity = (await page.locator('.public-profile-header').boundingBox())!;
+        const activity = (await page.locator('.public-profile-activity').boundingBox())!;
+        if (site === 'cactus' && width > 900) {
+          expect(activity.x, 'Cactus identity sits beside the reading log').toBeGreaterThan(identity.x + identity.width);
+        } else {
+          expect(activity.y, 'mobile and Folio introduce the author above the work').toBeGreaterThanOrEqual(identity.y + identity.height);
+        }
+      }
+    }
+    await login(page, 'reader');
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme });
+      for (const width of [1440, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        await capture(page, 'reader', `${width}-${colorScheme}`, 'community-account', '/account');
+        await page.locator('.account-section-nav a[href="#account-security"]').click();
+        await expect(page.locator('#account-security')).toBeInViewport();
+        await page.getByTestId('account-new-password').focus();
+        await expect(page.getByTestId('account-new-password')).toHaveCSS('outline-style', 'solid');
+      }
+    }
+  });
+});
+
+
+test.describe('theme identity inventory', () => {
+  test.use({ locale: 'zh-CN' });
+  test('publication and notebook pages remain readable across viewports', async ({ page }) => {
+    expect(outputRoot).toBeTruthy();
+    mkdirSync(base, { recursive: true });
+    for (const colorScheme of ['light', 'dark'] as const) {
+      await page.emulateMedia({ colorScheme, reducedMotion: 'reduce' });
+      for (const width of [1440, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const [name, route] of [['home', '/'], ['archive', '/posts/'], ['tags', '/tags/'],
+          ['search', '/search/?w=reading'], ['article', '/visual-long-article'], ['login', '/login']] as const) {
+          await capture(page, 'guest', `${width}-${colorScheme}`, `identity-${name}`, route);
+          await expect(page.locator('#main-content')).toBeVisible();
+        }
+      }
+    }
+  });
+});
