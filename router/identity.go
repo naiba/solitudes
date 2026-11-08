@@ -72,6 +72,14 @@ func issueLoginSession(writer http.ResponseWriter, httpRequest *http.Request, ac
 		expires = time.Now().AddDate(0, 3, 0)
 	}
 	if err := solitudes.System.DB.Transaction(func(tx *gorm.DB) error {
+		// Serialize session issuance with moderation so an in-flight login cannot survive a ban.
+		var stored model.Account
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&stored, "id = ?", account.ID).Error; err != nil {
+			return err
+		}
+		if stored.DisabledAt != nil || stored.EmailVerifiedAt == nil {
+			return newHTTPError(http.StatusForbidden)
+		}
 		if err := tx.Create(&model.LoginSession{ID: id, AccountID: account.ID, TokenHash: secretHash(token), ExpiresAt: expires}).Error; err != nil {
 			return err
 		}

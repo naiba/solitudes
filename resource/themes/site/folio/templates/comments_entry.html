@@ -7,7 +7,7 @@
             {{if and .Email (not .AccountID)}}
             <img src="https://gravatar.loli.net/avatar/{{.Email|md5}}.jpg?s=100&amp;d=mm&amp;r=g" alt="{{.PublicName}}" loading="lazy">
             {{else}}
-            <img src="https://api.dicebear.com/9.x/lorelei/svg?seed={{if .Account}}{{.Account.ID}}{{else}}{{.Nickname}}{{end}}" alt="{{.PublicName}}" loading="lazy">
+            <img src="{{if .AccountID}}{{generatedAvatarURL .AccountID}}{{else}}{{generatedAvatarURL .Nickname}}{{end}}" alt="{{.PublicName}}" loading="lazy">
             {{end}}
         </div>
         <div class="comment-meta-info">

@@ -7,8 +7,11 @@
 <link rel="next" href="{{.Data.navigation.Next}}">
 {{end}}
 {{template "site/menu" .}}
-<main id="main-content">
-{{if eq .Data.what "books"}}<h1>{{.Tr.T "books"}}</h1><p>{{.Tr.T "books_all_the_books"}}</p>{{else}}<h1 class="sr-only">{{.Title}}</h1>{{end}}
+<main id="main-content" class="archive-page">
+{{if eq .Data.what "books"}}<h1>{{.Tr.T "books"}}</h1><p>{{.Tr.T "books_all_the_books"}}</p>{{else if eq .Data.what "tags"}}<header class="tag-directory-heading">
+  <a href="/tags/">← {{.Tr.T "tags"}}</a>
+  <h1><span class="tag-directory-marker" aria-hidden="true">#</span>{{.Data.tag}}</h1>
+</header>{{else}}<h1 class="archive-title">{{.Tr.T "posts"}}</h1>{{end}}
 <section id="posts">
     {{if not .Data.articles}}
     <ul class="post-list">
@@ -19,10 +22,10 @@
     {{else}}
     {{range $s := .Data.articles}}
     {{range $j,$a := $s}}
-    {{if eq $j 0}}<h2>{{$a.CreatedAt.Year}}</h2><ul class="post-list">{{end}}
+    {{if eq $j 0}}<section class="archive-year"><h2>{{$a.CreatedAt.Year}}</h2><ul class="post-list">{{end}}
     {{template "site/article_list_entry" (dict "article" $a "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}
     {{end}}
-    </ul>
+    </ul></section>
     {{end}}
     {{end}}
   <div class="pagination">

@@ -2,10 +2,10 @@
 {{/* Article slugs are single URL path segments, not query strings or fragments. */}}
 {{template "site/header" .}}
 {{template "site/menu" .}}
-<article class="post" id="main-content" tabindex="-1">
+<article class="post search-page" id="main-content" tabindex="-1">
   <div class="content">
     {{template "site/search_form" .}}
-    <section id="search">
+    <section aria-label="{{.Tr.T "search"}}">
       {{if .Data.results}}
       <div id="search-result">
         <ul class="search-result-list">

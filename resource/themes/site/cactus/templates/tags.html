@@ -2,14 +2,18 @@
 {{template "site/header" .}}
 {{template "site/menu" .}}
 <main id="main-content">
-<h1 class="sr-only">{{.Title}}</h1>
-<section id="tags">
+<header class="tag-directory-heading">
+  <h1>{{.Tr.T "tags"}}</h1>
+  <p>{{.Tr.T "tag_directory_intro"}}</p>
+</header>
+<ul id="tags">
   {{range $i,$tag := .Data.tags}}
-  <a data-testid="tag-entry" href="/tags/{{pathEscape $tag}}/">
-    {{$tag}} <small>{{index $.Data.counts $i}}</small>
-  </a>
-  {{end}}
-</section>
+  <li><a data-testid="tag-entry" href="/tags/{{pathEscape $tag}}/">
+    <span class="tag-name">{{$tag}}</span>
+    <small>{{index $.Data.counts $i}}<span class="sr-only"> {{$.Tr.T "posts"}}</span></small>
+  </a></li>
+  {{else}}<li>{{.Tr.T "no_article"}}</li>{{end}}
+</ul>
 {{template "site/pagination" (dict "nav" .Data.navigation "tr" .Tr)}}
 </main>
 {{template "site/footer" .}}

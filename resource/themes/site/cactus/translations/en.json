@@ -206,5 +206,6 @@
     {"locale": "en", "key": "image_viewer", "trans": "Image viewer"},
     {"locale": "en", "key": "image_enlarge", "trans": "Enlarge image"},
     {"locale": "en", "key": "image_original", "trans": "View original"},
-    {"locale": "en", "key": "image_zoom", "trans": "Actual size"}
+    {"locale": "en", "key": "image_zoom", "trans": "Actual size"},
+    {"locale": "en", "key": "tag_directory_intro", "trans": "Browse articles and books by topic."}
 ]

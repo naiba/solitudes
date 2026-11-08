@@ -272,5 +272,10 @@
     {"locale": "zh", "key": "theme_selection_help", "trans": "选择主题后点击「保存」生效。前台与后台可独立选择，方向键也可切换选项。"},
     {"locale": "zh", "key": "theme_selected", "trans": "已选择"},
     {"locale": "zh", "key": "identity_email_verified", "trans": "邮箱已验证"},
-    {"locale": "zh", "key": "identity_email_verified_at", "trans": "邮箱验证时间"}
+    {"locale": "zh", "key": "identity_email_verified_at", "trans": "邮箱验证时间"},
+    {"locale": "zh", "key": "user_moderation", "trans": "用户管理"},
+    {"locale": "zh", "key": "user.nickname.update", "trans": "修改用户昵称"},
+    {"locale": "zh", "key": "user.disable", "trans": "封禁用户"},
+    {"locale": "zh", "key": "user_disable_effect", "trans": "封禁后昵称统一显示为“已封禁用户”，禁止登录并立即撤销已有会话。"},
+    {"locale": "zh", "key": "user_disable_confirm", "trans": "我确认封禁此用户"}
 ]

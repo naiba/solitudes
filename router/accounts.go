@@ -69,6 +69,10 @@ func updateAccountProfile(writer http.ResponseWriter, httpRequest *http.Request)
 		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Take(&stored, "id = ?", account.ID).Error; err != nil {
 			return err
 		}
+		// A request authenticated before a ban must not restore the moderated nickname.
+		if stored.DisabledAt != nil {
+			return newHTTPError(http.StatusForbidden)
+		}
 		// Compare locked database state, not a potentially stale browser session.
 		if stored.Nickname == nickname && stored.Bio == bio && stored.DirectoryHidden == (visible != "on") {
 			return nil

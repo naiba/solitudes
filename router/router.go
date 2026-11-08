@@ -479,6 +479,8 @@ func newAppWithRoutes(extraRoutes func(chi.Router)) *chi.Mux {
 			admin.Get("/users", serveEndpoint(requireAdmin, usersPage))
 			admin.Get("/users/{id}", serveEndpoint(requireAdmin, adminUserDetail))
 			admin.Get("/audit", serveEndpoint(requireAdmin, auditPage))
+			admin.Post("/users/{id}/nickname", serveEndpoint(requireAdmin, updateUserNickname))
+			admin.Post("/users/{id}/disable", serveEndpoint(requireAdmin, disableUser))
 			admin.Post("/users/{id}/role", serveEndpoint(requireAdmin, setUserRole))
 			admin.Get("/auth/providers", serveEndpoint(requireAdmin, loginProvidersPage))
 			admin.Post("/auth/providers", serveEndpoint(requireAdmin, saveLoginProviders))
@@ -748,6 +750,10 @@ func sitemapHandler(writer http.ResponseWriter, httpRequest *http.Request) error
 
 func setFuncMap(engine *html.Engine) {
 	funcMap := template.FuncMap{
+		// Account surfaces must share the comment avatar seed; nicknames can change.
+		"generatedAvatarURL": func(seed string) string {
+			return "https://api.dicebear.com/9.x/lorelei/svg?seed=" + url.QueryEscape(seed)
+		},
 		"md5": func(origin string) string {
 			hasher := md5.New()
 			hasher.Write([]byte(origin))

@@ -179,6 +179,11 @@ func lockOIDCTokenRequest(ctx context.Context, tx *gorm.DB, request interface{ G
 	if _, err := lockOIDCClient(tx.WithContext(ctx), clientID, true); err != nil {
 		return err
 	}
+	// A cached authorization or refresh request must not mint tokens after a ban.
+	var account model.Account
+	if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).Where("id = ? AND disabled_at IS NULL AND email_verified_at IS NOT NULL", request.GetSubject()).Take(&account).Error; err != nil {
+		return err
+	}
 	if auth, ok := request.(*oidcAuthRequest); ok {
 		var row model.OIDCAuthRequest
 		return tx.Where("id = ? AND client_id = ? AND account_id = ? AND approved = true AND expires_at > ?", auth.ID, clientID, request.GetSubject(), time.Now()).Take(&row).Error

@@ -103,8 +103,29 @@ async function capture(page: Page, role: string, viewport: string, name: string,
     status = response?.status() || 0;
     expect(status, `${role} ${route}`).toBe(expectedStatus);
   }
+  // Cactus selects a stylesheet through site settings, not prefers-color-scheme.
+  // Switch that stylesheet explicitly so dark captures actually exercise dark colors.
+  if (site === 'cactus' && /-(light|dark)$/.test(viewport)) {
+    const scheme = viewport.endsWith('-dark') ? 'dark' : 'white';
+    await page.locator('link[href*="/css/theme-"]').evaluate((node, value) => new Promise<void>((resolve, reject) => {
+      // Repeated captures on the same page need no reload; an unchanged href may not emit load.
+      const href = `/static/site/cactus/css/theme-${value}.css`;
+      if ((node as HTMLLinkElement).href === new URL(href, document.baseURI).href) {
+        resolve();
+        return;
+      }
+      node.addEventListener('load', () => resolve(), {once:true});
+      node.addEventListener('error', () => reject(new Error('Theme stylesheet failed')), {once:true});
+      (node as HTMLLinkElement).href = href;
+    }), scheme);
+  }
   await page.addStyleTag({ content: '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }' });
   await page.waitForTimeout(80);
+  // DOM readiness does not mean the external account avatar has finished loading.
+  for (const avatar of await page.locator('[data-testid="account-avatar"], [data-testid="profile-avatar"]').all()) {
+    await expect(avatar).toBeVisible();
+    await expect.poll(() => avatar.evaluate(node => (node as HTMLImageElement).naturalWidth), { timeout: 20000 }).toBeGreaterThan(0);
+  }
   if (await page.locator('#editSection, #topicContent').count()) {
     await expect(page.locator('.vditor-toolbar').first()).toBeVisible({ timeout: 20000 });
     await expect(page.locator('.vditor [contenteditable="true"]:visible').first()).toBeVisible({ timeout: 20000 });
@@ -235,6 +256,7 @@ test('visual inventory of every live theme page and interactive state', async ({
     await expect(page).toHaveURL(/\/oidc\/consent\?/);
     await capture(page, 'admin-site', viewport, 'consent');
     await page.goto('/account/oidc/clients', { waitUntil: 'domcontentloaded' });
+    if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
     await page.getByTestId('oidc-client-name').fill(`Visual audit ${site}/${admin} ${viewport}`);
     await page.getByTestId('oidc-client-homepage').fill('https://client.example.test/');
     await page.getByTestId('oidc-client-redirects').fill('https://client.example.test/callback');
@@ -348,6 +370,7 @@ test('modern admin workspace Chinese visual review', async ({ page }) => {
     }
   }
   await page.goto('/admin/oidc/clients');
+  if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
   await page.getByTestId('oidc-client-name').fill('Visual administration app');
   await page.getByTestId('oidc-client-homepage').fill('https://example.test');
   await page.getByTestId('oidc-client-redirects').fill('https://example.test/callback');
@@ -394,6 +417,15 @@ test.describe('community experience', () => {
         await page.setViewportSize({ width, height: 900 });
         await capture(page, 'guest', `${width}-${colorScheme}`, 'community-readers', '/readers/');
         await expect(page.getByTestId('reader-circle-activity').first()).toBeVisible();
+        const feed = (await page.locator('.circle-feed').boundingBox())!;
+        const members = (await page.locator('.reader-circle-members').boundingBox())!;
+        if (site === 'cactus') {
+          expect(members.y, 'Cactus presents a full-width log before the member roster').toBeGreaterThanOrEqual(feed.y+feed.height);
+          if (width > 900) expect((await page.getByTestId('reader-circle-activity').first().boundingBox())!.height).toBeLessThan(120);
+        } else if (width > 900) {
+          expect(members.x, 'Folio keeps its editorial sidebar beside the news column').toBeGreaterThan(feed.x+feed.width);
+        }
+
         await capture(page, 'guest', `${width}-${colorScheme}`, 'community-profile', `/users/${editorID}`);
         await expect(page.getByTestId('public-profile-article').first()).toBeVisible();
         const identity = (await page.locator('.public-profile-header').boundingBox())!;
@@ -431,10 +463,54 @@ test.describe('theme identity inventory', () => {
       for (const width of [1440, 390, 320]) {
         await page.setViewportSize({ width, height: 900 });
         for (const [name, route] of [['home', '/'], ['archive', '/posts/'], ['tags', '/tags/'],
-          ['search', '/search/?w=reading'], ['article', '/visual-long-article'], ['login', '/login']] as const) {
+          ['search', '/search/?w=reading'], ['article', '/visual-long-article'], ['login', '/login'], ['register', '/register']] as const) {
           await capture(page, 'guest', `${width}-${colorScheme}`, `identity-${name}`, route);
           await expect(page.locator('#main-content')).toBeVisible();
         }
+      }
+    }
+  });
+});
+
+test.describe('application page identity', () => {
+  test.use({ locale: 'zh-CN' });
+  test('application management and grants preserve theme hierarchy', async ({ page }) => {
+    expect(outputRoot).toBeTruthy();
+    mkdirSync(base, { recursive: true });
+    await login(page, 'reader');
+    await page.goto('/account/oidc/clients');
+    if (site === 'cactus') {
+      await expect(page.getByTestId('oidc-client-name')).not.toBeVisible();
+      await page.locator('.client-create > summary').click();
+    }
+    await page.getByTestId('oidc-client-name').fill('阅读笔记 · Reading companion');
+    await page.getByTestId('oidc-client-description').fill('用于同步阅读记录与笔记的应用。');
+    await page.getByTestId('oidc-client-homepage').fill('https://reader.example.test/');
+    await page.getByTestId('oidc-client-redirects').fill('https://reader.example.test/callback');
+    await page.getByTestId('oidc-client-submit').click();
+    await expect(page.getByTestId('oidc-created-id')).not.toBeEmpty();
+    // Theme cases share the consent database; explicitly request consent in every case.
+    const createdClientID = (await page.getByTestId('oidc-created-id').textContent())!.trim();
+    const verifier = 'visual-application-consent-verifier-with-sufficient-length';
+    const authorize = new URLSearchParams({ client_id: process.env.E2E_OIDC_CLIENT_ID!, redirect_uri: process.env.E2E_OIDC_REDIRECT_URI!, response_type:'code', scope:'openid email profile offline_access', state:'application-review', prompt:'consent', code_challenge:createHash('sha256').update(verifier).digest('base64url'), code_challenge_method:'S256' });
+    await page.route(process.env.E2E_OIDC_REDIRECT_URI! + '**', route => route.fulfill({status:200,body:'Authorization received'}));
+    await page.goto('/authorize?' + authorize);
+    await page.getByTestId('oidc-consent-allow').click();
+    await page.waitForURL(url => url.href.startsWith(process.env.E2E_OIDC_REDIRECT_URI!));
+    for (const scheme of ['light','dark'] as const) {
+      await page.emulateMedia({colorScheme:scheme});
+      for (const width of [1440,390,320]) {
+        await page.setViewportSize({width,height:900});
+        await capture(page,'reader',`${width}-${scheme}`,'applications-clients','/account/oidc/clients');
+        await expect(page.getByTestId('account-client-row').filter({hasText:createdClientID})).toHaveCount(1);
+        if (site === 'cactus') await page.locator('.client-create > summary').click();
+        await page.getByTestId('oidc-client-name').focus();
+        await expect(page.getByTestId('oidc-client-name')).toHaveCSS('outline-style','solid');
+        await capture(page,'reader',`${width}-${scheme}`,'applications-create');
+        await capture(page,'reader',`${width}-${scheme}`,'applications-grants','/account/oidc/authorizations');
+        await expect(page.getByTestId('authorization-row')).toHaveCount(1);
+        await expect(page.getByTestId('authorization-revoke')).toBeEnabled();
+        expect((await page.getByTestId('authorization-revoke').boundingBox())!.height).toBeGreaterThanOrEqual(44);
       }
     }
   });

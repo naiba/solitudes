@@ -1,7 +1,7 @@
 {{define "site/account_oidc_clients"}}
 {{template "site/header" .}}
 {{template "site/menu" .}}
-<main id="main-content" class="account-center">
+<main id="main-content" class="account-clients account-center">
   <p><a href="/account">← {{.Tr.T "my_account"}}</a></p>
   <h1>{{.Tr.T "provider_external_apps"}}</h1>
   <p>{{.Tr.T "owned_clients_hint"}}</p>
@@ -9,7 +9,7 @@
   <p>{{.Tr.T "oidc_issuer"}}: <code>{{.Data.issuer}}</code></p>
   <p><a href="{{.Data.issuer}}/.well-known/openid-configuration">{{.Tr.T "discovery_document"}}</a></p>
   <div class="account-grid">
-    <section class="account-card"><h2>{{.Tr.T "create_client"}}</h2>
+    <details class="account-card client-create"><summary>{{.Tr.T "create_client"}}</summary>
       <form action="/account/oidc/clients" method="post" data-testid="oidc-client-form">
         <label for="my-client-name">{{.Tr.T "client_name"}}</label>
         <input id="my-client-name" name="name" data-testid="oidc-client-name" required maxlength="100">
@@ -25,7 +25,7 @@
         <p>{{.Tr.T "pkce_hint"}}</p>
         <button type="submit" data-testid="oidc-client-submit">{{.Tr.T "create_client"}}</button>
       </form>
-    </section>
+    </details>
     <section class="account-card" id="clients"><h2>{{.Tr.T "manage_clients"}}</h2>
       <ul>{{range .Data.clients}}<li data-testid="account-client-row"><strong>{{.Name}}</strong> · <code>{{.ID}}</code>{{if .HomepageURL}} · <a href="{{.HomepageURL}}" target="_blank" rel="noopener noreferrer">{{$.Tr.T "application_homepage"}}</a>{{end}}
         <p class="client-usage" data-testid="oidc-client-usage"><span>{{$.Tr.T "client_login_users"}} <strong data-testid="oidc-client-login-users">{{.LoginUsers}}</strong></span><span>{{$.Tr.T "client_active_users"}} <strong data-testid="oidc-client-active-users">{{.ActiveUsers}}</strong></span></p>

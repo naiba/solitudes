@@ -301,7 +301,7 @@ func adminClientDetail(writer http.ResponseWriter, httpRequest *http.Request) er
 }
 
 // Shared with the translation contract: audit actions are translated dynamically.
-var auditActionNames = []string{"oidc.login", "session.login", "session.attempt", "session.logout", "account.register", "account.verify", "account.verification.send", "identity.callback", "oidc.authorize", "oidc.consent", "oidc.logout", "oidc.request", "client.create", "client.update", "client.disable", "client.delete", "grant.revoke", "user.role.update", "account.password.update", "account.profile.update", "account.operation", "passkey.operation", "provider.update", "settings.update", "oidc.keys.rotate", "article.save", "article.delete", "redirect.save", "redirect.delete", "comment.create", "admin.operation", "access.denied", "request.error", "audit.view", "audit.enabled", "account.initialized"}
+var auditActionNames = []string{"oidc.login", "session.login", "session.attempt", "session.logout", "account.register", "account.verify", "account.verification.send", "identity.callback", "oidc.authorize", "oidc.consent", "oidc.logout", "oidc.request", "client.create", "client.update", "client.disable", "client.delete", "grant.revoke", "user.role.update", "user.nickname.update", "user.disable", "account.password.update", "account.profile.update", "account.operation", "passkey.operation", "provider.update", "settings.update", "oidc.keys.rotate", "article.save", "article.delete", "redirect.save", "redirect.delete", "comment.create", "admin.operation", "access.denied", "request.error", "audit.view", "audit.enabled", "account.initialized"}
 
 func auditPage(writer http.ResponseWriter, httpRequest *http.Request) error {
 	page, err := identityPage(writer, httpRequest)

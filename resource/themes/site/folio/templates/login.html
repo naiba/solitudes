@@ -1,28 +1,34 @@
 {{define "site/login"}}
 {{template "site/header" .}}
-<main id="main-content" class="auth-shell folio-container" data-testid="site-auth-page">
+<main id="main-content" class="auth-entry auth-shell folio-container" data-testid="site-auth-page">
   <div class="auth-card">
+    <header class="auth-editorial-heading">
     <p class="auth-eyebrow">{{.Tr.T "auth_eyebrow"}}</p>
     <h1>{{.Tr.T "sign_in"}}</h1>
     <p>{{.Tr.T "auth_sign_in_intro"}}</p>
+    </header>
+    <div class="auth-editorial-form">
     {{if .Data.oidc_client}}{{template "site/oidc_application" .}}{{end}}
     {{if .Data.verified}}<p role="status">{{.Tr.T "email_verified"}}</p>{{end}}
     <form action="/login" method="post" id="loginForm" data-testid="auth-login-form">
       <input type="hidden" name="return_to" value="{{.Data.return_to}}">
       <label for="loginEmail">{{.Tr.T "email"}}</label>
       <input id="loginEmail" name="email" type="email" autocomplete="username" data-testid="auth-email" required>
-      {{if .Conf.Auth.WebAuthn.RPID}}<button type="button" id="passkey-login" data-testid="auth-passkey" class="auth-secondary" data-unsupported-webauthn="{{.Tr.T "unsupported_webauthn"}}">{{.Tr.T "sign_in_passkey"}}</button>{{end}}
       <label for="loginPassword">{{.Tr.T "auth_password"}}</label>
       <input id="loginPassword" name="password" type="password" autocomplete="current-password" data-testid="auth-password" required>
       <label for="loginCaptcha">{{.Tr.T "auth_captcha"}}</label>
-      <div class="auth-captcha"><input id="loginCaptcha" name="captcha" autocomplete="off" data-testid="auth-captcha" required maxlength="5"><button type="button" data-refresh-captcha="captchaImage" aria-label="{{.Tr.T "refresh_captcha"}}">↻</button></div>
+      <div class="auth-captcha"><input id="loginCaptcha" name="captcha" autocomplete="off" data-testid="auth-captcha" required maxlength="5"><button type="button" data-refresh-captcha="captchaImage" aria-label="{{.Tr.T "refresh_captcha"}}">↻</button><img id="captchaImage" class="auth-captcha-image" alt="{{.Tr.T "auth_captcha"}}"></div>
       <input type="hidden" name="captchaId" id="captchaId">
-      <img id="captchaImage" class="auth-captcha-image" alt="{{.Tr.T "auth_captcha"}}">
+
       <label class="auth-check"><input type="checkbox" name="remember" value="on">{{.Tr.T "remember_me"}}</label>
       <button class="auth-primary" type="submit" data-testid="auth-submit">{{.Tr.T "sign_in"}}</button>
     </form>
+{{if .Conf.Auth.WebAuthn.RPID}}<button type="button" id="passkey-login" data-testid="auth-passkey" class="auth-secondary" data-unsupported-webauthn="{{.Tr.T "unsupported_webauthn"}}">{{.Tr.T "sign_in_passkey"}}</button>{{end}}
+    </div>
+    <aside class="auth-editorial-support">
     <p class="auth-switch">{{.Tr.T "auth_no_account"}} <a href="/register{{if .Data.return_to}}?return_to={{urlquery .Data.return_to}}{{end}}" data-testid="auth-register-link">{{.Tr.T "create_account"}}</a></p>
     {{template "site/auth_providers" .}}
+    </aside>
   </div>
 </main>
 <script src="/static/site/folio/js/auth.js" defer></script>

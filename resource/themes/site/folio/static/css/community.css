@@ -107,7 +107,7 @@
 .reader-avatar { border-radius: 0; background: none; border: 0; font-family: var(--font-heading); font-size: 1.5rem; }
 .reader-card-name { font-family: var(--font-heading); font-size: 1.2rem; }
 .public-profile-header { text-align: center; display: flex; flex-direction: column; align-items: center; border-block: 3px double var(--border); padding: 2.5rem 0; }
-.public-profile-avatar { display: none; }
+.public-profile-avatar { display:block; width:3rem; height:3rem; object-fit:contain; background:none; }
 .public-profile-name { justify-content: center; }
 .public-profile-name h1 { font-size: clamp(2.5rem,5vw,4rem); font-family: var(--font-heading); font-weight: 500; }
 .public-profile-bio { font-family: var(--font-heading); font-size: 1.2rem; max-width: 45ch; }
@@ -133,4 +133,64 @@
  .public-profile-activity, .tag-cloud { grid-template-columns: minmax(0,1fr); }
  .posts-listing .year-group { grid-template-columns: minmax(0,1fr); gap: .5rem; }
  .account-section-nav { justify-content: flex-start; gap: .5rem 1rem; }
+}
+
+.account-avatar { width:2rem; height:2rem; flex:none; object-fit:contain; }
+
+/* Account documents follow Folio's editorial hierarchy, while creation stays
+   in a secondary column so existing applications remain easy to scan. */
+.account-authorizations > h1, .account-clients > h1 { font:500 clamp(1.8rem,4vw,2.75rem)/1.2 var(--font-heading); border-bottom:3px double var(--border); padding-bottom:1rem; }
+.account-authorizations .account-authorization-list { counter-reset:authorizations; gap:2rem; }
+.account-authorizations .account-card { counter-increment:authorizations; border:0; border-top:1px solid var(--text); border-radius:0; background:none; padding:1.25rem 0; }
+.account-authorizations .authorization-heading { justify-content:flex-start; }
+.account-authorizations .authorization-heading::before { content:counter(authorizations,decimal-leading-zero); font:.8rem var(--font-mono); color:var(--muted); }
+.account-authorizations .authorization-heading h2 { font:500 1.7rem/1.3 var(--font-heading); }
+.account-authorizations .authorization-heading a { margin-left:auto; font-size:.85rem; }
+.account-authorizations .authorization-scopes { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); border-block:1px solid var(--border); padding:.75rem 0; margin:1rem 0; }
+.account-authorizations .authorization-actions p { max-width:40rem; }
+.account-clients .account-grid { grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:2.5rem; }
+.account-clients .account-card { border:0; border-radius:0; padding:1rem 0; background:none; border-top:2px solid var(--text); }
+.account-clients .account-card h2 { font:500 1.7rem/1.3 var(--font-heading); }
+.account-clients #clients > ul { padding:0; list-style:none; }
+.account-clients [data-testid="account-client-row"] { padding:1rem 0; border-bottom:1px solid var(--border); overflow-wrap:anywhere; }
+.account-clients [data-testid="account-client-row"] > strong { display:block; font:500 1.4rem var(--font-heading); margin-bottom:.5rem; }
+.account-clients :is(input:not([type=checkbox]),button,summary), .account-authorizations button { min-height:44px; }
+.account-clients summary { cursor:pointer; align-content:center; }
+:is(.account-clients,.account-authorizations) :is(a,button,input,textarea,summary):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+@media(max-width:767px) { .account-clients .account-grid { grid-template-columns:minmax(0,1fr); } .account-authorizations .authorization-scopes { grid-template-columns:minmax(0,1fr); } }
+
+/* Reader access uses an editorial sidebar and a separate form column, rather
+   than the same centered utility sheet as Cactus. Supporting links follow the
+   form in source order so narrow screens and keyboard navigation stay natural. */
+.auth-entry.auth-shell { max-width:62rem; margin-bottom:2.5rem; }
+.auth-entry .auth-card { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.25fr); grid-template-rows:auto 1fr; column-gap:3rem; padding:1.25rem 0 0; border:0; border-top:3px double var(--text); background:none; }
+.auth-entry .auth-editorial-heading { grid-column:1; grid-row:1; }
+.auth-entry .auth-editorial-heading h1 { font-size:clamp(2rem,4vw,2.8rem); margin:.45rem 0 .75rem; }
+.auth-entry .auth-editorial-heading p { margin:.5rem 0; line-height:1.55; }
+.auth-entry .auth-editorial-form { grid-column:2; grid-row:1 / 3; min-width:0; padding-left:2rem; border-left:1px solid var(--border); }
+.auth-entry .auth-editorial-support { grid-column:1; grid-row:2; min-width:0; }
+.auth-entry .auth-card form { gap:.35rem; margin-top:0; }
+.auth-entry .auth-card form > label:not(.auth-check) { margin-top:.3rem; font-size:.9rem; }
+.auth-entry .auth-card form > input, .auth-entry .auth-captcha input { padding:.45rem .65rem; }
+.auth-entry .auth-card .auth-captcha { display:grid; grid-template-columns:minmax(0,1fr) 44px 110px; gap:.4rem; align-items:center; }
+/* Grid centering no longer stretches the refresh control to the input height. */
+.auth-entry .auth-captcha button { min-height:44px; }
+.auth-entry .auth-captcha-image { width:110px; height:44px; min-height:44px; object-fit:contain; }
+.auth-entry .auth-check { min-height:44px; margin:0; font-size:.9rem; }
+.auth-entry .auth-editorial-form > .auth-secondary { width:100%; margin-top:.5rem; }
+.auth-entry .auth-notice, .auth-entry .auth-application { padding:.6rem .75rem; margin:0 0 .75rem; font-size:.85rem; }
+.auth-entry .auth-switch { text-align:left; margin:1rem 0 .5rem; font-size:.9rem; }
+.auth-entry .auth-providers { margin-top:.75rem; padding-top:.75rem; gap:.45rem; }
+.auth-entry .auth-providers p { font-size:.85rem; line-height:1.5; }
+.auth-entry .auth-providers p + p { order:1; color:var(--muted); }
+.auth-entry .auth-providers a { padding:.4rem .75rem; font-size:.85rem; }
+.auth-entry .auth-resend { margin-top:.75rem; padding-top:.35rem; }
+.auth-entry .auth-resend summary { min-height:44px; align-content:center; font-size:.9rem; }
+.auth-entry :is(a,input,button,summary):focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+@media(max-width:700px) {
+  .auth-entry .auth-card { display:block; padding-top:.75rem; }
+  .auth-entry .auth-editorial-heading { padding-bottom:.75rem; margin-bottom:.75rem; border-bottom:1px solid var(--border); }
+  .auth-entry .auth-editorial-heading h1 { margin:.35rem 0; }
+  .auth-entry .auth-editorial-heading p { font-size:.9rem; }
+  .auth-entry .auth-editorial-form { padding:0; border:0; }
 }

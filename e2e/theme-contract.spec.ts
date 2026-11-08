@@ -701,6 +701,7 @@ test('member app durable authorization survives credential removal and requires 
   await signIn(page, readerEmail!, readerPassword!);
   await page.getByTestId('account-oidc-clients').click();
   const applicationName = `Revocable ${siteTheme} application`;
+  if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
   await page.getByTestId('oidc-client-name').fill(applicationName);
   await page.getByTestId('oidc-client-homepage').fill('https://external.example.test/');
   await page.getByTestId('oidc-client-redirects').fill(oidcRedirectURI!);
@@ -1304,11 +1305,18 @@ test('public metadata is canonical and private drafts cannot be indexed or cache
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/posts/', { waitUntil: 'domcontentloaded' });
   const postList = page.locator(siteTheme === 'cactus' ? '#posts .post-list' : '.year-group .article-list').first();
-  expect((await postList.evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
+  if (siteTheme === 'cactus') await expect(postList).toHaveCSS('display', 'block');
+  else expect((await postList.evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
   expect(errors, 'single-page archive must not bind a missing pagination button').toEqual([]);
   await page.goto('/search/?w=article', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.search-result-list li').first()).toBeVisible();
-  expect((await page.locator('.search-result-list').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
+  if (siteTheme === 'cactus') {
+    const results = page.locator('.search-result-list li');
+    const first = (await results.nth(0).boundingBox())!;
+    const second = (await results.nth(1).boundingBox())!;
+    expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
+    expect(Math.abs(second.x - first.x)).toBeLessThan(1);
+  } else expect((await page.locator('.search-result-list').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
   await page.goto('/visual-editor-post', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('meta[property="article:author"]')).toHaveAttribute('content', /^https:\/\/[^/]+\/users\/[^/]+$/);
@@ -1318,7 +1326,6 @@ test('public metadata is canonical and private drafts cannot be indexed or cache
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       expect(await page.evaluate(() => document.documentElement.scrollWidth), `${route} at ${width}px`).toBeLessThanOrEqual(width + 1);
       if (route === '/readers/' && width === 768) {
-        expect((await page.locator('.reader-circle-layout').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(1);
         expect((await page.locator('.reader-circle-members').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
         const feed = (await page.locator('.circle-feed').boundingBox())!;
         const members = (await page.locator('.reader-circle-members').boundingBox())!;
@@ -1438,6 +1445,7 @@ test('registration delivers a verification email before a new reader can sign in
       post_logout_uris: 'https://reader.example.test/logout#fragment' },
   });
   expect(invalidLogout.status()).toBe(400);
+  if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
   await page.getByTestId('oidc-client-name').fill('New reader application');
   await page.getByTestId('oidc-client-description').fill('Use the blog identity to read articles');
   await page.getByTestId('oidc-client-homepage').fill('https://reader.example.test/app');
@@ -1820,16 +1828,26 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   await page.getByTestId('site-reader-circle-nav').click();
   await expect(page).toHaveURL(/\/readers\/$/);
   await expect(page.getByTestId('reader-circle-activity').first()).toBeVisible();
-  expect((await page.locator('.reader-circle-layout').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
   const feedBox = (await page.locator('.circle-feed').boundingBox())!;
   const membersBox = (await page.locator('.reader-circle-members').boundingBox())!;
-  expect(membersBox.x, 'member discovery sits beside the chronological feed').toBeGreaterThan(feedBox.x + feedBox.width);
+  // Theme identity includes geometry: Cactus has a full-width log, Folio an editorial sidebar.
+  if (siteTheme === 'cactus') {
+    expect(membersBox.y, 'member discovery follows the full-width log').toBeGreaterThanOrEqual(feedBox.y + feedBox.height);
+    expect(Math.abs(membersBox.width - feedBox.width)).toBeLessThan(2);
+  } else {
+    expect(membersBox.x, 'member discovery sits beside the chronological feed').toBeGreaterThan(feedBox.x + feedBox.width);
+  }
   const firstActivity = (await page.getByTestId('reader-circle-activity').nth(0).boundingBox())!;
   const secondActivity = (await page.getByTestId('reader-circle-activity').nth(1).boundingBox())!;
   expect(secondActivity.y, 'chronology reads down one column').toBeGreaterThanOrEqual(firstActivity.y + firstActivity.height);
   const activeSection = (await page.locator('section[aria-labelledby="circle-active-title"]').boundingBox())!;
   const newSection = (await page.locator('section[aria-labelledby="circle-new-title"]').boundingBox())!;
-  expect(newSection.y, 'member sections stack in the sidebar').toBeGreaterThanOrEqual(activeSection.y + activeSection.height);
+  if (siteTheme === 'cactus') {
+    expect(newSection.x, 'compact member rosters share a row below the log').toBeGreaterThanOrEqual(activeSection.x + activeSection.width);
+    expect(Math.abs(newSection.y - activeSection.y)).toBeLessThan(2);
+  } else {
+    expect(newSection.y, 'member sections stack in the sidebar').toBeGreaterThanOrEqual(activeSection.y + activeSection.height);
+  }
   await expect(page.locator('body')).not.toContainText('Spam comment content');
   await expect(page.locator('body')).not.toContainText('Private profile draft');
   await expect(page.getByTestId('reader-circle-active').filter({ hasText: 'Browser Editor' })).toHaveCount(1);
@@ -1911,7 +1929,9 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: 'domcontentloaded' });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(394);
-  expect((await page.locator('.reader-circle-layout').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(1);
+  const mobileFeed = (await page.locator('.circle-feed').boundingBox())!;
+  const mobileMembers = (await page.locator('.reader-circle-members').boundingBox())!;
+  expect(mobileMembers.y, 'mobile member discovery follows the feed in both themes').toBeGreaterThanOrEqual(mobileFeed.y + mobileFeed.height);
   await expect(page.locator('.circle-feed-list')).toHaveCSS('display', 'block');
   const mobileFirst = (await page.getByTestId('reader-circle-activity').nth(0).boundingBox())!;
   const mobileSecond = (await page.getByTestId('reader-circle-activity').nth(1).boundingBox())!;
@@ -3430,6 +3450,7 @@ test('admin creates and disables an OIDC client via the UI', async ({ page }) =>
   await signIn(page);
   await page.goto('/admin/oidc/clients', { waitUntil: 'domcontentloaded' });
   const name = `Browser client ${Date.now()}`;
+  if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
   await page.getByTestId('oidc-client-name').fill(name);
   await page.getByTestId('oidc-client-homepage').fill('https://browser.example.test/');
   await page.getByTestId('oidc-client-redirects').fill('http://localhost:9999/callback');
@@ -3456,6 +3477,7 @@ test('ordinary readers can register their own OIDC app but cannot manage another
   expect((await page.request.get('/admin/oidc/clients', { maxRedirects: 0 })).status()).toBe(403);
   await expect(page.getByText('Browser external app', { exact: true })).toHaveCount(0);
   const name = `My app ${Date.now()}`;
+  if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
   await page.getByTestId('oidc-client-name').fill(name);
   await page.getByTestId('oidc-client-homepage').fill('https://reader.example.test/');
   await page.getByTestId('oidc-client-redirects').fill('http://localhost:9998/callback');
@@ -3550,6 +3572,7 @@ test('reader creates a confidential OAuth client with a one-time secret in each 
   test.skip(!readerEmail || !readerPassword, 'Requires isolated reader credentials.');
   await signIn(page, readerEmail!, readerPassword!, /\/account(?:\?|$)/);
   await page.getByTestId('account-oidc-clients').click();
+  if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
   await page.getByTestId('oidc-client-name').fill('Private app');
   await page.getByTestId('oidc-client-homepage').fill('https://client.example.com/');
   await page.getByTestId('oidc-client-redirects').fill('https://client.example.com/callback');
@@ -3565,6 +3588,7 @@ for (const publicClient of [true, false]) {
     test.skip(!readerEmail || !editorEmail || !readerPassword || !oidcRedirectURI);
     await signIn(page, readerEmail!, readerPassword!);
     await page.goto('/account/oidc/clients');
+    if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
     await page.getByTestId('oidc-client-name').fill(`Cross-user ${publicClient ? 'public' : 'confidential'} app`);
     await page.getByTestId('oidc-client-homepage').fill('https://external.example.test/');
     await page.getByTestId('oidc-client-redirects').fill(oidcRedirectURI!);
@@ -3783,6 +3807,7 @@ test('admin can trace a reader-owned application, its logins and security events
   await signIn(page, readerEmail!, readerPassword!);
   const name = `Audited reader application ${Date.now()}`;
   await page.goto('/account/oidc/clients');
+  if (await page.locator('.client-create:not([open]) > summary').count()) await page.locator('.client-create > summary').click();
   await page.getByTestId('oidc-client-name').fill(name);
   await page.getByTestId('oidc-client-homepage').fill('https://audit.example.test/');
   await page.getByTestId('oidc-client-redirects').fill(oidcRedirectURI!);
@@ -3994,5 +4019,163 @@ test('machine content is discoverable without JavaScript and redirect targets ar
     expect(await page.content()).not.toContain('javascript:alert(1)');
   } finally {
     await context.close();
+  }
+});
+
+test('administrator moderates nicknames and bans accounts with active sessions', async ({ page, browser }) => {
+  const email = `moderation-${siteTheme}-${Date.now()}@example.com`;
+  const password = 'moderation-reader-password';
+  await page.goto('/register?return_to=%2Faccount');
+  await page.getByTestId('register-email').fill(email);
+  await page.getByTestId('register-nickname').fill('Moderation reader');
+  await page.getByTestId('register-password').fill(password);
+  await page.getByTestId('register-captcha').fill('0');
+  await expect(page.locator('input[name="captchaId"]').first()).not.toHaveValue('');
+  const registered = page.waitForResponse(r => r.url().endsWith('/register') && r.request().method() === 'POST');
+  await page.getByTestId('register-submit').click();
+  expect((await registered).status()).toBe(202);
+  let verification = '';
+  await expect.poll(async () => {
+    const response = await page.request.get('/__e2e/verification-mail');
+    if (response.ok()) verification = await response.text();
+    return verification;
+  }).toContain('/verify-email?token=');
+  await page.goto(verification);
+  await signIn(page, email, password, /\/account(?:\?|$)/);
+  const profile = await page.getByTestId('account-public-profile').getAttribute('href');
+  expect(profile).toMatch(/^\/users\//);
+  const adminContext = await browser.newContext({ baseURL: new URL(page.url()).origin });
+  try {
+    const admin = await adminContext.newPage();
+    await admin.goto('/login');
+    await signIn(admin, adminEmail!, adminPassword!);
+    await admin.goto('/admin'+profile);
+    for (const width of [1280,390]) {
+      await admin.setViewportSize({width,height:900});
+      await expect(admin.getByTestId('user-nickname-form')).toBeVisible();
+      await expect(admin.getByTestId('user-disable-form')).toBeVisible();
+      expect(await admin.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    }
+    await admin.getByTestId('user-nickname-form').locator('input').fill('Reviewed nickname');
+    await admin.getByTestId('user-nickname-form').locator('button').click();
+    await expect(admin.locator('h1')).toHaveText('Reviewed nickname');
+    await page.goto(profile!);
+    await expect(page.getByTestId('public-profile').locator('h1')).toHaveText('Reviewed nickname');
+    const ban = admin.getByTestId('user-disable-form');
+    await ban.locator('input[type="checkbox"]').check();
+    await ban.locator('button').click();
+    await expect(admin.locator('h1')).toHaveText('已封禁用户');
+    await expect(admin.getByTestId('user-nickname-form')).toHaveCount(0);
+    await page.goto('/account');
+    await expect(page).toHaveURL(/\/login/);
+    await page.goto(profile!);
+    await expect(page.getByTestId('public-profile').locator('h1')).toHaveText('已封禁用户');
+    await page.goto('/login');
+    await page.getByTestId('auth-email').fill(email);
+    await page.getByTestId('auth-password').fill(password);
+    await page.getByTestId('auth-captcha').fill('0');
+    await expect(page.locator('input[name="captchaId"]')).not.toHaveValue('');
+    const rejected = page.waitForResponse(r => r.url().endsWith('/login') && r.request().method() === 'POST');
+    await page.getByTestId('auth-submit').click();
+    expect((await rejected).status()).toBe(401);
+    await admin.goto('/admin/audit?action=user.disable&user_id='+profile!.split('/').pop());
+    await expect(admin.getByTestId('audit-event')).toHaveCount(1);
+  } finally { await adminContext.close(); }
+});
+
+test('Cactus tags stay readable as a compact wrapping cluster', async ({ page }, testInfo) => {
+  test.skip(siteTheme !== 'cactus');
+  for (const scheme of ['white', 'dark']) {
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({width,height:900});
+      await page.goto('/tags/');
+      await page.locator('link[href*="/css/theme-"]').evaluate((node, value) => new Promise<void>((resolve, reject) => {
+        node.addEventListener('load', () => resolve(), {once:true});
+        node.addEventListener('error', () => reject(new Error('Theme stylesheet failed')), {once:true});
+        (node as HTMLLinkElement).href = `/static/site/cactus/css/theme-${value}.css`;
+      }), scheme);
+      const entries = page.getByTestId('tag-entry');
+      await expect(entries.first()).toBeVisible();
+      await page.screenshot({path: process.env.SOLITUDES_TAG_SCREENSHOTS
+        ? path.join(process.env.SOLITUDES_TAG_SCREENSHOTS, `cactus-tags-${scheme}-${width}.png`)
+        : testInfo.outputPath(`cactus-tags-${scheme}-${width}.png`),fullPage:true});
+      // Random inline backgrounds override the directory stylesheet and can hide labels/counts.
+      expect(await entries.evaluateAll(nodes => nodes.map(node => (node as HTMLElement).style.backgroundColor))).toEqual(
+        Array(await entries.count()).fill(''));
+      await expect(page.locator('#main-content h1')).toBeVisible();
+      const geometry = await entries.evaluateAll(nodes => nodes.map(node => {
+        const bounds=node.getBoundingClientRect();
+        return {height:bounds.height,background:getComputedStyle(node).backgroundColor};
+      }));
+      for (const item of geometry) {
+        expect(item.height).toBeGreaterThanOrEqual(44);
+        expect(item.background).toBe('rgba(0, 0, 0, 0)');
+      }
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      const boxes = await entries.evaluateAll(nodes => nodes.map(node => { const r=node.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width}; }));
+      expect(boxes.length).toBeGreaterThan(1);
+      expect(boxes[1]!.y, 'short tags share a line instead of becoming full-width index rows').toBe(boxes[0]!.y);
+      expect(boxes[0]!.width, 'tag hit area follows its text').toBeLessThan(150);
+      expect((await page.locator('#tags').boundingBox())!.height, 'four tags remain a compact cluster').toBeLessThan(110);
+      const topic = entries.filter({hasText:'Topic'});
+      await expect(topic).toHaveCount(1);
+      await topic.focus();
+      await expect(topic).toBeFocused();
+      await page.keyboard.press('Enter');
+      await expect(page).toHaveURL(/\/tags\/Topic\/$/);
+      await expect(page.locator('#main-content h1')).toBeVisible();
+      await expect(page.locator('#main-content h1')).toContainText('Topic');
+      // Earlier editor tests add topics to the shared database; verify the
+      // seeded entries explicitly instead of assuming an unchanged total.
+      for (const slug of ['visual-topic', 'visual-topic-discussion']) {
+        await expect(page.locator(`[data-testid="topic-entry"][data-topic-slug="${slug}"]`)).toBeVisible();
+      }
+      await page.locator('#main-content a[href="/tags/"]').click();
+      await expect(page).toHaveURL(/\/tags\/$/);
+    }
+  }
+});
+
+test('authentication preserves distinct compact layouts and uninterrupted password flow', async ({ page }) => {
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ['/login', '/register']) {
+      await page.goto(route, { waitUntil: 'networkidle' });
+      const panel = (await page.locator('.auth-card').boundingBox())!;
+      const shell = (await page.locator('.auth-shell').boundingBox())!;
+      expect(Math.abs(panel.x + panel.width / 2 - shell.x - shell.width / 2), 'authentication is balanced within the site shell').toBeLessThan(3);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+      const form = page.getByTestId(route === '/login' ? 'auth-login-form' : 'register-form');
+      const emailInput = page.getByTestId(route === '/login' ? 'auth-email' : 'register-email');
+      const emailBox = (await emailInput.boundingBox())!;
+      if (width === 1440) {
+        if (siteTheme === 'cactus') {
+          const label = (await form.locator('label').first().boundingBox())!;
+          expect(label.x + label.width).toBeLessThan(emailBox.x);
+          expect(Math.abs(label.y + label.height / 2 - emailBox.y - emailBox.height / 2)).toBeLessThan(3);
+        } else {
+          const heading = (await page.locator('.auth-editorial-heading').boundingBox())!;
+          expect(heading.x + heading.width).toBeLessThan(emailBox.x);
+        }
+      }
+      const captcha = (await form.locator('.auth-captcha input').boundingBox())!;
+      const captchaImage = form.locator('.auth-captcha-image');
+      await expect.poll(() => captchaImage.evaluate(node => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+      const image = (await captchaImage.boundingBox())!;
+      expect(Math.abs(image.y - captcha.y)).toBeLessThan(2);
+      await emailInput.focus();
+      await expect(emailInput).toHaveCSS('outline-style', 'solid');
+      if (route === '/register') await page.locator('.auth-resend summary').click();
+      for (const control of await page.locator('.auth-card input:not([type=hidden]):not([type=checkbox]), .auth-card button').all()) {
+        expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      }
+      if (route === '/login') {
+        const submit = (await page.getByTestId('auth-submit').boundingBox())!;
+        const passkey = (await page.getByTestId('auth-passkey').boundingBox())!;
+        expect(passkey.y, 'alternative methods do not interrupt email and password').toBeGreaterThanOrEqual(submit.y + submit.height);
+        const email = (await page.getByTestId('auth-email').boundingBox())!;
+        expect(submit.y + submit.height - email.y, 'primary login controls stay together regardless of translated help text').toBeLessThan(360);
+      }
+    }
   }
 });

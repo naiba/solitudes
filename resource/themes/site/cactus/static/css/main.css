@@ -1555,35 +1555,20 @@ p {
   aspect-ratio: 16 / 9;
 }
 
-#tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  justify-content: center;
-}
-
-#tags>a {
-  display: inline-block;
-  padding: 0.5rem 1.1rem;
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: white;
-  text-align: center;
-  border-radius: 0.375rem;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-#tags>a:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-}
-
-#tags>a small {
-  display: inline-block;
-  margin-left: 0.35rem;
-  opacity: 0.8;
-  font-size: 0.85rem;
-}
+/* Tags are a compact, naturally wrapping cluster, never a publication index.
+   Keep colors in CSS: random inline backgrounds previously broke contrast. */
+.tag-directory-heading { margin-bottom: .75rem; }
+.tag-directory-heading h1 { margin: .4rem 0; color: var(--color-text); font-size: 1.35rem; overflow-wrap: anywhere; }
+.tag-directory-heading p { margin: .25rem 0; color: color-mix(in srgb, var(--color-text) 75%, var(--color-bg)); font-size: .85rem; }
+.tag-directory-heading > a { display: inline-flex; align-items: center; min-height: 44px; font-size: .8rem; }
+.tag-directory-marker { color: var(--color-accent); margin-right: .4em; }
+#tags { display: flex; flex-wrap: wrap; align-items: baseline; gap: .15rem 1.2rem; margin: 0; padding: 0; list-style: none; }
+#tags li { min-width: 0; max-width: 100%; margin: 0; padding: 0; list-style: none; }
+#tags a { display: inline-flex; align-items: baseline; gap: .35rem; min-height: 44px; box-sizing: border-box; padding: .65rem 0; color: var(--color-text); font: .95rem/1.4 monospace; background: none; text-decoration: none; max-width: 100%; }
+#tags .tag-name { min-width: 0; overflow-wrap: anywhere; }
+#tags .tag-name::before { content: "#"; color: var(--color-accent); margin-right: .2em; }
+#tags small { flex: none; color: color-mix(in srgb, var(--color-text) 70%, var(--color-bg)); font: .7rem/1 monospace; font-variant-numeric: tabular-nums; align-self: flex-start; margin-top: .1rem; }
+#tags a:hover .tag-name, #tags a:focus-visible .tag-name { text-decoration: underline; text-underline-offset: .25em; }
 
 .sl-topic {
   border: 1px dashed #666;

@@ -272,5 +272,10 @@
     {"locale": "en", "key": "theme_selection_help", "trans": "Choose a theme, then save to apply. Site and administration themes are independent; arrow keys also change the selection."},
     {"locale": "en", "key": "theme_selected", "trans": "Selected"},
     {"locale": "en", "key": "identity_email_verified", "trans": "Email verified"},
-    {"locale": "en", "key": "identity_email_verified_at", "trans": "Email verified at"}
+    {"locale": "en", "key": "identity_email_verified_at", "trans": "Email verified at"},
+    {"locale": "en", "key": "user_moderation", "trans": "User moderation"},
+    {"locale": "en", "key": "user.nickname.update", "trans": "Update user nickname"},
+    {"locale": "en", "key": "user.disable", "trans": "Ban user"},
+    {"locale": "en", "key": "user_disable_effect", "trans": "Banning replaces the nickname with “已封禁用户”, prevents sign-in and revokes existing sessions."},
+    {"locale": "en", "key": "user_disable_confirm", "trans": "I confirm banning this user"}
 ]

@@ -7,7 +7,7 @@
     {{if and .Account (eq .Account.ID .Data.profile.ID)}}<a class="public-profile-edit" href="/account" data-testid="profile-edit-link">{{.Tr.T "edit_profile"}}</a>{{end}}
   </div>
   <header class="public-profile-header">
-    <div class="public-profile-avatar" aria-hidden="true">{{substr .Data.profile.Nickname 0 1}}</div>
+    <img class="public-profile-avatar" src="{{generatedAvatarURL .Data.profile.ID}}" alt="" width="48" height="48" data-testid="profile-avatar">
     <div class="public-profile-intro">
       <p class="section-label">{{.Tr.T "public_profile"}}</p>
       <div class="public-profile-name"><h1>{{.Data.profile.Nickname}}</h1><span class="comment-role role-{{.Data.profile.Role}}">{{if eq .Data.profile.Role "admin"}}{{.Tr.T "role_admin"}}{{else if eq .Data.profile.Role "editor"}}{{.Tr.T "role_editor"}}{{else}}{{.Tr.T "role_user"}}{{end}}</span></div>

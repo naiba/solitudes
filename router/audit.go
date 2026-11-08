@@ -164,6 +164,12 @@ func auditAction(method, path string) string {
 	if strings.HasPrefix(path, "/account/oidc/authorizations/") && strings.HasSuffix(path, "/revoke") {
 		return "grant.revoke"
 	}
+	if strings.HasPrefix(path, "/admin/users/") && strings.HasSuffix(path, "/nickname") {
+		return "user.nickname.update"
+	}
+	if strings.HasPrefix(path, "/admin/users/") && strings.HasSuffix(path, "/disable") {
+		return "user.disable"
+	}
 	if strings.HasPrefix(path, "/admin/users/") && strings.HasSuffix(path, "/role") {
 		return "user.role.update"
 	}

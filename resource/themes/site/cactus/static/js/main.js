@@ -16,27 +16,9 @@ function toggle(sel) {
     } else { document.querySelector(sel).style.display = 'none' }
 }
 
-function randomColor() {
-    // HSL: hue 0-360, saturation 60-100%, lightness 20-60%
-    const h = Math.floor(Math.random() * 360);
-    const s = Math.floor(Math.random() * 40) + 60;
-    const l = Math.floor(Math.random() * 40) + 20;
-    return `hsl(${h},${s}%,${l}%)`;
-}
-
+// Tag colors belong to the theme stylesheet; random inline colors break contrast
+// and override the directory layout on every page load.
 ready(function () {
-    /**
-     * 标签云
-     */
-    const tagsCloud = document.querySelectorAll("#tags>a");
-    if (tagsCloud.length > 0) {
-        for (let i = 0; i < tagsCloud.length; i++) {
-            while (!tagsCloud[i].style.backgroundColor) {
-                tagsCloud[i].style.backgroundColor = randomColor();
-            }
-        }
-    }
-
     /**
      * video height
      */

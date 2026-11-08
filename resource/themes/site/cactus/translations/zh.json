@@ -206,5 +206,6 @@
     {"locale": "zh", "key": "image_viewer", "trans": "查看大图"},
     {"locale": "zh", "key": "image_enlarge", "trans": "放大图片"},
     {"locale": "zh", "key": "image_original", "trans": "查看原图"},
-    {"locale": "zh", "key": "image_zoom", "trans": "原始尺寸"}
+    {"locale": "zh", "key": "image_zoom", "trans": "原始尺寸"},
+    {"locale": "zh", "key": "tag_directory_intro", "trans": "按标签浏览文章与书籍。"}
 ]
