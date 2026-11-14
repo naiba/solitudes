@@ -561,12 +561,10 @@ test('real Vditor inserts and publishes restricted Markdown', async ({page, brow
   test.skip(!adminEmail, 'Requires isolated fixtures.');
   // Serve the actual pinned editor distribution locally, including Lute and
   // language assets. No widget stub, and CI does not depend on a CDN request.
-  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/**', route => {
-    const relative = new URL(route.request().url()).pathname.split('/dist/')[1]!;
-    return route.fulfill({path:path.resolve('node_modules/vditor/dist',relative)});
-  });
+  await useRealEditor(page);
   await signIn(page);
   await page.goto('/admin/publish', {waitUntil:'domcontentloaded'});
+  await waitForEditor(page);
   const tool = page.locator('[data-type="restricted-content"]');
   await expect(tool).toBeVisible({timeout:30000});
   await page.evaluate(() => eval('vditor.setValue("Before\\n\\nselected-secret\\n\\nAfter")'));
@@ -615,12 +613,10 @@ test('real Vditor inserts and publishes restricted Markdown', async ({page, brow
 
 test('quick Topic real Vditor protects fragments across roles and public surfaces', async ({page, browser}) => {
   test.skip(!adminEmail || !readerEmail || !editorEmail);
-  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/**', route => {
-    const relative = new URL(route.request().url()).pathname.split('/dist/')[1]!;
-    return route.fulfill({path:path.resolve('node_modules/vditor/dist',relative)});
-  });
+  await useRealEditor(page);
   await signIn(page);
   await page.goto('/admin/');
+  await waitForEditor(page);
   const tool = page.locator('[data-type="restricted-content"]');
   await expect(tool).toBeVisible({timeout:30000});
   await page.evaluate(() => eval('vditor.setValue("Quick public topic\\n\\nselected-topic-secret")'));
