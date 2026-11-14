@@ -2739,11 +2739,14 @@ test('page width and start height contract stays consistent within each theme an
   const capture = async (name:string, width:number) => {
     if (process.env.SOLITUDES_LAYOUT_SCREENSHOTS && [390,1440].includes(width)) await page.screenshot({path:path.join(process.env.SOLITUDES_LAYOUT_SCREENSHOTS,`${siteTheme}-${name}-${width}.png`),animations:'disabled'});
   };
+  let reference: {x:number;width:number}|undefined;
+  try {
   for (const width of [390,768,1024,1440]) {
     await page.context().clearCookies();
     await page.setViewportSize({width,height:900});
     await page.goto('/');
     const wide = await bounds('#main-content');
+    reference = wide;
     await capture('home',width);
     const routes = [
       ['/posts/','posts','.posts-listing'], ['/books/','books','.posts-listing'],
@@ -2803,6 +2806,29 @@ test('page width and start height contract stays consistent within each theme an
       sameWidth(await bounds('[data-reading-content]'),wide,'standalone page body for '+email);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     }
+  }
+  } catch (error) {
+    try {
+      const current = await page.evaluate(() => {
+        const selectors = ['#main-content', '[data-reading-content]', '[data-testid="page-dates"]', '#comments', '#reply-list'];
+        return {
+          pathname: location.pathname,
+          viewport: {width: innerWidth, height: innerHeight, clientWidth: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth},
+          fonts: document.fonts.status,
+          stylesheets: Array.from(document.styleSheets, sheet => ({href: sheet.href?.split('?')[0] ?? null, disabled: sheet.disabled})),
+          elements: Object.fromEntries(selectors.map(selector => {
+            const element = document.querySelector(selector);
+            if (!element) return [selector, null];
+            const rect = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            return [selector, {x: rect.x, y: rect.y, width: rect.width, height: rect.height, display: style.display,
+              margin: style.margin, padding: style.padding, boxSizing: style.boxSizing, maxWidth: style.maxWidth}];
+          })),
+        };
+      });
+      await test.info().attach('layout-diagnostics', {body: JSON.stringify({theme: siteTheme, reference, current}, null, 2), contentType: 'application/json'});
+    } catch { /* Preserve the original failure if the page is no longer available. */ }
+    throw error;
   }
 });
 
