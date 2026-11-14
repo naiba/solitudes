@@ -46,6 +46,14 @@ jobs:
         run: bunx playwright test article-images.spec.ts redirect-management.spec.ts
       - name: Site-theme and default-admin Chromium browser matrix
         run: go test -p 2 -tags 'e2e postgres_test' ./router -run TestBrowserThemeMatrix -count=1 -v -timeout 20m
+      - name: Upload browser failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: browser-test-results
+          path: e2e/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
 
   build:
     if: github.event_name == 'push'
