@@ -380,7 +380,7 @@ for (const role of ['guest', 'member', 'editor', 'admin'] as const) {
 }
 
 async function useRealEditor(page: Page) {
-  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/**', route => {
+  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/**', route => {
     const relative = new URL(route.request().url()).pathname.split('/dist/')[1]!;
     return route.fulfill({path:path.resolve('node_modules/vditor/dist',relative)});
   });
@@ -416,6 +416,7 @@ for (const role of ['admin', 'editor'] as const) {
     await signIn(page, role === 'admin' ? adminEmail : editorEmail);
     await page.goto('/admin/publish', {waitUntil:'domcontentloaded'});
     await waitForEditor(page);
+    await expect(page.locator('#editSection [data-mode="sv"]')).toHaveClass(/vditor-menu--current/);
     // An untouched editor must not warn, including after clicking into it.
     await page.getByTestId('publish-title').click();
     const unexpected: string[] = [];
@@ -487,7 +488,7 @@ test('publish unsaved protection survives delayed editor initialization', async 
 
 test('publish unsaved protection remains active when the editor CDN fails', async ({page}) => {
   test.skip(!adminEmail, 'Requires isolated fixtures.');
-  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/**', route => route.abort());
+  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/**', route => route.abort());
   await signIn(page);
   await page.goto('/admin/publish', {waitUntil:'domcontentloaded'});
   await page.getByTestId('publish-title').fill('Keep my title even without the editor');
@@ -555,7 +556,7 @@ test('real Vditor inserts and publishes restricted Markdown', async ({page, brow
   test.skip(!adminEmail, 'Requires isolated fixtures.');
   // Serve the actual pinned editor distribution locally, including Lute and
   // language assets. No widget stub, and CI does not depend on a CDN request.
-  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/**', route => {
+  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/**', route => {
     const relative = new URL(route.request().url()).pathname.split('/dist/')[1]!;
     return route.fulfill({path:path.resolve('node_modules/vditor/dist',relative)});
   });
@@ -609,7 +610,7 @@ test('real Vditor inserts and publishes restricted Markdown', async ({page, brow
 
 test('quick Topic real Vditor protects fragments across roles and public surfaces', async ({page, browser}) => {
   test.skip(!adminEmail || !readerEmail || !editorEmail);
-  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/**', route => {
+  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/**', route => {
     const relative = new URL(route.request().url()).pathname.split('/dist/')[1]!;
     return route.fulfill({path:path.resolve('node_modules/vditor/dist',relative)});
   });
@@ -721,7 +722,7 @@ test('member app durable authorization survives credential removal and requires 
     const accountReady = new Promise<void>(resolve => { releaseAccount = resolve; });
     const footerReady = new Promise<void>(resolve => { releaseFooter = resolve; });
     const script = `**/static/site/${siteTheme}/js/account.js?*`;
-    const footer = 'https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/method.min.js';
+    const footer = 'https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/method.min.js';
     await page.route(script, async route => { await accountReady; await route.continue(); });
     await page.route(footer, async route => { await footerReady; await route.abort(); });
     try {
@@ -3541,7 +3542,7 @@ test('reader can register and remove a WebAuthn passkey from the front site', as
   const accountReady = new Promise<void>(resolve => { releaseAccount = resolve; });
   const footerReady = new Promise<void>(resolve => { releaseFooter = resolve; });
   await page.route('**/js/account.js?*', async route => { await accountReady; await route.continue(); });
-  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.0/dist/method.min.js', async route => { await footerReady; await route.abort(); });
+  await page.route('https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/method.min.js', async route => { await footerReady; await route.abort(); });
   try {
     await page.goto('/account', {waitUntil:'commit'});
     await expect(page.getByTestId('account-passkey-add')).toBeDisabled();
