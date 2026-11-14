@@ -8,7 +8,7 @@
         "@playwright/test": "^1.65.1",
         "@types/bun": "latest",
         "jquery": "3.7.1",
-        "vditor": "4.0.1",
+        "vditor": "4.0.0",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -36,6 +36,6 @@
 
     "undici-types": ["undici-types@8.9.0", "", {}, "sha512-KTDyRTYX8sWmKXAikPHHSyc63CRPETMctyjKFupcC6OBLXT3xsN0e9aF7m+mIXutFWpUXuedtowG7iLOzp0kQg=="],
 
-    "vditor": ["vditor@4.0.1", "", { "dependencies": { "diff-match-patch": "^1.0.5" } }, "sha512-CyajvPNE8fjCgEAzAaSxVEEWwQMJ5FTIVkNn3k+5IRaldqGwPRr8Dx2QLALHGCby8L/AJ6pQXjXiSPUGhHGmDw=="],
+    "vditor": ["vditor@4.0.0", "", { "dependencies": { "diff-match-patch": "^1.0.5" } }, "sha512-JUeSmmNNxXaq4j29F6OZ/vLgyM/Wt/SpSK4o/gyrc02uTsS+iTeC0ofajxbW29WSJ4LFMec4nrywVul51PrLvg=="],
   }
 }

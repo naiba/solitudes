@@ -6,7 +6,7 @@
     "@playwright/test": "^1.65.1",
     "@types/bun": "latest",
     "jquery": "3.7.1",
-    "vditor": "4.0.1"
+    "vditor": "4.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"
