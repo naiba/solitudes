@@ -3,10 +3,10 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.65.1",
     "@types/bun": "latest",
     "jquery": "3.7.1",
-    "vditor": "4.0.0"
+    "vditor": "4.0.1"
   },
   "peerDependencies": {
     "typescript": "^5"
