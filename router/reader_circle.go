@@ -13,6 +13,8 @@ import (
 
 const readerCirclePageSize = 12
 
+const readerCircleFeedSize = 12
+
 type readerCircleMember struct {
 	ID            string
 	Nickname      string
@@ -95,7 +97,7 @@ func activeReaders() ([]readerCircleMember, error) {
 // The feed links each public contribution to its author and the source post.
 // Comments underneath spam are excluded even when the reply itself is clean.
 // Limit the number of events, not their age, so the latest public data stays visible.
-func recentReaderActivity() ([]readerCircleActivity, error) {
+func recentReaderActivity(limit int) ([]readerCircleActivity, error) {
 	var activity []readerCircleActivity
 	err := solitudes.System.DB.Raw(`
 		SELECT a.id AS account_id, a.nickname, a.role, feed.kind,
@@ -129,8 +131,25 @@ func recentReaderActivity() ([]readerCircleActivity, error) {
 		) AS feed JOIN accounts AS a ON a.id = feed.account_id
 		WHERE a.directory_hidden = false AND a.email_verified_at IS NOT NULL AND a.disabled_at IS NULL
 		ORDER BY feed.happened_at DESC, feed.event_id DESC
-		LIMIT 12`).Scan(&activity).Error
+		LIMIT ?`, limit).Scan(&activity).Error
 	return activity, err
+}
+
+// The first page shows active members above the newest ones. In a small circle
+// the two lists are mostly the same people, so a member already listed as
+// active is not repeated among the newcomers.
+func readersNotListed(members, listed []readerCircleMember) []readerCircleMember {
+	seen := make(map[string]bool, len(listed))
+	for _, member := range listed {
+		seen[member.ID] = true
+	}
+	remaining := make([]readerCircleMember, 0, len(members))
+	for _, member := range members {
+		if !seen[member.ID] {
+			remaining = append(remaining, member)
+		}
+	}
+	return remaining
 }
 
 func readerCircle(writer http.ResponseWriter, httpRequest *http.Request) error {
@@ -149,12 +168,14 @@ func readerCircle(writer http.ResponseWriter, httpRequest *http.Request) error {
 		if err != nil {
 			return fmt.Errorf("load active readers: %w", err)
 		}
-		activity, err = recentReaderActivity()
+		activity, err = recentReaderActivity(readerCircleFeedSize)
 		if err != nil {
 			return fmt.Errorf("load reader circle activity: %w", err)
 		}
+		latest = readersNotListed(latest, active)
 	}
-	noindex := len(latest) == 0 || page > 1
+	// Members hidden from the newcomer list are still on the page as active ones.
+	noindex := len(latest)+len(active) == 0 || page > 1
 	if noindex {
 		writer.Header().Set("X-Robots-Tag", "noindex, follow")
 	}

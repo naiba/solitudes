@@ -1,22 +1,26 @@
 /* ==========================================================================
-   Auto Theme - Follows System Preference (Light/Dark)
+   Auto Theme - follows the system unless the visitor chose light or dark.
+   header.html adds .light/.dark to <html> from the cross-theme
+   `solitudes_theme` key before first paint; without a stored choice the
+   media query decides. Keep both dark blocks identical.
    ========================================================================== */
 
-/* Light mode (default) - based on white theme */
 :root {
+  color-scheme: light;
+
   /* Primary Colors */
   --color-accent: #2bbc8a;
   --color-link-hover: #d480aa;
-  
+
   /* Text Colors */
   --color-text: #383838;
   --color-muted: #8c8c8c;
-  
+
   /* Background Colors */
   --color-bg: #fff;
   --color-footer-bg: #fafafa;
   --color-footer-nav-bg: #e6e6e6;
-  
+
   /* Theme accent for buttons/UI elements */
   --theme-accent-color: #2bbc8a;
   --theme-accent-contrast: #06251c;
@@ -25,23 +29,32 @@
   --theme-bg-color: #fff;
 }
 
-/* Dark mode - triggered by system preference */
+:root.dark {
+  color-scheme: dark;
+  --color-accent: #2bbc8a;
+  --color-link-hover: #d480aa;
+  --color-text: #c9cacc;
+  --color-muted: #8c8c8c;
+  --color-bg: #1d1f21;
+  --color-footer-bg: #282a2e;
+  --color-footer-nav-bg: #373b41;
+  --theme-accent-color: #2bbc8a;
+  --theme-accent-contrast: #06251c;
+  --theme-accent-hover: rgba(43, 188, 138, 0.8);
+  --theme-accent-disabled: rgba(43, 188, 138, 0.4);
+  --theme-bg-color: #1d1f21;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* Primary Colors */
+  :root:not(.light) {
+    color-scheme: dark;
     --color-accent: #2bbc8a;
     --color-link-hover: #d480aa;
-    
-    /* Text Colors */
     --color-text: #c9cacc;
     --color-muted: #8c8c8c;
-    
-    /* Background Colors */
     --color-bg: #1d1f21;
     --color-footer-bg: #282a2e;
     --color-footer-nav-bg: #373b41;
-    
-    /* Theme accent for buttons/UI elements */
     --theme-accent-color: #2bbc8a;
     --theme-accent-contrast: #06251c;
     --theme-accent-hover: rgba(43, 188, 138, 0.8);

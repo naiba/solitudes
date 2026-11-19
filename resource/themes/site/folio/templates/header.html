@@ -10,11 +10,19 @@
     <link rel="icon" type="image/png" href="/logo.png">
     <link rel="shortcut icon" href="/logo.png">
     <link rel="apple-touch-icon" href="/logo.png">
+    {{/* Utility classes for owner-written home content and articles only. The
+         theme's own reset lives in style.css, so a slow or blocked CDN never
+         changes the layout. Keep it before the theme styles in source order. */}}
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" media="print" onload="this.media='all'">
     <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"></noscript>
-    <link rel="stylesheet" href="/static/site/folio/css/style.css?v2026101004">
-    <link rel="stylesheet" href="/static/site/folio/css/editorial.css?v2026100704">
+    <link rel="stylesheet" href="/static/site/folio/css/style.css?v=2.2.0">
+    <link rel="stylesheet" href="/static/site/folio/css/editorial.css?v=2.2.0">
     <link rel="preconnect" href="https://fonts.googleapis.cn" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.cn" crossorigin>
+    {{/* Web fonts must not block first paint: a CSS @import held rendering until
+         the font host answered. The stacks in style.css cover the swap. */}}
+    <link rel="stylesheet" href="https://fonts.googleapis.cn/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;family=IBM+Plex+Mono:ital,wght@0,400;1,400&amp;family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&amp;display=swap" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.cn/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&amp;family=IBM+Plex+Mono:ital,wght@0,400;1,400&amp;family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&amp;display=swap"></noscript>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://unpkg.com">
     <link rel="dns-prefetch" href="https://gravatar.loli.net">
@@ -94,8 +102,8 @@
         };
     </script>
     <link rel="stylesheet" href="/static/site/folio/css/reading.css?v=caption-lightbox">
-    <link rel="stylesheet" href="/static/site/folio/css/layout.css?v2026101008">
-    <link rel="stylesheet" href="/static/site/folio/css/community.css?v=auth-theme-density">
+    <link rel="stylesheet" href="/static/site/folio/css/layout.css?v=2.2.0">
+    <link rel="stylesheet" href="/static/site/folio/css/community.css?v=2.2.0">
     {{if .Data.comparison}}<link rel="stylesheet" href="/static/site/folio/css/compare.css?v2026101001">{{end}}
 </head>
 
@@ -214,7 +222,7 @@
                         <li><a href="/readers/" data-testid="site-reader-circle-nav">{{.Tr.T "reader_circle"}}</a></li>
                         <li><a href="{{if .Account}}/account{{else}}/login{{end}}" data-testid="site-account-nav">{{if .Account}}{{.Tr.T "my_account"}}{{else}}{{.Tr.T "sign_in"}}{{end}}</a></li>
                         <li>
-                            <button type="button" onclick="window.toggleTheme()" class="theme-toggle-btn" aria-label="{{.Tr.T "toggle_theme"}}" title="{{.Tr.T "toggle_theme"}}">
+                            <button type="button" onclick="window.toggleTheme()" class="theme-toggle-btn" data-testid="site-theme-toggle" aria-label="{{.Tr.T "toggle_theme"}}" title="{{.Tr.T "toggle_theme"}}">
                                 <span class="theme-icon">
                                     <span class="icon-auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
                                     <span class="icon-light" style="display:none"><i class="fa-solid fa-sun"></i></span>
@@ -247,7 +255,7 @@
                 <li><a href="/readers/" data-testid="site-reader-circle-nav-mobile">{{.Tr.T "reader_circle"}}</a></li>
                 <li><a href="{{if .Account}}/account{{else}}/login{{end}}" data-testid="site-account-nav-mobile">{{if .Account}}{{.Tr.T "my_account"}}{{else}}{{.Tr.T "sign_in"}}{{end}}</a></li>
                 <li>
-                    <button type="button" onclick="window.toggleTheme()" class="theme-toggle-btn" aria-label="{{.Tr.T "toggle_theme"}}">
+                    <button type="button" onclick="window.toggleTheme()" class="theme-toggle-btn" data-testid="site-theme-toggle-mobile" aria-label="{{.Tr.T "toggle_theme"}}">
                         <span class="theme-icon">
                             <span class="icon-auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
                             <span class="icon-light" style="display:none"><i class="fa-solid fa-sun"></i></span>

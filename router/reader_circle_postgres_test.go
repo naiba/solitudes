@@ -88,7 +88,7 @@ func TestPostgresReaderCirclePrivacyAndActivity(t *testing.T) {
 	if err != nil || len(active) != 1 || active[0].ID != accounts[0].ID || active[0].ActivityCount != 5 {
 		t.Fatalf("only public post and clean comment count: %+v err=%v", active, err)
 	}
-	activity, err := recentReaderActivity()
+	activity, err := recentReaderActivity(readerCircleFeedSize)
 	if err != nil || len(activity) != 3 || activity[0].Kind != "comment" || activity[0].CommentID != good.ID ||
 		activity[0].AccountID != accounts[0].ID || activity[0].ArticleSlug != public.Slug || activity[0].ArticleTitle != public.Title ||
 		activity[0].Excerpt != good.Content || activity[1].Kind != "article" || activity[1].ArticleSlug != public.Slug || activity[2].CommentID != old.ID {
@@ -135,7 +135,7 @@ func TestPostgresReaderCircleKeepsOlderActivityInLatestOrder(t *testing.T) {
 	if err := db.Create(&comment).Error; err != nil {
 		t.Fatal(err)
 	}
-	activity, err := recentReaderActivity()
+	activity, err := recentReaderActivity(readerCircleFeedSize)
 	if err != nil {
 		t.Fatal(err)
 	}

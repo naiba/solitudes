@@ -100,6 +100,14 @@ docker compose up -d solitudes
 
 自定义主题放在 `resource/themes/{site,admin}/<主题名>/`，包含 `metadata.json`、`screenshot.png`、`templates/`、`static/` 和 `translations/`。`metadata.json` 的 `id` 必须与目录名一致，格式参考 [Cactus](resource/themes/site/cactus/metadata.json)。
 
+两个前台主题都默认跟随设备的明暗外观，访客可以自行切换，选择保存在共用的 `solitudes_theme` 键里。Cactus 只有一套浅色和一套深色，不再提供配色设置。Folio 另外加载 Tailwind 2，供站长自写内容使用工具类，但主题自身的布局不依赖该请求。
+
+修改内置前台主题后，用真实模板重新生成 `screenshot.png`：
+
+```bash
+SOLITUDES_CAPTURE_SITE_THEME=1 go test -tags 'e2e postgres_test' ./router -run TestCaptureSiteThemeScreenshots -count=1
+```
+
 所有前台主题共用权限过滤后的 `.Queries` 数据接口，用法参考 [查询接口](router/template_queries.go) 和内置模板。只安装可信主题；不要绕过正文权限过滤，或对用户输入使用 `unsafe`。
 
 ## 开发与测试

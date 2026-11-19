@@ -21,10 +21,6 @@
         <button type="submit" data-testid="account-profile-save">{{.Tr.T "save_profile"}}</button>
       </form>
     </section>
-    <section class="account-card" id="account-applications"><h2>{{.Tr.T "applications_and_authorizations"}}</h2><nav class="account-application-links">
-      <a href="/account/oidc/authorizations" data-testid="account-authorizations"><strong>{{.Tr.T "authorized_applications"}} →</strong><span>{{.Tr.T "authorized_apps_hint"}}</span></a>
-      <a href="/account/oidc/clients" data-testid="account-oidc-clients"><strong>{{.Tr.T "manage_clients"}} →</strong><span>{{.Tr.T "owned_clients_hint"}}</span></a>
-    </nav></section>
     </div>
     <div class="account-column" data-testid="account-security-column">
     <section class="account-card" id="account-security"><h2>{{.Tr.T "security"}}</h2>
@@ -50,6 +46,11 @@
     </section>
     </div>
   </div>
+  {{/* A band below both columns: inside either column it left the other one short. */}}
+  <section class="account-card" id="account-applications"><h2>{{.Tr.T "applications_and_authorizations"}}</h2><nav class="account-application-links">
+    <a href="/account/oidc/authorizations" data-testid="account-authorizations"><strong>{{.Tr.T "authorized_applications"}} →</strong><span>{{.Tr.T "authorized_apps_hint"}}</span></a>
+    <a href="/account/oidc/clients" data-testid="account-oidc-clients"><strong>{{.Tr.T "manage_clients"}} →</strong><span>{{.Tr.T "owned_clients_hint"}}</span></a>
+  </nav></section>
 </main>
 <script src="/static/site/folio/js/account.js?v=confirmation-readiness"></script>
 {{template "site/footer" .}}

@@ -3,7 +3,7 @@
 {{template "site/menu" .}}
 <main id="main-content" class="account-clients account-center">
   <p><a href="/account">← {{.Tr.T "my_account"}}</a></p>
-  <h1>{{.Tr.T "provider_external_apps"}}</h1>
+  <h1 class="page-title">{{.Tr.T "provider_external_apps"}}</h1>
   <p>{{.Tr.T "owned_clients_hint"}}</p>
   <p class="client-usage-hint">{{.Tr.T "client_usage_hint"}}</p>
   <p>{{.Tr.T "oidc_issuer"}}: <code>{{.Data.issuer}}</code></p>

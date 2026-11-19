@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page, type Route } from '@playwright/test';
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { createHash, createPublicKey, verify } from 'node:crypto';
 
 async function capturePagination(page: Page, name: string) {
@@ -11,6 +12,184 @@ async function capturePagination(page: Page, name: string) {
   }
   if(original) await page.setViewportSize(original);
 }
+
+// Where the painted content of each matched element ends, in page pixels. A
+// stretched grid or flex item always reaches the bottom of its row, so the
+// element's own box says nothing about whether one column ran out of content.
+// Text and controls clipped away or made inert are not counted.
+async function contentBottoms(page: Page, selector: string): Promise<number[]> {
+  return page.locator(selector).evaluateAll(columns => columns.map(column => {
+    let bottom = column.getBoundingClientRect().top;
+    const walker = document.createTreeWalker(column, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      let rects: DOMRect[] = [];
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (!(node as Text).data.trim()) continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        rects = Array.from(range.getClientRects());
+      } else if (/^(IMG|INPUT|BUTTON|TEXTAREA)$/.test((node as Element).tagName)) rects = [(node as Element).getBoundingClientRect()];
+      const owner = node.nodeType === Node.TEXT_NODE ? node.parentElement! : node as Element;
+      if (!rects.length || owner.closest('[inert]') || !owner.checkVisibility({ visibilityProperty: true })) continue;
+      for (const rect of rects) if (rect.width && rect.height) bottom = Math.max(bottom, rect.bottom);
+    }
+    return bottom + window.scrollY;
+  }));
+}
+
+// The bottoms of the columns a multi-column list is poured into.
+async function listColumnBottoms(page: Page, rows: string): Promise<number[]> {
+  return page.locator(rows).evaluateAll(nodes => {
+    const columns = new Map<number, number>();
+    for (const node of nodes) {
+      const box = node.getBoundingClientRect();
+      columns.set(Math.round(box.left), Math.max(columns.get(Math.round(box.left)) ?? 0, box.bottom));
+    }
+    return Array.from(columns.values());
+  });
+}
+const spread = (values: number[]) => Math.max(...values) - Math.min(...values);
+
+// The home page, reader circle and member pages are composed so that no column
+// can trail off beside a longer one. They once paired lists that grow with
+// unrelated things (topics with comments, a feed with member lists, articles
+// with comments), and whichever was shorter left a strip of empty page.
+// Runs on the multi-page fixture: only a populated site shows the difference.
+test('pagination contract: community pages are composed of level sections', async ({ page }) => {
+  test.skip(!process.env.E2E_PAGING_THREAD, 'Needs the multi-page fixture: a sparse site cannot show a column running out.');
+  const settle = async () => {
+    await page.evaluate(() => document.fonts.ready);
+    await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => undefined))));
+  };
+  // Children of a grid or multi-column list, as rows of boxes read left to right.
+  const columnsOf = async (rows: string) => new Set(await page.locator(rows).evaluateAll(nodes => nodes.map(node => Math.round(node.getBoundingClientRect().left)))).size;
+  const expectStacked = async (...selectors: string[]) => {
+    let previous = -Infinity;
+    for (const selector of selectors) {
+      const box = (await page.locator(selector).first().boundingBox())!;
+      expect(box, selector).not.toBeNull();
+      expect(box.y, `${selector} follows the section above it`).toBeGreaterThanOrEqual(previous - 1);
+      previous = box.y + box.height;
+    }
+  };
+
+  for (const width of [1440, 1024]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/', { waitUntil: 'load' });
+    await settle();
+    if (siteTheme === 'cactus') {
+      // The side column's comment list is elastic: it ends the column on the main column's last line.
+      const comments = page.locator('.home-secondary .home-comments-list.fill-rows');
+      const readRows = () => comments.evaluate(node => {
+        const box = node.getBoundingClientRect();
+        return Array.from(node.children, row => {
+          const rect = row.getBoundingClientRect();
+          const shown = rect.left < box.right - 1;
+          return { shown, cut: shown && rect.bottom > box.bottom + 1, inert: (row as HTMLElement).inert };
+        });
+      });
+      // The theme script marks hidden rows inert after layout, so allow it a moment.
+      const expectWholeRows = () => expect(async () => {
+        const rows = await readRows();
+        expect(rows.filter(row => row.shown).length, 'at least one comment is always shown').toBeGreaterThan(0);
+        for (const row of rows) {
+          expect(row.cut, 'a shown comment is never cut off').toBe(false);
+          expect(row.inert, 'comments out of view are inert, shown ones are not').toBe(!row.shown);
+        }
+      }).toPass({ timeout: 5000 });
+      await expectWholeRows();
+      expect(spread(await contentBottoms(page, '.home-primary, .home-secondary')), `home columns at ${width}px`).toBeLessThanOrEqual(48);
+      const members = (await page.getByTestId('reader-circle-home').boundingBox())!;
+      const list = (await comments.boundingBox())!;
+      expect(members.y - (list.y + list.height), 'no hole between the comments and the block below them').toBeLessThanOrEqual(24);
+      // With a short side column the list takes more rows and still closes level.
+      await page.locator('.home-most-read-section').evaluate(node => node.remove());
+      await expectWholeRows();
+      expect(spread(await contentBottoms(page, '.home-primary, .home-secondary')), `home columns with a short side column at ${width}px`).toBeLessThanOrEqual(12);
+      // A row can change height while the list keeps its size, as when a web font
+      // arrives. Rows that no longer fit must be re-marked: watching only the
+      // list once left a visible row inert and a hidden one reachable.
+      await comments.evaluate(node => { (node.firstElementChild as HTMLElement).style.minHeight = '12rem'; });
+      await expectWholeRows();
+      await expect(page.locator('.home-articles-section [data-testid="article-list-link"]')).toHaveCount(6);
+    } else {
+      // Departments run the width of the page, one below another.
+      const band = (await page.getByTestId('folio-community').boundingBox())!;
+      const departments = await page.locator('.journal-community > .journal-department').evaluateAll(nodes => nodes.map(node => { const box = node.getBoundingClientRect(); return { top: box.top, bottom: box.bottom, width: box.width }; }));
+      expect(departments.length).toBeGreaterThanOrEqual(2);
+      departments.forEach((department, index) => {
+        expect(Math.abs(department.width - band.width), 'a department spans the page').toBeLessThan(2);
+        if (index) expect(department.top).toBeGreaterThanOrEqual(departments[index - 1]!.bottom - 1);
+      });
+      expect(await columnsOf('.journal-community [data-testid="home-recent-comment"]'), 'letters set three across').toBe(width >= 1001 ? 3 : 2);
+      const label = (await page.locator('.journal-department-label').first().boundingBox())!;
+      const content = (await page.locator('.journal-community .home-comments-list').boundingBox())!;
+      expect(label.x + label.width, 'a department is named in the left margin').toBeLessThanOrEqual(content.x);
+      // The lead story and the two picks beside it close together.
+      expect(spread(await contentBottoms(page, '.journal-front > *')), `front page columns at ${width}px`).toBeLessThanOrEqual(96);
+      await expect(page.getByTestId('folio-recommendation')).toHaveCount(2);
+    }
+
+    await page.goto('/readers/', { waitUntil: 'load' });
+    await settle();
+    await expectStacked('.reader-circle-intro', '.circle-feed', '.reader-circle-members section:nth-of-type(1)', '.reader-circle-members section:nth-of-type(2)');
+    const feed = (await page.locator('.circle-feed').boundingBox())!;
+    const members = (await page.locator('.reader-circle-members').boundingBox())!;
+    expect(Math.abs(members.width - feed.width), 'the feed and the member lists both span the page').toBeLessThan(2);
+    await expect(page.getByTestId('reader-circle-activity')).toHaveCount(12);
+    expect(await columnsOf('[data-testid="reader-circle-activity"]'), 'feed columns').toBe(siteTheme === 'folio' ? 2 : 1);
+    for (const roster of ['reader-circle-active', 'reader-circle-latest']) {
+      // The themes introduce people in their own way: Folio in cards set three
+      // across, Cactus in a plain list with one member to a line.
+      expect(await columnsOf(`[data-testid="${roster}"]`), `${roster} columns at ${width}px`).toBe(siteTheme === 'folio' ? 3 : 1);
+    }
+    if (siteTheme === 'cactus') {
+      // Name, role and date joined line up down the page like a table.
+      for (const roster of ['reader-circle-active', 'reader-circle-latest']) {
+        for (const cell of ['.comment-role', '.reader-card-since']) expect(await columnsOf(`[data-testid="${roster}"] > ${cell}`), `${roster} ${cell} column`).toBe(1);
+      }
+      const rowHeights = await page.locator('.reader-card').evaluateAll(rows => rows.map(row => row.getBoundingClientRect().height));
+      expect(Math.max(...rowHeights), 'a member takes one line').toBeLessThan(48);
+    }
+    const listed = await page.getByTestId('reader-circle-member').evaluateAll(links => links.map(link => link.getAttribute('href')));
+    expect(new Set(listed).size, 'a member is listed once, as active or as new').toBe(listed.length);
+
+    // The administrator has a long list of articles, the reader only comments.
+    for (const [member, rows] of [[process.env.E2E_ADMIN_ID, 'public-profile-article'], [process.env.E2E_READER_ID, 'public-profile-comment']] as const) {
+      await page.goto('/users/' + member, { waitUntil: 'load' });
+      await settle();
+      await expectStacked('.public-profile-header', '#profile-articles', '#profile-comments');
+      const entries = `.public-profile-list li:has([data-testid="${rows}"])`;
+      await expect(page.locator(entries)).toHaveCount(12);
+      if (siteTheme === 'folio') {
+        // A two-column grid like the front page's recent posts; neither column runs on alone for more than an entry.
+        expect(await columnsOf(entries), `${rows} columns at ${width}px`).toBe(2);
+        expect(spread(await listColumnBottoms(page, entries)), `${rows} columns at ${width}px`).toBeLessThanOrEqual(120);
+      } else {
+        // One log, a line per entry, with the dates in a gutter like the archive.
+        expect(await columnsOf(entries), `${rows} columns at ${width}px`).toBe(1);
+        expect(await columnsOf(`${entries} > .post-date`), 'date gutter').toBe(1);
+        const heights = await page.locator(entries).evaluateAll(items => items.map(item => item.getBoundingClientRect().height));
+        expect(Math.max(...heights), `${rows} entries stay compact`).toBeLessThan(70);
+      }
+    }
+    // What the member wrote leads; the article it answers is the caption.
+    const reply = await page.getByTestId('public-profile-comment').first().boundingBox();
+    const source = await page.getByTestId('public-profile-comment-article').first().boundingBox();
+    expect(reply!.y, 'the comment comes before its article').toBeLessThan(source!.y);
+  }
+
+  // One column: nothing to level.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/', { waitUntil: 'load' });
+  await settle();
+  await expect(page.getByTestId('home-recent-comment').filter({ visible: true })).toHaveCount(siteTheme === 'cactus' ? 5 : 6);
+  expect(await columnsOf('[data-testid="home-recent-comment"]:visible')).toBe(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+  await page.goto('/readers/', { waitUntil: 'load' });
+  expect(await columnsOf('[data-testid="reader-circle-activity"]')).toBe(1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(391);
+});
 
 test('pagination contract public archives, search, tags, profiles and replies', async ({page}) => {
   test.skip(!process.env.E2E_PAGING_THREAD, 'Requires multi-page fixtures.');
@@ -676,10 +855,18 @@ test('account columns remain compact across roles and screen widths', async ({pa
       } else expect(right!.y).toBeGreaterThanOrEqual(left!.y+left!.height);
       if (width > 900) {
         const index = (await page.locator('.account-section-nav').boundingBox())!;
+        expect(index.y + index.height, 'the section index is a line above the forms').toBeLessThanOrEqual(left!.y);
         if (siteTheme === 'cactus') {
-          expect(index.x + index.width, 'notebook settings index sits beside the forms').toBeLessThan(left!.x);
+          // Settings read as rows; an index rail down the left edge left that column empty beside the forms.
+          const title = (await page.locator('#account-profile > h2').boundingBox())!;
+          const form = (await page.getByTestId('account-profile-form').boundingBox())!;
+          expect(title.x + title.width, 'each settings section names itself beside its controls').toBeLessThanOrEqual(form.x);
+          expect(Math.abs(title.y - form.y)).toBeLessThan(12);
         } else {
-          expect(index.y + index.height, 'journal section index sits above the service columns').toBeLessThanOrEqual(left!.y);
+          // The biography field takes up the difference, so both service columns end together.
+          expect(spread(await contentBottoms(page, '[data-testid="account-profile-column"], [data-testid="account-security-column"]')), `${role} service columns`).toBeLessThanOrEqual(48);
+          const links = (await page.locator('#account-applications').boundingBox())!;
+          expect(links.y, 'application links form a band below both columns').toBeGreaterThanOrEqual(Math.max(left!.y + left!.height, right!.y + right!.height));
         }
       }
       for (const column of ['account-profile-column','account-security-column']) {
@@ -1026,8 +1213,11 @@ test('Folio editorial front page keeps unique stories above compact community', 
       expect(new Set(slugs).size).toBe(slugs.length);
       expect(slugs.length).toBeLessThanOrEqual(7);
       const recommendations = await page.getByTestId('folio-recommendation').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-story-slug')));
-      expect(recommendations).toHaveLength(2);
-      expect(new Set(recommendations).size).toBe(2);
+      // Two picks are guaranteed; up to two more only fill height the lead story leaves beside them.
+      await expect(page.locator('.journal-front-secondary > [data-testid="folio-recommendation"]')).toHaveCount(2);
+      expect(recommendations.length).toBeGreaterThanOrEqual(2);
+      expect(recommendations.length).toBeLessThanOrEqual(4);
+      expect(new Set(recommendations).size).toBe(recommendations.length);
       expect(recommendations).not.toContain(slugs[0]);
       expect(await page.getByTestId('folio-latest').getByTestId('folio-story').count()).toBe(slugs.length - 1);
       const front = await page.getByTestId('folio-frontpage').boundingBox();
@@ -1312,13 +1502,15 @@ test('public metadata is canonical and private drafts cannot be indexed or cache
   expect(errors, 'single-page archive must not bind a missing pagination button').toEqual([]);
   await page.goto('/search/?w=article', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('.search-result-list li').first()).toBeVisible();
-  if (siteTheme === 'cactus') {
+  {
+    // Search is ranked output in both themes: one reading sequence, never a
+    // two-column grid whose order zig-zags.
     const results = page.locator('.search-result-list li');
     const first = (await results.nth(0).boundingBox())!;
     const second = (await results.nth(1).boundingBox())!;
     expect(second.y).toBeGreaterThanOrEqual(first.y + first.height);
     expect(Math.abs(second.x - first.x)).toBeLessThan(1);
-  } else expect((await page.locator('.search-result-list').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
+  }
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex');
   await page.goto('/visual-editor-post', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('meta[property="article:author"]')).toHaveAttribute('content', /^https:\/\/[^/]+\/users\/[^/]+$/);
@@ -1328,7 +1520,8 @@ test('public metadata is canonical and private drafts cannot be indexed or cache
       await page.goto(route, { waitUntil: 'domcontentloaded' });
       expect(await page.evaluate(() => document.documentElement.scrollWidth), `${route} at ${width}px`).toBeLessThanOrEqual(width + 1);
       if (route === '/readers/' && width === 768) {
-        expect((await page.locator('.reader-circle-members').evaluate(node => getComputedStyle(node).gridTemplateColumns)).split(' ')).toHaveLength(2);
+        // Folio sets member cards several across; Cactus lists one member to a line.
+        expect((await listColumnBottoms(page, '.reader-card')).length, 'tablet roster columns').toBe(siteTheme === 'folio' ? 2 : 1);
         const feed = (await page.locator('.circle-feed').boundingBox())!;
         const members = (await page.locator('.reader-circle-members').boundingBox())!;
         expect(members.y, 'tablet member discovery follows the full-width feed').toBeGreaterThanOrEqual(feed.y + feed.height);
@@ -1532,6 +1725,14 @@ test('public pages load local assets without script errors and redirect safely',
     );
     expect(assets.length).toBeGreaterThan(0);
     for (const asset of assets) expect((await page.request.get(asset)).status(), asset).toBe(200);
+  }
+  // Icons, social cards and structured data all point at these two paths; a
+  // theme without its own files answered 404 on a fresh installation.
+  for (const [icon, type] of [['/logo.png', /^image\/png/], ['/favicon.ico', /icon/]] as const) {
+    const response = await page.request.get(icon);
+    expect(response.status(), icon).toBe(200);
+    expect(response.headers()['content-type'], icon).toMatch(type);
+    expect((await response.body()).length, icon).toBeGreaterThan(200);
   }
   // Keep the external target local to the test: do not navigate to another site.
   const target = 'https://external.example.test/read?from=blog';
@@ -1804,7 +2005,8 @@ test('cactus home keeps a compact article list and aligned column headings and c
 test('reader circle defaults to visible and supports opt-out and rejoin without revealing email', async ({ page }) => {
   test.skip(!readerEmail || !readerPassword || !editorEmail || !adminEmail || !adminPassword,
     'Requires isolated reader, editor, and admin fixtures.');
-  const readerCard = () => page.getByTestId('reader-circle-latest').filter({
+  // A member is listed once: as active after contributing, otherwise among the new faces.
+  const readerCard = () => page.locator('.reader-card').filter({
     has: page.getByRole('link', { name: 'Browser Reader', exact: true }),
   });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
@@ -1812,10 +2014,17 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   await expect(page.getByTestId('reader-circle-home')).toContainText('newest readers');
   await expect(page.getByTestId('reader-circle-more')).toHaveAttribute('href', '/readers/');
   await expect(page.getByTestId('reader-circle-more')).toHaveText(siteTheme === 'folio' ? /View [Mm]ore\s*→/ : /View [Mm]ore\s*➤/);
-  const homeHeading = page.getByTestId('reader-circle-home').locator('.home-community-heading');
-  const homeTitle = await homeHeading.locator('a').first().boundingBox();
   const homeMore = await page.getByTestId('reader-circle-more').boundingBox();
-  expect(homeTitle && homeMore && homeMore.x - homeTitle.x - homeTitle.width).toBeGreaterThan(8);
+  if (siteTheme === 'cactus') {
+    const homeTitle = await page.getByTestId('reader-circle-home').locator('.home-community-heading a').first().boundingBox();
+    expect(homeTitle && homeMore && homeMore.x - homeTitle.x - homeTitle.width).toBeGreaterThan(8);
+  } else {
+    // Folio names the department in the left margin, with its link below the name.
+    const label = (await page.getByTestId('reader-circle-home').locator('.journal-department-label').boundingBox())!;
+    const names = (await page.locator('.reader-home-list').boundingBox())!;
+    expect(label.x + label.width, 'department name sits in the margin').toBeLessThanOrEqual(names.x);
+    expect(homeMore!.x + homeMore!.width).toBeLessThanOrEqual(names.x);
+  }
   await expect(page.locator('.reader-home-list')).toHaveCSS('flex-wrap','wrap');
   if (siteTheme === 'cactus') {
     const search = await page.locator('.home-search-section').boundingBox();
@@ -1832,24 +2041,28 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   await expect(page.getByTestId('reader-circle-activity').first()).toBeVisible();
   const feedBox = (await page.locator('.circle-feed').boundingBox())!;
   const membersBox = (await page.locator('.reader-circle-members').boundingBox())!;
-  // Theme identity includes geometry: Cactus has a full-width log, Folio an editorial sidebar.
-  if (siteTheme === 'cactus') {
-    expect(membersBox.y, 'member discovery follows the full-width log').toBeGreaterThanOrEqual(feedBox.y + feedBox.height);
-    expect(Math.abs(membersBox.width - feedBox.width)).toBeLessThan(2);
-  } else {
-    expect(membersBox.x, 'member discovery sits beside the chronological feed').toBeGreaterThan(feedBox.x + feedBox.width);
-  }
+  // Both themes run every section the width of the page: a feed beside the
+  // member lists could never end on the same line. They differ in how a
+  // section is set: Cactus prints a one-column log, Folio a two-column grid of dispatches.
+  expect(membersBox.y, 'member discovery follows the feed').toBeGreaterThanOrEqual(feedBox.y + feedBox.height);
+  expect(Math.abs(membersBox.width - feedBox.width)).toBeLessThan(2);
   const firstActivity = (await page.getByTestId('reader-circle-activity').nth(0).boundingBox())!;
   const secondActivity = (await page.getByTestId('reader-circle-activity').nth(1).boundingBox())!;
-  expect(secondActivity.y, 'chronology reads down one column').toBeGreaterThanOrEqual(firstActivity.y + firstActivity.height);
-  const activeSection = (await page.locator('section[aria-labelledby="circle-active-title"]').boundingBox())!;
-  const newSection = (await page.locator('section[aria-labelledby="circle-new-title"]').boundingBox())!;
   if (siteTheme === 'cactus') {
-    expect(newSection.x, 'compact member rosters share a row below the log').toBeGreaterThanOrEqual(activeSection.x + activeSection.width);
-    expect(Math.abs(newSection.y - activeSection.y)).toBeLessThan(2);
+    expect(secondActivity.y, 'the log reads down one column').toBeGreaterThanOrEqual(firstActivity.y + firstActivity.height);
   } else {
-    expect(newSection.y, 'member sections stack in the sidebar').toBeGreaterThanOrEqual(activeSection.y + activeSection.height);
+    expect(Math.abs(secondActivity.y - firstActivity.y), 'dispatches are set two across, like the front page').toBeLessThan(2);
+    expect(secondActivity.x).toBeGreaterThan(firstActivity.x + firstActivity.width);
   }
+  const activeSection = (await page.locator('section[aria-labelledby="circle-active-title"]').boundingBox())!;
+  // "New faces" is absent while every member is already listed as active.
+  const newFaces = page.locator('section[aria-labelledby="circle-new-title"]');
+  if (await newFaces.count()) expect((await newFaces.boundingBox())!.y, 'member sections stack').toBeGreaterThanOrEqual(activeSection.y + activeSection.height);
+  const memberColumns = (await listColumnBottoms(page, '.reader-card')).length;
+  if (siteTheme === 'folio') expect(memberColumns, 'member cards are set several across').toBeGreaterThan(1);
+  else expect(memberColumns, 'the member list gives each member a line').toBe(1);
+  const listedMembers = await page.getByTestId('reader-circle-member').evaluateAll(links => links.map(link => link.getAttribute('href')));
+  expect(new Set(listedMembers).size, 'nobody is listed under both headings').toBe(listedMembers.length);
   await expect(page.locator('body')).not.toContainText('Spam comment content');
   await expect(page.locator('body')).not.toContainText('Private profile draft');
   await expect(page.getByTestId('reader-circle-active').filter({ hasText: 'Browser Editor' })).toHaveCount(1);
@@ -1873,15 +2086,29 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   await expect(guestHomeComment.getByTestId('home-comment-author')).toHaveCount(0);
   await expect(guestHomeComment).toContainText('Guest Neighbour');
   await expect(page.getByTestId('home-recent-comments')).not.toContainText('private-guest@example.test');
-  const primary = page.locator(siteTheme === 'cactus' ? '.home-primary' : '.journal-community .home-topics-section');
-  const secondary = page.locator(siteTheme === 'cactus' ? '.home-secondary' : '.journal-community-side');
-  await expect(primary.getByTestId('topic-entry').first()).toBeVisible();
-  await expect(secondary.getByTestId('home-recent-comments')).toBeVisible();
-  const primaryBox = (await primary.boundingBox())!;
-  const secondaryBox = (await secondary.boundingBox())!;
-  expect(primaryBox.x).toBeLessThan(secondaryBox.x);
-  expect(primaryBox.width).toBeGreaterThan(secondaryBox.width * 1.5);
-  expect(await guestHomeComment.getByTestId('home-comment-link').evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeLessThanOrEqual(14);
+  if (siteTheme === 'cactus') {
+    const primary = page.locator('.home-primary');
+    const secondary = page.locator('.home-secondary');
+    await expect(primary.getByTestId('topic-entry').first()).toBeVisible();
+    await expect(secondary.getByTestId('home-recent-comments')).toBeVisible();
+    const primaryBox = (await primary.boundingBox())!;
+    const secondaryBox = (await secondary.boundingBox())!;
+    expect(primaryBox.x).toBeLessThan(secondaryBox.x);
+    expect(primaryBox.width).toBeGreaterThan(secondaryBox.width * 1.5);
+    expect(await guestHomeComment.getByTestId('home-comment-link').evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeLessThanOrEqual(14);
+  } else {
+    // Folio stacks its departments: topics, then letters, each the width of the page.
+    const topics = (await page.locator('.journal-community .home-topics-section').boundingBox())!;
+    const letters = (await page.getByTestId('home-recent-comments').boundingBox())!;
+    await expect(page.locator('.journal-community .home-topics-section').getByTestId('topic-entry').first()).toBeVisible();
+    expect(letters.y, 'letters follow the topics').toBeGreaterThanOrEqual(topics.y + topics.height - 1);
+    expect(Math.abs(letters.width - topics.width)).toBeLessThan(2);
+    // A letter leads with what was said, set as running text rather than a caption.
+    const quote = (await guestHomeComment.getByTestId('home-comment-link').boundingBox())!;
+    const byline = (await guestHomeComment.locator('.home-comment-byline').boundingBox())!;
+    expect(quote.y).toBeLessThan(byline.y);
+    expect(await guestHomeComment.getByTestId('home-comment-link').evaluate(node => parseFloat(getComputedStyle(node).fontSize))).toBeLessThanOrEqual(16);
+  }
 
   await signIn(page, readerEmail!, readerPassword!);
   await expect(page.getByTestId('site-manage-nav')).toHaveCount(0);
@@ -1934,7 +2161,6 @@ test('reader circle defaults to visible and supports opt-out and rejoin without 
   const mobileFeed = (await page.locator('.circle-feed').boundingBox())!;
   const mobileMembers = (await page.locator('.reader-circle-members').boundingBox())!;
   expect(mobileMembers.y, 'mobile member discovery follows the feed in both themes').toBeGreaterThanOrEqual(mobileFeed.y + mobileFeed.height);
-  await expect(page.locator('.circle-feed-list')).toHaveCSS('display', 'block');
   const mobileFirst = (await page.getByTestId('reader-circle-activity').nth(0).boundingBox())!;
   const mobileSecond = (await page.getByTestId('reader-circle-activity').nth(1).boundingBox())!;
   expect(mobileSecond.y).toBeGreaterThanOrEqual(mobileFirst.y + mobileFirst.height);
@@ -3187,9 +3413,11 @@ test('topics keep compact comments inside the bubble and author metadata outside
       for (const entry of [quiet, busy]) {
         await expect(entry).toBeVisible();
         await expect(entry.getByTestId('topic-content').getByTestId('article-author-link')).toHaveCount(0);
-        const content = (await entry.getByTestId('topic-bubble').boundingBox())!;
-        const byline = (await entry.getByTestId('topic-byline').boundingBox())!;
-        expect(byline.y, 'author row belongs outside and below the content bubble').toBeGreaterThanOrEqual(content.y + content.height);
+        // Read both boxes in one step: web fonts arriving between two separate reads move the page under the first one.
+        const [contentBottom, bylineTop] = await entry.evaluate(node => [
+          node.querySelector('[data-testid="topic-bubble"]')!.getBoundingClientRect().bottom,
+          node.querySelector('[data-testid="topic-byline"]')!.getBoundingClientRect().top]);
+        expect(bylineTop, 'author row belongs outside and below the content bubble').toBeGreaterThanOrEqual(contentBottom);
         await expect(entry.getByTestId('article-author-link')).toHaveAttribute('href', /^\/users\//);
         await expect(entry.getByTestId('topic-reply-link')).toBeVisible();
       }
@@ -3957,13 +4185,71 @@ test('reader can change their password in both account themes', async ({ page })
   await expect(page.getByTestId('account-logout')).toBeVisible();
 });
 
-test('folio theme preference persists through reload', async ({ page }) => {
-  test.skip(siteTheme !== 'folio', 'Cactus uses the configured color scheme rather than a UI toggle.');
+test('visitor theme preference persists through reload in both site themes', async ({ page }) => {
+  // Both themes read the shared `solitudes_theme` key. Cactus shows all three
+  // choices at once; Folio cycles through them with one button.
+  await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.locator('.folio-header .theme-toggle-btn').click();
-  expect(await page.evaluate(() => localStorage.getItem('solitudes_theme'))).toBe('dark');
+  const toggle = page.getByTestId('site-theme-toggle');
+  const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const preference = () => page.evaluate(() => localStorage.getItem('solitudes_theme'));
+  const choose = async (scheme: 'auto' | 'light' | 'dark') => {
+    if (siteTheme === 'cactus') await page.getByTestId(`site-theme-${scheme}`).click();
+    else for (let presses = 0; presses < 3 && await preference() !== scheme; presses++) await toggle.click();
+    expect(await preference()).toBe(scheme);
+  };
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAccessibleName(/.+/);
+  expect(await preference()).toBeNull();
+  const light = await background();
+  if (siteTheme === 'cactus') {
+    // The colour scheme is the reader's choice of three, with the current one marked.
+    await expect(toggle.getByRole('button')).toHaveCount(3);
+    await expect(toggle.locator('[aria-pressed="true"]')).toHaveAttribute('data-theme-choice', 'auto');
+    for (const choice of await toggle.getByRole('button').all()) await expect(choice).toHaveText(/\S/);
+  }
+
+  await choose('dark');
+  if (siteTheme === 'cactus') await expect(toggle.locator('[aria-pressed="true"]')).toHaveAttribute('data-theme-choice', 'dark');
   await page.reload({ waitUntil: 'domcontentloaded' });
   await expect(page.locator('html')).toHaveClass(/dark/);
+  if (siteTheme === 'cactus') await expect(toggle.locator('[aria-pressed="true"]'), 'the stored choice is marked after a reload').toHaveAttribute('data-theme-choice', 'dark');
+  const dark = await background();
+  expect(dark, 'a stored dark preference overrides a light system').not.toBe(light);
+
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await choose('light');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.locator('html')).toHaveClass(/light/);
+  expect(await background(), 'a stored light preference overrides a dark system').toBe(light);
+
+  await choose('auto');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.locator('html')).not.toHaveClass(/\blight\b/);
+  expect(await background(), 'auto follows the system again').toBe(dark);
+
+  // Cactus articles replace the site header with the reading menu, so the
+  // control must not live only in the header.
+  await page.goto('/visual-long-article', { waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('site-theme-toggle')).toBeVisible();
+  expect(await background()).toBe(dark);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(page.viewportSize()!.width);
+});
+
+test('diagram rendering follows the painted palette', async ({ page }) => {
+  // The contract is the theme handed to the renderer, not Mermaid's own output.
+  await page.route('**/vditor@*/dist/method.min.js', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: `window.Vditor = new Proxy({}, { get: (_, name) => (...args) => {
+      if (name === 'mermaidRender') window.__mermaidTheme = args[2] === undefined ? 'default' : args[2];
+    } });`,
+  }));
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/visual-long-article', { waitUntil: 'load' });
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __mermaidTheme?: string }).__mermaidTheme))
+      .toBe(colorScheme === 'dark' ? 'dark' : 'default');
+  }
 });
 
 test('Cactus responsive site header aligns controls and keeps menu rows compact', async ({ page }, testInfo) => {
@@ -4113,15 +4399,15 @@ test('administrator moderates nicknames and bans accounts with active sessions',
 
 test('Cactus tags stay readable as a compact wrapping cluster', async ({ page }, testInfo) => {
   test.skip(siteTheme !== 'cactus');
-  for (const scheme of ['white', 'dark']) {
+  for (const scheme of ['light', 'dark']) {
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({width,height:900});
       await page.goto('/tags/');
-      await page.locator('link[href*="/css/theme-"]').evaluate((node, value) => new Promise<void>((resolve, reject) => {
-        node.addEventListener('load', () => resolve(), {once:true});
-        node.addEventListener('error', () => reject(new Error('Theme stylesheet failed')), {once:true});
-        (node as HTMLLinkElement).href = `/static/site/cactus/css/theme-${value}.css`;
-      }), scheme);
+      // The theme has one light and one dark palette; select it the way the footer switch does.
+      await page.evaluate(value => {
+        document.documentElement.classList.remove('light', 'dark');
+        document.documentElement.classList.add(value);
+      }, scheme);
       const entries = page.getByTestId('tag-entry');
       await expect(entries.first()).toBeVisible();
       await page.screenshot({path: process.env.SOLITUDES_TAG_SCREENSHOTS
@@ -4162,6 +4448,257 @@ test('Cactus tags stay readable as a compact wrapping cluster', async ({ page },
       await expect(page).toHaveURL(/\/tags\/$/);
     }
   }
+});
+
+test('Cactus lists are dated one-line entries under plain accent headings', async ({ browser }) => {
+  test.skip(siteTheme !== 'cactus');
+  for (const locale of ['en-US', 'zh-CN']) {
+    const context = await browser.newContext({ locale, baseURL: process.env.E2E_BASE_URL || 'http://localhost:8080' });
+    const page = await context.newPage();
+    try {
+      for (const width of [1280, 390, 320]) {
+        await page.setViewportSize({ width, height: 900 });
+        for (const [route, pattern] of [['/', /^\d{4}-\d{2}-\d{2}$/], ['/posts/', /^\d{2}-\d{2}$/], ['/books/', /^\d{2}-\d{2}$/]] as const) {
+          await page.goto(route, { waitUntil: 'domcontentloaded' });
+          const rows = page.locator('.post-list .post-item:has(> .post-title-row)');
+          expect(await rows.count()).toBeGreaterThan(2);
+          const measured = await rows.evaluateAll(items => items.map(item => {
+            const date = item.querySelector(':scope > time.post-date')!;
+            const title = item.querySelector('[data-testid="article-list-link"]')!;
+            const d = date.getBoundingClientRect();
+            const range = document.createRange(); range.selectNodeContents(title);
+            const first = range.getClientRects()[0]!;
+            return { text: date.textContent!.trim(), datetime: date.getAttribute('datetime'), tooltip: date.getAttribute('title'),
+              dateX: d.x, dateRight: d.right, dateMid: d.y + d.height / 2, titleX: first.x, titleMid: first.y + first.height / 2,
+              family: getComputedStyle(date).fontFamily, numeric: getComputedStyle(date).fontVariantNumeric, height: item.getBoundingClientRect().height,
+              titleRowHeight: item.querySelector(':scope > .post-title-row')!.getBoundingClientRect().height,
+              titleRowX: item.querySelector(':scope > .post-title-row')!.getBoundingClientRect().x };
+          }));
+          for (const row of measured) {
+            // A locale-neutral date of constant length cannot collide with translated bylines.
+            expect(row.text, `${route} ${locale}`).toMatch(pattern);
+            expect(row.datetime).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+            expect(row.tooltip, 'the localized date stays available').toBeTruthy();
+            // Dates line up through tabular figures in the body face; monospace is for code.
+            expect(row.family).not.toMatch(/mono/i);
+            expect(row.numeric).toContain('tabular-nums');
+            expect(row.dateRight, 'date gutter sits left of the title').toBeLessThan(row.titleX);
+            expect(Math.abs(row.dateMid - row.titleMid), 'date shares the title line').toBeLessThan(6);
+            // The date and byline add no row of their own: an entry is exactly as tall as its title text.
+            expect(row.height - row.titleRowHeight, 'no separate byline row').toBeLessThan(2);
+          }
+          expect(new Set(measured.map(row => Math.round(row.dateX))).size, 'date gutters align').toBeLessThanOrEqual(route === '/' ? 2 : 1);
+          // Series icons sit inside the title column; the column edge itself is shared.
+          expect(new Set(measured.map(row => Math.round(row.titleRowX))).size, 'titles start on one edge per column').toBeLessThanOrEqual(route === '/' ? 2 : 1);
+          expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+        }
+        await page.goto('/', { waitUntil: 'domcontentloaded' });
+        await expect(page.getByTestId('home-recent-comment').first().locator('time')).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+      }
+      // Every list page is titled like the home page's sections: the accent
+      // colour, the body face, and no path prefix or other decoration.
+      const accent = await page.evaluate(() => { const probe = document.createElement('i'); probe.style.color = 'var(--color-accent)'; document.body.append(probe); const color = getComputedStyle(probe).color; probe.remove(); return color; });
+      await page.setViewportSize({ width: 1280, height: 900 });
+      for (const route of ['/posts/', '/books/', '/tags/', '/tags/design/', '/readers/']) {
+        await page.goto(route, { waitUntil: 'domcontentloaded' });
+        const heading = page.locator('#main-content h1.page-title');
+        await expect(heading).toHaveCount(1);
+        expect(await heading.evaluate(node => getComputedStyle(node, '::before').content)).toBe('none');
+        expect(await heading.evaluate(node => getComputedStyle(node).fontFamily)).not.toMatch(/mono/i);
+        expect(await heading.evaluate(node => getComputedStyle(node).color)).toBe(accent);
+      }
+      await page.goto('/tags/design/');
+      await expect(page.locator('#main-content h1.page-title a[href="/tags/"]')).toBeVisible();
+      await page.goto('/search/?w=reading');
+      await expect(page.locator('#main-content h1')).toHaveCount(1);
+      expect(await page.locator('#search > h1.page-title').evaluate(node => getComputedStyle(node, '::before').content)).toBe('none');
+      await page.goto('/r/go?url=' + Buffer.from('https://external.example.test/read').toString('base64url'));
+      await expect(page.locator('#main-content h1.page-title')).toHaveCount(1);
+      await expect(page.locator('#target-url code')).toHaveText('https://external.example.test/read');
+      expect((await page.locator('#continue-link').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      expect((await page.goto('/visual-missing-page'))?.status()).toBe(404);
+      await expect(page.locator('#main-content h1')).toHaveCount(1);
+      await expect(page.locator('#main-content .error-actions a[href="/"]')).toBeVisible();
+      await expect(page.getByTestId('site-search-input')).toBeVisible();
+    } finally { await context.close(); }
+  }
+});
+
+test('theme surfaces keep their own material: Cactus rules and Folio columns, never shared cards', async ({ page }) => {
+  test.skip(!adminEmail, 'Requires isolated administrator.');
+  const flat = async (selector: string) => page.locator(selector).first().evaluate(node => {
+    const style = getComputedStyle(node);
+    return { radius: style.borderTopLeftRadius, background: style.backgroundColor, shadow: style.boxShadow,
+      top: style.borderTopWidth, right: style.borderRightWidth };
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('/tags/Topic/');
+  const topic = await flat('[data-testid="topic-bubble"]');
+  expect(topic.radius, 'a topic is a quote, not a rounded bubble').toBe('0px');
+  expect(topic.background).toBe('rgba(0, 0, 0, 0)');
+  expect(topic.right, 'no box around a topic').toBe('0px');
+  if (siteTheme === 'cactus') {
+    await expect(page.locator('[data-testid="topic-bubble"]').first()).toHaveCSS('border-left-style', 'solid');
+  } else {
+    expect(await page.locator('[data-testid="topic-bubble"]').first().evaluate(node => getComputedStyle(node, '::before').content)).toBe('"\u201C"');
+    await expect(page.getByTestId('topic-content').first()).toHaveCSS('font-family', /Cormorant|serif/i);
+  }
+
+  await page.goto('/visual-topic-discussion#comments');
+  if (siteTheme === 'folio') {
+    // Correspondence is ruled, with the letter aligned under its signature.
+    const comment = await flat('[data-testid="comment-entry"]');
+    expect(comment.background).toBe('rgba(0, 0, 0, 0)');
+    expect(comment.radius).toBe('0px');
+    expect(comment.right).toBe('0px');
+    expect(comment.top).toBe('1px');
+    const entry = page.getByTestId('comment-entry').first();
+    const name = (await entry.locator('.comment-author').boundingBox())!;
+    const body = (await entry.locator('.comment-body').boundingBox())!;
+    expect(Math.abs(body.x - name.x), 'letter aligns with its signature').toBeLessThan(2);
+    expect((await entry.getByTestId('comment-reply').boundingBox())!.height).toBeGreaterThanOrEqual(36);
+    const form = await flat('[data-testid="comment-form"]');
+    expect(form.background).toBe('rgba(0, 0, 0, 0)');
+    expect(form.right).toBe('0px');
+    // Regression: `.comment-form button` out-specified the quiet cancel control,
+    // so it rendered as a second filled primary button, full width on phones.
+    await entry.getByTestId('comment-reply').click();
+    const cancel = page.locator('.comment-reply-cancel');
+    await expect(cancel).toBeVisible();
+    await expect(cancel).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    expect((await cancel.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    const target = await flat('#comment_reply_target');
+    expect(target.radius, 'the reply note is ruled like the rest of the correspondence').toBe('0px');
+    expect(target.background).toBe('rgba(0, 0, 0, 0)');
+    await page.setViewportSize({ width: 390, height: 900 });
+    expect((await cancel.boundingBox())!.width, 'cancel stays a compact text control on phones').toBeLessThan(160);
+    await cancel.click();
+    await expect(page.locator('#comment_reply_target')).toBeHidden();
+    await page.setViewportSize({ width: 1280, height: 900 });
+  } else {
+    const prompt = await flat('.comment-guest-prompt');
+    expect(prompt.background, 'the guest notice is a prompt rule, not a tinted card').toBe('rgba(0, 0, 0, 0)');
+    expect(prompt.radius).toBe('0px');
+    await expect(page.getByTestId('comment-entry').first().locator('time')).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+  }
+  expect((await page.getByTestId('comment-sign-in').boundingBox())!.height).toBeGreaterThanOrEqual(44);
+
+  // Role labels are mixed from the active palette. The former fixed pastel chips
+  // were identical in both themes and glared on dark palettes.
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.goto('/visual-topic-discussion#comments');
+    const badges = await page.getByTestId('comment-role').evaluateAll(nodes => nodes.map(node => {
+      // color-mix() computes to color(srgb …); paint it to read plain 8-bit channels.
+      const context = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+      const resolve = (color: string) => { context.clearRect(0, 0, 1, 1); context.fillStyle = color; context.fillRect(0, 0, 1, 1); return Array.from(context.getImageData(0, 0, 1, 1).data); };
+      const luminance = (rgb: number[]) => rgb.slice(0, 3).map(v => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; })
+        .reduce((sum, v, i) => sum + v * [0.2126, 0.7152, 0.0722][i]!, 0);
+      const style = getComputedStyle(node);
+      const own = resolve(style.backgroundColor);
+      const sheet = resolve(getComputedStyle(document.body).backgroundColor);
+      const background = own[3] === 0 ? sheet : own;
+      const [a, b] = [luminance(resolve(style.color)), luminance(background)];
+      return { contrast: (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05), chip: luminance(background), sheet: luminance(sheet), role: node.className };
+    }));
+    expect(badges.length).toBeGreaterThanOrEqual(4);
+    for (const badge of badges) {
+      expect(badge.contrast, `${badge.role} ${colorScheme}`).toBeGreaterThanOrEqual(4.5);
+      // A label follows the page: dark on dark palettes, light on light ones.
+      if (colorScheme === 'dark') expect(badge.chip, `${badge.role} is not a pale chip on a dark page`).toBeLessThan(0.2);
+      else expect(badge.chip, badge.role).toBeGreaterThan(0.5);
+    }
+  }
+  await page.emulateMedia({ colorScheme: 'light' });
+
+  await page.goto('/search/?w=reading');
+  const results = page.locator('.search-result-title');
+  expect(await results.count()).toBeGreaterThan(2);
+  const positions = await results.evaluateAll(nodes => nodes.map(node => { const r = node.getBoundingClientRect(); return { x: r.x, y: r.y }; }));
+  for (let i = 1; i < positions.length; i++) {
+    expect(Math.abs(positions[i]!.x - positions[0]!.x), 'ranked results form one reading sequence').toBeLessThan(1);
+    expect(positions[i]!.y).toBeGreaterThan(positions[i - 1]!.y);
+  }
+  if (siteTheme === 'folio') {
+    // Regression: the heading rule targeted h2/h3 inside results, but titles are
+    // links, so they silently fell back to the small body face.
+    expect(await results.first().evaluate(node => getComputedStyle(node).fontFamily))
+      .toBe(await page.locator('.page-title').evaluate(node => getComputedStyle(node).fontFamily));
+    expect(parseFloat(await results.first().evaluate(node => getComputedStyle(node).fontSize))).toBeGreaterThanOrEqual(22);
+    const excerpt = (await page.locator('.search-result-excerpt').first().boundingBox())!;
+    const title = (await results.first().boundingBox())!;
+    expect(excerpt.x, 'the matching passage sits beside its headline').toBeGreaterThan(title.x + title.width - 1);
+    await page.goto('/posts/');
+    // Regression: the year label drew its own short rule at the foot of the margin column.
+    await expect(page.locator('.posts-listing .year-label').first()).toHaveCSS('border-bottom-width', '0px');
+    await page.goto('/tags/design/');
+    await expect(page.locator('.page-header .page-eyebrow a[href="/tags/"]')).toBeVisible();
+    await expect(page.locator('.page-header h1')).toHaveText('design');
+    await page.goto('/books/');
+    const volumes = await page.locator('.posts-listing-books .year-group').first().locator('.article-list-item').evaluateAll(nodes => nodes.map(node => node.getBoundingClientRect().x));
+    expect(new Set(volumes.map(Math.round)).size, 'books are listed one volume per row').toBe(1);
+  }
+
+  await signIn(page);
+  await page.goto('/account');
+  const workspace = await flat('[data-testid="account-workspace"]');
+  expect(workspace.radius, 'the workspace is a ruled row, not a promoted card').toBe('0px');
+  expect(workspace.background).toBe('rgba(0, 0, 0, 0)');
+  expect(workspace.right).toBe('0px');
+  for (const testID of ['account-manage-articles', 'account-compose', 'account-admin-dashboard']) {
+    const link = page.getByTestId(testID);
+    expect((await link.boundingBox())!.height, testID).toBeGreaterThanOrEqual(44);
+    await expect(link).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(1280);
+  await page.setViewportSize({ width: 390, height: 900 });
+  await expect(page.getByTestId('account-admin-dashboard')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  await page.goto('/account');
+  await page.getByTestId('account-logout').click();
+});
+
+test('Folio layout does not depend on the optional Tailwind request', async ({ browser }) => {
+  test.skip(siteTheme !== 'folio');
+  // Compare the theme with Tailwind's reset layer against the theme alone. Both
+  // runs are offline for the CDN and web fonts, so the result is deterministic.
+  const preflight = readFileSync(path.resolve('fixtures/tailwind-2.2.19-preflight.css'), 'utf8');
+  const measure = async (withTailwindReset: boolean) => {
+    const context = await browser.newContext({ baseURL: process.env.E2E_BASE_URL || 'http://localhost:8080', viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+    const page = await context.newPage();
+    try {
+      let requested = 0;
+      await page.route('**/tailwindcss@*/**', route => {
+        requested++;
+        return withTailwindReset ? route.fulfill({ contentType: 'text/css', body: preflight }) : route.abort();
+      });
+      await page.route(/fonts\.(googleapis|gstatic)\.cn/, route => route.abort());
+      const result: Record<string, string[]> = {};
+      for (const route of ['/posts/', '/tags/', '/readers/', '/visual-page', '/visual-book', '/login']) {
+        await page.goto(route, { waitUntil: 'load' });
+        if (withTailwindReset) {
+          await page.waitForFunction(() => Array.from(document.styleSheets).some(sheet => (sheet.href || '').includes('tailwindcss') && sheet.media.mediaText === 'all'));
+        }
+        // List entries slide in; a box measured mid-flight is 20px off and differs between the two runs by timing alone.
+        await page.evaluate(() => Promise.all(document.getAnimations().map(animation => animation.finished.catch(() => undefined))));
+        result[route] = await page.evaluate(() => Array.from(document.querySelectorAll(
+          'body, .folio-header, .folio-footer, #main-content, #main-content :is(h1, h2, h3, p, ul, ol, li, dl, blockquote, pre, hr, form, label, input, textarea, table, img)'))
+          .slice(0, 500).map(node => {
+            const box = node.getBoundingClientRect();
+            const style = getComputedStyle(node);
+            return [node.tagName, Math.round(box.x), Math.round(box.y), Math.round(box.width), Math.round(box.height),
+              style.marginTop, style.marginBottom, style.paddingLeft, style.listStyleType, style.borderTopWidth, style.borderTopStyle,
+              style.fontSize, style.fontWeight, style.lineHeight, style.display].join('|');
+          }));
+        expect(result[route]!.length, route).toBeGreaterThan(4);
+      }
+      expect(requested, 'the stylesheet is still offered for owner-written utility classes').toBeGreaterThan(0);
+      return result;
+    } finally { await context.close(); }
+  };
+  const alone = await measure(false);
+  const withReset = await measure(true);
+  for (const route of Object.keys(alone)) expect(alone[route], `${route} is identical without Tailwind`).toEqual(withReset[route]);
 });
 
 test('authentication preserves distinct compact layouts and uninterrupted password flow', async ({ page }) => {

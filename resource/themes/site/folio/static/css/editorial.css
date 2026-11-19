@@ -1,6 +1,9 @@
 /* Editorial layout: stories first, community second. Shared account controls
    retain their existing interaction and role-specific visibility. */
-:root { --font-heading: 'Cormorant Garamond', 'Noto Serif SC', 'Songti SC', 'SimSun', Georgia, serif; }
+/* CJK headings need a serif face too. System installs name the same family
+   differently (Google Fonts: "Noto Serif SC"; Linux packages: "Noto Serif CJK
+   SC"; Adobe: "Source Han Serif SC"), so list each before the generic serif. */
+:root { --font-heading: 'Cormorant Garamond', 'Noto Serif SC', 'Noto Serif CJK SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', Georgia, serif; }
 .folio-header { padding: .55rem 0; }
 .folio-header-inner { gap: 1rem; }
 .folio-logo { min-width: 0; }
@@ -27,7 +30,6 @@
 .journal-front-secondary { min-width: 0; border-left: 1px solid var(--border); padding-left: 2.5rem; }
 .journal-secondary-story { padding: .8rem 0 1.15rem; }
 .journal-secondary-story + .journal-secondary-story { border-top: 1px solid var(--border); padding-top: 1.25rem; }
-.journal-secondary-story:last-child { padding-bottom: 0; }
 .journal-secondary-story h2 { font: 600 clamp(1.3rem, 2.2vw, 1.7rem)/1.4 var(--font-heading); margin: 0 0 .65rem; }
 .journal-secondary-story h2 a { color: var(--text); }
 .journal-secondary-story .article-card-excerpt { margin: .5rem 0 0; }
@@ -44,18 +46,47 @@
 .article-card-excerpt { font-size: .88rem; line-height: 1.7; margin-bottom: 0; }
 .journal-archive-link { border-top: 1px solid var(--border); padding: .7rem 0; text-align: right; font-size: .85rem; }
 .journal-community { margin: 2rem 0 3rem; }
-.journal-community-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 2.5rem; }
-.journal-community-grid > *, .journal-community-side { min-width: 0; }
-.journal-community-side { border-left: 1px solid var(--border); padding-left: 2.5rem; }
-.journal-community-no-topics { grid-template-columns: 1fr; }
-.journal-community-no-topics .journal-community-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; border: 0; padding: 0; }
-.journal-community .sidebar-section { margin-top: 0; }
-.journal-community h3.section-label { margin: 0; }
-.journal-community .home-comments-list { margin-top: .6rem; }
-.journal-community .home-topics-section { margin: 0; }
-.journal-community .reader-circle-home > p { font-size: .8rem; margin: .5rem 0; }
+/* Departments: full-width rows named in the left margin, the same device as
+   the years of the archive. Each sets its own grid, so nothing on the page
+   depends on two unrelated lists happening to be the same length. */
+.journal-department { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: 0 2.5rem; padding: 1.5rem 0; border-top: 1px solid var(--border); }
+.journal-department:first-of-type { padding-top: .5rem; border-top: 0; }
+.journal-department-label { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; min-width: 0; }
+.journal-department-label h3.section-label { margin: 0; line-height: 1.6; }
+.journal-department-label h3.section-label, .journal-department-label h3.section-label a { color: var(--text); }
+.journal-department-label .home-widget-more { font-size: .78rem; white-space: nowrap; }
+/* Topics are notes of uneven length, so they are poured into two columns the
+   browser keeps level rather than set in rows that leave the shorter one hanging. */
+.journal-topic-grid { display: block; columns: 2; column-gap: 2.5rem; margin: 0; padding: 0; list-style: none; }
+.journal-topic-grid > li { min-width: 0; break-inside: avoid; padding: 0 0 1.25rem; }
+.journal-topic-grid .topic-entry { margin-bottom: 0; }
+/* Letters: what was said leads, who said it and where follows. */
+.journal-community .home-comments-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem 2.5rem; margin: 0; }
+.journal-community .home-comments-list li { display: flex; flex-direction: column; gap: .45rem; padding: 0; border: 0; }
+.journal-community .home-comment-excerpt { margin: 0; color: var(--text); font-size: .9rem; line-height: 1.65; -webkit-line-clamp: 3; }
+.journal-community .home-comment-excerpt:hover { color: var(--accent); }
+.journal-community .home-comment-byline time { margin-left: 0; }
+.journal-community .home-comment-byline time::before { content: "\00b7"; margin-right: .35rem; }
+/* Members run on as compact name-and-role units: fixed columns pulled short
+   names and their badges apart. */
+.journal-department-label > p { margin: 0; color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.journal-department .reader-home-list { align-content: start; gap: .6rem 1rem; margin: 0; }
+.journal-department .reader-home-list li { padding: 0; gap: .5rem; }
+.journal-department .reader-home-list .reader-avatar { flex: none; width: 1.75rem; height: 1.75rem; object-fit: contain; }
+.journal-department .reader-home-list a { color: var(--text); font: 600 1.1rem/1.3 var(--font-heading); }
+.journal-department .reader-home-list a:hover { color: var(--accent); }
+.journal-department-empty { margin: 0; color: var(--muted); font-size: .85rem; }
 .journal-empty { padding: 3rem 0; color: var(--muted); }
-.comment-role { font-weight: 500; border-color: transparent; border-radius: 3px; }
+
+/* The lead story and the two picks beside it share one row. The picks divide
+   its height between them and the lead's link sits on its last line, so both
+   columns close together whichever side has more text. */
+@media (min-width: 768px) {
+  .hero-featured { display: flex; flex-direction: column; align-items: flex-start; }
+  .hero-featured > .journal-read-link { margin-top: auto; }
+  .journal-front-secondary { display: grid; grid-template-rows: auto; grid-auto-rows: 1fr; }
+  .journal-front-secondary > .journal-secondary-story:last-child { padding-bottom: 0; }
+}
 .app-prose > p:first-of-type::first-letter { float: none; font: inherit; color: inherit; padding: 0; margin: 0; }
 /* Only a prose opening gets a drop cap: never a paragraph after a heading,
    a version/access notice, or one beginning with media or inline code. */
@@ -81,19 +112,31 @@
 .sibling-nav { margin-top: 2rem; padding: 1.25rem 0; gap: 1rem; }
 .sibling-nav .section-label, .sibling-title { display: block; }
 .sibling-next { margin-left: auto; text-align: right; }
-.comments-section > hr { max-width: none; margin: 1.5rem 0; }
+/* Correspondence opens like every journal section: a full-width ink rule. */
+.comments-section > hr { max-width: none; margin: 0 0 1rem; background: var(--text); }
+.comments-section .comments-heading { margin-bottom: 1rem; }
 .comments-section > hr::after { display: none; }
+@media (max-width: 1000px) {
+  .journal-community .home-comments-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  /* No room for a margin: the department name moves above its content. */
+  .journal-department { grid-template-columns: minmax(0, 1fr); gap: .75rem; padding: 1.25rem 0; }
+  .journal-department-label { flex-direction: row; flex-wrap: wrap; align-items: baseline; justify-content: space-between; }
+  .journal-department-label > p { order: 3; flex-basis: 100%; }
+}
 @media (max-width: 767px) {
   .journal-masthead { padding: 1.5rem 0 1rem; display: block; }
   .journal-tools { flex-direction: row; align-items: center; margin-top: 1rem; gap: 1.5rem; }
   .journal-subscribe { flex: none; }
-  .journal-front, .journal-story-grid, .journal-community-grid { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+  .journal-front, .journal-story-grid { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
   .journal-front { padding: 1.5rem 0; }
-  .journal-front-secondary, .journal-community-side { padding-left: 0; border-left: 0; }
+  .journal-front-secondary { padding-left: 0; border-left: 0; }
   .journal-front-secondary { padding-top: 1rem; border-top: 1px solid var(--border); }
   .journal-story-grid { gap: 0; }
   .journal-community { margin-top: 1.5rem; }
-  .journal-community-no-topics .journal-community-side { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+  .journal-topic-grid { columns: 1; }
+  .journal-community .home-comments-list { grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
   .article-header { padding-top: 1.5rem; }
   .article-title { font-size: 1.75rem; }
   .article-header { margin-bottom: 1.5rem; }

@@ -2,8 +2,8 @@
   "id": "folio",
   "name": "Folio",
   "author": "奶爸博客",
-  "version": "2.1.0",
-  "description": "Luxury editorial magazine theme with refined typography",
+  "version": "2.2.0",
+  "description": "Editorial journal theme: masthead, lead story, ruled sections and a strict type hierarchy",
   "link": "https://lifelonglearn.ing",
   "config": {
     "folio.hometopcontent": "",

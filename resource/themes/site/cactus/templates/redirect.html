@@ -1,15 +1,17 @@
 {{define "site/redirect"}}
 {{template "site/header" .}}
 {{template "site/menu" .}}
-<section id="main-content" tabindex="-1">
-    <span class="h1">{{.Data.title}}</span>
+<main id="main-content" class="redirect-page" tabindex="-1">
+    <header class="page-heading">
+        <h1 class="page-title page-title-redirect">{{.Data.title}}</h1>
+    </header>
     <div id="redirect-container">
-        <p>{{.Data.msg}}</p>
+        <p class="page-summary">{{.Data.msg}}</p>
         <p id="target-url"></p>
-        <p><a id="continue-link" href="#" rel="noopener noreferrer">{{.Data.continue_text}}</a></p>
+        <p><a id="continue-link" href="#" rel="noopener noreferrer">{{.Data.continue_text}} <span aria-hidden="true">→</span></a></p>
         <p id="countdown"></p>
     </div>
-</section>
+</main>
 <script>
     (function () {
         var params = new URLSearchParams(window.location.search);

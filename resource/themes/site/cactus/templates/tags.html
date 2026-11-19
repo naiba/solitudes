@@ -2,9 +2,9 @@
 {{template "site/header" .}}
 {{template "site/menu" .}}
 <main id="main-content">
-<header class="tag-directory-heading">
-  <h1>{{.Tr.T "tags"}}</h1>
-  <p>{{.Tr.T "tag_directory_intro"}}</p>
+<header class="page-heading">
+  <h1 class="page-title">{{.Tr.T "tags"}}</h1>
+  <p class="page-summary">{{.Tr.T "tag_directory_intro"}}</p>
 </header>
 <ul id="tags">
   {{range $i,$tag := .Data.tags}}

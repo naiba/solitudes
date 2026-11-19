@@ -23,17 +23,22 @@
         {{template "site/article_list_byline" .}}
     </div>
     {{else}}
+    {{/* One line per entry: the date column is placed first by CSS, while the source
+         keeps title, author, date so assistive technology hears the title first. */}}
+    {{$layout := "2006-01-02"}}{{if .dateLayout}}{{$layout = .dateLayout}}{{end}}
     <div class="post-title-row">
-        {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if not .article.Public}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a data-testid="article-list-link" href="/{{pathEscape .article.Slug}}">{{.article.Title}}</a>{{if .article.ReadNum}}
+        {{if .article.IsBook}}<i class="fa-solid fa-book"></i> {{end}}{{if not .article.Public}}<i class="fa-solid fa-shield-dog"></i> {{end}}<a data-testid="article-list-link" href="/{{pathEscape .article.Slug}}">{{.article.Title}}</a>
+        {{template "site/article_list_author" .}}{{if .article.ReadNum}}
         <small>(<i class="fa-regular fa-eye"></i>{{.article.ReadNum}}{{if .article.CommentNum}},<i class="fa-regular fa-comment-dots"></i>{{.article.CommentNum}}{{end}})</small>{{end}}
     </div>
-    {{template "site/article_list_byline" .}}
+    <time class="post-date" datetime="{{iso8601 .article.CreatedAt}}" title="{{tf .article.CreatedAt (.tr.T "date_format")}}">{{tf .article.CreatedAt $layout}}</time>
     {{end}}
 </li>
 {{end}}
 {{define "site/article_list_byline"}}
-<div class="meta post-byline"{{if .article.IsTopic}} data-testid="topic-byline"{{end}}>
-    {{if .article.Author.Nickname}}{{if .article.Author.ID}}<a href="/users/{{.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.article.Author.Nickname}}</a>{{else}}<span>{{.article.Author.Nickname}}</span>{{end}}{{if not .article.IsTopic}}<span aria-hidden="true">·</span>{{end}}{{end}}<time datetime="{{iso8601 .article.CreatedAt}}">{{tf .article.CreatedAt (.tr.T "date_format")}}</time>
-    {{if .article.IsTopic}}<span class="topic-inline-actions">{{if .article.ReadNum}}<span aria-label="{{.tr.T "views"}}"><i class="fa-regular fa-eye" aria-hidden="true"></i> {{.article.ReadNum}}</span>{{end}}{{if .article.CommentNum}}<span aria-label="{{.tr.T "comments"}}"><i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.article.CommentNum}}</span>{{end}}<a href="https://{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a><a href="https://{{.Conf.Site.Domain}}/{{pathEscape .article.Slug}}" data-testid="topic-reply-link">{{.tr.T "topic_comment_action"}} →</a></span>{{end}}
+<div class="meta post-byline" data-testid="topic-byline">
+    {{template "site/article_list_author" .}}<time datetime="{{iso8601 .article.CreatedAt}}" title="{{tf .article.CreatedAt (.tr.T "date_format")}}">{{tf .article.CreatedAt "2006-01-02"}}</time>
+    <span class="topic-inline-actions">{{if .article.ReadNum}}<span aria-label="{{.tr.T "views"}}"><i class="fa-regular fa-eye" aria-hidden="true"></i> {{.article.ReadNum}}</span>{{end}}{{if .article.CommentNum}}<span aria-label="{{.tr.T "comments"}}"><i class="fa-regular fa-comment-dots" aria-hidden="true"></i> {{.article.CommentNum}}</span>{{end}}<a href="https://{{.Conf.Site.Domain}}/tags/Topic/">#Topic</a><a href="https://{{.Conf.Site.Domain}}/{{pathEscape .article.Slug}}" data-testid="topic-reply-link">{{.tr.T "topic_comment_action"}} →</a></span>
 </div>
 {{end}}
+{{define "site/article_list_author"}}{{if .article.Author.Nickname}}{{if .article.Author.ID}}<a class="post-author" href="/users/{{.article.Author.ID}}" rel="author" data-testid="article-author-link">{{.article.Author.Nickname}}</a>{{else}}<span class="post-author">{{.article.Author.Nickname}}</span>{{end}}{{end}}{{end}}

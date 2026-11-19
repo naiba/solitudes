@@ -226,7 +226,7 @@ func TestThemeArticleSlugLinks(t *testing.T) {
 				{"user_profile", `[data-testid="public-profile-comment-article"]`, "", "thread=comment", "comment-comment", viewData{"profile": model.Account{Nickname: "Reader"}, "comments": []*model.Comment{comment}}},
 				{"index", `[data-testid="home-comment-link"], [data-testid="topic-comment-link"]`, "", "thread=comment", "comment-comment", viewData{}},
 				{"index", `[data-testid="topic-reply-link"]`, "", "", "", viewData{}},
-				{"reader_circle", `[data-testid="reader-circle-activity-link"]`, "", "thread=comment", "comment-comment", viewData{"page": 1, "activity": []viewData{{"Kind": "comment", "ArticleSlug": slug, "CommentID": "comment", "HappenedAt": time.Time{}}}}},
+				{"reader_circle", `[data-testid="reader-circle-activity-link"]`, "", "thread=comment", "comment-comment", viewData{"page": 1, "activity": []viewData{{"AccountID": "member", "Kind": "comment", "ArticleSlug": slug, "CommentID": "comment", "HappenedAt": time.Time{}}}}},
 			} {
 				t.Run(tc.name+"/"+tc.selector, func(t *testing.T) {
 					checkLinks(t, render(t, tc.name, tc.data), tc.selector, tc.suffix, tc.query, tc.fragment)

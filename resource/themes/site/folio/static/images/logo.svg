@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Folio: one sheet folded once into two leaves. Left leaf in ink, right leaf
+       as paper with a drop-cap block and text rules in the theme's palette. -->
+  <rect width="512" height="512" fill="#f5f0e8"/>
+  <path d="M84 132 L246 100 V412 L84 380 Z" fill="#1c1917"/>
+  <path d="M266 100 L428 132 V380 L266 412 Z" fill="#fbf8f2" stroke="#1c1917" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M300 152 L350 162 V226 L300 216 Z" fill="#b45309"/>
+  <g stroke="#1c1917" stroke-width="14" stroke-linecap="round">
+    <path d="M372 176 L396 181"/>
+    <path d="M372 214 L396 219"/>
+    <path d="M300 260 L396 279"/>
+    <path d="M300 304 L396 323"/>
+    <path d="M300 348 L366 361"/>
+  </g>
+  <g stroke="#f5f0e8" stroke-width="14" stroke-linecap="round">
+    <path d="M116 181 L212 162"/>
+    <path d="M116 225 L212 206"/>
+    <path d="M116 269 L212 250"/>
+    <path d="M116 313 L212 294"/>
+    <path d="M116 357 L180 344"/>
+  </g>
+</svg>

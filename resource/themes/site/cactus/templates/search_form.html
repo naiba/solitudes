@@ -1,6 +1,8 @@
 {{define "site/search_form"}}
 <section id="search">
-    <h2 class="h1">{{.Tr.T "search"}}</h2>
+    {{/* The search page passes heading "h1": there this form is the page, while
+         the home and error pages embed it as one section among others. */}}
+    {{if eq .heading "h1"}}<h1 class="page-title">{{.Tr.T "search"}}</h1>{{else}}<h2 class="h1">{{.Tr.T "search"}}</h2>{{end}}
     <form action="/search/" method="get">
         <div class="row">
             <label for="search-input" class="sr-only">{{.Tr.T "search"}}</label>

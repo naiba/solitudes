@@ -6,49 +6,88 @@
   --community-muted: var(--muted);
   --community-background: var(--bg);
 }
-.reader-circle-intro { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem 2rem; padding: 1.5rem 0; border: 0; border-bottom: 1px solid var(--community-border); border-radius: 0; background: none; }
-.reader-circle-intro h1 { margin: 0 0 .5rem; }
-.reader-circle-intro p { margin: 0; color: var(--community-muted); line-height: 1.7; }
-.reader-circle-intro .circle-join { flex-shrink: 0; gap: .75rem; font-size: .85rem; }
-/* Keep chronology in one reading column; discovery is a separate sidebar. */
-.reader-circle-layout { grid-template-columns: minmax(0, 1.8fr) minmax(16rem, 1fr); gap: 2.5rem; }
-.reader-circle-layout .circle-feed { grid-column: auto; }
-.reader-circle-members { display: block; border-left: 1px solid var(--community-border); padding-left: 1.5rem; }
-.reader-circle-layout-single .reader-circle-members { border: 0; padding: 0; }
-.reader-circle section { margin-top: 2rem; }
-.circle-section-heading { display: block; margin-bottom: 1rem; }
-.circle-section-heading h2 { margin: 0 0 .4rem; }
-.circle-section-heading p { line-height: 1.6; margin: 0; }
-.circle-hint { opacity: 1; color: var(--community-muted); }
-.circle-feed-list { display: block; border-top: 1px solid var(--community-border); }
-.circle-feed-list .circle-feed-item { position: relative; padding: 1.3rem 0 1.3rem 1.2rem; border: 0; border-bottom: 1px solid var(--community-border); border-radius: 0; background: none; }
-.circle-feed-item::before { content: ''; position: absolute; left: 0; top: 1.8rem; width: .35rem; height: .35rem; border-radius: 50%; background: var(--community-accent); }
-.circle-feed-byline { gap: .35rem .6rem; }
-.circle-feed-byline time { opacity: 1; color: var(--community-muted); }
-.circle-feed-action { margin-top: .65rem; line-height: 1.65; }
-.circle-feed-action a { font-size: 1rem; }
-.circle-feed-excerpt { margin-top: .5rem; padding-left: .8rem; border-left: 2px solid var(--community-border); line-height: 1.7; color: var(--community-muted); opacity: 1; -webkit-line-clamp: 3; }
-.reader-cards { gap: 0; margin: 0; }
-.reader-cards .reader-card { padding: .9rem 0; border: 0; border-bottom: 1px solid var(--community-border); border-radius: 0; background: none; }
-.reader-card-head { gap: .4rem .6rem; }
-.reader-avatar { display: inline-flex; justify-content: center; align-items: center; flex: 0 0 2rem; height: 2rem; border: 1px solid var(--community-border); border-radius: 50%; color: var(--community-accent); background: var(--community-surface); font-size: .85rem; text-transform: uppercase; }
-.reader-card-name { min-height: 36px; display: inline-flex; align-items: center; }
-.reader-card p { margin: .5rem 0; }
-.reader-card small { font-size: .75rem; opacity: 1; color: var(--community-muted); }
-.reader-circle-layout-single .reader-cards { gap: 0 2rem; }
-.circle-pagination, .public-profile-pagination { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 1rem; }
+/* ---------------------------------------------------------------------------
+   Reader circle and member pages
+   Every section spans the page and sets its own grid, in the manner of the
+   front page: section rule, serif heading, two or three columns whose rows
+   line up. Nothing sits in a side column. A feed beside the member lists, or
+   articles beside comments, are lists that grow with unrelated things, and
+   one of them always trailed off into empty paper.
+   --------------------------------------------------------------------------- */
+.reader-circle { margin: 0 auto 3rem; }
+/* A masthead closes with the rule of the section below it, not with one of its own. */
+.reader-circle-intro { padding: 2.5rem 0; border-top: 3px double var(--border); text-align: center; }
+.reader-circle-intro h1 { margin: 0 0 .5rem; font: 500 clamp(2.5rem, 5vw, 4rem)/1.12 var(--font-heading); }
+.reader-circle-intro p { max-width: 60ch; margin: 0 auto; color: var(--community-muted); line-height: 1.7; }
+.circle-join { display: inline-flex; align-items: center; gap: .75rem; min-height: 44px; margin-top: 1.25rem; padding: .45rem .9rem; border-radius: 2px; background: var(--accent); color: var(--accent-contrast); font-size: .85rem; font-weight: 700; text-decoration: none; }
+.reader-circle section { min-width: 0; margin-top: 2.25rem; }
+.reader-circle-intro + .reader-circle-layout > :first-child, .reader-circle-layout > .reader-circle-members:first-child > :first-child { margin-top: 0; }
+.circle-section-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .25rem 1.5rem; padding: 1rem 0; border-top: 1px solid var(--text); }
+.circle-section-heading h2 { margin: 0; font: 600 1.5rem/1.3 var(--font-heading); }
+.circle-section-heading .circle-hint { margin: 0; font-size: .82rem; line-height: 1.6; }
+
+/* The feed is a grid of dispatches, set like the front page's recent posts. */
+.circle-feed-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.5rem; margin: 0; padding: 0; list-style: none; }
+.circle-feed-item { min-width: 0; padding: 1.1rem 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.circle-feed-byline { display: flex; align-items: center; flex-wrap: wrap; gap: .2rem .5rem; color: var(--community-muted); font-size: .78rem; }
+.circle-feed-byline > a { color: var(--text); font-weight: 600; }
+.circle-feed-byline time { margin-left: auto; white-space: nowrap; }
+.circle-feed-title { display: block; margin-top: .45rem; color: var(--text); font: 600 1.4rem/1.4 var(--font-heading); }
+.circle-feed-title:hover { color: var(--accent); }
+.circle-feed-excerpt { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: .35rem 0 0; color: var(--community-muted); font-size: .88rem; line-height: 1.7; }
+
+/* Members: one card each, three across. */
+.reader-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 2.5rem; margin: 0; padding: 0; list-style: none; }
+.reader-card { display: flex; align-items: flex-start; gap: .85rem; min-width: 0; padding: 1rem 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.reader-avatar { flex: none; width: 2.5rem; height: 2.5rem; object-fit: contain; }
+.reader-card-body { min-width: 0; }
+.reader-card-head { display: flex; align-items: center; flex-wrap: wrap; gap: .1rem .6rem; }
+.reader-card-name { display: inline-flex; align-items: center; min-height: 36px; color: var(--text); font: 600 1.2rem/1.3 var(--font-heading); }
+.reader-card-name:hover { color: var(--accent); }
+.reader-card p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin: .15rem 0 0; color: color-mix(in srgb, var(--muted) 50%, var(--text)); font-size: .82rem; line-height: 1.6; white-space: pre-wrap; }
+.reader-card small { display: block; margin-top: .3rem; color: var(--community-muted); font-size: .75rem; }
+.circle-pagination, .public-profile-pagination { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1.5rem; margin-top: .5rem; border-top: 1px solid var(--border); }
 .circle-pagination a, .public-profile-pagination a { display: inline-flex; align-items: center; min-height: 44px; font-size: .85rem; }
 .circle-pagination:empty, .public-profile-pagination:empty { display: none; }
-.public-profile-header { border: 0; border-top: 2px solid var(--community-accent); border-bottom: 1px solid var(--community-border); border-radius: 0; padding: 2rem 0; background: none; }
-.public-profile-avatar { border-radius: 12px; }
-.public-profile-bio { max-width: 60ch; color: var(--community-muted); }
-.public-profile-activity { gap: 2.5rem; margin-top: 2rem; }
-.public-profile-activity > section { border-top: 1px solid var(--community-border); padding-top: 1.25rem; }
-.public-profile-list li:first-child { border-top: 0; }
-.public-profile-item-heading { display: grid; gap: .35rem; }
-.public-profile-item-heading a { line-height: 1.65; }
-.public-profile-list p { padding-left: .85rem; border-left: 2px solid var(--community-border); color: var(--community-muted); line-height: 1.75; }
-.public-profile-empty { padding: 1.5rem; margin: 0; border: 1px dashed var(--community-border); font-size: .9rem; line-height: 1.7; }
+
+/* A member's page: masthead, then what they published and what they said. */
+.public-profile { padding-bottom: 4rem; overflow-wrap: anywhere; }
+.public-profile-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; margin-bottom: .8rem; }
+.public-profile-toolbar a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; border: 0; background-image: none; font-size: .875rem; text-decoration: none; }
+.public-profile-toolbar .public-profile-back { color: var(--accent); }
+.public-profile-toolbar .public-profile-edit { padding: .35rem .85rem; border: 1px solid var(--border); font-weight: 600; }
+.public-profile-toolbar a:hover { background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+.public-profile-header { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 2.5rem 0; border-top: 3px double var(--border); text-align: center; }
+.public-profile-avatar { display: block; width: 3.5rem; height: 3.5rem; object-fit: contain; }
+.public-profile-intro { min-width: 0; }
+.public-profile-intro .section-label { margin: 0 0 .5rem; }
+.public-profile-name { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .5rem 1rem; }
+.public-profile-name h1 { margin: 0; font: 500 clamp(2.5rem, 5vw, 4rem)/1.15 var(--font-heading); }
+.public-profile-joined { margin: .65rem 0 0; color: var(--community-muted); font-size: .85rem; }
+.public-profile-bio { max-width: 45ch; margin: 0; color: var(--community-muted); font: 1.2rem/1.6 var(--font-heading); white-space: pre-wrap; }
+.public-profile-activity > section { min-width: 0; scroll-margin-top: 7rem; }
+.public-profile-activity > section + section { margin-top: 2.25rem; }
+.public-profile-activity h2 { margin: 0; padding: 1rem 0; border-top: 1px solid var(--text); font: 600 1.5rem/1.3 var(--font-heading); }
+.public-profile-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 2.5rem; margin: 0; padding: 0; list-style: none; }
+.public-profile-list li { min-width: 0; padding: 1.1rem 0; border-top: 1px solid var(--border); }
+.public-profile-item-heading a { color: var(--text); font: 600 1.4rem/1.4 var(--font-heading); }
+.public-profile-item-heading a:hover { color: var(--accent); }
+.public-profile-list time { display: block; margin-top: .35rem; color: var(--community-muted); font-size: .78rem; white-space: nowrap; }
+/* Letters: the member's own words lead, the article they answered is the caption. */
+.public-profile-letters li { display: flex; flex-direction: column; gap: .6rem; }
+.public-profile-letters p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; margin: 0; color: var(--text); font-size: .95rem; line-height: 1.7; white-space: pre-wrap; }
+.public-profile-letters .public-profile-item-heading { color: var(--community-muted); font-size: .8rem; line-height: 1.5; }
+.public-profile-letters .public-profile-item-heading a { font: 600 1.05rem/1.4 var(--font-heading); }
+.public-profile-letters time { margin-top: .15rem; }
+.public-profile-empty { margin: 0; padding: 1rem 0; border-top: 1px solid var(--border); color: var(--community-muted); font-size: .9rem; font-style: italic; }
+@media (max-width: 900px) {
+  .reader-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .circle-feed-list, .reader-cards, .public-profile-list { grid-template-columns: minmax(0, 1fr); }
+  .reader-circle-intro, .public-profile-header { padding: 1.5rem 0; }
+}
+
 .account-settings .account-summary { margin: .75rem 0 1.5rem; }
 .account-section-nav { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; padding: .5rem 0; border-block: 1px solid var(--community-border); }
 .account-section-nav a { display: inline-flex; align-items: center; min-height: 44px; font-size: .85rem; background-image: none; }
@@ -71,67 +110,74 @@
 .account-settings .account-card li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem 1rem; padding-block: .5rem; }
 .account-settings .account-card li time { display: block; color: var(--community-muted); font-size: .8rem; margin-top: .25rem; }
 :is(.reader-circle, .public-profile, .account-settings) :is(a, button, input, textarea):focus-visible { outline: 2px solid var(--community-accent); outline-offset: 4px; }
-@media (max-width: 900px) {
-  .reader-circle-layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .reader-circle-members { border: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
-  .reader-circle-layout-single .reader-circle-members { display: block; }
-}
 @media (max-width: 767px) {
   .account-settings .account-columns { grid-template-columns: minmax(0, 1fr); }
   .account-settings .account-card { padding: 1.1rem; }
-  .public-profile-activity { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
-  .public-profile-header { padding: 1.5rem 0; }
-  .public-profile-bio { grid-column: 1 / -1; }
 }
 @media (max-width: 540px) {
-  .reader-circle-members { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  .circle-feed-byline time { flex-basis: 100%; margin-left: 0; }
-  .reader-circle-intro { padding-top: .5rem; }
   .account-section-nav { gap: .25rem 1rem; }
 }
 
 /* Folio keeps the squared edges and serif hierarchy of its editorial pages. */
 .public-profile-avatar, .account-settings .account-card { border-radius: 0; }
-.circle-feed-action a { font-family: var(--font-heading); font-size: 1.2rem; }
 
 /* Folio: section rules and editorial hierarchy carry the publication identity. */
-.reader-circle-intro { display: block; text-align: center; padding: 2.5rem 0; border-block: 3px double var(--border); }
-.reader-circle-intro h1 { font-family: var(--font-heading); font-size: clamp(2.5rem,5vw,4rem); font-weight: 500; }
-.reader-circle-intro .circle-join { display: inline-flex; margin-top: 1.25rem; }
-.circle-section-heading h2 { font-family: var(--font-heading); font-size: 1.75rem; }
-.circle-feed-item::before { display: none; }
-.circle-feed-list .circle-feed-item { padding: 1.5rem 0; }
-.circle-feed-action a { display: block; margin-top: .4rem; font-family: var(--font-heading); font-size: 1.6rem; line-height: 1.35; }
-.circle-feed-byline { font-family: var(--font-mono); font-size: .75rem; }
-.circle-feed-excerpt { border: 0; padding: 0; }
-.reader-avatar { border-radius: 0; background: none; border: 0; font-family: var(--font-heading); font-size: 1.5rem; }
-.reader-card-name { font-family: var(--font-heading); font-size: 1.2rem; }
-.public-profile-header { text-align: center; display: flex; flex-direction: column; align-items: center; border-block: 3px double var(--border); padding: 2.5rem 0; }
-.public-profile-avatar { display:block; width:3rem; height:3rem; object-fit:contain; background:none; }
-.public-profile-name { justify-content: center; }
-.public-profile-name h1 { font-size: clamp(2.5rem,5vw,4rem); font-family: var(--font-heading); font-weight: 500; }
-.public-profile-bio { font-family: var(--font-heading); font-size: 1.2rem; max-width: 45ch; }
-.public-profile-activity { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
-.public-profile-activity h2 { font-family: var(--font-heading); font-size: 1.75rem; }
-.public-profile-item-heading a { font-family: var(--font-heading); font-size: 1.4rem; }
 .account-heading { border-bottom: 3px double var(--border); padding-bottom: 1.25rem; }
 .account-heading h1 { font-family: var(--font-heading); font-size: 2.75rem; font-weight: 500; }
 .account-section-nav { justify-content: center; gap: 2.5rem; border-bottom: 3px double var(--border); }
 .account-settings .account-card { background: none; border: 0; border-top: 2px solid var(--text); border-radius: 0; padding: 1.5rem 0; }
 .account-settings .account-card h2 { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 500; }
 .account-settings .account-columns { gap: 3rem; }
+/* Two service columns of like weight: the profile form on one side, signing in
+   on the other. Passkeys and connected accounts are parts of signing in, so
+   they are subsections under one rule rather than three sections that made
+   that column tower over the form. The application links are a band below
+   both. The biography field may take up a line or two of difference, within
+   the bounds of a sensible text box; it is not there to fill a hole. */
+.account-settings > #account-applications { margin-top: 1.5rem; }
+.account-settings [data-testid="account-security-column"] { gap: 0; }
+.account-settings [data-testid="account-security-column"] > .account-card ~ .account-card { padding: 1.1rem 0; border-top: 1px solid var(--community-border); }
+.account-settings [data-testid="account-security-column"] > .account-card ~ .account-card h2 { margin-bottom: .5rem; font-size: 1.35rem; }
+@media (min-width: 768px) {
+  .account-settings .account-columns { align-items: stretch; }
+  .account-settings #account-profile, .account-settings #account-profile > form { display: flex; flex: 1 1 auto; flex-direction: column; }
+  .account-settings #account-profile > form > * { flex: none; }
+  .account-settings #account-profile > form > textarea { flex: 1 1 auto; max-height: 13rem; }
+  .account-settings #account-profile > form > button { align-self: flex-start; }
+  .account-settings > #account-applications .account-application-links { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 3rem; }
+  .account-settings > #account-applications .account-application-links a + a { border-top: 0; }
+}
 .page-header { border-bottom: 3px double var(--border); padding-bottom: 2rem; }
 .tag-cloud { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0 3rem; }
 .tag-cloud .tag-cloud-item { display: flex; align-items: baseline; justify-content: space-between; padding: 1.25rem 0; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: none; font: 1.5rem var(--font-heading); }
 .tag-cloud-item sup { position: static; font: .8rem var(--font-mono); color: var(--muted); }
-.posts-listing .year-group { display: grid; grid-template-columns: 7rem minmax(0,1fr); gap: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem; }
-.posts-listing .year-label { font: 2rem var(--font-heading); }
-.search-result-item { border-radius: 0; background: none; border-inline: 0; padding-block: 1.5rem; }
-.search-result-item h2, .search-result-item h3 { font-family: var(--font-heading); font-size: 1.75rem; }
+/* The year is a margin label beside its stories; it carries no rule of its
+   own, which previously left a stray short line at the foot of the margin. */
+.posts-listing .year-group { display: grid; grid-template-columns: 7rem minmax(0,1fr); gap: 2rem; align-items: start; border-top: 1px solid var(--border); padding-top: 1.5rem; }
+.posts-listing .year-label { font: 600 2rem/1.2 var(--font-heading); }
+.page-eyebrow { margin: 0; }
+.page-eyebrow a { color: inherit; }
+/* Books are volumes: one per row with a wider standfirst, not a post grid. */
+.posts-listing-books .year-group .article-list { grid-template-columns: minmax(0,1fr); gap: 0; }
+.posts-listing-books .article-list-item { padding: 1rem 0; border-top: 1px solid var(--border); }
+.posts-listing-books .article-list-item:first-child { padding-top: 0; border-top: 0; }
+.posts-listing-books .article-list .article-card-title { font-size: 1.75rem; line-height: 1.3; }
+.posts-listing-books .article-card-excerpt { max-width: 46rem; font-size: .95rem; }
+/* Search is a ranked index: one result per ruled row, headline beside its
+   matching passage, read top to bottom. Result titles are links, not headings:
+   style .search-result-title itself. An earlier `h2, h3` rule matched nothing,
+   so titles silently fell back to small body-face links. */
+.search-results { margin-top: 1.5rem; border-bottom: 1px solid var(--border); }
+.search-result-item { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.35fr); gap: .35rem 2.5rem; align-items: baseline; padding: 1.1rem 0; border-top: 1px solid var(--border); }
+.search-result-title { justify-self: start; color: var(--text); font: 600 1.45rem/1.35 var(--font-heading); overflow-wrap: anywhere; }
+.search-result-excerpt { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.7; }
+.search-result-excerpt mark { padding: 0 .1em; color: var(--text); background: color-mix(in srgb, var(--accent) 22%, var(--bg)); }
 .auth-shell .auth-card { border-radius: 0; box-shadow: none; border-top: 3px double var(--border); }
 @media (max-width: 767px) {
- .public-profile-activity, .tag-cloud { grid-template-columns: minmax(0,1fr); }
- .posts-listing .year-group { grid-template-columns: minmax(0,1fr); gap: .5rem; }
+ .tag-cloud, .search-result-item { grid-template-columns: minmax(0,1fr); }
+ .posts-listing .year-group { grid-template-columns: minmax(0,1fr); gap: .75rem; }
+ /* Stacked stories need the air the second column used to provide. */
+ .posts-listing .year-group .article-list { gap: 1.1rem; }
  .account-section-nav { justify-content: flex-start; gap: .5rem 1rem; }
 }
 
@@ -193,4 +239,33 @@
   .auth-entry .auth-editorial-heading h1 { margin:.35rem 0; }
   .auth-entry .auth-editorial-heading p { font-size:.9rem; }
   .auth-entry .auth-editorial-form { padding:0; border:0; }
+}
+
+/* Authorization shares the sign-in composition: the request is stated on the
+   left, the application, its scopes and the decision occupy the form column. */
+.auth-consent .auth-application { margin: 0 0 1rem; padding: 0 0 1rem; border: 0; border-bottom: 1px solid var(--border); background: none; }
+.auth-consent .auth-application h2 { margin: .25rem 0 .5rem; }
+.auth-consent .auth-scopes { margin: 0 0 1rem; padding: 0; counter-reset: scope; line-height: 1.5; }
+.auth-consent .auth-scopes li { display: flex; align-items: baseline; gap: .75rem; padding: .55rem 0; border-bottom: 1px solid var(--border); counter-increment: scope; }
+.auth-consent .auth-scopes li::before { content: counter(scope, decimal-leading-zero); color: var(--muted); font: .75rem var(--font-mono); }
+.auth-consent .auth-warning { margin: 0 0 1rem; padding: 0; border: 0; color: var(--muted); font-size: .85rem; line-height: 1.6; }
+
+/* One-time credentials read as a ruled table of record. */
+.client-created .client-created-notice { margin: 1rem 0; padding-left: .85rem; border-left: 3px solid var(--accent); line-height: 1.6; }
+.client-credentials { margin: 1.5rem 0 3rem; border-bottom: 1px solid var(--border); }
+.client-credentials > div { display: grid; grid-template-columns: 12rem minmax(0,1fr); gap: .35rem 2rem; align-items: baseline; padding: 1rem 0; border-top: 1px solid var(--border); }
+.client-credentials dt { color: var(--muted); font: 600 .75rem/1.5 var(--font-body); letter-spacing: .12em; text-transform: uppercase; }
+.client-credentials dd { margin: 0; min-width: 0; }
+.client-credentials code { font: 1rem/1.5 var(--font-mono); overflow-wrap: anywhere; user-select: all; }
+@media(max-width:767px) { .client-credentials > div { grid-template-columns: minmax(0,1fr); } }
+
+/* Touch screens: stacked list links keep the 24px minimum target (WCAG 2.5.8).
+   Single-line ellipsis links grow through line-height, because a flex box
+   would drop their ellipsis. */
+@media (pointer: coarse), (max-width: 500px) {
+  .topic-comment-text { line-height: 24px; }
+  .home-comment-excerpt { padding-block: 3px; }
+  :is(.topic-comment-byline, .home-comment-byline, .circle-feed-byline, .article-card-meta, .hero-meta, .topic-inline-actions, .page-eyebrow, .article-meta) a,
+  .home-widget-more, .journal-section-heading > a, .book-chapter-list .chapter-title { display: inline-flex; align-items: center; min-height: 24px; }
+  .article-meta .edit-link { min-width: 24px; justify-content: center; }
 }

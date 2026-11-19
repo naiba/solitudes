@@ -2,9 +2,11 @@
 {{/* Article slugs are single URL path segments, not query strings or fragments. */}}
 {{template "site/header" .}}
 {{$articles := .Queries.Articles "newest" 7 "without_tag" "Topic"}}
-{{$readers := .Queries.Users "newest" 4}}
-{{$comments := .Queries.RecentComments 5}}
-{{$topics := .Queries.Articles "newest" 5 "tag" "Topic"}}
+{{/* The community band is a stack of departments, each a grid of its own, so
+     these counts fill whole rows: two topics across, three letters across. */}}
+{{$readers := .Queries.Users "newest" 6}}
+{{$comments := .Queries.RecentComments 6}}
+{{$topics := .Queries.Articles "newest" 4 "tag" "Topic"}}
 {{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
 <script type="application/ld+json">
 {
@@ -66,13 +68,7 @@
         {{if $picks}}
         <div class="journal-front-secondary" data-testid="folio-recommendations">
             <span class="section-label">{{.Tr.T "folio_also_read"}}</span>
-            {{range $picks}}{{$article := index $pool .}}
-            <article class="journal-secondary-story" data-testid="folio-recommendation" data-story-slug="{{$article.Slug}}">
-                <h2><a href="/{{pathEscape $article.Slug}}">{{$article.Title}}</a></h2>
-                {{template "site/article_list_byline" (dict "article" $article "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}
-                {{if $article.Content}}<p class="article-card-excerpt">{{mdExcerpt $article.Content 120}}</p>{{end}}
-            </article>
-            {{end}}
+            {{range $picks}}{{template "site/home_recommendation" (dict "article" (index $pool .) "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}{{end}}
         </div>
         {{end}}
     </section>
@@ -92,36 +88,41 @@
 
     <section class="journal-community" aria-labelledby="journal-community-title" data-testid="folio-community">
         <div class="journal-section-heading"><h2 id="journal-community-title">{{.Tr.T "folio_conversations"}}</h2><a href="/readers/">{{.Tr.T "reader_circle"}} <span aria-hidden="true">→</span></a></div>
-        <div class="journal-community-grid{{if not $topics}} journal-community-no-topics{{end}}">
-            {{if $topics}}
-            <section class="home-topics-section" aria-labelledby="journal-topics-title">
-                <div class="home-community-heading"><h3 id="journal-topics-title" class="section-label"><a href="/tags/Topic/">{{.Tr.T "topics"}}</a></h3><a class="home-widget-more" href="/tags/Topic/">{{.Tr.T "view_more"}} <span aria-hidden="true">→</span></a></div>
-                <ul class="article-list compact-list">
-                    {{range $topics}}<li class="article-list-item">{{template "site/article_list_entry" (dict "article" . "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}</li>{{end}}
-                </ul>
-            </section>
-            {{end}}
-            <aside class="journal-community-side">
-                {{if $comments}}
-                <section class="sidebar-section home-comments" data-testid="home-recent-comments" aria-labelledby="journal-comments-title">
-                    <h3 id="journal-comments-title" class="section-label">{{.Tr.T "recent_comments"}}</h3>
-                    <ul class="home-comments-list" role="list">{{range $comments}}<li data-testid="home-recent-comment">
-                        <div class="home-comment-byline">{{if .AccountID}}<a href="/users/{{.AccountID}}" data-testid="home-comment-author">{{.Nickname}}</a>{{else}}<span>{{.Nickname}}</span>{{end}}<span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else if eq .Role "user"}}{{$.Tr.T "role_user"}}{{else}}{{$.Tr.T "role_guest"}}{{end}}</span><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></div>
-                        <a class="home-comment-excerpt" href="/{{pathEscape .ArticleSlug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="home-comment-link">{{substr .Content 0 160}}</a>
-                        <span class="home-comment-context">{{$.Tr.T "comment_on"}} {{.ArticleTitle}}</span>
-                    </li>{{end}}</ul>
-                </section>
-                {{end}}
-                <section class="sidebar-section reader-circle-home" data-testid="reader-circle-home" aria-labelledby="journal-readers-title">
-                    <div class="home-community-heading"><h3 id="journal-readers-title" class="section-label"><a href="/readers/">{{.Tr.T "reader_circle"}}</a></h3><a class="home-widget-more" href="/readers/" data-testid="reader-circle-more">{{.Tr.T "view_more"}} <span aria-hidden="true">→</span></a></div>
-                    <p>{{.Tr.T "reader_circle_home_intro"}}</p>
-                    {{if $readers}}<ul class="reader-home-list">{{range $readers}}<li><a href="/users/{{.ID}}" data-testid="reader-circle-member" title="{{.Nickname}}">{{.Nickname}}</a><span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else}}{{$.Tr.T "role_user"}}{{end}}</span></li>{{end}}</ul>{{else}}<p>{{.Tr.T "reader_circle_empty"}}</p>{{end}}
-                </section>
-            </aside>
-        </div>
+        {{/* Departments span the page, one below another, each named in the
+             left margin like the years of the archive. Topics beside a column
+             of comments and members never ended on the same line. */}}
+        {{if $topics}}
+        <section class="journal-department home-topics-section" aria-labelledby="journal-topics-title">
+            <div class="journal-department-label"><h3 id="journal-topics-title" class="section-label"><a href="/tags/Topic/">{{.Tr.T "topics"}}</a></h3><a class="home-widget-more" href="/tags/Topic/">{{.Tr.T "view_more"}} <span aria-hidden="true">→</span></a></div>
+            <ul class="article-list compact-list journal-topic-grid">
+                {{range $topics}}<li class="article-list-item">{{template "site/article_list_entry" (dict "article" . "tr" $.Tr "Conf" $.Conf "Queries" $.Queries)}}</li>{{end}}
+            </ul>
+        </section>
+        {{end}}
+        {{if $comments}}
+        <section class="journal-department home-comments" data-testid="home-recent-comments" aria-labelledby="journal-comments-title">
+            <div class="journal-department-label"><h3 id="journal-comments-title" class="section-label">{{.Tr.T "recent_comments"}}</h3></div>
+            <ul class="home-comments-list" role="list">{{range $comments}}<li data-testid="home-recent-comment">
+                <a class="home-comment-excerpt" href="/{{pathEscape .ArticleSlug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="home-comment-link">{{substr .Content 0 160}}</a>
+                <div class="home-comment-byline">{{if .AccountID}}<a href="/users/{{.AccountID}}" data-testid="home-comment-author">{{.Nickname}}</a>{{else}}<span>{{.Nickname}}</span>{{end}}<span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else if eq .Role "user"}}{{$.Tr.T "role_user"}}{{else}}{{$.Tr.T "role_guest"}}{{end}}</span><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></div>
+                <span class="home-comment-context">{{$.Tr.T "comment_on"}} {{.ArticleTitle}}</span>
+            </li>{{end}}</ul>
+        </section>
+        {{end}}
+        <section class="journal-department reader-circle-home" data-testid="reader-circle-home" aria-labelledby="journal-readers-title">
+            <div class="journal-department-label"><h3 id="journal-readers-title" class="section-label"><a href="/readers/">{{.Tr.T "reader_circle"}}</a></h3><p>{{.Tr.T "reader_circle_home_intro"}}</p><a class="home-widget-more" href="/readers/" data-testid="reader-circle-more">{{.Tr.T "view_more"}} <span aria-hidden="true">→</span></a></div>
+            {{if $readers}}<ul class="reader-home-list">{{range $readers}}<li><img class="reader-avatar" src="{{generatedAvatarURL .ID}}" alt="" width="28" height="28" loading="lazy"><a href="/users/{{.ID}}" data-testid="reader-circle-member" title="{{.Nickname}}">{{.Nickname}}</a><span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else}}{{$.Tr.T "role_user"}}{{end}}</span></li>{{end}}</ul>{{else}}<p class="journal-department-empty">{{.Tr.T "reader_circle_empty"}}</p>{{end}}
+        </section>
     </section>
     {{$bottom := index .Theme "folio.homebottomcontent"}}
     {{if $bottom}}<section class="home-bottom-content app-prose">{{(md "home-bottom" (printf "%s" $bottom))|unsafe}}</section>{{end}}
 </main>
 {{template "site/footer" .}}
+{{end}}
+{{define "site/home_recommendation"}}
+            <article class="journal-secondary-story" data-testid="folio-recommendation" data-story-slug="{{.article.Slug}}">
+                <h2><a href="/{{pathEscape .article.Slug}}">{{.article.Title}}</a></h2>
+                {{template "site/article_list_byline" .}}
+                {{if .article.Content}}<p class="article-card-excerpt">{{mdExcerpt .article.Content 120}}</p>{{end}}
+            </article>
 {{end}}

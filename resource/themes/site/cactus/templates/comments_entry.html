@@ -13,7 +13,7 @@
         <p class="comment-meta title{{if eq .PublicRole "admin"}} admin{{end}}">
             {{if .Account}}<a href="/users/{{.Account.ID}}" data-testid="comment-author-link">{{.PublicName}}</a>{{else if .Website}}<a href="{{.Website | externalLink}}" target="_blank" rel="nofollow noopener">{{.PublicName}}</a>{{else}}<b>{{.PublicName}}</b>{{end}}
             <span class="comment-role role-{{.PublicRole}}" data-testid="comment-role">{{if eq .PublicRole "admin"}}{{$.tr.T "role_admin"}}{{else if eq .PublicRole "editor"}}{{$.tr.T "role_editor"}}{{else if eq .PublicRole "user"}}{{$.tr.T "role_user"}}{{else}}{{$.tr.T "role_guest"}}{{end}}</span>
-            <time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.tr.T "date_format")}}</time>
+            <time datetime="{{iso8601 .CreatedAt}}" title="{{tf .CreatedAt ($.tr.T "date_format")}}">{{tf .CreatedAt "2006-01-02"}}</time>
             <a href="https://{{$.Conf.Site.Domain}}/{{pathEscape .Article.Slug}}/v{{.Version}}"><small>·v{{.Version}}</small></a>
             {{if ptrStrEq .EmailReadStatus "read"}}
             <i class="fa-solid fa-eye" style="color: #999; font-size: 0.9em;" title="{{$.tr.T "email_read"}}"></i>

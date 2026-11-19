@@ -1,10 +1,13 @@
 {{define "site/account_oidc_client_created"}}
 {{template "site/header" .}}
-<main id="main-content" class="account-center folio-container"><section class="account-card">
-  <h1>{{.Tr.T "client_created"}}</h1><p>{{.Tr.T "copy_secret_once"}}</p>
-  <p>{{.Tr.T "client_id"}}: <code data-testid="oidc-created-id">{{.Data.client_id}}</code></p>
-  {{if .Data.secret}}<p>{{.Tr.T "client_secret"}}: <code data-testid="oidc-created-secret">{{.Data.secret}}</code></p>{{end}}
-  <a href="/account/oidc/clients" data-testid="oidc-created-back">{{.Tr.T "provider_external_apps"}}</a>
-</section></main>
+<main id="main-content" class="account-center account-clients client-created folio-container">
+  <p><a href="/account/oidc/clients" data-testid="oidc-created-back">← {{.Tr.T "provider_external_apps"}}</a></p>
+  <h1>{{.Tr.T "client_created"}}</h1>
+  <p class="client-created-notice" role="status">{{.Tr.T "copy_secret_once"}}</p>
+  <dl class="client-credentials">
+    <div><dt>{{.Tr.T "client_id"}}</dt><dd><code data-testid="oidc-created-id">{{.Data.client_id}}</code></dd></div>
+    {{if .Data.secret}}<div><dt>{{.Tr.T "client_secret"}}</dt><dd><code data-testid="oidc-created-secret">{{.Data.secret}}</code></dd></div>{{end}}
+  </dl>
+</main>
 {{template "site/footer" .}}
 {{end}}

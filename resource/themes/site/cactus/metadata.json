@@ -2,12 +2,12 @@
   "id": "cactus",
   "name": "Cactus",
   "author": "奶爸博客",
-  "version": "2.1.1",
-  "description": "Default site theme",
+  "version": "2.2.0",
+  "description": "Clean and simple, after hexo-theme-cactus: dated lists of writing, accent headings, and light and dark palettes that follow the reader's device",
   "link": "https://lifelonglearn.ing",
   "config": {
-    "cactus.hometopcontent": "# Top:\n\nA fast, simple & powerful blog framework 👍\n",
-    "cactus.homebottomcontent": "# Bottom:\n\nA fast, simple & powerful blog framework 👍\n",
+    "cactus.hometopcontent": "A fast, simple & powerful blog framework 🌵\n",
+    "cactus.homebottomcontent": "",
     "cactus.headermenus": [
       {
         "name": "Home",
@@ -54,7 +54,6 @@
         "black": false
       }
     ],
-    "cactus.customcode": "<script>\nconsole.log('Custom code loaded');\n</script>",
-    "cactus.colorscheme": "auto"
+    "cactus.customcode": ""
   }
 }

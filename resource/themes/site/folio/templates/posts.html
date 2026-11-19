@@ -10,8 +10,8 @@
 <main id="main-content">
     <header class="page-header folio-container">
         {{if .Data.tag}}
+        <p class="section-label page-eyebrow"><a href="/tags/">{{.Tr.T "tags"}}</a> <span aria-hidden="true">/</span> {{.Tr.T "posts_with_tag"}}</p>
         <h1 class="page-title">{{.Data.tag}}</h1>
-        <p class="page-description">{{.Tr.T "posts_with_tag"}}</p>
         {{else if eq .Data.what "books"}}
         <h1 class="page-title">{{.Tr.T "books"}}</h1>
         <p class="page-description">{{.Tr.T "books_all_the_books"}}</p>
@@ -21,7 +21,7 @@
         {{end}}
     </header>
 
-    <section class="posts-listing folio-container">
+    <section class="posts-listing{{if eq .Data.what "books"}} posts-listing-books{{end}} folio-container">
         {{if not .Data.articles}}
         <p class="folio-muted">{{.Tr.T "no_article"}}</p>
         {{else}}

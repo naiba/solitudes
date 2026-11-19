@@ -1,64 +1,87 @@
-/* Cactus uses compact logs, member rosters and a settings index. Its geometry
-   is independent of Folio's mastheads, editorial columns and display titles. */
+/* Cactus keeps to plain dated lists and one accent colour, after
+   hexo-theme-cactus. Its geometry is independent of Folio's mastheads,
+   editorial columns and display titles. */
 .reader-circle, .public-profile, .account-settings {
   --community-border: color-mix(in srgb, var(--color-text) 16%, transparent);
   --community-accent: var(--color-accent);
   --community-muted: color-mix(in srgb, var(--color-text) 72%, var(--color-bg));
 }
 .reader-circle-intro { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.5rem 1rem; padding:.5rem 0; border:0; background:none; }
-.reader-circle-intro h1, .account-heading h1 { margin:.3rem 0; font-size:1.4rem; color:var(--color-text); }
 .reader-circle-intro p { margin:.25rem 0; font-size:.85rem; line-height:1.5; color:var(--community-muted); }
-.reader-circle-intro .circle-join { background:none; color:var(--color-text); padding:.25rem 0; font: .8rem monospace; border-radius:0; }
+.reader-circle-intro .circle-join { display:inline-flex; align-items:center; min-height:44px; padding:.25rem 0; color:var(--color-accent); font-size:.85rem; font-weight:700; text-decoration:none; }
 .reader-circle-layout { display:block; }
 .reader-circle section { margin-top:1.25rem; }
 .circle-section-heading, .reader-circle-members .circle-section-heading { display:flex; align-items:baseline; flex-wrap:wrap; gap:.2rem .75rem; margin-bottom:.4rem; }
-.circle-section-heading h2, .public-profile-activity h2, .account-card h2 { font-family:monospace; font-size:1rem; }
+.circle-section-heading h2, .account-card h2 { font-size:1rem; font-weight:700; }
 .circle-section-heading h2, .circle-section-heading p { margin:0; }
 .circle-hint { opacity:1; color:var(--community-muted); font-size:.75rem; line-height:1.5; }
 .circle-feed-list { display:block; }
-.circle-feed-list .circle-feed-item { display:grid; grid-template-columns:6.5rem minmax(0,1fr); gap:.5rem 1rem; padding:.65rem 0; border:0; border-bottom:1px dotted var(--community-border); border-radius:0; background:none; }
-.circle-log-date { color:var(--community-muted); font:.75rem/1.8 monospace; }
+.circle-feed-list .circle-feed-item { display:grid; grid-template-columns:auto minmax(0,1fr); gap:.5rem 1rem; padding:.65rem 0; border:0; border-bottom:1px dotted var(--community-border); border-radius:0; background:none; }
+.circle-log-date { color:var(--community-muted); font-size:.8rem; line-height:1.8; font-variant-numeric:tabular-nums; letter-spacing:0; white-space:nowrap; }
 .circle-log-entry { display:flex; flex-wrap:wrap; align-items:baseline; gap:.15rem .5rem; min-width:0; }
 .circle-feed-byline { display:inline-flex; gap:.3rem; font-size:.85rem; }
 .circle-feed-action { display:inline; margin:0; line-height:1.5; }
 .circle-feed-action a { font-size:.9rem; font-weight:500; }
 .circle-feed-action > span { font-size:.8rem; opacity:1; color:var(--community-muted); }
 .circle-feed-excerpt { flex-basis:100%; margin:0; font-size:.8rem; line-height:1.5; color:var(--community-muted); opacity:1; -webkit-line-clamp:2; }
-.reader-circle-members { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1.5rem; border:0; padding:0; }
-.reader-cards { margin:.4rem 0; gap:.25rem .75rem; }
-.reader-cards .reader-card { padding:.4rem 0; border:0; background:none; border-radius:0; }
-.reader-card-head { gap:.3rem; }
-.reader-card-name { font: .85rem/1.5 monospace; min-height:32px; display:inline-flex; align-items:center; }
-.reader-card p { margin:.15rem 0; font-size:.78rem; line-height:1.5; }
-.reader-card small { margin:.1rem 0; opacity:1; color:var(--community-muted); font:.7rem/1.5 monospace; }
-.reader-circle-layout-single .reader-circle-members { display:block; }
+/* Members are a plain list, one to a line: name, role, a line of the bio,
+   and the date they joined, set in columns so the eye can run down any of
+   them. Cards are how the journal theme introduces people. */
+.reader-circle-members { display:block; min-width:0; border:0; padding:0; }
+.reader-cards { display:grid; grid-template-columns:minmax(11rem,max-content) max-content minmax(0,1fr) max-content; column-gap:1rem; margin:.25rem 0 0; padding:0; list-style:none; }
+/* Rows share the list's columns, so a role sits right after its name and the
+   bios still start on one edge whatever the longest name is. The name column
+   has a floor so the two member lists usually line up with each other too. */
+.reader-card { display:grid; grid-column:1 / -1; grid-template-columns:subgrid; align-items:baseline; min-width:0; padding:.1rem 0; overflow-wrap:anywhere; }
+@supports not (grid-template-columns:subgrid) {
+  .reader-cards { display:block; }
+  .reader-card { grid-template-columns:minmax(0,14rem) 8.5rem minmax(0,1fr) auto; column-gap:1rem; }
+}
+.reader-card-name { max-width:16rem; overflow:hidden; font-size:.95rem; font-weight:600; line-height:32px; text-overflow:ellipsis; white-space:nowrap; }
+.reader-card .comment-role { justify-self:start; }
+.reader-card p { grid-column:3; grid-row:1; margin:0; overflow:hidden; color:var(--community-muted); font-size:.85rem; line-height:1.5; text-overflow:ellipsis; white-space:nowrap; }
+.reader-card-since { grid-column:4; grid-row:1; color:var(--community-muted); font-size:.8rem; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .circle-pagination, .public-profile-pagination { display:flex; flex-wrap:wrap; gap:.25rem 1rem; margin-top:.5rem; }
 .circle-pagination a, .public-profile-pagination a { display:inline-flex; align-items:center; min-height:44px; font-size:.8rem; }
 .circle-pagination:empty, .public-profile-pagination:empty { display:none; }
-.public-profile-header { display:flex; flex-direction:column; align-items:flex-start; gap:.6rem; border:0; padding:.75rem 0; border-radius:0; background:none; }
-.public-profile-avatar { flex:none; width:2rem; height:2rem; font:1rem monospace; border:1px solid var(--community-border); border-radius:2px; background:none; color:var(--color-accent); }
-.public-profile-name { display:block; }
-.public-profile-name h1 { font-size:1.4rem; line-height:1.3; }
-.public-profile-eyebrow { font:.7rem monospace; letter-spacing:0; }
-.public-profile-joined { opacity:1; font:.72rem/1.5 monospace; color:var(--community-muted); }
-.public-profile-bio { margin:0; font-size:.85rem; line-height:1.6; color:var(--community-muted); }
-.public-profile-activity { display:block; margin-top:.75rem; }
-.public-profile-activity > section { padding-top:.75rem; border-top:1px solid var(--community-border); }
+/* A member's page is set like the rest of the site: the name as the page
+   title, then two plain lists in the manner of the archive, a date and a line
+   each. For a comment the line is what the member wrote, followed by the
+   article it answers. An identity rail beside the lists was tried and left
+   most of its height empty. */
+.public-profile { margin:0 auto 4rem; overflow-wrap:anywhere; }
+.public-profile-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.5rem 1rem; }
+.public-profile-toolbar a { display:inline-flex; align-items:center; gap:.4rem; min-height:44px; font-size:.85rem; text-decoration:none; background-image:none; }
+.public-profile-toolbar .public-profile-back { color:var(--color-accent); }
+.public-profile-toolbar .public-profile-edit { color:var(--color-text); font-weight:700; }
+.public-profile-toolbar a:hover { text-decoration:underline; text-underline-offset:3px; }
+.public-profile-header { display:grid; grid-template-columns:auto minmax(0,1fr); gap:.35rem .85rem; align-items:start; padding:.25rem 0 1rem; }
+.public-profile-avatar { grid-row:1 / span 2; width:3rem; height:3rem; border:1px solid var(--community-border); border-radius:2px; object-fit:contain; }
+.public-profile-intro { display:flex; flex-wrap:wrap; align-items:baseline; gap:.1rem .75rem; min-width:0; }
+.public-profile-name { order:-1; display:flex; flex:1 0 100%; flex-wrap:wrap; align-items:center; gap:.25rem .6rem; }
+.public-profile-eyebrow, .public-profile-joined { margin:0; color:var(--community-muted); font-size:.8rem; line-height:1.6; }
+.public-profile-eyebrow::after { content:"\00b7"; margin-left:.75rem; }
+.public-profile-bio { grid-column:2; max-width:70ch; margin:.25rem 0 0; color:var(--color-text); font-size:.9rem; line-height:1.6; white-space:pre-wrap; }
+.public-profile-activity > section { min-width:0; padding-top:.75rem; border-top:1px solid var(--community-border); scroll-margin-top:2rem; }
 .public-profile-activity > section + section { margin-top:1.25rem; }
-.public-profile section h2 { margin:0 0 .5rem; font-size:1rem; }
-.public-profile-list li { padding:.5rem 0; border:0; }
-.public-profile-item-heading { display:flex; flex-wrap:wrap; gap:.15rem .75rem; }
-.public-profile-item-heading a { font-size:.9rem; font-weight:500; line-height:1.5; }
-.public-profile-item-heading time { opacity:1; color:var(--community-muted); font:.7rem monospace; }
-.public-profile-list p { margin:.25rem 0 0; padding-left:.65rem; border-left:1px solid var(--community-border); font-size:.82rem; line-height:1.5; -webkit-line-clamp:3; }
-.public-profile-empty { margin:.5rem 0; padding:0; border:0; font-size:.8rem; color:var(--community-muted); }
-.account-settings .account-summary { margin:.5rem 0 .75rem; font:.8rem/1.5 monospace; }
+.public-profile-activity h2 { margin:0 0 .6rem; font-size:1rem; font-weight:700; }
+.public-profile-list { margin:0; }
+/* A comment: the date, what the member wrote, then the article it answers. */
+.post-list.public-profile-replies .post-item > .post-title-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,22rem); column-gap:1.5rem; align-items:baseline; }
+.post-list.public-profile-replies .post-item > .post-title-row { font-size:.9rem; font-weight:400; line-height:1.55; }
+.public-profile-replies p { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; margin:0; }
+.public-profile-reply-source { overflow:hidden; color:var(--community-muted); font-size:.8rem; line-height:1.5; text-overflow:ellipsis; white-space:nowrap; }
+.public-profile-reply-source a { color:inherit; }
+.public-profile-reply-source a:hover { color:var(--color-accent); }
+.public-profile-empty { margin:0; color:var(--community-muted); font-size:.8rem; }
+.public-profile-pagination { justify-content:space-between; }
+.account-settings .account-summary { margin:.5rem 0 .75rem; font-size:.85rem; line-height:1.5; }
 .account-section-nav { display:flex; flex-wrap:wrap; gap:.25rem 1rem; border-bottom:1px solid var(--community-border); }
-.account-section-nav a { display:inline-flex; align-items:center; min-height:44px; font:.8rem monospace; background-image:none; }
+.account-section-nav a { display:inline-flex; align-items:center; min-height:44px; font-size:.85rem; background-image:none; }
 .account-settings .account-columns { grid-template-columns:minmax(0,1fr); gap:.75rem; margin-top:.75rem; }
 .account-settings .account-column { gap:.75rem; }
 .account-settings .account-card { padding:.75rem 0; border:0; border-top:1px solid var(--community-border); border-radius:0; background:none; scroll-margin-top:1rem; }
-.account-settings .account-card h2 { font:1rem monospace; margin:0 0 .5rem; }
+.account-settings .account-card h2 { margin:0 0 .5rem; font-size:1rem; font-weight:700; }
 .account-settings .account-card > p, .account-settings .circle-privacy { font-size:.8rem; line-height:1.5; color:var(--community-muted); opacity:1; }
 .account-settings .account-card label { font-size:.85rem; margin:.6rem 0 .25rem; }
 .account-settings .account-card input:not([type=checkbox]), .account-settings .account-card textarea { border-radius:2px; padding:.55rem; min-height:44px; }
@@ -69,14 +92,14 @@
 .account-settings .account-application-links { gap:0; }
 .account-settings .account-application-links a { padding:.6rem 0; }
 .account-settings .account-card li { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:.35rem .75rem; margin:.35rem 0; }
-.account-settings .account-card li time { display:block; color:var(--community-muted); font:.7rem monospace; }
+.account-settings .account-card li time { display:block; color:var(--community-muted); font-size:.75rem; font-variant-numeric:tabular-nums; }
 .account-settings [role="status"] { padding:.5rem .75rem; border-left:2px solid var(--community-accent); font-size:.85rem; }
 :is(.reader-circle,.public-profile,.account-settings) :is(a,button,input,textarea):focus-visible { outline:2px solid var(--community-accent); outline-offset:3px; }
 /* Removing the card alone leaves a sparse column pinned to the page edge.
    Balance the utility form within the site shell and size all its controls together. */
 #main-content.auth-shell { max-width:28rem; margin-inline:auto; }
 .auth-shell .auth-card { margin:0; padding:0 0 1.5rem; background:none; box-shadow:none; border:0; border-radius:0; }
-.auth-shell .auth-card h1 { font:700 1.4rem monospace; margin:.5rem 0; }
+.auth-shell .auth-card h1 { margin:.5rem 0; color:var(--color-accent); font:700 1.5rem/1.35 var(--font-body); letter-spacing:.01em; }
 .auth-shell .auth-card > p { font-size:.85rem; line-height:1.5; margin:.5rem 0; }
 .auth-shell .auth-card form { gap:.35rem; margin-top:1rem; }
 .auth-shell .auth-card form > label:not(.auth-check) { font-size:.85rem; margin-top:.4rem; }
@@ -87,38 +110,47 @@
 .auth-shell .auth-providers, .auth-shell .auth-resend { margin-top:1rem; padding-top:.75rem; }
 .auth-shell .auth-providers p { font-size:.8rem; line-height:1.5; }
 .auth-shell .auth-providers p + p { order:1; color:color-mix(in srgb, var(--color-text) 75%, var(--color-bg)); }
-.auth-shell .auth-notice, .auth-shell .auth-application { padding:.6rem .75rem; border-radius:2px; }
+/* Notices and the requesting application carry an accent rule on the left, like topics. */
+.auth-shell .auth-notice, .auth-shell .auth-application { padding:.35rem 0 .35rem .85rem; border:0; border-left:2px solid var(--color-accent); border-radius:0; }
 .auth-shell :is(a,button,input,summary):focus-visible { outline:2px solid var(--color-accent); outline-offset:3px; }
 #posts .post-list .post-item { margin-bottom:.5rem; }
-#search-result li { margin:.75rem 0; }
-#search-result a.search-result-title { font-size:1rem; }
 #search-result p.search-result { font-size:.85rem; line-height:1.55; }
 @media (min-width:901px) {
-  #main-content.public-profile { display:grid; grid-template-columns:11rem minmax(0,1fr); column-gap:2rem; }
-  .public-profile-toolbar { grid-column:1/-1; }
-  .public-profile-header { align-self:start; }
-  .public-profile-activity { margin-top:0; }
-  #main-content.account-settings { display:grid; grid-template-columns:10rem minmax(0,1fr); column-gap:2rem; }
-  .account-settings > * { grid-column:1/-1; }
-  .account-settings .account-section-nav { grid-column:1; align-self:start; display:flex; flex-direction:column; border:0; padding-top:.75rem; position:sticky; top:1rem; }
-  .account-settings .account-columns { grid-column:2; margin-top:0; }
+  /* Settings read as rows: each section names itself in a left gutter and
+     sets its controls beside that name. A separate index rail down the left
+     edge left most of that column empty next to the forms. */
+  .account-settings .account-card { display:grid; grid-template-columns:13rem minmax(0,1fr); grid-template-rows:auto 1fr; column-gap:2rem; }
+  .account-settings .account-card > * { grid-column:2; }
+  .account-settings .account-card > h2, .account-settings .account-card > h2 + p { grid-column:1; margin-top:0; }
+  /* The first control block spans the title and hint rows; the flexible second
+     row takes its extra height, so the hint stays directly under the title. */
+  .account-settings .account-card > h2 + :not(p), .account-settings .account-card > h2 + p + * { grid-row:1 / span 2; margin-top:0; }
+  .account-settings .account-card > button { justify-self:start; align-self:start; }
+  .account-settings .account-card > h2 + p { hyphens:manual; }
   .account-settings :is([data-testid="account-profile-form"],[data-testid="account-password-form"]) { display:grid; grid-template-columns:8rem minmax(0,1fr); align-items:start; gap:.5rem .75rem; }
   .account-settings :is([data-testid="account-profile-form"],[data-testid="account-password-form"]) > :is(p,button,.circle-preference) { grid-column:2; }
   .account-settings :is([data-testid="account-profile-form"],[data-testid="account-password-form"]) > button { justify-self:start; }
   .account-settings .account-card label { margin:.6rem 0; }
 }
+@media (max-width:760px) {
+  /* Narrow screens: name and role share a line, the rest wraps under them. */
+  .reader-cards { display:block; }
+  .reader-card { grid-template-columns:minmax(0,1fr) auto; column-gap:1rem; row-gap:0; padding:.35rem 0; }
+  .reader-card-name { max-width:none; }
+  .reader-card .comment-role { justify-self:end; }
+  .reader-card p { grid-column:1 / -1; grid-row:auto; white-space:normal; }
+  .reader-card-since { grid-column:1 / -1; grid-row:auto; }
+  .post-list.public-profile-replies .post-item > .post-title-row { grid-template-columns:minmax(0,1fr); }
+  .public-profile-reply-source { white-space:normal; }
+}
 @media (max-width:540px) {
-  .reader-circle-members { grid-template-columns:minmax(0,1fr); gap:0; }
   .circle-feed-list .circle-feed-item { grid-template-columns:minmax(0,1fr); gap:.1rem; }
   .circle-log-date { font-size:.7rem; }
-  .public-profile-header { flex-direction:row; flex-wrap:wrap; gap:.6rem; }
-  .public-profile-intro { flex:1; }
-  .public-profile-bio { flex-basis:100%; }
 }
 
 .account-avatar { width:2rem; height:2rem; flex:none; object-fit:contain; }
 
-/* Search is ranked output and archives are chronological logs: keep a single
+/* Search is ranked output and archives are chronological lists: keep a single
    reading sequence rather than inheriting the publication's two-column grid. */
 /* Inherit the site width so search stays aligned with other public lists. */
 #main-content.search-page #search-result .search-result-list { display:block; }
@@ -127,17 +159,19 @@
 .search-page #search-result p.search-result { margin:.25rem 0 0; }
 .search-page #search-result mark { color:var(--color-text); background:color-mix(in srgb,var(--color-accent) 20%,var(--color-bg)); }
 .search-page .search-input, .search-page .base-button { min-height:44px; font-size:.95rem; border-radius:2px; }
-.archive-page .archive-title { font:700 1.35rem monospace; color:var(--color-text); margin:0 0 1rem; }
+/* The query field takes the row on every page, as it does on the home page;
+   the upstream 38% width left a dead gap beside the button on phones. */
+:is(.search-page, .error-page) #search .search-input { flex:1; min-width:0; width:auto; }
+.error-page #search .search-input, .error-page #search .base-button { min-height:44px; font-size:.95rem; }
 .archive-page #posts .archive-year { display:grid; grid-template-columns:4rem minmax(0,1fr); gap:1rem; padding:.75rem 0; border-top:1px dotted color-mix(in srgb,var(--color-text) 18%,transparent); }
-.archive-page #posts .archive-year h2 { margin:.3rem 0; font:1rem monospace; color:var(--color-accent); }
+.archive-page #posts .archive-year h2 { margin:.3rem 0; color:var(--color-accent); font-size:1rem; font-weight:700; font-variant-numeric:tabular-nums; }
 .archive-page #posts .post-list { display:block; margin:0; }
 .archive-page #posts .post-list .post-item { margin:0 0 .65rem; }
 .archive-page #posts .post-title-row { font-size:.95rem; }
-.account-authorizations > h1, .account-clients > h1 { font:700 1.4rem monospace; color:var(--color-text); }
 .account-authorizations > p, .account-clients > p { margin:.5rem 0; font-size:.85rem; line-height:1.5; overflow-wrap:anywhere; }
 .account-authorizations .account-authorization-list { gap:0; }
 .account-authorizations .account-card { padding:1rem 0; border:0; border-top:1px dotted color-mix(in srgb,var(--color-text) 20%,transparent); border-radius:0; background:none; box-shadow:none; }
-.account-authorizations .authorization-heading h2 { font:700 1rem monospace; }
+.account-authorizations .authorization-heading h2 { font-size:1rem; font-weight:700; }
 .account-authorizations .account-card > p { margin:.35rem 0; font-size:.85rem; }
 .account-authorizations .authorization-scopes { margin:.5rem 0; padding-left:1rem; display:block; }
 .account-authorizations .authorization-scopes > li { list-style:disc; font-size:.8rem; }
@@ -145,7 +179,7 @@
 .account-authorizations .authorization-actions p { margin:0; }
 .account-clients .account-grid { display:flex; flex-direction:column; gap:1rem; }
 .account-clients .account-card { box-sizing:border-box; width:100%; padding:.75rem 0; border:0; border-top:1px solid color-mix(in srgb,var(--color-text) 20%,transparent); border-radius:0; background:none; }
-.account-clients .account-card h2, .account-clients .client-create > summary { font:700 1rem monospace; margin:0; }
+.account-clients .account-card h2, .account-clients .client-create > summary { margin:0; font-size:1rem; font-weight:700; }
 .account-clients summary { cursor:pointer; min-height:44px; align-content:center; }
 .account-clients .account-card > ul { list-style:none; padding:0; }
 .account-clients [data-testid="account-client-row"] { padding:.75rem 0; border-bottom:1px dotted color-mix(in srgb,var(--color-text) 20%,transparent); overflow-wrap:anywhere; }
@@ -178,4 +212,46 @@
   .auth-entry .auth-card form > :is(.auth-check,.auth-primary,.auth-secondary) { grid-column:1; }
   .auth-entry .auth-card form > label:not(.auth-check) { margin-top:.35rem; }
   .auth-entry .auth-card > .auth-secondary { margin-left:0; }
+}
+
+/* The writing workspace is a quiet line of links, set like the site
+   navigation: accent links parted by dotted rules. */
+.account-settings .account-workspace { display:flex; align-items:center; flex-wrap:wrap; gap:0 1rem; margin:.5rem 0 .75rem; padding:0; font-size:.85rem; line-height:1.5; }
+.account-settings .account-workspace strong { font-weight:400; color:var(--community-muted); }
+.account-settings .account-workspace div { display:flex; flex-wrap:wrap; margin:0; }
+.account-settings .account-workspace a { display:inline-flex; align-items:center; min-height:44px; color:var(--color-accent); text-decoration:none; background-image:none; }
+.account-settings .account-workspace a + a { margin-left:.9rem; padding-left:.9rem; background:linear-gradient(var(--color-accent),var(--color-accent)) left center / 1px 1em no-repeat; }
+.account-settings .account-workspace a:hover { text-decoration:underline; text-underline-offset:3px; }
+
+/* One-time credentials are a key/value readout that selects in one gesture. */
+.client-created .client-created-notice { margin:.75rem 0; padding:.5rem .75rem; border-left:2px solid var(--color-accent); font-size:.85rem; line-height:1.5; }
+.client-credentials { margin:1rem 0 2rem; }
+.client-credentials > div { display:grid; grid-template-columns:8rem minmax(0,1fr); gap:.25rem 1rem; align-items:baseline; padding:.65rem 0; border-top:1px dotted color-mix(in srgb,var(--color-text) 20%,transparent); }
+.client-credentials > div:last-child { border-bottom:1px dotted color-mix(in srgb,var(--color-text) 20%,transparent); }
+.client-credentials dt { color:color-mix(in srgb,var(--color-text) 72%,var(--color-bg)); font-size:.85rem; line-height:1.5; }
+.client-credentials dd { margin:0; min-width:0; }
+.client-credentials code { padding:0; border:0; background:none; font:.9rem/1.5 var(--font-mono); overflow-wrap:anywhere; user-select:all; }
+@media(max-width:540px) { .client-credentials > div { grid-template-columns:minmax(0,1fr); } }
+
+/* Controls share one crisp 2px corner; pills are reserved for role badges.
+   Notices carry an accent rule on the left instead of a tinted card. */
+.search-input, .base-button, #reply textarea, #reply input, .comment-auth-actions a { border-radius:2px; }
+.comment-guest-prompt { margin:.75rem 0; padding:.35rem 0 .35rem .85rem; border:0; border-left:2px solid var(--color-accent); border-radius:0; background:none; font-size:.85rem; line-height:1.55; }
+.comment-auth-actions a { font-size:.85rem; }
+#reply-list .comment-meta time { color:var(--color-subtle); font-size:.8rem; font-variant-numeric:tabular-nums; letter-spacing:0; white-space:nowrap; }
+#reply-list .comment-meta small { color:var(--color-subtle); letter-spacing:0; }
+/* Body-size type made every account field and button oversized. */
+.account-settings .account-card input:not([type=checkbox]), .account-settings .account-card textarea,
+.account-clients .account-card input:not([type=checkbox]), .account-clients .account-card textarea { font-size:.95rem; line-height:1.4; }
+.account-settings .account-card button, .account-heading-actions :is(a,button) { font-size:.9rem; }
+
+/* Touch screens: stacked list links keep the 24px minimum target (WCAG 2.5.8)
+   without loosening the desktop lists. Single-line ellipsis links grow
+   through line-height, because a flex box would drop their ellipsis. */
+@media (pointer: coarse), (max-width: 500px) {
+  .topic-comment-text { line-height: 24px; }
+  .home-comment-excerpt { padding-block: 3px; }
+  :is(.topic-comment-byline, .home-comment-byline, .circle-feed-byline, .topic-entry .post-byline, .topic-inline-actions) a,
+  .home-widget-more, .sl-menu > a:last-of-type, .circle-feed-action a { display: inline-flex; align-items: center; min-height: 24px; }
+  .public-profile-list .post-title-row a { display: inline-block; min-height: 24px; }
 }

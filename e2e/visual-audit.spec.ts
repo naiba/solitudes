@@ -103,21 +103,15 @@ async function capture(page: Page, role: string, viewport: string, name: string,
     status = response?.status() || 0;
     expect(status, `${role} ${route}`).toBe(expectedStatus);
   }
-  // Cactus selects a stylesheet through site settings, not prefers-color-scheme.
-  // Switch that stylesheet explicitly so dark captures actually exercise dark colors.
-  if (site === 'cactus' && /-(light|dark)$/.test(viewport)) {
-    const scheme = viewport.endsWith('-dark') ? 'dark' : 'white';
-    await page.locator('link[href*="/css/theme-"]').evaluate((node, value) => new Promise<void>((resolve, reject) => {
-      // Repeated captures on the same page need no reload; an unchanged href may not emit load.
-      const href = `/static/site/cactus/css/theme-${value}.css`;
-      if ((node as HTMLLinkElement).href === new URL(href, document.baseURI).href) {
-        resolve();
-        return;
-      }
-      node.addEventListener('load', () => resolve(), {once:true});
-      node.addEventListener('error', () => reject(new Error('Theme stylesheet failed')), {once:true});
-      (node as HTMLLinkElement).href = href;
-    }), scheme);
+  // Cactus follows the visitor: force the named appearance the way its footer
+  // switch does. Admin pages share this helper but have no site
+  // palette, so only act where the Cactus stylesheet is present; waiting for it
+  // there used to time the admin reviews out.
+  if (site === 'cactus' && /-(light|dark)$/.test(viewport) && await page.locator('link[href*="/static/site/cactus/css/color-scheme.css"]').count()) {
+    await page.evaluate(dark => {
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.classList.toggle('light', !dark);
+    }, viewport.endsWith('-dark'));
   }
   await page.addStyleTag({ content: '*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }' });
   await page.waitForTimeout(80);
@@ -128,7 +122,8 @@ async function capture(page: Page, role: string, viewport: string, name: string,
   }
   if (await page.locator('#editSection, #topicContent').count()) {
     await expect(page.locator('.vditor-toolbar').first()).toBeVisible({ timeout: 20000 });
-    await expect(page.locator('.vditor [contenteditable="true"]:visible').first()).toBeVisible({ timeout: 20000 });
+    // The split-view editor edits in a textarea; the other modes use contenteditable.
+    await expect(page.locator('.vditor textarea.vditor-sv:visible, .vditor [contenteditable="true"]:visible').first()).toBeVisible({ timeout: 20000 });
   }
   const image = path.join(base, `${role}-${viewport}-${name}.jpg`);
   await page.screenshot({ path: image, type: 'jpeg', quality: 65, fullPage: !name.startsWith('reading-'), animations: 'disabled' });
@@ -386,8 +381,10 @@ test('identity administration statistics and audit visual review', async ({ page
   mkdirSync(base, { recursive: true });
   await login(page, 'admin');
   const verifier = 's'.repeat(64);
+  // The site themes share one database, so an earlier run may already have
+  // granted this scope; always ask again to reach the consent page.
   await page.goto('/authorize?' + new URLSearchParams({client_id:process.env.E2E_OIDC_CLIENT_ID!, redirect_uri:process.env.E2E_OIDC_REDIRECT_URI!,
-    response_type:'code', scope:'openid', state:'visual-audit-login', code_challenge:createHash('sha256').update(verifier).digest('base64url'), code_challenge_method:'S256'}));
+    response_type:'code', scope:'openid', state:'visual-audit-login', prompt:'consent', code_challenge:createHash('sha256').update(verifier).digest('base64url'), code_challenge_method:'S256'}));
   await page.getByTestId('oidc-consent-allow').click();
   await expect(page).toHaveURL(/callback\?code=/);
   const token = await page.request.post('/oauth/token', {form:{grant_type:'authorization_code', client_id:process.env.E2E_OIDC_CLIENT_ID!,
@@ -419,22 +416,16 @@ test.describe('community experience', () => {
         await expect(page.getByTestId('reader-circle-activity').first()).toBeVisible();
         const feed = (await page.locator('.circle-feed').boundingBox())!;
         const members = (await page.locator('.reader-circle-members').boundingBox())!;
-        if (site === 'cactus') {
-          expect(members.y, 'Cactus presents a full-width log before the member roster').toBeGreaterThanOrEqual(feed.y+feed.height);
-          if (width > 900) expect((await page.getByTestId('reader-circle-activity').first().boundingBox())!.height).toBeLessThan(120);
-        } else if (width > 900) {
-          expect(members.x, 'Folio keeps its editorial sidebar beside the news column').toBeGreaterThan(feed.x+feed.width);
-        }
+        // Both themes run the feed and the member lists the width of the page.
+        expect(members.y, 'the feed comes before the member lists').toBeGreaterThanOrEqual(feed.y+feed.height);
+        if (site === 'cactus' && width > 900) expect((await page.getByTestId('reader-circle-activity').first().boundingBox())!.height).toBeLessThan(120);
 
         await capture(page, 'guest', `${width}-${colorScheme}`, 'community-profile', `/users/${editorID}`);
         await expect(page.getByTestId('public-profile-article').first()).toBeVisible();
         const identity = (await page.locator('.public-profile-header').boundingBox())!;
         const activity = (await page.locator('.public-profile-activity').boundingBox())!;
-        if (site === 'cactus' && width > 900) {
-          expect(activity.x, 'Cactus identity sits beside the reading log').toBeGreaterThan(identity.x + identity.width);
-        } else {
-          expect(activity.y, 'mobile and Folio introduce the author above the work').toBeGreaterThanOrEqual(identity.y + identity.height);
-        }
+        // An identity rail beside the log left most of that column empty.
+        expect(activity.y, 'both themes introduce the author above the work').toBeGreaterThanOrEqual(identity.y + identity.height);
       }
     }
     await login(page, 'reader');

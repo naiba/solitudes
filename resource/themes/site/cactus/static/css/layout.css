@@ -64,8 +64,6 @@ body.max-width { box-sizing: border-box; width: 100%; max-width: var(--site-widt
 .account-settings .account-card textarea { min-height: 6rem; height: 6rem; }
 .account-settings .account-card input + button { margin-top: .75rem; }
 .account-authorization-list .account-card { padding: 1rem; border-radius: 4px; }
-.account-settings .account-workspace { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1rem; padding: .65rem 1rem; }
-.account-settings .account-workspace div { margin-top: 0; }
 .account-application-links { display: grid; gap: .75rem; }
 .account-application-links a { display: grid; gap: .25rem; padding-block: .5rem; min-height: 44px; }
 .account-application-links span { color: var(--color-muted); font-size: .85rem; line-height: 1.6; font-weight: 400; }

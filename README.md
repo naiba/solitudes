@@ -100,6 +100,14 @@ Cactus and Folio site themes and one default admin theme are bundled. Switch the
 
 Custom themes live in `resource/themes/{site,admin}/<name>/`, containing `metadata.json`, `screenshot.png`, `templates/`, `static/` and `translations/`. The metadata `id` must match the directory name; see [Cactus](resource/themes/site/cactus/metadata.json) for the format.
 
+Both site themes follow the device's light or dark appearance and let the visitor override it; the choice is kept in the shared `solitudes_theme` key. Cactus has one light and one dark palette and no colour-scheme setting. Folio additionally loads Tailwind 2 for utility classes in owner-written content, but its own layout does not depend on that request.
+
+After changing a bundled site theme, regenerate its `screenshot.png` from the real templates:
+
+```bash
+SOLITUDES_CAPTURE_SITE_THEME=1 go test -tags 'e2e postgres_test' ./router -run TestCaptureSiteThemeScreenshots -count=1
+```
+
 Site themes share the permission-filtered `.Queries` interface; see [query definitions](router/template_queries.go) and built-in templates for usage. Only install trusted themes. Never bypass content filtering or apply `unsafe` to user input.
 
 ## Development and tests

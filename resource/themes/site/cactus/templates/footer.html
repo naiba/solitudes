@@ -12,12 +12,14 @@
                 <li><a href="{{.link}}" {{if .black}} target="_blank" rel="noopener noreferrer"{{end}} {{if and .icon (not .name)}}aria-label="{{.link}}" title="{{.link}}"{{end}}>{{if .icon}}<i class="{{.icon}}"></i>
                         {{end}}{{.name}}</a></li>
                 {{end}}
+                {{/* All three choices are on show, so the current one is plain and any other is one click away. */}}
+                <li class="footer-theme"><span class="theme-switch" role="group" aria-label="{{.Tr.T "toggle_theme"}}" data-testid="site-theme-toggle" data-theme-switch><button type="button" data-theme-choice="auto" data-testid="site-theme-auto" aria-pressed="true">{{.Tr.T "theme_auto"}}</button><button type="button" data-theme-choice="light" data-testid="site-theme-light" aria-pressed="false">{{.Tr.T "theme_light"}}</button><button type="button" data-theme-choice="dark" data-testid="site-theme-dark" aria-pressed="false">{{.Tr.T "theme_dark"}}</button></span></li>
             </ul>
         </nav>
     </div>
 </footer>
 
-<script src="/static/site/cactus/js/main.js?v=cactus-log-density"></script>
+<script src="/static/site/cactus/js/main.js?v=2.2.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/vditor@4.0.1/dist/method.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/github-dark-dimmed.min.css"></noscript>
@@ -50,7 +52,10 @@
                 const render = renders[Object.keys(renders)[i]];
                 try {
                     if (Object.keys(renders)[i] == "mermaidRender") {
-                        let theme = "{{.Conf.Site.Theme}}" == "dark" ? "dark" : undefined;
+                        // Follow the palette actually painted (fixed scheme or the
+                        // visitor's choice). The site theme id is "cactus", never
+                        // "dark", so comparing it left diagrams light on dark pages.
+                        let theme = isDarkPalette() ? "dark" : undefined;
                         render(document, undefined, theme)
                     } else {
                         render(document)

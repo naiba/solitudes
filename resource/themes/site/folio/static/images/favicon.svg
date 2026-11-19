@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Favicon cut of the Folio mark: the two leaves and the drop-cap block only. -->
+  <rect width="64" height="64" fill="#f5f0e8"/>
+  <path d="M6 12 L30 7 V57 L6 52 Z" fill="#1c1917"/>
+  <path d="M35 8.5 L57 13 V51 L35 55.5 Z" fill="#fbf8f2" stroke="#1c1917" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M40 19 L52 21.5 V37.5 L40 35 Z" fill="#b45309"/>
+</svg>

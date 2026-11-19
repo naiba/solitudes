@@ -1,10 +1,14 @@
 {{define "site/index"}}
 {{/* Article slugs are single URL path segments, not query strings or fragments. */}}
 {{template "site/header" .}}
-{{$articles := .Queries.Articles "newest" 6 "without_tag" "Topic"}}
-{{$readers := .Queries.Users "newest" 4}}
-{{$comments := .Queries.RecentComments 5}}
 {{$topics := .Queries.Articles "newest" 5 "tag" "Topic"}}
+{{/* Without topics the writing list takes their place in the main column. */}}
+{{$articleCount := 6}}{{if not $topics}}{{$articleCount = 10}}{{end}}
+{{$articles := .Queries.Articles "newest" $articleCount "without_tag" "Topic"}}
+{{$readers := .Queries.Users "newest" 4}}
+{{/* More comments than usually fit: the list ends level with the main column
+     and shows only the rows that reach that far (see main.css). */}}
+{{$comments := .Queries.RecentComments 12}}
 {{/* html/template escapes JSON strings; manual escaping would double-encode names. */}}
 <script type="application/ld+json">
 {
@@ -92,8 +96,8 @@
     {{end}}
     {{if $comments}}<section class="home-comments" data-testid="home-recent-comments">
       <h2 class="h1">{{.Tr.T "recent_comments"}}</h2>
-      <ul class="home-comments-list" role="list">{{range $comments}}<li data-testid="home-recent-comment">
-        <div class="home-comment-byline">{{if .AccountID}}<a href="/users/{{.AccountID}}" data-testid="home-comment-author">{{.Nickname}}</a>{{else}}<span>{{.Nickname}}</span>{{end}}<span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else if eq .Role "user"}}{{$.Tr.T "role_user"}}{{else}}{{$.Tr.T "role_guest"}}{{end}}</span><time datetime="{{iso8601 .CreatedAt}}">{{tf .CreatedAt ($.Tr.T "date_format")}}</time></div>
+      <ul class="home-comments-list fill-rows" role="list">{{range $comments}}<li data-testid="home-recent-comment">
+        <div class="home-comment-byline">{{if .AccountID}}<a href="/users/{{.AccountID}}" data-testid="home-comment-author">{{.Nickname}}</a>{{else}}<span>{{.Nickname}}</span>{{end}}<span class="comment-role role-{{.Role}}">{{if eq .Role "admin"}}{{$.Tr.T "role_admin"}}{{else if eq .Role "editor"}}{{$.Tr.T "role_editor"}}{{else if eq .Role "user"}}{{$.Tr.T "role_user"}}{{else}}{{$.Tr.T "role_guest"}}{{end}}</span><time datetime="{{iso8601 .CreatedAt}}" title="{{tf .CreatedAt ($.Tr.T "date_format")}}">{{tf .CreatedAt "2006-01-02"}}</time></div>
         <a class="home-comment-excerpt" href="/{{pathEscape .ArticleSlug}}?thread={{.ID}}#comment-{{.ID}}" data-testid="home-comment-link">{{substr .Content 0 160}}</a>
         <span class="home-comment-context">{{$.Tr.T "comment_on"}} {{.ArticleTitle}}</span>
       </li>{{end}}</ul>

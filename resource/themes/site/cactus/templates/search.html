@@ -4,7 +4,7 @@
 {{template "site/menu" .}}
 <article class="post search-page" id="main-content" tabindex="-1">
   <div class="content">
-    {{template "site/search_form" .}}
+    {{template "site/search_form" (dict "Tr" .Tr "heading" "h1")}}
     <section aria-label="{{.Tr.T "search"}}">
       {{if .Data.results}}
       <div id="search-result">
