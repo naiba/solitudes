@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/88250/lute v1.7.8
-	github.com/PuerkitoBio/goquery v1.13.0
+	github.com/PuerkitoBio/goquery v1.14.0
 	github.com/adtac/go-akismet v0.0.0-20181220032308-0ca9e1023047
 	github.com/blevesearch/bleve/v2 v2.6.3
 	github.com/go-chi/chi/v5 v5.5.0
