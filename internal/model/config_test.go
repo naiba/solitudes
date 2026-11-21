@@ -428,3 +428,49 @@ func TestValidateThemeConfigStartup(t *testing.T) {
 	// This should also not panic or return error
 	ValidateThemeConfigStartup(cfgMissingKey, availableThemesNoConfig)
 }
+
+// When the new content cannot be written (full disk, I/O error) saving must
+// fail and leave the existing file alone. Falling back to writing in place
+// truncates the file first and then fails the same way, leaving it empty.
+func TestConfigSaveKeepsTheExistingFileWhenTheNewContentCannotBeWritten(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "conf.yml")
+	const existing = "database: old\n"
+	if err := os.WriteFile(path, []byte(existing), 0600); err != nil {
+		t.Fatal(err)
+	}
+	originalCreate := createConfigTemporaryFile
+	t.Cleanup(func() { createConfigTemporaryFile = originalCreate })
+	createConfigTemporaryFile = func(dir, pattern string) (*os.File, error) {
+		created, err := os.CreateTemp(dir, pattern)
+		if err != nil {
+			return nil, err
+		}
+		name := created.Name()
+		if err := created.Close(); err != nil {
+			return nil, err
+		}
+		// A handle that cannot be written to stands in for a failing disk.
+		return os.Open(name)
+	}
+
+	config := &Config{ConfigFilePath: path, Database: "postgres://new"}
+	if err := config.Save(); err == nil {
+		t.Fatal("Save reported success although the new content could not be written")
+	}
+
+	saved, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(saved) != existing {
+		t.Errorf("config after the failed save = %q, want the previous content %q", saved, existing)
+	}
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Errorf("config directory holds %d entries after the failed save, want only conf.yml", len(entries))
+	}
+}

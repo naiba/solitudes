@@ -77,6 +77,9 @@ type Config struct {
 	ConfigFilePath string `yaml:"-"`
 }
 
+// createConfigTemporaryFile is replaced in tests to make writing fail.
+var createConfigTemporaryFile = os.CreateTemp
+
 // Save ..
 func (c *Config) Save() error {
 	b, err := yaml.Marshal(&c)
@@ -87,7 +90,7 @@ func (c *Config) Save() error {
 	// file holds the database DSN and every secret: writing in place truncates
 	// it first, and a crash in between leaves a config the site cannot start
 	// from.
-	temporary, err := os.CreateTemp(filepath.Dir(c.ConfigFilePath), ".conf-*.yml.tmp")
+	temporary, err := createConfigTemporaryFile(filepath.Dir(c.ConfigFilePath), ".conf-*.yml.tmp")
 	if err != nil {
 		return c.saveInPlace(b)
 	}
@@ -102,10 +105,13 @@ func (c *Config) Save() error {
 	if closeErr := temporary.Close(); writeErr == nil {
 		writeErr = closeErr
 	}
-	if writeErr == nil {
-		writeErr = os.Rename(temporaryPath, c.ConfigFilePath)
-	}
 	if writeErr != nil {
+		// 新内容没能完整写下来（磁盘满、I/O 错误）时必须直接报错，不能回退到
+		// 原地覆盖：原地写会先把原文件截断，同样写不进去，留下一个空配置。
+		_ = os.Remove(temporaryPath)
+		return writeErr
+	}
+	if err := os.Rename(temporaryPath, c.ConfigFilePath); err != nil {
 		_ = os.Remove(temporaryPath)
 		// A config file bind-mounted on its own (a common container setup)
 		// cannot be renamed over. Keep those installations able to save.
