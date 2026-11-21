@@ -145,7 +145,7 @@
 {{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to={{printf "/%s#reply" (pathEscape .Data.article.Slug)}}" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to={{printf "/%s#reply" (pathEscape .Data.article.Slug)}}" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
         <label for="id_content" class="sr-only">{{.Tr.T "comment_content"}}</label>
         <textarea cols="40" rows="6" id="id_content" data-testid="comment-content"
-            placeholder='{{.Tr.T "may_not_reply_if_email_not_exist"}}'></textarea>
+            placeholder='{{.Tr.T "comment_reply_notification_hint"}}'></textarea>
         {{if .Account}}
         <input type="hidden" maxlength="64" id="id_nickname">
         {{else}}

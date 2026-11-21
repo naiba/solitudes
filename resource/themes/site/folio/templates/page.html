@@ -63,7 +63,7 @@
             <h3>{{.Tr.T "leave_a_comment"}}</h3>
 {{/* Encode the inner path first; html/template escapes the complete return_to query value once. */}}
 {{if .Account}}<p class="comment-identity">{{.Tr.T "comment_as"}} <a href="/users/{{.Account.ID}}">{{.Account.Nickname}}</a> · {{.Tr.T "verified_member"}}</p>{{else}}<div class="comment-identity comment-guest-prompt"><p>{{.Tr.T "guest_comment_hint"}}</p><div class="comment-auth-actions"><a class="comment-auth-login" href="/login?return_to={{printf "/%s#reply" (pathEscape .Data.article.Slug)}}" data-testid="comment-sign-in">{{.Tr.T "sign_in"}}</a><a class="comment-auth-register" href="/register?return_to={{printf "/%s#reply" (pathEscape .Data.article.Slug)}}" data-testid="comment-register">{{.Tr.T "create_account"}}</a></div></div>{{end}}
-            <p class="comment-form-hint">{{.Tr.T "may_not_reply_if_email_not_exist"}}</p>
+            <p class="comment-form-hint">{{.Tr.T "comment_reply_notification_hint"}}</p>
             <p class="comment-form-status" id="comment_form_status" role="status" aria-live="polite"></p>
             <div class="comment-reply-target" id="comment_reply_target" hidden>
                 <span id="comment_reply_target_text"></span>

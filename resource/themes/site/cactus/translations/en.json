@@ -150,7 +150,7 @@
     {"locale": "en", "key": "article_latest_version", "trans": "Read latest version v{0}"},
     {"locale": "en", "key": "article_history", "trans": "Revision history"},
     {"locale": "en", "key": "home", "trans": "Home"},
-    {"locale": "en", "key": "may_not_reply_if_email_not_exist", "trans": "If you don't fill in your email, I may not be able to reply to your comment. Enter email or nickname first to auto-load other information."},
+    {"locale": "en", "key": "comment_reply_notification_hint", "trans": "Guests are not notified of replies by email. Sign in to comment and replies go to your verified email. Enter email or nickname first to auto-load other information."},
     {"locale": "en", "key": "menu", "trans": "Menu"},
     {"locale": "en", "key": "toggle_theme", "trans": "Colour scheme"},
     {"locale": "en", "key": "theme_auto", "trans": "System"},

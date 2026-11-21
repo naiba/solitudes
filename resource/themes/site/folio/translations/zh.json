@@ -156,7 +156,7 @@
     {"locale": "zh", "key": "article_history", "trans": "历史版本"},
     {"locale": "zh", "key": "home", "trans": "首页"},
     {"locale": "zh", "key": "leave_a_comment", "trans": "发表评论"},
-    {"locale": "zh", "key": "may_not_reply_if_email_not_exist", "trans": "如果不填写邮箱，我可能无法回复您的评论。优先填入邮箱或昵称会自动加载其他信息。"},
+    {"locale": "zh", "key": "comment_reply_notification_hint", "trans": "游客填写的邮箱不会收到回复通知；登录后评论，有人回复时会发邮件到已验证的邮箱。优先填入邮箱或昵称会自动加载其他信息。"},
     {"locale": "zh", "key": "next", "trans": "下一篇"},
     {"locale": "zh", "key": "next_chapter", "trans": "下一章"},
     {"locale": "zh", "key": "next_page", "trans": "下一页"},
