@@ -217,12 +217,12 @@ func publishHandler(writer http.ResponseWriter, httpRequest *http.Request) error
 	if newArticle.ID == "" {
 		var existed model.Article
 		if err := solitudes.System.DB.Select("id, author_id").Order("created_at DESC").Take(&existed, "slug = ?", newArticle.Slug).Error; err == nil {
-			if !mayEditArticle(account, &existed) {
-				return newHTTPError(http.StatusForbidden)
-			}
-			newArticle.ID = existed.ID
-			newArticle.CreatedAt = time.Now()
-			newArticle.UpdatedAt = time.Now()
+			// A new article must not take over an existing one. This used to
+			// continue as an edit of the article that owns the slug: its text
+			// was replaced, without a history entry, by someone who never
+			// opened it. Editing goes through the article's ID.
+			requestValue(httpRequest, "audit_reason", "article_slug_taken")
+			return newHTTPError(http.StatusConflict, "an article with this slug already exists; open that article to edit it or choose another slug")
 		}
 	}
 

@@ -143,6 +143,9 @@
             accept: 'image/*,.mp4,.rar,.zip,.wav,.mp3',
             url: '/admin/upload',
             linkToImgUrl: '/admin/fetch',
+            // Vditor refuses uploads above 10 MB unless told otherwise; the
+            // server accepts files up to 50 MB.
+            max: 50 * 1024 * 1024,
         },
         height: 500,
     })

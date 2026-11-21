@@ -108,8 +108,8 @@ func commentHandler(writer http.ResponseWriter, httpRequest *http.Request) error
 	go func() {
 		var emailErr error
 		// Only send email if replying to someone else's comment
-		if replyTo != nil && replyTo.PublicRole() != string(model.RoleAdmin) && replyTo.Email != "" && replyTo.Email != cm.Email {
-			emailErr = notify.Email(&cm, replyTo, article, *cm.EmailTrackingToken)
+		if recipient := replyNotificationRecipient(replyTo); recipient != nil && recipient.PublicRole() != string(model.RoleAdmin) && recipient.Email != cm.Email {
+			emailErr = notify.Email(&cm, recipient, article, *cm.EmailTrackingToken)
 
 			// Update EmailReadStatus based on email sending result
 			if emailErr == nil {
@@ -227,4 +227,24 @@ func loadCommentAccounts(comments []*model.Comment) error {
 		}
 	}
 	return nil
+}
+
+// replyNotificationRecipient returns the parent comment addressed to the
+// verified email of the account that wrote it, or nil when nobody may be
+// notified. A guest's address is whatever was typed into the form: mailing it
+// let anyone use the site to send their own text to arbitrary people. The
+// address stored with the comment is not used either, it can be outdated.
+func replyNotificationRecipient(replyTo *model.Comment) *model.Comment {
+	if replyTo == nil || replyTo.AccountID == nil {
+		return nil
+	}
+	var author model.Account
+	if err := solitudes.System.DB.Select("email").
+		Where("id = ? AND email_verified_at IS NOT NULL AND disabled_at IS NULL", *replyTo.AccountID).
+		Take(&author).Error; err != nil || author.Email == "" {
+		return nil
+	}
+	recipient := *replyTo
+	recipient.Email = author.Email
+	return &recipient
 }

@@ -128,13 +128,32 @@ func requestLifecycle(views viewRenderer, errorHandler endpointErrorHandler) fun
 			state := &requestState{values: make(map[any]any), views: views, errorHandler: errorHandler}
 			r = r.WithContext(context.WithValue(r.Context(), requestStateKey{}, state))
 			writer := &responseWriter{ResponseWriter: w, request: r, state: state}
+			if r.Body == nil {
+				r.Body = http.NoBody
+			}
+			// File uploads are the one endpoint that legitimately exceeds the
+			// general limit below, which made its own 50 MB limit unreachable.
+			// Their body is bounded but not read here: the handler rejects
+			// callers without publishing rights before touching it, and the
+			// multipart parser spools large parts to disk instead of memory.
+			if isUploadRequest(r) {
+				if r.ContentLength > maxUploadRequestSize {
+					respondError(writer, r, newHTTPError(http.StatusRequestEntityTooLarge))
+					return
+				}
+				r.Body = http.MaxBytesReader(writer, r.Body, maxUploadRequestSize)
+				defer func() {
+					if r.MultipartForm != nil {
+						_ = r.MultipartForm.RemoveAll()
+					}
+				}()
+				next.ServeHTTP(writer, r)
+				return
+			}
 			// Match the previous 4 MiB request limit, including chunked request bodies.
 			if r.ContentLength > 4<<20 {
 				respondError(writer, r, newHTTPError(http.StatusRequestEntityTooLarge))
 				return
-			}
-			if r.Body == nil {
-				r.Body = http.NoBody
 			}
 			// A lazy MaxBytesReader alone permits mutations before an oversized
 			// chunked body is read. Validate the complete bounded body first,

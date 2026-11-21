@@ -120,6 +120,14 @@ var contentTypeList = map[string]string{
 
 const maxUploadSize = 50 * 1024 * 1024 // 50MB
 
+// maxUploadRequestSize bounds a whole upload request: one file of the maximum
+// size plus the multipart framing around it.
+const maxUploadRequestSize = maxUploadSize + 1<<20
+
+func isUploadRequest(r *http.Request) bool {
+	return r.Method == http.MethodPost && r.URL.Path == "/admin/upload"
+}
+
 var errUnsafeFetchURL = errors.New("remote image URL must resolve to a public HTTP(S) address")
 
 var blockedFetchNetworks = []netip.Prefix{
