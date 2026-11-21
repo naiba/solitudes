@@ -235,13 +235,41 @@ var videoHostPatterns = []string{
 }
 
 func isVideoLink(urlStr string) bool {
-	lowerURL := strings.ToLower(urlStr)
+	parsed, err := url.Parse(urlStr)
+	if err != nil || parsed.Host == "" {
+		return false
+	}
+	// 只看主机名和路径：按整串子串匹配的话，https://evil.example/#youtube.com
+	// 这样把视频站域名放在查询串或片段里的链接也会被当成视频，绕开 /r/go 跳转页。
+	host := strings.ToLower(parsed.Hostname())
+	path := strings.ToLower(parsed.EscapedPath())
 	for _, pattern := range videoHostPatterns {
-		if strings.Contains(lowerURL, pattern) {
+		patternHost, patternPath, _ := strings.Cut(pattern, "/")
+		if host != patternHost && !strings.HasSuffix(host, "."+patternHost) {
+			continue
+		}
+		if videoPathMatches(path, "/"+patternPath) {
 			return true
 		}
 	}
 	return false
+}
+
+// videoPathMatches 判断路径是否以模式开头；模式里的 * 匹配一段不含 / 的路径。
+func videoPathMatches(path, pattern string) bool {
+	literal, afterWildcard, hasWildcard := strings.Cut(pattern, "*")
+	if !strings.HasPrefix(path, literal) {
+		return false
+	}
+	if !hasWildcard {
+		return true
+	}
+	rest := path[len(literal):]
+	segmentEnd := strings.Index(rest, "/")
+	if segmentEnd <= 0 {
+		return false
+	}
+	return videoPathMatches(rest[segmentEnd:], afterWildcard)
 }
 
 func isExternalLink(urlStr string) bool {

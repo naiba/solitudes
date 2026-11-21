@@ -55,3 +55,22 @@ func TestReplyNotificationRecipientRequiresVerifiedAccountEmail(t *testing.T) {
 		t.Error("looking up the recipient changed the stored comment")
 	}
 }
+
+// A reply to one's own comment is not notified. Whether it is one's own is a
+// matter of the account: a guest who typed the recipient's address into the
+// form used to count as the recipient and silenced the notification.
+func TestCommentAuthorIsRecipientComparesAccountsNotTypedAddresses(t *testing.T) {
+	recipientAccount, otherAccount := "10000000-0000-4000-8000-0000000000b1", "10000000-0000-4000-8000-0000000000b2"
+	recipient := &model.Comment{Email: "recipient@example.com", AccountID: &recipientAccount}
+	sameAccount := recipientAccount
+
+	if commentAuthorIsRecipient(&model.Comment{Email: "recipient@example.com"}, recipient) {
+		t.Error("a guest who typed the recipient's address was taken for the recipient")
+	}
+	if commentAuthorIsRecipient(&model.Comment{Email: "recipient@example.com", AccountID: &otherAccount}, recipient) {
+		t.Error("another account was taken for the recipient")
+	}
+	if !commentAuthorIsRecipient(&model.Comment{Email: "changed@example.com", AccountID: &sameAccount}, recipient) {
+		t.Error("the recipient replying to their own comment must not be notified")
+	}
+}

@@ -108,7 +108,7 @@ func commentHandler(writer http.ResponseWriter, httpRequest *http.Request) error
 	go func() {
 		var emailErr error
 		// Only send email if replying to someone else's comment
-		if recipient := replyNotificationRecipient(replyTo); recipient != nil && recipient.PublicRole() != string(model.RoleAdmin) && recipient.Email != cm.Email {
+		if recipient := replyNotificationRecipient(replyTo); recipient != nil && recipient.PublicRole() != string(model.RoleAdmin) && !commentAuthorIsRecipient(&cm, recipient) {
 			emailErr = notify.Email(&cm, recipient, article, *cm.EmailTrackingToken)
 
 			// Update EmailReadStatus based on email sending result
@@ -227,6 +227,13 @@ func loadCommentAccounts(comments []*model.Comment) error {
 		}
 	}
 	return nil
+}
+
+// commentAuthorIsRecipient 判断新评论的作者是不是被回复的那个账号（自己回复自己不发通知）。
+// 必须比较账号而不是邮箱：游客的邮箱是表单里随便填的，填上被回复者的邮箱
+// 就能让对方收不到这条回复的通知。
+func commentAuthorIsRecipient(comment, recipient *model.Comment) bool {
+	return comment.AccountID != nil && recipient.AccountID != nil && *comment.AccountID == *recipient.AccountID
 }
 
 // replyNotificationRecipient returns the parent comment addressed to the

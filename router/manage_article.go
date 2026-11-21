@@ -318,7 +318,76 @@ func editorContentAllowed(original, proposed string) bool {
 	oldRaw, oldUnsafe := markdownPrivilegedContent(original)
 	newRaw, newUnsafe := markdownPrivilegedContent(proposed)
 	return equalMarkdownTokens(oldRaw, newRaw) && equalMarkdownTokens(oldUnsafe, newUnsafe) &&
-		equalMarkdownTokens(renderedExecutableElements(original), renderedExecutableElements(proposed))
+		equalMarkdownTokens(renderedExecutableElements(original), renderedExecutableElements(proposed)) &&
+		equalMarkdownTokens(browserRenderedElements(original), browserRenderedElements(proposed))
+}
+
+// browserRenderedLanguages 是前台页脚里 Vditor 会在浏览器端重新渲染的代码块语言
+// （图表、脑图、公式等）。这些块在服务端输出里只是转义过的文本，但浏览器端的
+// 渲染器会把文本重新变成 DOM：公式报错信息直接写进 innerHTML，图表的 tooltip
+// 接受 HTML，mermaid 和 graphviz 的节点可以带 javascript: 链接。服务端的转义
+// 管不到这一层，所以它们和原始 HTML 一样属于特权内容：编辑者不能新增或改动，
+// 管理员写的原样保留。
+var browserRenderedLanguages = map[string]bool{
+	"language-mermaid": true, "language-mindmap": true, "language-echarts": true,
+	"language-graphviz": true, "language-plantuml": true, "language-flowchart": true,
+	"language-abc": true, "language-markmap": true, "language-smiles": true,
+	"language-math": true,
+}
+
+func browserRenderedElement(token html.Token) bool {
+	for _, attribute := range token.Attr {
+		if attribute.Key != "class" {
+			continue
+		}
+		for _, class := range strings.Fields(strings.ToLower(attribute.Val)) {
+			if browserRenderedLanguages[class] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// browserRenderedElements 返回渲染结果里每个会被浏览器端渲染器处理的元素（含内容）。
+func browserRenderedElements(content string) (elements []string) {
+	tokenizer := html.NewTokenizer(strings.NewReader(mdRender("editor-permissions", content)))
+	var current strings.Builder
+	capturedTag := ""
+	depth := 0
+	for {
+		typeOfToken := tokenizer.Next()
+		if typeOfToken == html.ErrorToken {
+			break
+		}
+		token := tokenizer.Token()
+		if depth == 0 {
+			if typeOfToken == html.StartTagToken && browserRenderedElement(token) {
+				current.Reset()
+				current.Write(tokenizer.Raw())
+				capturedTag = token.Data
+				depth = 1
+			}
+			continue
+		}
+		current.Write(tokenizer.Raw())
+		if token.Data != capturedTag {
+			continue
+		}
+		if typeOfToken == html.StartTagToken {
+			depth++
+		}
+		if typeOfToken == html.EndTagToken {
+			depth--
+			if depth == 0 {
+				elements = append(elements, current.String())
+			}
+		}
+	}
+	if depth > 0 {
+		elements = append(elements, current.String())
+	}
+	return elements
 }
 
 func equalMarkdownTokens(a, b []string) bool {
