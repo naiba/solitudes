@@ -1,4 +1,6 @@
-debug: true
+# debug logs every SQL statement, including password and session token hashes.
+# Keep it off outside local development.
+debug: false
 enabletrustedproxycheck: false
 trustedproxies:
   - 192.168.160.1

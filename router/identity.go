@@ -123,10 +123,18 @@ func verifyAccountEmail(raw string) error {
 }
 
 func safeReturnPath(raw string) string {
-	if strings.HasPrefix(raw, "/") && !strings.HasPrefix(raw, "//") && !strings.ContainsAny(raw, "\\\r\n") {
-		return raw
+	if !strings.HasPrefix(raw, "/") || strings.HasPrefix(raw, "//") || strings.Contains(raw, "\\") {
+		return ""
 	}
-	return ""
+	// Browsers remove tabs and newlines from a URL before resolving it, which
+	// turns "/\t/host" into the protocol-relative "//host". Refuse every
+	// control character instead of listing the ones known to be stripped.
+	for _, character := range raw {
+		if character < 0x20 || character == 0x7f {
+			return ""
+		}
+	}
+	return raw
 }
 
 func publicBaseURL() string {

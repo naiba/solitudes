@@ -45,12 +45,9 @@ func commentHandler(writer http.ResponseWriter, httpRequest *http.Request) error
 		return newHTTPError(http.StatusBadRequest, "guest nickname must be 1–64 characters")
 	}
 
-	article, err := verifyArticle(&cf)
+	article, err := verifyArticle(account, &cf)
 	if err != nil {
 		return fmt.Errorf("article verification failed: %w", err)
-	}
-	if !canReadArticle(account, article) {
-		return newHTTPError(http.StatusNotFound)
 	}
 
 	commentType, replyTo, err := getCommentType(&cf, article.ID)
@@ -141,13 +138,23 @@ func generateTrackingToken() (string, error) {
 	return hex.EncodeToString(b), nil
 }
 
-func verifyArticle(cf *commentForm) (*model.Article, error) {
+// verifyArticle returns the article a comment may be posted to.
+func verifyArticle(account *model.Account, cf *commentForm) (*model.Article, error) {
 	var article model.Article
-	if err := solitudes.System.DB.Select("id,version,title,slug,visibility,author_id").Order("created_at DESC").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
+	if err := solitudes.System.DB.Select("id,version,title,slug,visibility,author_id,disable_comment").Order("created_at DESC").Take(&article, "slug = ?", cf.Slug).Error; err != nil {
 		return nil, fmt.Errorf("failed to fetch article: %w", err)
 	}
 	if cf.Version > article.Version || cf.Version == 0 {
 		return nil, errors.New("invalid article version")
+	}
+	if !canReadArticle(account, &article) {
+		return nil, newHTTPError(http.StatusNotFound)
+	}
+	// The templates hide the comment form when comments are disabled, but the
+	// endpoint is reachable without the form. Enforce the setting here, after
+	// the visibility check so a hidden article is not revealed by a 403.
+	if article.DisableComment {
+		return nil, newHTTPError(http.StatusForbidden, "comments are disabled for this article")
 	}
 	return &article, nil
 }

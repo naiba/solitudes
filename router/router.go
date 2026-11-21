@@ -74,6 +74,17 @@ func init() {
 	}
 
 	// 标题渲染：为 heading anchor 注入 aria-label 属性
+	// 围栏代码块的 info 字符串：Lute 把它原样拼进 <code class="language-...">，
+	// 不转义引号。info 里带一个 " 就能跳出 class 属性，写进事件处理器甚至新的标签，
+	// 编辑者据此可以在管理员浏览文章时执行脚本。渲染到这个节点时先把它转义掉；
+	// 节点本身不输出内容，后面的代码节点读到的就是转义后的 info。
+	luteEngine.Md2HTMLRendererFuncs[ast.NodeCodeBlockFenceInfoMarker] = func(n *ast.Node, entering bool) (string, ast.WalkStatus) {
+		if entering {
+			n.CodeBlockInfo = luteHtml.EscapeHTML(n.CodeBlockInfo)
+		}
+		return "", ast.WalkContinue
+	}
+
 	luteEngine.Md2HTMLRendererFuncs[ast.NodeHeading] = func(n *ast.Node, entering bool) (string, ast.WalkStatus) {
 		headingLevel := " 123456"
 		level := headingLevel[n.HeadingLevel : n.HeadingLevel+1]

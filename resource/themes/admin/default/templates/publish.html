@@ -209,9 +209,17 @@
                     .then(r => r.json())
                     .then(tags => {
                         if (tags && tags.length > 0) {
-                            tagsDropdown.innerHTML = tags.map(tag => 
-                                `<div class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-tag="${tag}">${tag}</div>`
-                            ).join('');
+                            // Tags are free text typed by any editor. Build the
+                            // nodes with textContent: interpolating them into
+                            // innerHTML ran markup stored in a tag name in the
+                            // administrator's session.
+                            tagsDropdown.replaceChildren(...tags.map(tag => {
+                                const option = document.createElement('div');
+                                option.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm';
+                                option.dataset.tag = tag;
+                                option.textContent = tag;
+                                return option;
+                            }));
                             tagsDropdown.classList.remove('hidden');
                         } else {
                             tagsDropdown.classList.add('hidden');
@@ -263,12 +271,21 @@
                     .then(r => r.json())
                     .then(books => {
                         if (books && books.length > 0) {
-                            booksDropdown.innerHTML = books.map(book => 
-                                `<div class="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm" data-id="${book.id}">
-                                    <span class="font-medium">${book.title}</span>
-                                    <span class="text-gray-500 text-xs ml-2">${book.slug}</span>
-                                </div>`
-                            ).join('');
+                            // Titles and slugs come from articles any editor can
+                            // write; see the tag dropdown above.
+                            booksDropdown.replaceChildren(...books.map(book => {
+                                const option = document.createElement('div');
+                                option.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm';
+                                option.dataset.id = book.id;
+                                const title = document.createElement('span');
+                                title.className = 'font-medium';
+                                title.textContent = book.title;
+                                const slug = document.createElement('span');
+                                slug.className = 'text-gray-500 text-xs ml-2';
+                                slug.textContent = book.slug;
+                                option.append(title, slug);
+                                return option;
+                            }));
                             booksDropdown.classList.remove('hidden');
                         } else {
                             booksDropdown.classList.add('hidden');

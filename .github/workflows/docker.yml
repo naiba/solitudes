@@ -6,6 +6,12 @@ on:
       - master
   pull_request:
 
+# The repository default gives workflows a read-write token. Tests run code
+# from the pushed branch and install third-party tooling, so start from
+# read-only and let the image jobs ask for package access.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -59,6 +65,9 @@ jobs:
     if: github.event_name == 'push'
     needs: test
     runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         include:
@@ -109,6 +118,8 @@ jobs:
   merge:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      packages: write
     steps:
       - name: Log in to the GHCR
         uses: docker/login-action@v4

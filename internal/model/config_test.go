@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/naiba/solitudes/internal/theme"
@@ -24,6 +25,52 @@ func TestConfigSaveRestrictsSecretFilePermissions(t *testing.T) {
 	}
 	if info.Mode().Perm() != 0600 {
 		t.Fatalf("config with login secrets is readable by other users: %v", info.Mode().Perm())
+	}
+}
+
+// The file holds the database DSN and every secret. Truncating it and writing
+// in place leaves it empty or half written if the process dies mid-write, and
+// the site cannot start again. The new content has to be written beside it
+// and swapped in.
+func TestConfigSaveReplacesTheFileInOneStep(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "conf.yml")
+	if err := os.WriteFile(path, []byte("database: old\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config := &Config{ConfigFilePath: path, Database: "postgres://new"}
+	if err := config.Save(); err != nil {
+		t.Fatal(err)
+	}
+
+	after, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if os.SameFile(before, after) {
+		t.Error("the existing file was overwritten in place instead of being replaced by a complete new file")
+	}
+	saved, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(saved), "postgres://new") {
+		t.Errorf("saved config = %q", saved)
+	}
+	if after.Mode().Perm() != 0600 {
+		t.Errorf("saved config mode = %v, want 0600", after.Mode().Perm())
+	}
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 {
+		t.Errorf("config directory holds %d entries after saving, want only conf.yml", len(entries))
 	}
 }
 

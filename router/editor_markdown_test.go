@@ -3,6 +3,8 @@ package router
 import (
 	"strings"
 	"testing"
+
+	"golang.org/x/net/html"
 )
 
 func TestEditorContentAllowed(t *testing.T) {
@@ -19,6 +21,10 @@ func TestEditorContentAllowed(t *testing.T) {
 		{"new SVG", "", `<svg onload=alert(1)></svg>`, false},
 		{"new HTML comment", "", "<!-- hidden -->", false},
 		{"script inside code fence stays inert", "", "```html\n" + adminScript + "\n```", true},
+		// A fence info string is rendered escaped (see
+		// TestMarkdownFenceInfoCannotLeaveTheClassAttribute), so it is inert text.
+		{"fence info with markup stays inert", "", "~~~\"><script>alert(1)</script>\ncode\n~~~", true},
+		{"ordinary fence language with punctuation", "", "```c++\nint main() {}\n```", true},
 		{"new javascript link", "", "[click](javascript:alert%281%29)", false},
 		{"encoded javascript link", "", "[click](jav&#x61;script:alert%281%29)", false},
 		{"new data image", "", "![x](data:image/svg+xml;base64,PHN2Zz4=)", false},
@@ -47,5 +53,37 @@ func TestMarkdownImageAltEscaped(t *testing.T) {
 	html := mdRender("image-alt-test", `![" onerror="alert(1)](photo.png)`)
 	if strings.Contains(html, `onerror="alert(1)"`) || !strings.Contains(html, "&quot;") {
 		t.Fatalf("unsafe image alt attribute: %s", html)
+	}
+}
+
+// Lute copies a fence's info string into class="language-..." without escaping
+// quotes, so the rendered article must not carry anything an info string put
+// outside that attribute, whoever wrote it.
+func TestMarkdownFenceInfoCannotLeaveTheClassAttribute(t *testing.T) {
+	for _, markdown := range []string{
+		"~~~\"><svg/onload=alert(1)>\ncode\n~~~",
+		"```js\"onmouseover=\"alert(1)\ncode\n```",
+		"```js' onfocus='alert(1)\ncode\n```",
+	} {
+		rendered := mdRender("fence-info-test", markdown)
+		tokenizer := html.NewTokenizer(strings.NewReader(rendered))
+		for {
+			tokenType := tokenizer.Next()
+			if tokenType == html.ErrorToken {
+				break
+			}
+			token := tokenizer.Token()
+			if tokenType != html.StartTagToken && tokenType != html.SelfClosingTagToken {
+				continue
+			}
+			if token.Data == "svg" {
+				t.Errorf("%q rendered an <svg> element: %s", markdown, rendered)
+			}
+			for _, attribute := range token.Attr {
+				if strings.HasPrefix(strings.ToLower(attribute.Key), "on") {
+					t.Errorf("%q rendered the event handler %s: %s", markdown, attribute.Key, rendered)
+				}
+			}
+		}
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v3"
 
@@ -82,10 +83,42 @@ func (c *Config) Save() error {
 	if err != nil {
 		return err
 	}
+	// Write the new content to a sibling file and rename it into place. The
+	// file holds the database DSN and every secret: writing in place truncates
+	// it first, and a crash in between leaves a config the site cannot start
+	// from.
+	temporary, err := os.CreateTemp(filepath.Dir(c.ConfigFilePath), ".conf-*.yml.tmp")
+	if err != nil {
+		return c.saveInPlace(b)
+	}
+	temporaryPath := temporary.Name()
+	_, writeErr := temporary.Write(b)
+	if writeErr == nil {
+		writeErr = temporary.Chmod(0600)
+	}
+	if writeErr == nil {
+		writeErr = temporary.Sync()
+	}
+	if closeErr := temporary.Close(); writeErr == nil {
+		writeErr = closeErr
+	}
+	if writeErr == nil {
+		writeErr = os.Rename(temporaryPath, c.ConfigFilePath)
+	}
+	if writeErr != nil {
+		_ = os.Remove(temporaryPath)
+		// A config file bind-mounted on its own (a common container setup)
+		// cannot be renamed over. Keep those installations able to save.
+		return c.saveInPlace(b)
+	}
+	return nil
+}
+
+func (c *Config) saveInPlace(content []byte) error {
 	if err := os.Chmod(c.ConfigFilePath, 0600); err != nil && !os.IsNotExist(err) {
 		return err
 	}
-	if err := os.WriteFile(c.ConfigFilePath, b, os.FileMode(0600)); err != nil {
+	if err := os.WriteFile(c.ConfigFilePath, content, os.FileMode(0600)); err != nil {
 		return err
 	}
 	return os.Chmod(c.ConfigFilePath, 0600)
